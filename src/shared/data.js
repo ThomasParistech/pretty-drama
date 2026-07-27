@@ -118,3 +118,14 @@ export function slugify(name) {
       .replace(/^-+|-+$/g, "") || "personnage"
   );
 }
+
+// Citation d'une réplique dans une modale de confirmation (`.confirm-quote`) :
+// une tirade y tiendrait toute la hauteur de l'écran. Partagé par l'éditeur
+// (supprimer la réplique) et l'enregistrement (supprimer la prise), qui
+// citent la même chose au même endroit.
+export const EXCERPT_MAX = 140;
+
+export function excerpt(text) {
+  const trimmed = (text ?? "").trim();
+  return trimmed.length > EXCERPT_MAX ? `${trimmed.slice(0, EXCERPT_MAX)}…` : trimmed;
+}

@@ -3,6 +3,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { characterColorById } from "./CharacterPanel.jsx";
 import ConfirmModal from "../shared/ConfirmModal.jsx";
+import { excerpt } from "../shared/data.js";
 
 // One dialogue line: drag handle + character <select> + text + delete.
 // Enter inside the textarea inserts a new line right after (like typing in a
@@ -144,9 +145,3 @@ export default React.memo(function LineRow({
     </div>
   );
 });
-
-// Keep the confirmation readable on a tirade.
-function excerpt(text) {
-  const trimmed = text.trim();
-  return trimmed.length > 140 ? `${trimmed.slice(0, 140)}…` : trimmed;
-}

@@ -79,19 +79,6 @@ h3 {
   padding: 7px 10px;
 }
 
-/* Modales de confirmation (ConfirmModal) : la réplique visée est citée en
-   serif, comme dans les cartes de dialogue, pour qu'on la reconnaisse. */
-.confirm-quote {
-  font-family: var(--font-serif);
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--ink);
-  border-left: 3px solid var(--ed-rule);
-  padding-left: 12px;
-  margin: 10px 0;
-  white-space: pre-wrap;
-}
-
 /* Quand le bouton destructif EST l'action principale (le seul autre choix est
    « Annuler »), il s'affirme. Il reste en retrait dans le modal personnage, où
    il n'est qu'un des deux gestes possibles face à « Réassigner ».

@@ -7,7 +7,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { githubUploadUrl, myLineNumbers, slugify } from "./data.js";
+import { EXCERPT_MAX, excerpt, githubUploadUrl, myLineNumbers, slugify } from "./data.js";
 
 // Le module ne touche à `window` que dans le corps des fonctions : il suffit
 // donc de le poser avant l'appel. Les cas hors github.io s'appuient sur
@@ -83,4 +83,21 @@ test("myLineNumbers numérote MES répliques dans l'ordre de la scène", () => {
 test("sans personnage choisi, personne n'est numéroté", () => {
   const lines = [{ id: "a", characterId: "c1" }];
   assert.equal(myLineNumbers(lines, "").size, 0);
+});
+
+// ------------------------------------------------------------------- excerpt
+
+test("excerpt cite une réplique courte telle quelle, sans points de suite", () => {
+  assert.equal(excerpt("  Être ou ne pas être.  "), "Être ou ne pas être.");
+  assert.equal(excerpt(""), "");
+  assert.equal(excerpt(undefined), "", "réplique sans texte : citation vide, pas de crash");
+});
+
+test("excerpt raccourcit une tirade et le dit", () => {
+  const tirade = "a".repeat(EXCERPT_MAX + 50);
+  const quoted = excerpt(tirade);
+  assert.equal(quoted.length, EXCERPT_MAX + 1, "les points de suite en plus de la coupe");
+  assert.ok(quoted.endsWith("…"));
+  // Une tirade juste à la limite n'est pas marquée comme coupée.
+  assert.equal(excerpt("a".repeat(EXCERPT_MAX)), "a".repeat(EXCERPT_MAX));
 });

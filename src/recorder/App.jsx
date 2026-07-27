@@ -5,7 +5,8 @@ import useScrollToActiveCard from "../shared/useScrollToActiveCard.js";
 import PlayHeader from "../shared/PlayHeader.jsx";
 import ProgressBar from "../shared/ProgressBar.jsx";
 import LeaveGuard from "../shared/LeaveGuard.jsx";
-import { downloadBlob, slugify, myLineNumbers } from "../shared/data.js";
+import ConfirmModal from "../shared/ConfirmModal.jsx";
+import { downloadBlob, slugify, myLineNumbers, excerpt } from "../shared/data.js";
 import {
   PlayIcon,
   PauseIcon,
@@ -14,6 +15,7 @@ import {
   SkipNextIcon,
   DownloadIcon,
   MicIcon,
+  TrashIcon,
   WarnIcon,
 } from "../shared/icons.jsx";
 import useManifest from "../shared/useManifest.js";
@@ -107,6 +109,25 @@ export default function App() {
         },
       };
     });
+    setDownloaded(false);
+  };
+
+  // Jeter une prise de la séance : la réplique reprend l'état qu'elle avait
+  // avant (« Déjà enregistrée » si un clip publié est à jour, sinon « À
+  // enregistrer »). Ne concerne QUE les prises en mémoire : un clip déjà
+  // publié ne se supprime pas depuis le navigateur, il vit dans le dépôt.
+  const deleteTake = (line) => {
+    setTakes((prev) => {
+      const take = prev[line.id];
+      if (!take) return prev;
+      if (take.url) URL.revokeObjectURL(take.url);
+      const { [line.id]: _dropped, ...rest } = prev;
+      return rest;
+    });
+    // Comme après avoir refait une prise : le ZIP déjà téléchargé ne décrit
+    // plus la séance (il contient encore celle qu'on vient de jeter), donc il
+    // est à refaire. Si c'était la dernière prise, il ne reste rien à
+    // télécharger et l'avertissement ne s'affiche pas (takenCount === 0).
     setDownloaded(false);
   };
 
@@ -236,7 +257,7 @@ export default function App() {
         {characterId !== "" && (
           <p className="header-hint">
             Placez-vous sur une de vos répliques, puis appuyez sur le micro en bas : il démarre
-            aussitôt. Une réplique déjà faite peut être réécoutée et refaite. Vous pouvez changer de
+            aussitôt. Une prise peut être réécoutée, refaite ou jetée. Vous pouvez changer de
             personnage pour enregistrer plusieurs voix dans le même fichier, à envoyer ensuite à
             votre responsable.
           </p>
@@ -342,7 +363,18 @@ export default function App() {
                 )}
               </div>
               <p className="dialogue-text">{line.text}</p>
-              {playerSrc && <TakePlayer src={playerSrc} seed={line.id} fresh={state === "fresh"} />}
+              {playerSrc && (
+                <TakePlayer
+                  src={playerSrc}
+                  seed={line.id}
+                  fresh={state === "fresh"}
+                  lineText={line.text}
+                  // Seule une prise de la séance se supprime (le lecteur sert
+                  // aussi à réécouter un clip publié, qui n'est pas à nous).
+                  onDelete={take ? () => deleteTake(line) : null}
+                  deleteDisabled={isRecording}
+                />
+              )}
             </div>
           );
         })}
@@ -644,14 +676,17 @@ function formatTime(seconds) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-// In-card audio player: round play button + elapsed/total + waveform.
+// In-card audio player: round play button + elapsed/total + waveform, plus a
+// discreet delete button at the far end when the clip is a take of THIS
+// session (`onDelete`).
 // `fresh` switches the vivid-green palette ("À télécharger") vs the greyed
 // green of already-recorded lines.
-function TakePlayer({ src, seed, fresh }) {
+function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [confirming, setConfirming] = useState(false);
   const fallback = useMemo(() => waveHeights(seed), [seed]);
   // Real peaks decoded from the audio; falls back to the decorative bars while
   // decoding or if decode fails.
@@ -703,6 +738,32 @@ function TakePlayer({ src, seed, fresh }) {
           />
         ))}
       </span>
+      {onDelete && (
+        <button
+          className="player-delete"
+          title="Supprimer cette prise"
+          aria-label="Supprimer cette prise"
+          disabled={deleteDisabled}
+          onClick={() => setConfirming(true)}
+        >
+          <TrashIcon />
+        </button>
+      )}
+      {confirming && (
+        <ConfirmModal
+          title="Supprimer cette prise ?"
+          confirmLabel="Supprimer"
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => {
+            setConfirming(false);
+            onDelete();
+          }}
+        >
+          {/* Rien de plus que la citation, comme la suppression de réplique de
+              l'éditeur : le titre dit le geste, la citation dit sur quoi. */}
+          <p className="confirm-quote">« {excerpt(lineText)} »</p>
+        </ConfirmModal>
+      )}
       <audio
         ref={audioRef}
         src={src}

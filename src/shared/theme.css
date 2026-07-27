@@ -683,6 +683,23 @@ textarea:focus {
   flex-wrap: wrap;
 }
 
+/* Modales de confirmation (ConfirmModal) : la réplique visée est citée en
+   serif, comme dans les cartes de dialogue, pour qu'on la reconnaisse. Vit
+   ici et plus dans editor.css depuis que la page Enregistrement cite aussi la
+   réplique (suppression d'une prise) : le modal est partagé, sa citation
+   aussi. Le filet suit --border (re-skinné par l'éditeur), donc la teinte
+   reste celle de la page. */
+.confirm-quote {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  border-left: 3px solid var(--border);
+  padding-left: 12px;
+  margin: 10px 0;
+  white-space: pre-wrap;
+}
+
 /* ---- Mobile ----
    La rangée du bandeau est serrée à 375px (sceau + marque + titre de pièce +
    chevron, plus les actions de l'éditeur) : on récupère de la largeur sur le

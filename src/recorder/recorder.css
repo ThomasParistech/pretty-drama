@@ -325,6 +325,53 @@
   background: var(--rec-fresh);
 }
 
+/* Jeter la prise de la séance : bout de rangée, en rouge du thème sur une
+   pastille teintée. Il côtoie le bouton d'écoute, vert et plein : un dessin
+   gris au trait s'y perdait, alors que c'est le seul geste irréversible de la
+   page. Rouge donc, mais au trait et sur un aplat pâle, pour qu'il reste
+   second face au lecteur.
+   Il n'existe que sur une prise de cette séance : un clip déjà publié se
+   réécoute mais ne se supprime pas depuis le navigateur. */
+.player-delete {
+  margin-left: auto;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  background: var(--accent-soft);
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 17px; /* l'icône se dimensionne sur la font-size (1em) */
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+/* Même zone tactile ≥ 42px que le bouton d'écoute, sans grossir le dessin. */
+.player-delete::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+}
+
+/* Au survol, le rouge devient plein : le bouton dit alors franchement ce qu'il
+   fait, sans l'annoncer en permanence. */
+.player-delete:hover:not(:disabled),
+.player-delete:focus-visible {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.player-delete:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* Carte en cours d'enregistrement : halo accent qui pulse (reste visible en
    arrière-plan derrière la pop-up). */
 .dialogue-card.own.recording {

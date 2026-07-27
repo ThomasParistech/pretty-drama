@@ -130,6 +130,21 @@ export function CrossIcon() {
   );
 }
 
+// Supprimer une prise d'enregistrement (page Enregistrement). Volontairement
+// sans les deux traits verticaux du couvercle habituel : le dessin fait 17 px,
+// taille à laquelle ils se referment sur les parois (même raison que
+// SparkleIcon, en sens inverse : ici on retire du trait au lieu de passer à
+// l'aplat).
+export function TrashIcon() {
+  return (
+    <svg {...strokeSvg}>
+      <path d="M4 7h16" />
+      <path d="M9.5 7V4.5h5V7" />
+      <path d="M6.5 7l.9 12.1a1.5 1.5 0 001.5 1.4h6.2a1.5 1.5 0 001.5-1.4L17.5 7" />
+    </svg>
+  );
+}
+
 // Avertissement : remplace l'emoji ⚠️, qui rendait en couleur pleine (jaune et
 // noir) sur mobile comme les ▶/⏸ d'avant, donc hors palette, et dont la
 // hauteur variait d'une plateforme à l'autre. Il ne sert qu'en tête de phrase,
