@@ -14,7 +14,7 @@ au bon moment.
 <!-- BUILD_STATUS_START -->
 ✅ **Dernier traitement réussi** — tout est en ligne.
 
-_Mis à jour le 22/07/2026 12:37 UTC._
+_Mis à jour le 27/07/2026 16:28 UTC._
 <!-- BUILD_STATUS_END -->
 
 ---
