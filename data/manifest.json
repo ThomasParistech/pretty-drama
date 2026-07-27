@@ -2,6 +2,16 @@
   "title": "Transport de Femmes",
   "history": [
     {
+      "at": "2026-07-27T20:37:55Z",
+      "files": [
+        {
+          "file": "voix-charlotte.zip",
+          "kind": "voix",
+          "clips": 3
+        }
+      ]
+    },
+    {
       "at": "2026-07-27T20:14:56Z",
       "files": [
         {
@@ -196,8 +206,8 @@
               "characterId": "0efe8009-ad49-476e-9a4b-2e95963314d2",
               "character": "Charlotte",
               "text": "On dit toutes ça, mon cœur.",
-              "status": "manquant",
-              "clip": null,
+              "status": "ok",
+              "clip": "clips/71ef53af-ebb4-44a6-8cc8-60353f97d4c2.mp3",
               "act": "Acte I",
               "scene": "Scène 1"
             },
@@ -216,8 +226,8 @@
               "characterId": "0efe8009-ad49-476e-9a4b-2e95963314d2",
               "character": "Charlotte",
               "text": "Si on pouvait la larguer.",
-              "status": "manquant",
-              "clip": null,
+              "status": "ok",
+              "clip": "clips/2b80ada1-2427-42f2-a3ac-cde1770d8fd7.mp3",
               "act": "Acte I",
               "scene": "Scène 1"
             },
@@ -306,8 +316,8 @@
               "characterId": "0efe8009-ad49-476e-9a4b-2e95963314d2",
               "character": "Charlotte",
               "text": "Aux vaches ouais.",
-              "status": "manquant",
-              "clip": null,
+              "status": "ok",
+              "clip": "clips/206346b4-ce69-4bd1-ad96-ed2d6cab6fa0.mp3",
               "act": "Acte I",
               "scene": "Scène 1"
             },
@@ -11657,8 +11667,8 @@
       "characterId": "0efe8009-ad49-476e-9a4b-2e95963314d2",
       "character": "Charlotte",
       "text": "On dit toutes ça, mon cœur.",
-      "status": "manquant",
-      "clip": null,
+      "status": "ok",
+      "clip": "clips/71ef53af-ebb4-44a6-8cc8-60353f97d4c2.mp3",
       "act": "Acte I",
       "scene": "Scène 1"
     },
@@ -11677,8 +11687,8 @@
       "characterId": "0efe8009-ad49-476e-9a4b-2e95963314d2",
       "character": "Charlotte",
       "text": "Si on pouvait la larguer.",
-      "status": "manquant",
-      "clip": null,
+      "status": "ok",
+      "clip": "clips/2b80ada1-2427-42f2-a3ac-cde1770d8fd7.mp3",
       "act": "Acte I",
       "scene": "Scène 1"
     },
@@ -11767,8 +11777,8 @@
       "characterId": "0efe8009-ad49-476e-9a4b-2e95963314d2",
       "character": "Charlotte",
       "text": "Aux vaches ouais.",
-      "status": "manquant",
-      "clip": null,
+      "status": "ok",
+      "clip": "clips/206346b4-ce69-4bd1-ad96-ed2d6cab6fa0.mp3",
       "act": "Acte I",
       "scene": "Scène 1"
     },
