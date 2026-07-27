@@ -48,14 +48,27 @@ virgule, parenthèses ou une phrase de plus.
   ouverture des DEUX accueils dans le navigateur dès que le serveur répond ;
   `exec ./node_modules/.bin/vite`, pas `npm run dev`, pour que Vite prenne la
   place du script : le Ctrl+C tue vraiment le serveur et libère le port, sans
-  wrapper npm ni pid à surveiller), `npm run build`. Tests Python :
-  `python3 -m unittest discover -s scripts/tests` (statuts + normalisation +
-  contrat ZIP + journal, cas partagés dans `normalize-cases.json`) ; un seul test :
-  `python3 -m unittest scripts.tests.test_normalize.TestNormalizeSharedCases.test_idempotent`.
-  Pas de tests JS. Build de prod à tester à la main (l'Action copie `data/` et
-  `clips/` dans `dist/`) : `npm run build && cp -r data clips dist/ && npm run preview`.
-  La CI rejoue ces tests dans `build.yml`, donc à chaque push de code comme
-  après chaque dépôt (`uploads.yml` finit par l'appeler).
+  wrapper npm ni pid à surveiller), `npm run build`. **Deux suites de tests**,
+  toutes deux rejouées par `build.yml`, donc à chaque push de code comme après
+  chaque dépôt (`uploads.yml` finit par l'appeler) :
+  - Python, `python3 -m unittest discover -s scripts/tests` : statuts,
+    normalisation (cas partagés dans `normalize-cases.json`), contrat ZIP,
+    journal, plus les **contrats inter-fichiers** (`test_contracts.py`, voir
+    plus bas). Un seul test :
+    `python3 -m unittest scripts.tests.test_normalize.TestNormalizeSharedCases.test_idempotent`.
+  - JS, `npm test` = `node --test src/` : la logique **pure** du front, celle
+    qui ne se relit pas à l'œil. `reducer.test.js` (réparation d'un
+    `script.json` douteux, ids jamais recyclés, qui parle après une
+    suppression), `history.test.js` (fusion des frappes, « Modifications non
+    téléchargées »), `data.test.js` (URL de dépôt, slugs), `useRecorder.test.js`
+    (l'extension du membre audio reste dans l'alphabet qu'accepte l'Action).
+    **Aucune dépendance de test** : `node --test` est intégré à Node, ces
+    modules sont du JS pur sans React ni DOM, et un fork de troupe ne doit pas
+    payer un `npm ci` plus lourd pour ça. Pas de test de composant React, donc
+    pas de rendu : ce qui touche au DOM se vérifie toujours à la main.
+
+  Build de prod à tester à la main (l'Action copie `data/` et `clips/` dans
+  `dist/`) : `npm run build && cp -r data clips dist/ && npm run preview`.
 
 ## Flux de données
 
@@ -105,7 +118,9 @@ virgule, parenthèses ou une phrase de plus.
   `SAFE_ID` (`src/editor/reducer.js`) et `LINE_ID_PATTERN`
   (`scripts/process_uploads.py`) doivent rester synchrones :
   `^[0-9a-zA-Z-]{1,64}$` (alphanumérique, pas seulement hex : ids lisibles
-  édités à la main acceptés).
+  édités à la main acceptés). Ce n'est plus une consigne mais un test :
+  `test_contracts.py` lit les deux fichiers et compare les deux expressions,
+  donc les faire diverger casse la CI.
 - Le format du ZIP est un contrat navigateur ↔ Action : toute modification doit
   toucher `downloadZip` (recorder `App.jsx`) ET `parse_manifest`
   (`process_uploads.py`) en même temps.
@@ -117,6 +132,23 @@ virgule, parenthèses ou une phrase de plus.
   orpheliner les mp3 déjà nommés). C'est sans conséquence : un id hors `SAFE_ID`
   hand-édité dans `script.json` n'a jamais de clip (l'Action rejette ces ids à
   l'upload) → statut `manquant`, `clip: null`, aucune URL forgée n'est émise.
+- **`sanitizeScript` ne déplace jamais une réplique d'un personnage à un
+  autre.** Deux cas à ne pas confondre quand un id de personnage est reminté :
+  hors `SAFE_ID`, l'id n'est porté que par lui, donc ses répliques le suivent
+  (`characterRemap`) ; **dupliqué**, le premier porteur garde l'id ET ses
+  répliques, le second repart avec un id neuf et aucune réplique. Remapper un
+  doublon changerait qui parle dans la pièce alors que les mp3, nommés par id
+  de *réplique*, ne bougeraient pas : la voix enregistrée par l'un sortirait
+  sous le nom de l'autre. Corollaire de tuyauterie : le remap se consulte sur
+  la valeur brute du `characterId`, **avant** tout contrôle contre `SAFE_ID`,
+  puisque les ids qu'il contient sont justement ceux qui n'y passent pas.
+- **Un no-op ne doit pas fabriquer un nouvel état.** `updateScene`
+  (`reducer.js`) rend l'état reçu tel quel quand la scène ne change pas, et
+  `scriptReducer` en fait autant pour toute action refusée. `history.js`
+  reconnaît une action sans effet à l'identité (`present === state.present`) :
+  sans cette sortie, reposer une réplique glissée exactement où elle était
+  allumait « Modifications non téléchargées » et laissait une étape vide à
+  annuler.
 - Uploads hostiles : caps de taille réels (les en-têtes ZIP mentent), noms de
   membres validés par fullmatch, un fichier cassé ne bloque jamais les autres.
 - **`validate_script` est volontairement plus strict que `sanitize_script`** :
@@ -153,9 +185,10 @@ virgule, parenthèses ou une phrase de plus.
 | Sortie de page avec du travail non téléchargé | **un seul composant pour les deux pages concernées** : `src/shared/LeaveGuard.jsx` (`active`, `title`, `saveLabel`, `onSave`, message en children), monté par l'éditeur (`active={dirty}`, `onSave={download}`) et par l'enregistrement (`active={hasUnexported}`, `onSave={downloadZip}`, awaité car async). Il porte les deux couches : (1) clics interceptés en phase capture sur `document`, tout `a[href]` qui sort de la page ouvre un `ConfirmModal` du thème (« Télécharger … puis quitter » / « Quitter quand même » / Annuler) ; écoute globale plutôt que lien par lien, donc les futurs liens sont couverts d'office ; clic modifié, `target="_blank"`, `download` et ancres internes passent ; (2) `setBeforeUnloadGuard` (seul appelant restant) comme filet pour le rechargement, la barre d'adresse et la fermeture d'onglet : là le navigateur n'autorise QUE son dialogue (message et style imposés depuis Chrome 51 / Firefox 44), rien à habiller, ne pas réessayer. Détails à ne pas défaire : `setBeforeUnloadGuard(false)` à la main avant de naviguer (sinon le dialogue natif se superpose au modal), 200 ms de délai après le téléchargement (décharger la page dans la même tâche l'annule), et le modal reste affiché quand `active` retombe. **Aucune persistance locale du travail** (localStorage) : décision produit, un brouillon oublié dans un navigateur redeviendrait une source de vérité périmée face au dépôt |
 | Enregistrement micro | `src/recorder/useRecorder.js` (MediaRecorder, stream réutilisé, `release()` en fin de session) |
 | Construction du ZIP | `downloadZip` dans `src/recorder/App.jsx` |
-| Seul retour du respo (journal des dépôts) | `scripts/update_history.py` → `data/history.json` (`{runs: [{at, files}]}`, la plus récente d'abord, plafonné à 30), recopié dans `manifest.json` par `build_manifest` ; affiché par `Journal` dans `src/dashboard/App.jsx`. **C'est le canal d'erreur du projet** : il n'y a plus ni issue GitHub ni statut README, donc un fichier refusé ne se dit QUE là. **Une ligne par FICHIER et pas par dépôt** (chaque fichier a son propre sort : un ZIP abîmé au milieu de trois bons n'empêche pas les autres), dans un `<table>` dont le conteneur défile (`max-height` + `overflow: auto`, en-tête `sticky` : une trentaine de dépôts ne doit pas allonger la page sans fin). Quatre colonnes : date (année comprise, un journal se relit des mois plus tard), statut, type, détail. **Les deux colonnes d'icônes empruntent la pastille des sceaux** (`page-mark` + `.dash-journal-mark`, centrées) : le type porte le sceau de la page productrice (micro de l'Enregistrement, plume de l'Édition, les deux mêmes que le bouton de dépôt juste au-dessus, donc aucune légende à donner ; pastille neutre avec un `?` pour un fichier qu'aucune page ne revendique), et le statut prend les mêmes vert et ambre que la grille au-dessus avec `CheckIcon`/`CrossIcon`. Aucun mot dans ces deux colonnes, donc chaque pastille porte un `aria-label` et un `title`. Détail optionnel (`detailOf`) : rien pour un script réussi, nom du ZIP et compte de répliques pour des voix, nom et motif pour un échec. **Aucun rappel en haut de page** : la ligne du journal suffit, un bandeau d'alerte a été essayé puis retiré. La date de la première ligne fait aussi office de détecteur de panne (un run en échec ne commite rien, donc elle arrête d'avancer) ; **pas d'horodatage du run dans le manifest**, un champ réécrit à chaque exécution ferait différer `manifest.json` à tous les pushes, donc un commit robot chaque fois |
+| Seul retour du respo (journal des dépôts) | `scripts/update_history.py` → `data/history.json` (`{runs: [{at, files}]}`, la plus récente d'abord, plafonné à 30), recopié dans `manifest.json` par `build_manifest` ; affiché par `Journal` dans `src/dashboard/App.jsx`. **C'est le canal d'erreur du projet** : il n'y a plus ni issue GitHub ni statut README, donc un fichier refusé ne se dit QUE là. **Une ligne par FICHIER et pas par dépôt** (chaque fichier a son propre sort : un ZIP abîmé au milieu de trois bons n'empêche pas les autres), dans un `<table>` dont le conteneur défile (`max-height` + `overflow: auto`, en-tête `sticky` : une trentaine de dépôts ne doit pas allonger la page sans fin). Quatre colonnes : date (année comprise, un journal se relit des mois plus tard), statut, type, détail. **Les deux colonnes d'icônes empruntent la pastille des sceaux** (`page-mark` + `.dash-journal-mark`, centrées) : le type porte le sceau de la page productrice (micro de l'Enregistrement, plume de l'Édition, les deux mêmes que le bouton de dépôt juste au-dessus, donc aucune légende à donner ; pastille neutre avec un `?` pour un fichier qu'aucune page ne revendique), et le statut prend les mêmes vert et ambre que la grille au-dessus avec `CheckIcon`/`CrossIcon`. Aucun mot dans ces deux colonnes, donc chaque pastille porte un `aria-label` et un `title`. Détail optionnel (`detailOf`) : rien pour un script réussi, nom du ZIP et compte de répliques pour des voix, nom et motif pour un échec. Le tableau est plafonné à `JOURNAL_ROWS` lignes, et **le dit** (`.dash-journal-more`, « N dépôts plus anciens non affichés ») : dans le seul canal de retour du projet, un tableau qui s'arrête sans un mot se lit comme « il n'y a rien de plus ». **Aucun rappel en haut de page** : la ligne du journal suffit, un bandeau d'alerte a été essayé puis retiré. La date de la première ligne fait aussi office de détecteur de panne (un run en échec ne commite rien, donc elle arrête d'avancer) ; **pas d'horodatage du run dans le manifest**, un champ réécrit à chaque exécution ferait différer `manifest.json` à tous les pushes, donc un commit robot chaque fois |
 | Bouton de dépôt (Avancement) | `githubUploadUrl()` (`src/shared/data.js`) → `https://github.com/<owner>/<repo>/upload/master/uploads`, reconstruit depuis l'URL Pages ; `null` hors github.io (dev, domaine perso), où la carte se masque plutôt que de forger un 404. Deux formes d'URL Pages à couvrir : site de projet (`owner.github.io/<repo>/…`, le dépôt est le premier segment) et **site racine** (`owner.github.io/…`, où le premier segment est un nom de fichier et le dépôt porte le nom du domaine) ; sans ce second cas le bouton pointait vers `github.com/<owner>/dashboard.html`. **Une seule carte** (`UploadLinks`) : il n'y a qu'un dossier de dépôt, et deux cartes vers la même URL se liraient comme deux destinations. Les deux sceaux (micro, plume) l'encadrent et disent les deux sortes de fichiers, `.dash-upload-word` colorant chaque mot avec le `--page-mark` de sa page |
 | Filtre audio ffmpeg | `audio_filter(peak)` dans `scripts/process_uploads.py`, construit par prise à partir de son pic (mesuré par `measure_peak_dbfs`, une passe `volumedetect` avant la conversion). Deux choses à ne pas défaire : le seuil de silence est **relatif au pic** de la prise, jamais une valeur absolue (les niveaux varient énormément selon la distance au micro et l'AGC du navigateur : un seuil fixe laissait une seconde de vide sur une prise forte et mangeait le premier mot d'une prise faible), et `start_duration` est **obligatoire** (les navigateurs posent un clic de quelques dizaines de ms sur les tout premiers échantillons ; sans durée d'attaque minimale, `silenceremove` considère que le son a commencé à l'échantillon 0 et ne coupe rien du tout). Sous `SILENT_PEAK_DBFS` la prise est convertie sans trim : la rogner entièrement écrirait un mp3 vide et illisible |
+| Contrats inter-fichiers tenus par la CI | `scripts/tests/test_contracts.py`. Il vérifie ce qui ne vivait que dans un commentaire « keep in sync », en **lisant les sources** plutôt qu'en recopiant les valeurs attendues (recopier ne ferait que déplacer le problème) : `SAFE_ID` (JS) identique à `LINE_ID_PATTERN` (Python) ; aucun CSS de page ne redéfinit un token `--header-*` (la liste est lue dans `theme.css`, donc un nouveau token réservé est couvert d'office) ; aucune règle de bandeau ne consomme `--accent`, `--font-serif` ou `--shadow`, tous re-skinnés par l'éditeur ; chaque clé de `PAGES` a ses deux variables de sceau dans `theme.css` et pas l'inverse ; les entrées de `vite.config.js` et les `.html` de la racine coïncident exactement. Un test qui ne peut pas échouer ne sert à rien : chacun de ces gardes a été vérifié par mutation |
 | Chemins repo côté Python | `scripts/common.py` (`REPO_ROOT`, `write_json`) |
 | Middleware dev data/clips | `serveRepoData` dans `vite.config.js` |
 

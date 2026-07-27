@@ -32,9 +32,13 @@ Toutes les pages chargent `theme.css`. Les couleurs, rayons, ombres et fonts
 passent par les tokens du `:root` : `--paper`, `--paper-dark`, `--card`,
 `--ink`, `--ink-soft`, `--accent`, `--accent-dark` (hover des boutons pleins),
 `--accent-soft`, `--gold`, `--border`, `--ok(-soft)`, `--warn(-soft)`,
-`--radius`, `--shadow`, `--font-ui`, `--font-serif`, plus les tokens réservés
-`--header-accent` / `--header-serif` (cf. plus bas) et `--ease-header` (courbe
-du repli du bandeau, neutralisée par le bloc `prefers-reduced-motion`).
+`--radius`, `--shadow`, `--shadow-hover` (survol d'une carte cliquable),
+`--card-active` (carte de dialogue courante), `--focus-ring` /
+`--focus-ring-offset` (bague de focus des éléments qui n'en ont pas par
+défaut : slider, cartes, liens-cartes), `--font-ui`, `--font-serif`, plus les
+tokens réservés `--header-accent` / `--header-serif` / `--header-shadow`
+(cf. plus bas) et `--ease-header` (courbe du repli du bandeau, neutralisée par
+le bloc `prefers-reduced-motion`).
 
 - Une page **peut** re-skinner des tokens dans un `:root` local à son CSS
   (seul l'éditeur le fait, design « Rail » : accent `#7a5cc0`, fonts IBM
@@ -42,8 +46,13 @@ du repli du bandeau, neutralisée par le bloc `prefers-reduced-motion`).
 - **Invariant** : un re-skin ne doit jamais changer l'identité visible d'un
   composant partagé — la marque et le titre du bandeau (PageHeader/
   PlayHeader) rendent identiquement sur toutes les pages via les tokens
-  réservés `--header-accent` et `--header-serif`, qu'aucune page ne
-  redéfinit. Si l'identité d'un composant partagé (couleur d'accent, font,
+  réservés `--header-accent`, `--header-serif` et `--header-shadow`, qu'aucune
+  page ne redéfinit. **`scripts/tests/test_contracts.py` le vérifie en CI** :
+  il lit la liste des `--header-*` dans theme.css, échoue si un CSS de page en
+  redéfinit un, et échoue aussi si une règle de bandeau consomme `--accent`,
+  `--font-serif` ou `--shadow` (tous re-skinnés par l'éditeur). C'est
+  exactement par là qu'une ombre de bandeau a disparu sur la seule page
+  Édition. Si l'identité d'un composant partagé (couleur d'accent, font,
   taille) passe par un token re-skinnable, c'est un finding haute ; les
   neutres re-skinnés « assortis » (`--card`, `--border`, `--ink-soft`) sont
   tolérés dans les composants partagés tant qu'ils restent perceptuellement
@@ -66,7 +75,7 @@ du repli du bandeau, neutralisée par le bloc `prefers-reduced-motion`).
 | Slider de progression indexé | `src/shared/ProgressBar.jsx` | Répétition, Enregistrement |
 | Cartes de dialogue `.dialogue-card` (+ palette « mes répliques » `.mine` et bordure `.active` communes) | `theme.css` — les pages posent `.mine` à côté de leur classe sémantique et ne gardent que leurs vrais écarts | Répétition, Enregistrement |
 | Boutons `.btn` / `.btn.primary` | `theme.css` | toutes |
-| Sceau de page (pastille ronde + icône) | `src/shared/PageMark.jsx` (+ `PAGES` de `src/shared/pages.js`) — la classe `page-<clé>` qu'il pose porte ses couleurs, il s'affiche donc juste partout, y compris hors d'un bandeau. Prop `label` quand le sceau ne désigne pas sa page (colonne Type du journal : le micro y veut dire « Voix ») | les deux bandeaux, les cartes de l'accueil, le bouton de dépôt de l'Avancement, et les DEUX colonnes d'icônes de son journal (la colonne Statut réutilise la pastille `.page-mark` avec les teintes `--ok`/`--warn` au lieu d'une couleur de page) |
+| Sceau de page (pastille ronde + icône) | `src/shared/PageMark.jsx` (+ `PAGES` de `src/shared/pages.js`) — la classe `page-<clé>` qu'il pose porte ses couleurs, il s'affiche donc juste partout, y compris hors d'un bandeau. Prop `label` quand le sceau ne désigne pas sa page (colonne Type du journal : le micro y veut dire « Voix »), et `label=""` quand il est **décoratif**, c'est-à-dire quand le mot est déjà écrit juste à côté (cartes de l'accueil, marque du hero) : sinon chaque lien s'annonce « Répétition, Répétition, Répétez… » | les deux bandeaux, les cartes de l'accueil, le bouton de dépôt de l'Avancement, et les DEUX colonnes d'icônes de son journal (la colonne Statut réutilise la pastille `.page-mark` avec les teintes `--ok`/`--warn` au lieu d'une couleur de page) |
 | Texte d'explication en tête des réglages `.header-hint` | `theme.css` | Répétition, Enregistrement, Édition |
 | Confirmation d'action destructive | `src/shared/ConfirmModal.jsx` — rendu en portail, Escape annule, focus initial sur le bouton à proposer. **Jamais de `window.confirm`** (dialogue natif hors thème) | Édition (réplique, scène, acte), et via `LeaveGuard` |
 | Garde de sortie de page (travail non téléchargé) | `src/shared/LeaveGuard.jsx` — clics de liens interceptés en capture + `beforeunload` en filet | Édition, Enregistrement |

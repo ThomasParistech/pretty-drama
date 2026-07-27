@@ -212,6 +212,36 @@ h3 {
   transform: scale(1.15);
 }
 
+/* Sur téléphone, le popover devient une barre en bas d'écran plutôt qu'une
+   boîte accrochée sous la puce. Deux raisons, pas une : accroché à gauche de sa
+   puce il mesure environ 163 px et débordait du bord droit dès que la puce
+   était en fin de rangée (défilement horizontal sur une page qui n'en a
+   nulle part ailleurs) ; et ses pastilles de 18 px sont intouchables au doigt.
+   Le fond plein-écran qui le ferme existe déjà, donc l'interaction ne change
+   pas : on tape une couleur, ou à côté pour renoncer.
+   `fixed` est sûr ici : aucun ancêtre du popover ne porte de transform (ce qui
+   en ferait le bloc conteneur), et cela le sort du rognage que le bandeau
+   applique pendant son repli. */
+@media (max-width: 800px) {
+  .swatch-popover {
+    position: fixed;
+    top: auto;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    gap: 10px;
+    padding: 14px;
+    justify-items: center;
+  }
+
+  .swatch-popover .swatch {
+    width: 100%;
+    max-width: 46px;
+    aspect-ratio: 1;
+    height: auto;
+  }
+}
+
 .swatch-popover .swatch.current {
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink);
 }

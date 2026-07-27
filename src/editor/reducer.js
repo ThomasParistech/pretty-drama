@@ -55,8 +55,17 @@ export function sanitizeScript(raw) {
   if (raw === null || typeof raw !== "object" || Array.isArray(raw)) raw = {};
 
   const seenIds = new Set();
-  // Character ids that had to be reminted map old -> new so their lines
-  // follow them.
+  // Personnage reminté parce que son id était HORS SAFE_ID : ancien -> neuf,
+  // pour que ses répliques le suivent. Uniquement ce cas-là.
+  //
+  // Un id DUPLIQUÉ ne s'y inscrit pas, et c'est la moitié qui compte : le
+  // premier porteur garde l'id, donc les répliques qui le citent lui restent,
+  // et le second repart avec un id neuf et aucune réplique. Remapper ici
+  // enverrait les répliques du premier au second, c'est-à-dire changerait qui
+  // parle dans la pièce (les mp3, eux, sont nommés par id de réplique et ne
+  // bougent pas : la voix d'Alceste se mettrait à sortir sous le nom de
+  // Philinte). Entre deux personnages indiscernables dans le fichier, on ne
+  // déplace rien.
   const characterRemap = new Map();
 
   const usedHues = new Set();
@@ -66,7 +75,10 @@ export function sanitizeScript(raw) {
       let id = c.id;
       if (!isId(id) || seenIds.has(id)) {
         const fresh = newId();
-        if (isId(id)) characterRemap.set(id, fresh); // duplicate: keep first owner
+        // Reminté pour cause d'id invalide (et non de doublon) : cet id-là
+        // n'est porté que par lui, ses répliques peuvent le suivre sans
+        // ambiguïté. Cf. le commentaire de characterRemap.
+        if (!isId(id) && typeof id === "string" && id) characterRemap.set(id, fresh);
         id = fresh;
       }
       seenIds.add(id);
@@ -85,8 +97,15 @@ export function sanitizeScript(raw) {
     let id = l.id;
     if (!isId(id) || seenIds.has(id)) id = newId();
     seenIds.add(id);
-    let characterId = isId(l.characterId) ? l.characterId : null;
+    // Le remap se consulte sur la valeur BRUTE, avant tout contrôle contre
+    // SAFE_ID : les ids qu'il contient sont justement ceux qui ne le passent
+    // pas. Les valider d'abord (ce que faisait ce code) revenait à ne jamais
+    // le consulter, et les répliques d'un personnage reminté devenaient
+    // orphelines pour une lettre accentuée dans le fichier.
+    let characterId = typeof l.characterId === "string" ? l.characterId : null;
     if (characterId && characterRemap.has(characterId)) characterId = characterRemap.get(characterId);
+    // characterIds ne contient que des ids valides : cette seule appartenance
+    // rejette aussi bien un id hors SAFE_ID qu'un personnage inexistant.
     if (characterId && !characterIds.has(characterId)) characterId = null;
     return { id, characterId, text: typeof l.text === "string" ? l.text : "" };
   };
@@ -130,7 +149,20 @@ function defaultCharacterId(scene, idx, characters) {
 // Immutably update one scene designated by indices. Only that scene's
 // object changes identity — untouched acts/scenes keep theirs, which is what
 // lets React.memo skip re-rendering the rest of the play on every keystroke.
+//
+// Quand `fn` rend la scène telle quelle (l'action ne changeait rien), on rend
+// l'ÉTAT tel quel. Sans cette sortie, un no-op fabriquait quand même un nouvel
+// objet d'état : history.js, qui reconnaît une action refusée à l'identité
+// (`present === state.present`), y voyait une vraie modification. Reposer une
+// réplique glissée exactement où elle était allumait donc « Modifications non
+// téléchargées » sans qu'on ait rien modifié, et laissait une étape vide à
+// annuler. Idem pour des indices hors bornes, qui ne désignent aucune scène.
 function updateScene(state, actIndex, sceneIndex, fn) {
+  const act = state.acts[actIndex];
+  const scene = act?.scenes?.[sceneIndex];
+  if (!scene) return state;
+  const nextScene = fn(scene);
+  if (nextScene === scene) return state;
   return {
     ...state,
     acts: state.acts.map((act, ai) =>
@@ -138,7 +170,7 @@ function updateScene(state, actIndex, sceneIndex, fn) {
         ? act
         : {
             ...act,
-            scenes: act.scenes.map((scene, si) => (si !== sceneIndex ? scene : fn(scene))),
+            scenes: act.scenes.map((s, si) => (si !== sceneIndex ? s : nextScene)),
           }
     ),
   };

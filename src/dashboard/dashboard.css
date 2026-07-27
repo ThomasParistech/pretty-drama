@@ -333,6 +333,15 @@
   padding: 18px 12px;
 }
 
+/* Le tableau est plafonné : on le dit sous lui, sinon il s'arrête sans un mot
+   et se lit comme « il n'y a rien de plus ». */
+.dash-journal-more {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-style: italic;
+  margin: 8px 0 0;
+}
+
 .dash-journal-detail code {
   font-size: 12.5px;
   color: var(--ink);

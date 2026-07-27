@@ -304,22 +304,15 @@ export default function App() {
               ]
                 .filter(Boolean)
                 .join(" ")}
-              role={mine ? "button" : undefined}
-              tabIndex={mine ? 0 : undefined}
+              // Raccourci au pointeur seulement : pas de role="button" ni de
+              // tabIndex ici. La carte contient déjà un vrai bouton (le lecteur
+              // de prise), et un contrôle dans un contrôle n'est pas exposé
+              // correctement aux technologies d'assistance. Le clavier a mieux
+              // de toute façon : les flèches « ma réplique » de la barre basse
+              // et le slider parcourent TOUTES mes répliques, là où tabuler de
+              // carte en carte obligeait à traverser toute la scène pour
+              // atteindre les commandes.
               onClick={mine ? () => selectLine(line) : undefined}
-              onKeyDown={
-                mine
-                  ? (e) => {
-                      // Seulement la carte elle-même : ne pas voler
-                      // Entrée/Espace au bouton play du lecteur intégré.
-                      if (e.target !== e.currentTarget) return;
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        selectLine(line);
-                      }
-                    }
-                  : undefined
-              }
             >
               <div className="dialogue-meta">
                 <span className="dialogue-character">

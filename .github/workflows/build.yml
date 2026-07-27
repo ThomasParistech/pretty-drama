@@ -60,8 +60,14 @@ jobs:
       - name: Install front dependencies
         run: npm ci
 
-      - name: Run tests (normalization + statuses + ZIP contract + journal)
+      - name: Run tests (normalization + statuses + ZIP contract + journal + contrats)
         run: python -m unittest discover -s scripts/tests -v
+
+      # Logique pure du front : réparation d'un script.json douteux, pile
+      # d'annulation, helpers partagés. `node --test` est intégré à Node, il n'y
+      # a donc aucune dépendance de test à installer.
+      - name: Run front tests (reducer, undo stack, shared helpers)
+        run: npm test
 
       # Le manifest est dérivé : on le reconstruit pour que le site déployé
       # colle à script.json et clips.json même après une édition à la main dans

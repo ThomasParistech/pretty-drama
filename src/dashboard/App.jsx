@@ -205,9 +205,13 @@ function Dashboard({ manifest }) {
 // qu'il existe et où le regarder AVANT son premier dépôt, sinon un échec le
 // trouverait devant une page qui n'a jamais rien promis.
 function Journal({ runs }) {
-  const rows = runs
-    .flatMap((run) => filesOf(run).map((file) => ({ ...file, at: run.at })))
-    .slice(0, JOURNAL_ROWS);
+  const all = runs.flatMap((run) => filesOf(run).map((file) => ({ ...file, at: run.at })));
+  const rows = all.slice(0, JOURNAL_ROWS);
+  // Le plafond est un garde-fou, mais il ne doit pas couper en silence : c'est
+  // le seul canal de retour du projet, et un tableau qui s'arrête sans le dire
+  // se lit comme « il n'y a rien de plus », y compris pour un dépôt raté qui
+  // vient de sortir par le bas.
+  const hidden = all.length - rows.length;
   return (
     <section className="dash-journal">
       <h2>Derniers dépôts de fichiers</h2>
@@ -247,6 +251,12 @@ function Journal({ runs }) {
           </tbody>
         </table>
       </div>
+      {hidden > 0 && (
+        <p className="dash-journal-more">
+          {hidden} dépôt{hidden > 1 ? "s" : ""} plus ancien{hidden > 1 ? "s" : ""} non affiché
+          {hidden > 1 ? "s" : ""}.
+        </p>
+      )}
     </section>
   );
 }

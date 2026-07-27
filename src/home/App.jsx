@@ -19,7 +19,8 @@ export default function App({ cards = ACTOR_CARDS }) {
     <div className="home page-home">
       <header className="home-hero">
         <div className="home-brand">
-          <PageMark page="home" className="home-brand-mark" />
+          {/* Décoratif : le mot « PrettyDrama » est juste à côté. */}
+          <PageMark page="home" className="home-brand-mark" label="" />
           PrettyDrama
         </div>
         {title && <h1 className="home-play-title">{title}</h1>}
@@ -32,7 +33,8 @@ export default function App({ cards = ACTOR_CARDS }) {
           const p = PAGES[key];
           return (
             <a key={key} className={`home-card card page-${key}`} href={p.href}>
-              <PageMark page={key} className="home-card-mark" />
+              {/* Décoratif : le libellé de la page suit immédiatement. */}
+              <PageMark page={key} className="home-card-mark" label="" />
               <span className="home-card-title">{p.label}</span>
               <span className="home-card-desc">{p.desc}</span>
             </a>

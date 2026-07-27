@@ -11,13 +11,21 @@ import { PAGES } from "./pages.js";
 // `label` : à passer quand le sceau ne désigne PAS sa page. Le journal des
 // dépôts s'en sert pour sa colonne Type, où le micro veut dire « Voix » et non
 // « Enregistrement » : sans lui, un lecteur d'écran y annonce le nom de la page.
+//
+// `label=""` le rend DÉCORATIF (aria-hidden, plus de role) : à utiliser quand
+// le mot est déjà écrit juste à côté, comme sur les cartes de l'accueil, où
+// sinon chaque lien s'annonce « Répétition, Répétition, Répétez à
+// l'italienne… ». Une image qui redit son voisin n'informe personne, elle
+// double la longueur de l'annonce.
 export default function PageMark({ page, className = "", label }) {
   const { label: pageLabel, Icon } = PAGES[page];
+  const decorative = label === "";
   return (
     <span
       className={`page-mark page-${page} ${className}`.trim()}
-      role="img"
-      aria-label={label ?? pageLabel}
+      role={decorative ? undefined : "img"}
+      aria-label={decorative ? undefined : (label ?? pageLabel)}
+      aria-hidden={decorative ? "true" : undefined}
     >
       <Icon />
     </span>
