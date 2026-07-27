@@ -29,11 +29,8 @@
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
-select:focus,
-input:focus,
-textarea:focus {
-  outline: 2px solid rgba(122, 92, 192, 0.35);
-}
+/* Pas de règle de focus ici : celle de theme.css dérive de --accent, que ce
+   :root local re-skinne déjà en violet. */
 
 /* Même bouton « Télécharger » que la page Enregistrement : accent chaud du
    thème partagé (que le :root local re-skinne en violet), hover compris —
@@ -59,6 +56,43 @@ h3 {
   max-width: 860px;
   margin: 0 auto;
   padding: 16px 20px 20px;
+}
+
+/* Paire annuler/rétablir : deux boutons icône collés, lus comme une seule
+   commande de navigation dans la pile d'états (voir history.js). */
+.history-group {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.history-group .btn {
+  font-size: 17px;
+  padding: 7px 10px;
+}
+
+/* Modales de confirmation (ConfirmModal) : la réplique visée est citée en
+   serif, comme dans les cartes de dialogue, pour qu'on la reconnaisse. */
+.confirm-quote {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  border-left: 3px solid var(--ed-rule);
+  padding-left: 12px;
+  margin: 10px 0;
+  white-space: pre-wrap;
+}
+
+/* Ici le bouton destructif EST l'action principale (l'autre est « Annuler ») :
+   il s'affirme plus que le `.btn.danger` en retrait du modal personnage, où il
+   n'est qu'un des deux choix possibles. */
+.confirm-modal .btn.danger {
+  border-color: var(--ed-danger);
+}
+
+.confirm-modal .btn.danger:hover {
+  background: var(--ed-danger);
+  color: #fff;
 }
 
 .dirty-hint {
@@ -320,12 +354,30 @@ h3 {
   overflow: hidden;
 }
 
+/* Grille explicite plutôt qu'un flex qui déborde : les quatre éléments ont
+   une place nommée, et le repli étroit (plus bas) se contente de redessiner
+   la grille — pas de wrap subi qui envoie le ✕ sur une 3e ligne. */
 .line-row {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-areas: "handle char text delete";
+  align-items: start;
   gap: 8px;
   padding: 8px 10px;
   border-bottom: 1px solid var(--ed-rule);
+}
+
+.line-row .drag-handle {
+  grid-area: handle;
+}
+.line-row .line-character {
+  grid-area: char;
+}
+.line-row .line-text {
+  grid-area: text;
+}
+.line-row .line-delete {
+  grid-area: delete;
 }
 
 .line-list .line-row:last-child {
@@ -352,7 +404,7 @@ h3 {
      margin after short names. */
   width: auto;
   max-width: 220px;
-  flex-shrink: 0;
+  justify-self: start;
   padding: 5px 0;
   background: transparent;
   border: none;
@@ -361,7 +413,6 @@ h3 {
 }
 
 .line-text {
-  flex: 1;
   min-width: 0;
   resize: none;
   overflow: hidden;
@@ -469,10 +520,13 @@ h3 {
   font-size: 14.5px;
 }
 
-.editor-header-hint {
-  font-size: 13.5px;
-  color: var(--ink-soft);
-  margin: 0;
+/* La base (taille, couleur, marge) vient de .header-hint (theme.css), posée à
+   côté dans le JSX : ici, seulement ce que l'éditeur a en plus (un lien et du
+   code inline dans la phrase). */
+.editor-header-hint a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .editor-header-hint code {
@@ -484,20 +538,34 @@ h3 {
 
 /* ---- Mobile ---- */
 
-@media (max-width: 800px) {
+/* Repli étroit des répliques : la ligne unique tient tant que le texte garde
+   une largeur de saisie décente (~280 px). En dessous, deux rangées —
+   poignée + personnage + ✕ en tête, texte en pleine largeur dessous. Le
+   seuil est bien plus bas que celui des cibles tactiles ci-dessous : la
+   colonne de l'éditeur fait 820 px de contenu, replier dès 800 px repliait
+   quasiment toujours. */
+@media (max-width: 620px) {
   .line-row {
-    flex-wrap: wrap;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "handle char delete"
+      "text   text text";
+    row-gap: 2px;
+    align-items: center;
   }
 
   .line-character {
-    width: calc(100% - 60px);
+    max-width: 100%;
   }
 
   .line-text {
-    flex-basis: 100%;
-    order: 3;
+    /* Aligné sur le bord du panneau, pas sur la colonne du personnage : sur
+       un écran étroit chaque pixel de largeur de saisie compte. */
+    padding-left: 2px;
   }
+}
 
+@media (max-width: 800px) {
   /* Cibles tactiles ≥ 40 px sur mobile, sans grossir les glyphes : on agrandit
      la zone cliquable des micro-boutons de l'éditeur (poignée, ✕ de puce et de
      réplique). */

@@ -1,5 +1,8 @@
-"""Status computation tests: ok / perime / manquant + orphan clips."""
+"""Status computation tests: ok / perime / manquant + orphan clips, plus la
+recopie du journal des dépôts (manifest.json est le seul fichier lu par les
+pages : ce que build_manifest n'y met pas n'existe pas pour le front)."""
 
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -7,6 +10,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from build_manifest import build_manifest, sanitize_script
+
+EXAMPLE_RUNS = json.loads(
+    (Path(__file__).resolve().parent / "history-example.json").read_text(encoding="utf-8")
+)["runs"]
 
 # Ids are UUIDs minted by the editor; short strings here for readability.
 L1, L2, L3 = "aaaa-1111", "bbbb-2222", "cccc-3333"
@@ -159,6 +166,31 @@ class TestMalformedScriptTolerance(unittest.TestCase):
 
     def test_sanitize_preserves_valid_script(self):
         self.assertEqual(sanitize_script(SCRIPT)["acts"], SCRIPT["acts"])
+
+
+class TestHistoryPassthrough(unittest.TestCase):
+    """Le journal traverse le manifest sans être retouché : c'est update_history
+    qui le tient, build_manifest ne fait que le porter jusqu'aux pages."""
+
+    def test_runs_are_copied_verbatim(self):
+        manifest = build_manifest(SCRIPT, CLIPS, EXAMPLE_RUNS)
+        self.assertEqual(manifest["history"], EXAMPLE_RUNS)
+
+    def test_history_is_always_present_even_without_a_journal(self):
+        # Sans la clé, `manifest.history` serait undefined côté front ; le
+        # dashboard tolère les deux, mais le contrat reste « toujours un tableau ».
+        self.assertEqual(build_manifest(SCRIPT, CLIPS)["history"], [])
+
+    def test_a_malformed_journal_degrades_to_empty(self):
+        # history.json est écrit par l'Action, mais il vit dans data/ à côté d'un
+        # script.json éditable à la main : un journal abîmé ne casse pas le build.
+        for bad in (None, {}, "nope", 42, {"runs": []}):
+            self.assertEqual(build_manifest(SCRIPT, CLIPS, bad)["history"], [])
+
+    def test_no_run_timestamp_is_added_to_the_manifest(self):
+        # Un champ réécrit à chaque exécution ferait différer manifest.json à
+        # tous les pushes, donc un commit robot chaque fois.
+        self.assertNotIn("generatedAt", build_manifest(SCRIPT, CLIPS))
 
 
 if __name__ == "__main__":

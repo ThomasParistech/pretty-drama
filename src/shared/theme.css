@@ -24,6 +24,75 @@
      identiquement sur toutes les pages, re-skin « Rail » compris. */
   --header-accent: #8b2635;
   --header-serif: "Cormorant Garamond", Georgia, serif;
+  /* Repli du bandeau : sortie franche puis freinage long, pour que le contenu
+     semble se poser plutôt que s'arrêter net. */
+  --ease-header: cubic-bezier(0.22, 0.61, 0.24, 1);
+}
+
+/* ---- Signature de page (« sceau ») ----
+   Chaque page a sa couleur : elle teinte la pastille du bandeau, pour qu'on
+   sache où on est sans lire un libellé. (Elle teintait aussi un filet de 3 px
+   en haut de page : retiré, il barrait chaque écran d'un trait dont on n'avait
+   pas besoin deux fois.)
+   Ce bloc est LA source de vérité de ces couleurs ; les favicons des .html
+   les redupliquent (une balise <link> ne peut pas lire une variable CSS).
+   Hex littéraux et non var(--accent) & co. : sinon le re-skin « Rail » de
+   l'éditeur déplacerait la couleur du sceau. Chaque teinte fait ≥ 4.5:1 sur
+   blanc comme sur son fond clair. */
+/* Les trois pages de la troupe (la marque, Répétition, Enregistrement) portent
+   EXACTEMENT le même sceau : même encre, même pastille. Elles avaient chacune sa
+   nuance, un bordeaux ici, un bordeaux légèrement autre là, une terre à côté :
+   assez proches pour qu'on n'y lise pas une distinction, assez différentes pour
+   qu'on les croie ratées. Ce sont les icônes (les masques, les bulles, le micro)
+   qui disent où on est. Vin sur sable est l'accord du fichier de design d'origine
+   (drama-token.svg), c'est donc lui qu'on étend aux trois.
+   Seuls les deux modes du responsable gardent leur couleur propre : elles ne
+   séparent plus deux pages voisines, elles marquent un autre territoire. */
+.page-home,
+.page-rehearsal,
+.page-recorder {
+  --page-mark: #8b2635;
+  --page-mark-soft: #f5eeda;
+}
+.page-dashboard {
+  --page-mark: #2e7d32; /* le vert de la complétion */
+  --page-mark-soft: #e6f3e6;
+}
+.page-editor {
+  --page-mark: #7a5cc0; /* l'accent « Rail » de l'éditeur */
+  --page-mark-soft: #f2eefb;
+}
+
+.page-mark {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--page-mark-soft);
+  color: var(--page-mark);
+  font-size: 20px; /* l'icône se dimensionne dessus (1em) */
+}
+
+/* Le triangle d'avertissement de `WarnIcon`, glissé en tête de phrase : il
+   suit la taille et la couleur du texte (1em, currentColor), et on l'assoit
+   sur la ligne de base au lieu du bas de la boîte. Marge à droite plutôt qu'une
+   espace dans le JSX : une espace insécable se casserait au retour à la ligne
+   et laisserait le triangle seul en fin de ligne. */
+.warn-icon {
+  vertical-align: -0.15em;
+  margin-right: 0.35em;
+}
+
+/* Sceau + marque : bloc insécable, le flex-wrap des bandeaux ne doit jamais
+   les renvoyer sur deux lignes. */
+.header-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
 }
 
 * {
@@ -157,15 +226,18 @@ textarea {
   background: #fff;
 }
 
+/* Dérivé de --accent (et non un rgba en dur) : une page re-skinnée emporte sa
+   bague de focus avec son accent, sans avoir à recopier la règle. */
 select:focus,
 input:focus,
 textarea:focus {
-  outline: 2px solid rgba(139, 38, 53, 0.35);
+  outline: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
   outline-offset: 1px;
 }
 
-/* ---- Collapsible play header (shared between Répétition & Enregistrement):
-   brand + page label + play title, then the act/scene/character selects. ---- */
+/* ---- Collapsible play header (shared between Répétition, Enregistrement et
+   Éditeur) : sceau de page + marque + titre de la pièce, puis les sélecteurs
+   d'acte/scène/personnage. ---- */
 
 .play-header {
   position: sticky;
@@ -183,6 +255,10 @@ textarea:focus {
   gap: 12px;
   padding: 10px 18px;
 }
+
+/* La rangée du haut ne bouge JAMAIS : ni sa hauteur, ni le sceau, ni le corps
+   du titre. Le repli n'enlève que les réglages du dessous ; le titre reste
+   centré dans une barre au padding symétrique. */
 
 .header-brand {
   font-family: var(--header-serif);
@@ -215,16 +291,69 @@ textarea:focus {
   white-space: nowrap;
 }
 
+/* Titre sans repli (tableau de bord) : il tient la place du bouton, donc il
+   pousse les actions à droite comme lui. */
+.play-header-title-plain {
+  flex: 1;
+  min-width: 0;
+}
+
 .play-header-chevron {
   color: var(--ink-soft);
   font-size: 12px;
+  transform: rotate(-180deg); /* fermé : la flèche pointe vers le haut */
+  transition: transform 0.26s var(--ease-header);
 }
 
+.play-header.open .play-header-chevron {
+  transform: rotate(0deg);
+}
+
+/* Repli animé : la grille à une seule ligne passe de la hauteur du contenu à
+   zéro, ce qui est interpolable, contrairement à `height: auto`.
+   `minmax(0, …)` et pas `0fr`/`1fr` tout court : le minimum d'une piste `fr`
+   vaut `auto`, donc la contribution min-content de son contenu, et une piste
+   « à zéro » restait haute des 14 px de padding bas des réglages, ce qui
+   laissait une ligne vide sous le titre une fois le bandeau fermé.
+   `visibility` (discrète : appliquée en fin de transition à la fermeture, dès
+   le début à l'ouverture) sort les selects du parcours clavier une fois fermés,
+   sans les démonter. */
 .play-header-settings {
+  display: grid;
+  grid-template-rows: minmax(0, 0fr);
+  visibility: hidden;
+  transition: grid-template-rows 0.26s var(--ease-header), visibility 0.26s;
+}
+
+.play-header.open .play-header-settings {
+  grid-template-rows: minmax(0, 1fr);
+  visibility: visible;
+}
+
+/* Le rognage vit ICI, sur la grille, et pas sur l'enfant : en `border-box`, un
+   enfant de hauteur 0 garde quand même ses 14 px de padding bas, qui
+   débordaient sous le bandeau fermé et l'épaississaient sans raison visible.
+   Actif seulement fermé ou en mouvement : ouvert et immobile, le bandeau doit
+   laisser dépasser le popover de couleur de l'éditeur. D'où la classe
+   `animating` posée par le composant. */
+.play-header:not(.open) .play-header-settings,
+.play-header.animating .play-header-settings {
+  overflow: hidden;
+}
+
+.play-header-settings-inner {
+  min-height: 0;
   padding: 0 18px 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.play-header.open .play-header-settings-inner {
+  opacity: 1;
+  transition-delay: 0.06s; /* le contenu apparaît quand la place est faite */
 }
 
 .selects-row {
@@ -252,6 +381,14 @@ textarea:focus {
   min-width: 160px;
 }
 
+/* Texte d'explication en tête des réglages (commun Répétition/Enregistrement) :
+   à quoi sert la page et comment s'en servir. */
+.header-hint {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
 /* ---- Dialogue list + fixed bottom control bar (shared) ---- */
 
 .dialogue-container {
@@ -276,18 +413,27 @@ textarea:focus {
 }
 
 .progress-container {
-  /* Zone tactile de 40 px ; la piste visible reste fine (6 px, fond clippé
-     au content-box) et les marges négatives annulent le padding pour ne
-     rien décaler dans la barre. */
+  /* Zone tactile de 40 px ; la piste visible (6 px) est dessinée par
+     ::before, centrée verticalement, pour porter son propre arrondi — un
+     border-radius sur le conteneur clippé au content-box resterait invisible.
+     Les marges négatives annulent la hauteur pour ne rien décaler. */
   height: 40px;
-  padding: 17px 0;
   margin: -13px 0 -3px;
-  background: var(--paper-dark);
-  background-clip: content-box;
-  border-radius: 999px;
   cursor: pointer;
   touch-action: none;
   position: relative;
+}
+
+.progress-container::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 6px;
+  transform: translateY(-50%);
+  background: var(--paper-dark);
+  border-radius: 999px;
 }
 
 .progress-container:focus-visible {
@@ -296,9 +442,13 @@ textarea:focus {
 }
 
 .progress-fill {
-  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 6px;
+  transform: translateY(-50%);
   background: var(--accent);
-  border-radius: 999px;
+  border-radius: 999px 0 0 999px;
   transition: width 0.15s;
 }
 
@@ -365,6 +515,20 @@ textarea:focus {
   border-color: var(--accent-dark);
 }
 
+/* Sauts « ma réplique » (communs Répétition/Enregistrement) : teintés de
+   l'accent qui surligne mes répliques (.dialogue-card.mine), pour lier
+   visuellement les boutons à mes cartes. */
+.ctrl-btn.my-jump {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.ctrl-btn.my-jump:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+}
+
 /* ---- Dialogue cards (shared look between Répétition & Enregistrement) ---- */
 
 .dialogue-card:focus-visible {
@@ -393,7 +557,10 @@ textarea:focus {
 .dialogue-card.active {
   border-color: var(--accent);
   border-left-color: var(--accent);
-  box-shadow: 0 2px 10px rgba(139, 38, 53, 0.12);
+  /* Dérivé de --accent (comme le halo d'enregistrement de recorder.css) et pas
+     le même bordeaux figé en rgba : un composant partagé ne fixe pas une
+     couleur qu'une page peut re-skinner. */
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .dialogue-meta {
@@ -489,4 +656,44 @@ textarea:focus {
   justify-content: flex-end;
   margin-top: 20px;
   flex-wrap: wrap;
+}
+
+/* ---- Mobile ----
+   La rangée du bandeau est serrée à 375px (sceau + marque + titre de pièce +
+   chevron, plus les actions de l'éditeur) : on récupère de la largeur sur le
+   sceau puis sur les marges, jamais sur le titre de la pièce. */
+
+/* Visé sur les deux bandeaux, et surtout PAS sur `.page-mark` tout court : les
+   masques de l'accueil ne se lisent qu'à partir d'environ 34 px et tomberaient
+   ici à 17 px, taille à laquelle les deux visages se touchent. Ça marchait par
+   accident (`.home-brand-mark` a la même spécificité et arrive après dans la
+   cascade, mais seulement parce que main.jsx importe theme.css avant home.css :
+   inverser ces deux imports rapetissait la marque). Aucun autre porteur de
+   sceau n'est dans un bandeau, donc le rendu est inchangé. */
+@media (max-width: 800px) {
+  .page-header .page-mark,
+  .play-header .page-mark {
+    width: 30px;
+    height: 30px;
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 420px) {
+  .page-header,
+  .play-header-row {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+/* ---- Mouvement réduit ----
+   Le repli du bandeau reste fonctionnel, il devient instantané. */
+@media (prefers-reduced-motion: reduce) {
+  .play-header-settings,
+  .play-header-settings-inner,
+  .play-header-chevron {
+    transition-duration: 0s;
+    transition-delay: 0s;
+  }
 }

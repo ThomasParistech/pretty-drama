@@ -1,14 +1,78 @@
-.dash-title {
-  font-size: 32px;
-  margin-bottom: 2px;
+/* Le raccourci de dépôt du respo : une seule carte (un seul dossier `uploads/`
+   pour les deux sortes de fichiers), centrée en tête de page. */
+.dash-uploads {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 26px;
 }
 
-.dash-global {
-  color: var(--ink-soft);
-  margin: 0 0 26px;
+/* Un vrai bouton, largeur de son contenu : pleine largeur, les deux sceaux se
+   retrouvaient plaqués aux bords, à trente pixels du libellé qu'ils qualifient.
+   Ils l'encadrent donc de près (le micro de l'Enregistrement à gauche, la plume
+   de l'Édition à droite), et le bouton se réduit avec l'écran jusqu'à occuper
+   toute la largeur disponible. */
+.dash-upload {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.dash-upload:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(43, 36, 32, 0.12);
+  transform: translateY(-1px);
+}
+
+.dash-upload:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Les sceaux des deux pages dont le dépôt reçoit le travail (micro pour les voix
+   enregistrées, plume pour le script écrit). `flex: none` est déjà porté par
+   .page-mark : ils ne se compriment pas, c'est le libellé qui se replie. */
+.dash-upload-mark {
+  width: 34px;
+  height: 34px;
+  font-size: 19px;
+}
+
+/* Le libellé est en noir : « Déposer » est le geste, il n'appartient à aucune
+   page. Seuls les deux groupes de mots qui nomment un fichier prennent la
+   couleur de leur page, via le --page-mark posé par la classe `page-<clé>` du
+   même span (la source de vérité reste theme.css). */
+.dash-upload-text {
+  color: var(--ink);
+  font-size: 15px;
   font-weight: 600;
+  text-align: center;
+  text-wrap: balance;
 }
 
+/* Chaque groupe reste insécable : « voix (ZIP) » coupé en fin de ligne laisserait
+   une parenthèse orpheline sous le mot qu'elle qualifie. */
+.dash-upload-word {
+  color: var(--page-mark);
+  white-space: nowrap;
+}
+
+/* L'extension : dite, pas criée. Elle ne concurrence pas le mot qu'elle suit.
+   La discrétion vient de la graisse et de la taille, JAMAIS d'une opacité : à
+   0.75 sur la couleur de page, « (JSON) » tombait à 3,1:1 sur la carte blanche
+   (sous le seuil AA pour ses ~13 px). */
+.dash-upload-format {
+  font-weight: 400;
+  font-size: 0.86em;
+}
+
+/* Répliques orphelines : la seule alerte de la page. Un fichier refusé, lui, ne
+   se rappelle PAS en haut de page : sa ligne du journal, avec son statut et son
+   motif, suffit. */
 .dash-orphans {
   padding: 14px 16px;
   margin-bottom: 16px;
@@ -45,7 +109,7 @@
 
 .dash-table th,
 .dash-table td {
-  padding: 6px 8px;
+  padding: 8px 10px;
   text-align: center;
   border: 1px solid var(--border);
   background: var(--card);
@@ -68,7 +132,28 @@
 
 .dash-table .dash-scene {
   font-weight: 700;
-  min-width: 34px;
+  min-width: 54px;
+}
+
+/* Ratios read as a column of numbers: aligned digits, big numerator, the
+   total kept small so the eye scans "combien c'est fait", not "sur combien". */
+.dash-table td {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+/* Le numérateur porte la couleur de statut, le dénominateur reste neutre :
+   pas d'opacité (elle délavait l'ambre sur le fond pêche, illisible). */
+.dash-cell-ok {
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.dash-cell-total {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
 }
 
 .dash-table .dash-name {
@@ -80,36 +165,204 @@
   padding-right: 14px;
 }
 
-/* "Still work to do" vs "all recorded" tint, shared by scene and name headers */
+/* Même teinte « en retard » / « tout enregistré » que les cases, portée aussi
+   par les actes, les numéros de scène et les noms : un acte, une colonne ou
+   une ligne entièrement verte se lit sans compter les cases. Teinte pleine
+   côté en-têtes (les cases sont éclaircies), pour marquer le résumé. */
 .dash-table th.todo {
   color: var(--warn);
+  background: var(--warn-soft);
 }
 
 .dash-table th.done {
   color: var(--ok);
+  background: var(--ok-soft);
 }
 
 .dash-table th.empty {
   color: var(--ink-soft);
 }
 
+/* Fonds éclaircis vers le blanc : la teinte suffit à repérer la colonne en
+   retard, et le chiffre coloré garde tout son contraste par-dessus. */
 .dash-table td.todo {
   color: var(--warn);
-  background: var(--warn-soft);
-  font-weight: 700;
+  background: color-mix(in srgb, var(--warn-soft) 65%, #fff);
 }
 
 .dash-table td.done {
   color: var(--ok);
-  background: var(--ok-soft);
+  background: color-mix(in srgb, var(--ok-soft) 65%, #fff);
 }
 
-.dash-table td.empty {
-  color: var(--ink-soft);
-}
+/* Aucune réplique dans la scène : case laissée vide, fond blanc par défaut —
+   elle s'efface d'elle-même entre les cases teintées. */
 
 .dash-legend {
   color: var(--ink-soft);
   font-size: 13px;
   margin-top: 10px;
+}
+
+/* Journal des dépôts, en pied de page : le seul endroit où le respo apprend ce
+   que l'Action a fait de ses fichiers, et le seul rappel des échecs (pas de
+   bandeau en haut de page). UNE LIGNE PAR FICHIER, en quatre colonnes fixes
+   (date, statut, type, détail) : chaque fichier a son propre sort. Les trois
+   premières colonnes ont une largeur réservée, donc les lignes s'alignent en
+   colonnes sans table ni grille (le détail prend le reste). */
+.dash-journal {
+  margin-top: 34px;
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}
+
+.dash-journal h2 {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+/* Le conteneur défile (les deux axes au besoin), jamais la page : une trentaine
+   de dépôts peut faire beaucoup de lignes, et l'Avancement ne doit pas
+   s'allonger sans fin. La hauteur laisse voir une petite dizaine de lignes. */
+.dash-journal-wrap {
+  max-height: 340px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.dash-journal-table {
+  width: 100%;
+  /* En dessous, les colonnes s'écraseraient : le conteneur défile plutôt. */
+  min-width: 460px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+/* En-tête discret, collé en haut pendant le défilement : sans lui, les colonnes
+   d'icônes ne se nomment nulle part. */
+.dash-journal-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--paper-dark);
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+  padding: 7px 12px;
+  white-space: nowrap;
+}
+
+.dash-journal-table td {
+  padding: 7px 12px;
+  border-top: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+/* Les deux colonnes d'icônes se serrent autour de leur dessin et le centrent
+   (en-tête compris, sinon la pastille flotte sous un libellé plus large), le
+   détail prend tout le reste. */
+.dash-journal-table th:nth-child(2),
+.dash-journal-table th:nth-child(3),
+.dash-journal-table td:nth-child(2),
+.dash-journal-table td:nth-child(3) {
+  width: 1%;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.dash-journal-when {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Les deux colonnes d'icônes partagent la pastille des sceaux (`page-mark` de
+   theme.css), en plus petit que dans les bandeaux : le statut et le type se
+   lisent comme une même famille de ronds. Seules les teintes changent, et
+   aucune n'est figée en hex ici. */
+.dash-journal-mark {
+  width: 26px;
+  height: 26px;
+  font-size: 15px;
+}
+
+/* Statut : mêmes vert et ambre que la grille au-dessus, donc rien de nouveau à
+   apprendre d'un écran à l'autre. Deux classes, donc ça bat le fond par défaut
+   de `.page-mark` (qui, lui, attend une couleur de page). */
+.dash-journal-mark.ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.dash-journal-mark.ko {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+/* Un fichier ni ZIP ni script : aucune page ne le revendique, donc aucune
+   couleur de page, et un point d'interrogation à la place de l'icône. */
+.dash-journal-mark.unknown {
+  background: var(--paper-dark);
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Détail optionnel : nom du fichier et, selon le cas, nombre de répliques ou
+   motif du refus. Il prend le reste de la largeur et s'y enveloppe. */
+.dash-journal-detail {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+/* Journal encore vide : le tableau et ses colonnes restent là (le respo doit
+   savoir où regarder avant son premier dépôt), une seule ligne en travers dit
+   pourquoi il n'y a rien. */
+.dash-journal-empty {
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+  padding: 18px 12px;
+}
+
+.dash-journal-detail code {
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+@media (max-width: 560px) {
+  /* Le libellé passe sur deux ou trois lignes : les sceaux rétrécissent pour
+     lui laisser la largeur, sans jamais passer sous le texte (c'est leur
+     position à gauche et à droite qui dit quel fichier va où). */
+  .dash-upload {
+    gap: 9px;
+    padding: 11px 12px;
+  }
+
+  .dash-upload-mark {
+    width: 30px;
+    height: 30px;
+    font-size: 17px;
+  }
+
+  .dash-upload-text {
+    font-size: 14px;
+  }
+
+  /* Les quatre colonnes tiennent au chausse-pied : on resserre les gouttières
+     plutôt que de laisser le tableau partir en défilement horizontal dès le
+     moindre téléphone. */
+  .dash-journal-table th,
+  .dash-journal-table td {
+    padding: 7px 8px;
+  }
 }

@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { characterColorById } from "./CharacterPanel.jsx";
+import ConfirmModal from "../shared/ConfirmModal.jsx";
 
 // One dialogue line: drag handle + character <select> + text + delete.
 // Enter inside the textarea inserts a new line right after (like typing in a
@@ -25,6 +26,8 @@ export default React.memo(function LineRow({
   });
 
   const textareaRef = useRef(null);
+  // Deleting a line that has text asks first (an empty line goes silently).
+  const [confirming, setConfirming] = useState(false);
 
   // Auto-grow the textarea to fit its content.
   const autoGrow = () => {
@@ -67,6 +70,7 @@ export default React.memo(function LineRow({
 
       <select
         className="line-character"
+        aria-label="Personnage de la réplique"
         style={{ color: color ?? "var(--ink-soft)" }}
         value={known ? line.characterId : ""}
         onChange={(e) =>
@@ -79,7 +83,7 @@ export default React.memo(function LineRow({
           })
         }
       >
-        {!known && <option value="">— Personnage ? —</option>}
+        {!known && <option value="">Personnage ?</option>}
         {characters.map((c) => (
           <option key={c.id} value={c.id}>
             {c.name}
@@ -87,6 +91,8 @@ export default React.memo(function LineRow({
         ))}
       </select>
 
+      {/* onBlur closes the undo step: a later edit of this same line becomes
+          a separate one (see history.js). */}
       <textarea
         ref={textareaRef}
         className="line-text"
@@ -97,6 +103,7 @@ export default React.memo(function LineRow({
           dispatch({ type: "EDIT_TEXT", actIndex, sceneIndex, lineId: line.id, text: e.target.value })
         }
         onInput={autoGrow}
+        onBlur={() => dispatch({ type: "HISTORY_BREAK" })}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
@@ -109,20 +116,35 @@ export default React.memo(function LineRow({
         className="btn icon small line-delete"
         title="Supprimer cette réplique"
         onClick={() => {
-          const excerpt = line.text.trim();
-          if (
-            excerpt === "" ||
-            window.confirm(
-              `Supprimer la réplique « ${excerpt.length > 80 ? `${excerpt.slice(0, 80)}…` : excerpt} » ? ` +
-                "Cette action est définitive."
-            )
-          ) {
+          if (line.text.trim() === "") {
             dispatch({ type: "DELETE_LINE", actIndex, sceneIndex, lineId: line.id });
+          } else {
+            setConfirming(true);
           }
         }}
       >
         ✕
       </button>
+
+      {confirming && (
+        <ConfirmModal
+          title="Supprimer cette réplique ?"
+          confirmLabel="Supprimer"
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => {
+            setConfirming(false);
+            dispatch({ type: "DELETE_LINE", actIndex, sceneIndex, lineId: line.id });
+          }}
+        >
+          <p className="confirm-quote">« {excerpt(line.text)} »</p>
+        </ConfirmModal>
+      )}
     </div>
   );
 });
+
+// Keep the confirmation readable on a tirade.
+function excerpt(text) {
+  const trimmed = text.trim();
+  return trimmed.length > 140 ? `${trimmed.slice(0, 140)}…` : trimmed;
+}

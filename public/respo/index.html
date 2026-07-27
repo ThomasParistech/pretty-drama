@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Raccourci pour le responsable : « …/respo » (sans .html) mène ici, et
+         cette page rebondit d'un cran plus haut, sur le vrai respo.html. C'est
+         une redirection et pas une entrée Vite dans un dossier parce que tout
+         le site vit en chemins relatifs (base "./", fetch("data/manifest.json"),
+         href="./rehearsal.html") : une vraie page à un niveau de profondeur
+         devrait remonter d'un cran dans le code partagé. Fichier de public/,
+         donc recopié tel quel dans dist/ (cf. les apple-touch-icon). -->
+    <meta http-equiv="refresh" content="0; url=../respo.html" />
+    <link rel="canonical" href="../respo.html" />
+    <meta name="robots" content="noindex" />
+    <title>PrettyDrama : Accueil responsable</title>
+  </head>
+  <body>
+    <!-- Visible seulement si la redirection ne part pas. -->
+    <p><a href="../respo.html">Accueil responsable</a></p>
+  </body>
+</html>

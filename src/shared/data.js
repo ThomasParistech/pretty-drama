@@ -32,7 +32,7 @@ export function fetchScript() {
 }
 
 export const MANIFEST_ERROR_MESSAGE =
-  "Impossible de charger la pièce. Le site n'est peut-être pas encore publié — " +
+  "Impossible de charger la pièce. Le site n'est peut-être pas encore publié : " +
   "réessayez dans quelques minutes ou contactez votre responsable.";
 
 // Numérotation « (n/total) » de mes répliques dans la scène courante,
@@ -71,6 +71,39 @@ export function downloadBlob(blob, filename) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+// The respo's own GitHub upload page, derived from the Pages URL.
+// Project sites live at https://<owner>.github.io/<repo>/…, so we can rebuild
+// https://github.com/<owner>/<repo>/upload/<branch>/uploads, pointing at THIS
+// troupe's repo, not the template's. Branch is `master` to match the workflows.
+// UN seul dossier de dépôt, `uploads/`, pour les deux sortes de fichiers (ZIP de
+// voix et script.json) : l'Action déduit le type de l'extension, donc il n'y a
+// qu'une adresse à connaître et un seul bouton à montrer.
+// Returns null anywhere we can't know the repo for sure (local dev, custom
+// domain): the caller hides the link rather than forge a 404.
+export function githubUploadUrl() {
+  const suffix = ".github.io";
+  const { hostname, pathname } = window.location;
+  let owner, repo;
+  if (hostname.endsWith(suffix)) {
+    owner = hostname.slice(0, -suffix.length);
+    const first = pathname.split("/").filter(Boolean)[0];
+    // Site racine (`owner.github.io`) : les pages vivent à la racine, donc le
+    // premier segment est un nom de fichier (« dashboard.html ») et pas un
+    // dépôt ; ce dépôt-là porte le nom du domaine. Sans ce cas, le bouton de
+    // dépôt pointait vers github.com/<owner>/dashboard.html, soit un 404 sur le
+    // geste quotidien du respo.
+    repo = !first || first.endsWith(".html") ? hostname : first;
+  } else if (import.meta.env.DEV) {
+    // Local dev is not on github.io, so we can't know the real repo. Point at
+    // the template so the link renders and can be styled/tested; it is NOT
+    // meant to be committed to during dev.
+    owner = "ThomasParistech";
+    repo = "prettydrama-voices";
+  }
+  if (!owner || !repo) return null;
+  return `https://github.com/${owner}/${repo}/upload/master/uploads`;
 }
 
 // "Serge" -> "serge", "Éléonore d'Aquitaine" -> "eleonore-d-aquitaine"

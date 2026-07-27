@@ -1,2 +1,0 @@
-Déposez ici les fichiers ZIP de voix envoyés par les acteurs (voix-*.zip).
-Ils seront traités puis supprimés automatiquement.

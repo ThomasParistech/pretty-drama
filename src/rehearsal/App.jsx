@@ -4,10 +4,23 @@ import useScrollToActiveCard from "../shared/useScrollToActiveCard.js";
 import PlayHeader from "../shared/PlayHeader.jsx";
 import ProgressBar from "../shared/ProgressBar.jsx";
 import { myLineNumbers } from "../shared/data.js";
-import { PlayIcon, PauseIcon, PrevIcon, NextIcon, SkipPrevIcon, SkipNextIcon } from "../shared/icons.jsx";
+import {
+  PlayIcon,
+  PauseIcon,
+  PrevIcon,
+  NextIcon,
+  SkipPrevIcon,
+  SkipNextIcon,
+  SparkleIcon,
+} from "../shared/icons.jsx";
 import useManifest from "../shared/useManifest.js";
 import useTts from "./useTts.js";
 import "./rehearsal.css";
+
+// Petite respiration entre deux répliques enchaînées par la synthèse vocale :
+// les mp3 réels portent un léger silence en tête/queue, la TTS non, d'où un
+// enchaînement trop abrupt sans ce délai.
+const TTS_GAP_MS = 80;
 
 // Rehearsal player — React port of the v1 UX:
 //  - act / scene / character selectors, "Muet" / "Cacher mon texte" /
@@ -118,6 +131,11 @@ export default function App() {
         playAt(i + 1);
       }
     };
+    // Advance après une courte respiration (voix de synthèse : cf. TTS_GAP_MS).
+    const advanceAfterGap = () => {
+      if (token !== tokenRef.current || !playingRef.current) return;
+      waitTimerRef.current = setTimeout(advance, TTS_GAP_MS);
+    };
 
     if (mine && muet) {
       // The actor speaks this line: silence + beep + overlay, then a
@@ -141,13 +159,13 @@ export default function App() {
       audio.onended = advance;
       audio.onerror = () => {
         // Missing/broken mp3: degrade gracefully to TTS.
-        if (token === tokenRef.current) tts.speak(line.text, advance);
+        if (token === tokenRef.current) tts.speak(line.text, advanceAfterGap);
       };
       audio.play().catch(() => {
-        if (token === tokenRef.current) tts.speak(line.text, advance);
+        if (token === tokenRef.current) tts.speak(line.text, advanceAfterGap);
       });
     } else {
-      tts.speak(line.text, advance);
+      tts.speak(line.text, advanceAfterGap);
     }
   };
 
@@ -222,32 +240,41 @@ export default function App() {
   useEffect(() => () => clearPending(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loadError) {
-    return <PageState title="Répétition" error={loadError} />;
+    return <PageState page="rehearsal" title="Répétition" error={loadError} />;
   }
   if (!manifest) {
-    return <PageState title="Répétition" />;
+    return <PageState page="rehearsal" title="Répétition" />;
   }
   if (lines.length === 0 && acts.every((a) => a.scenes.every((s) => s.lines.length === 0))) {
     return (
       <PageState
+        page="rehearsal"
         title="Répétition"
-        error="La pièce est vide pour l'instant. Le responsable doit d'abord la saisir dans l'éditeur."
+        error="La pièce est vide pour l'instant. Le responsable doit d'abord la saisir dans la page Édition."
       />
     );
   }
 
   return (
     <div className="rehearsal-page">
-      <PlayHeader title={manifest.title || "Répétition"}>
+      <PlayHeader page="rehearsal" title={manifest.title || "Répétition"}>
         <div className="selects-row">
-              <select value={actIndex} onChange={(e) => changeAct(Number(e.target.value))}>
+              <select
+                aria-label="Acte"
+                value={actIndex}
+                onChange={(e) => changeAct(Number(e.target.value))}
+              >
                 {acts.map((a, i) => (
                   <option key={i} value={i}>
                     {a.title}
                   </option>
                 ))}
               </select>
-              <select value={sceneIndex} onChange={(e) => changeScene(Number(e.target.value))}>
+              <select
+                aria-label="Scène"
+                value={sceneIndex}
+                onChange={(e) => changeScene(Number(e.target.value))}
+              >
                 {(acts[actIndex]?.scenes ?? []).map((s, i) => {
                   const count =
                     characterId === ""
@@ -265,10 +292,11 @@ export default function App() {
             <div className="character-row">
               <select
                 className="character-select"
+                aria-label="Mon personnage"
                 value={characterId}
                 onChange={(e) => setCharacterId(e.target.value)}
               >
-                <option value="">Qui êtes-vous ?</option>
+                <option value="">Qui jouez-vous ?</option>
                 {manifest.characters.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -298,6 +326,9 @@ export default function App() {
                 </label>
               </div>
         </div>
+        <p className="header-hint">
+          Répétez votre texte à l'italienne avec les vraies voix de la troupe.
+        </p>
       </PlayHeader>
 
       <main className="dialogue-container" ref={listRef}>
@@ -330,7 +361,11 @@ export default function App() {
                   {line.character}
                   {mine ? ` (${myNumbers.get(line.id)}/${myNumbers.size})` : ""}
                 </span>
-                {line.status !== "ok" && <span className="tts-hint" title="Pas encore de vraie voix">🤖 voix de synthèse</span>}
+                {line.status !== "ok" && (
+                  <span className="tts-hint" title="Pas encore de vraie voix">
+                    <SparkleIcon /> voix de synthèse
+                  </span>
+                )}
               </div>
               <p className="dialogue-text">{line.text}</p>
             </div>
@@ -340,7 +375,7 @@ export default function App() {
 
       {overlay && (
         <div className="wait-indicator" role="status">
-          <span>🎭 À vous…</span>
+          <span>À vous…</span>
         </div>
       )}
 
@@ -348,7 +383,7 @@ export default function App() {
         <ProgressBar value={index} count={lines.length} onSeek={goTo} />
         <div className="buttons-row">
           {characterId !== "" && (
-            <button className="ctrl-btn" title="Ma réplique précédente" onClick={goToPrevMy}>
+            <button className="ctrl-btn my-jump" title="Ma réplique précédente" onClick={goToPrevMy}>
               <SkipPrevIcon />
             </button>
           )}
@@ -366,7 +401,7 @@ export default function App() {
             <NextIcon />
           </button>
           {characterId !== "" && (
-            <button className="ctrl-btn" title="Ma réplique suivante" onClick={goToNextMy}>
+            <button className="ctrl-btn my-jump" title="Ma réplique suivante" onClick={goToNextMy}>
               <SkipNextIcon />
             </button>
           )}

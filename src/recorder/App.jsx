@@ -4,8 +4,18 @@ import PageState from "../shared/PageState.jsx";
 import useScrollToActiveCard from "../shared/useScrollToActiveCard.js";
 import PlayHeader from "../shared/PlayHeader.jsx";
 import ProgressBar from "../shared/ProgressBar.jsx";
-import { setBeforeUnloadGuard, downloadBlob, slugify, myLineNumbers } from "../shared/data.js";
-import { PlayIcon, PauseIcon, StopIcon, PrevIcon, NextIcon, DownloadIcon } from "../shared/icons.jsx";
+import LeaveGuard from "../shared/LeaveGuard.jsx";
+import { downloadBlob, slugify, myLineNumbers } from "../shared/data.js";
+import {
+  PlayIcon,
+  PauseIcon,
+  StopIcon,
+  SkipPrevIcon,
+  SkipNextIcon,
+  DownloadIcon,
+  MicIcon,
+  WarnIcon,
+} from "../shared/icons.jsx";
 import useManifest from "../shared/useManifest.js";
 import useRecorder, { extensionForMimeType } from "./useRecorder.js";
 import "./recorder.css";
@@ -74,14 +84,10 @@ export default function App() {
 
   useScrollToActiveCard(listRef, [safeMyIndex, actIndex, sceneIndex, characterId]);
 
-  // Guard: takes only live in memory. Warn before closing while any take
-  // has not been included in a downloaded ZIP yet.
+  // Takes only live in memory: leaving the page while some are not in a
+  // downloaded ZIP loses them (see the LeaveGuard at the end of the render).
   const takenCount = Object.keys(takes).length;
   const hasUnexported = takenCount > 0 && !downloaded;
-  useEffect(() => {
-    setBeforeUnloadGuard(hasUnexported);
-    return () => setBeforeUnloadGuard(false);
-  }, [hasUnexported]);
 
   const saveTake = (line, blob, mimeType) => {
     if (!blob || blob.size === 0) return;
@@ -145,21 +151,25 @@ export default function App() {
   };
 
   if (loadError) {
-    return <PageState title="Enregistrement" error={loadError} />;
+    return <PageState page="recorder" title="Enregistrement" error={loadError} />;
   }
 
   if (!manifest) {
-    return <PageState title="Enregistrement" />;
+    return <PageState page="recorder" title="Enregistrement" />;
   }
 
   if (!supported) {
     return (
       <PageState
+        page="recorder"
         title="Enregistrement"
         error="Votre navigateur ne permet pas d'enregistrer du son. Essayez avec une version récente de Chrome, Firefox ou Safari."
       />
     );
   }
+
+  // Sans personnage choisi, la liste laisse la place à l'encart d'accueil.
+  const visibleLines = characterId === "" ? [] : lines;
 
   // Sélectionne une de MES répliques (jamais en cours d'enregistrement).
   const selectLine = (line) => {
@@ -168,9 +178,10 @@ export default function App() {
 
   return (
     <div className="recorder-page">
-      <PlayHeader title={manifest.title || "Enregistrement"}>
+      <PlayHeader page="recorder" title={manifest.title || "Enregistrement"}>
         <div className="selects-row">
           <select
+            aria-label="Acte"
             value={actIndex}
             disabled={isRecording}
             onChange={(e) => {
@@ -185,6 +196,7 @@ export default function App() {
             ))}
           </select>
           <select
+            aria-label="Scène"
             value={sceneIndex}
             disabled={isRecording}
             onChange={(e) => setSceneIndex(Number(e.target.value))}
@@ -205,12 +217,13 @@ export default function App() {
         </div>
         <div className="character-row">
           <select
-            className="character-select"
+            className={`character-select ${characterId === "" ? "unset" : ""}`}
+            aria-label="Mon personnage"
             value={characterId}
             disabled={isRecording}
             onChange={(e) => setCharacterId(e.target.value)}
           >
-            <option value="">Qui êtes-vous ?</option>
+            <option value="">Qui jouez-vous ?</option>
             {manifest.characters.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -218,21 +231,33 @@ export default function App() {
             ))}
           </select>
         </div>
-        <p className="recorder-hint">
-          Placez-vous sur une de vos répliques, puis appuyez sur le micro en bas : il démarre
-          aussitôt. Une réplique déjà faite peut être réécoutée et refaite. Vous pouvez changer de
-          personnage pour enregistrer plusieurs voix dans le même fichier, à envoyer ensuite à
-          votre responsable.
-        </p>
+        {/* Tant qu'aucun personnage n'est choisi, le mode d'emploi vit dans
+            l'encart d'accueil (à la place des répliques) : pas de doublon. */}
+        {characterId !== "" && (
+          <p className="header-hint">
+            Placez-vous sur une de vos répliques, puis appuyez sur le micro en bas : il démarre
+            aussitôt. Une réplique déjà faite peut être réécoutée et refaite. Vous pouvez changer de
+            personnage pour enregistrer plusieurs voix dans le même fichier, à envoyer ensuite à
+            votre responsable.
+          </p>
+        )}
         {micError && <p className="mic-error">{micError}</p>}
         {hasUnexported && (
           <p className="zip-note warn">
-            ⚠️ Vos enregistrements ne sont PAS sauvegardés tant que vous n'avez pas téléchargé le
+            <WarnIcon />
+            Vos enregistrements ne sont PAS sauvegardés tant que vous n'avez pas téléchargé le
             fichier.
           </p>
         )}
         {downloaded && takenCount > 0 && (
           <p className="zip-note done">✓ Fichier téléchargé. Envoyez-le à votre responsable.</p>
+        )}
+        {/* Ce message vit dans le bandeau (et pas dans la liste) parce que le
+            bandeau est sticky : il reste sous les yeux pendant qu'on parcourt
+            les répliques des autres personnages. Il prend la place de la
+            légende des statuts, les deux étant exclusifs. */}
+        {characterId !== "" && myLines.length === 0 && (
+          <p className="no-lines-note">Vous n'avez aucune réplique dans cette scène.</p>
         )}
         {characterId !== "" && myLines.length > 0 && (
           <div className="status-legend">
@@ -250,14 +275,19 @@ export default function App() {
       </PlayHeader>
 
       <main className="dialogue-container" ref={listRef}>
+        {/* Sans personnage, la page ne sert à rien (aucune réplique n'est
+            « mienne », le micro reste désactivé) : on remplace la liste par
+            un encart qui dit quoi faire, et qui fait faire. */}
         {characterId === "" && (
-          <div className="empty-state">Choisissez votre personnage dans le bandeau ci-dessus.</div>
+          <IntroCard
+            characters={manifest.characters}
+            lines={manifest.lines}
+            isTodo={isTodo}
+            onPick={setCharacterId}
+          />
         )}
-        {characterId !== "" && myLines.length === 0 && (
-          <div className="empty-state">Vous n'avez aucune réplique dans cette scène.</div>
-        )}
-        {lines.map((line) => {
-          const mine = characterId !== "" && line.characterId === characterId;
+        {visibleLines.map((line) => {
+          const mine = line.characterId === characterId;
           const active = mine && currentLine?.id === line.id;
           const state = mine ? lineState(line) : null;
           const take = takes[line.id];
@@ -325,88 +355,153 @@ export default function App() {
         })}
       </main>
 
-      <div className="controls">
-        {isRecording && (
-          <div className="rec-live-panel" role="status">
-            <span className="rec-live-dot" />
-            <span className="rec-live-label">Enregistrement</span>
-            <LiveWaveform analyser={analyser} />
-            {/* aria-hidden : role="status" annonce « Enregistrement » une fois ;
-                le chrono qui tourne ne doit pas être ré-énoncé chaque seconde. */}
-            <span className="rec-live-time" aria-hidden="true">{formatTime(elapsed)}</span>
-          </div>
-        )}
-        <ProgressBar
-          value={safeMyIndex}
-          count={myLines.length}
-          disabled={isRecording}
-          onSeek={setMyIndex}
-        />
-        <div className="buttons-row">
-          <span className="controls-side">
-            {myLines.length > 0 && (
-              <span className="line-counter">
-                {safeMyIndex + 1}/{myLines.length}
-              </span>
-            )}
-          </span>
-          <button
-            className="ctrl-btn"
-            title="Ma réplique précédente"
-            disabled={isRecording || safeMyIndex <= 0}
-            onClick={() => setMyIndex(safeMyIndex - 1)}
-          >
-            <PrevIcon />
-          </button>
-          <button
-            className={`ctrl-btn play mic ${isRecording ? "stop" : ""}`}
-            title={
-              isRecording
-                ? "Terminer l'enregistrement"
-                : "Enregistrer cette réplique (le micro démarre aussitôt)"
-            }
-            disabled={!currentLine}
-            onClick={toggleRecord}
-          >
-            {isRecording ? (
-              <StopIcon />
-            ) : (
-              <svg
-                className="mic-svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#fff"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="9" y="2" width="6" height="11" rx="3" />
-                <path d="M5 10a7 7 0 0 0 14 0" />
-                <line x1="12" y1="19" x2="12" y2="22" />
-              </svg>
-            )}
-          </button>
-          <button
-            className="ctrl-btn"
-            title="Ma réplique suivante"
-            disabled={isRecording || safeMyIndex >= myLines.length - 1}
-            onClick={() => setMyIndex(safeMyIndex + 1)}
-          >
-            <NextIcon />
-          </button>
-          <span className="controls-side right">
+      {/* Barre de contrôle masquée tant qu'aucun personnage n'est choisi :
+          elle n'offrirait qu'un micro et un téléchargement désactivés. */}
+      {characterId !== "" && (
+        <div className="controls">
+          {isRecording && (
+            <div className="rec-live-panel" role="status">
+              <span className="rec-live-dot" />
+              <span className="rec-live-label">Enregistrement</span>
+              <LiveWaveform analyser={analyser} />
+              {/* aria-hidden : role="status" annonce « Enregistrement » une fois ;
+                  le chrono qui tourne ne doit pas être ré-énoncé chaque seconde. */}
+              <span className="rec-live-time" aria-hidden="true">{formatTime(elapsed)}</span>
+            </div>
+          )}
+          <ProgressBar
+            value={safeMyIndex}
+            count={myLines.length}
+            disabled={isRecording}
+            onSeek={setMyIndex}
+          />
+          <div className="buttons-row">
+            <span className="controls-side">
+              {myLines.length > 0 && (
+                <span className="line-counter">
+                  {safeMyIndex + 1}/{myLines.length}
+                </span>
+              )}
+            </span>
+            {/* Ces flèches ne parcourent QUE mes répliques : même design que
+                les sauts « ma réplique » de la page Répétition (.my-jump). */}
             <button
-              className="btn primary download-btn"
-              title="Télécharger le ZIP des prises"
-              aria-label={`Télécharger le ZIP des prises (${takenCount})`}
-              disabled={takenCount === 0}
-              onClick={downloadZip}
+              className="ctrl-btn my-jump"
+              title="Ma réplique précédente"
+              disabled={isRecording || safeMyIndex <= 0}
+              onClick={() => setMyIndex(safeMyIndex - 1)}
             >
-              <DownloadIcon /> ({takenCount})
+              <SkipPrevIcon />
             </button>
-          </span>
+            <button
+              className={`ctrl-btn play mic ${isRecording ? "stop" : ""}`}
+              title={
+                isRecording
+                  ? "Terminer l'enregistrement"
+                  : "Enregistrer cette réplique (le micro démarre aussitôt)"
+              }
+              disabled={!currentLine}
+              onClick={toggleRecord}
+            >
+              {isRecording ? <StopIcon /> : <MicIcon />}
+            </button>
+            <button
+              className="ctrl-btn my-jump"
+              title="Ma réplique suivante"
+              disabled={isRecording || safeMyIndex >= myLines.length - 1}
+              onClick={() => setMyIndex(safeMyIndex + 1)}
+            >
+              <SkipNextIcon />
+            </button>
+            <span className="controls-side right">
+              <button
+                className="btn primary download-btn"
+                title="Télécharger le ZIP des prises"
+                aria-label={`Télécharger le ZIP des prises (${takenCount})`}
+                disabled={takenCount === 0}
+                onClick={downloadZip}
+              >
+                <DownloadIcon /> ({takenCount})
+              </button>
+            </span>
+          </div>
         </div>
-      </div>
+      )}
+
+      <LeaveGuard
+        active={hasUnexported}
+        title="Vos prises ne sont pas téléchargées"
+        saveLabel="Télécharger le ZIP puis quitter"
+        onSave={downloadZip}
+      >
+        <p>
+          {takenCount > 1
+            ? `Vos ${takenCount} prises ne vivent que dans cet onglet`
+            : "Votre prise ne vit que dans cet onglet"}{" "}
+          : en quittant la page sans télécharger le ZIP, vous devrez tout réenregistrer.
+        </p>
+      </LeaveGuard>
+    </div>
+  );
+}
+
+// Encart d'accueil, à la place des répliques tant qu'aucun personnage n'est
+// choisi : le mode d'emploi de la page, puis les personnages en boutons (le
+// select du bandeau seul se lisait comme une page bloquée). Le compteur « à
+// enregistrer » aide chacun à se reconnaître et montre le travail restant.
+function IntroCard({ characters, lines, isTodo, onPick }) {
+  const stats = characters.map((c) => {
+    const own = lines.filter((l) => l.characterId === c.id);
+    return { character: c, total: own.length, todo: own.filter(isTodo).length };
+  });
+  return (
+    <div className="intro-card card">
+      <h2 className="intro-title">Qui jouez-vous&nbsp;?</h2>
+      <p className="intro-lead">
+        Choisissez votre personnage : la page mettra alors <strong>vos</strong> répliques en avant.
+      </p>
+      <ol className="intro-steps">
+        <li>Placez-vous sur une de vos répliques et appuyez sur le micro : il démarre aussitôt.</li>
+        <li>Réécoutez, refaites la prise si besoin, puis passez à la suivante.</li>
+      </ol>
+      <p className="intro-outro">
+        Quand vous avez terminé (un ou plusieurs personnages, ou même seulement une partie de vos
+        répliques), appuyez sur le bouton{" "}
+        <span className="intro-dl">
+          <DownloadIcon />
+        </span>{" "}
+        pour sauvegarder vos prises et les
+        transmettre à la personne qui suit les enregistrements dans la troupe.
+      </p>
+      {stats.length === 0 ? (
+        <p className="intro-empty">
+          Aucun personnage pour l'instant : la pièce doit d'abord être saisie dans la page Édition.
+        </p>
+      ) : (
+        <div className="intro-characters">
+          {stats.map(({ character, total, todo }) => (
+            <button
+              key={character.id}
+              className="intro-character"
+              disabled={total === 0}
+              onClick={() => onPick(character.id)}
+            >
+              <span className="intro-character-name">{character.name}</span>
+              {total === 0 ? (
+                <span className="intro-character-count">aucune réplique</span>
+              ) : todo === 0 ? (
+                <span className="intro-character-count done">
+                  <span className="st-pill done">✓</span> tout est enregistré
+                </span>
+              ) : (
+                <span className="intro-character-count todo">
+                  <span className="st-dot" /> {todo} à enregistrer
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

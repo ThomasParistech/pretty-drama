@@ -73,23 +73,29 @@ finding sur la seule lecture du diff**. Par zone :
 
 - **`scripts/`** : bugs et cas limites ; toute entrée externe (ZIP, JSON
   uploadé à la main) est hostile — une entrée malformée est ignorée ou
-  collectée dans `uploads_errors.json`, jamais un crash de workflow ;
-  chemins via `scripts/common.py`, pas de chemins en dur ; messages
-  d'erreur destinés aux issues **en français**.
+  collectée dans `uploads_result.json` (puis dans le journal des dépôts),
+  jamais un crash de workflow ; chemins via `scripts/common.py`, pas de
+  chemins en dur ; messages d'erreur **en français** (ils finissent affichés
+  sur la page Avancement, seul retour du respo).
 - **`.github/`** : pas d'injection dans les `run:` (contenu utilisateur —
   noms de fichiers, titres — passé via `env:`, jamais interpolé `${{ }}`
-  dans le script) ; `permissions:` minimales ; `concurrency` conservée ;
-  l'ordre **déployer puis committer** jamais inversé (pas de commit si le
-  déploiement échoue).
+  dans le script) ; `permissions:` minimales ; les rôles des deux workflows
+  restent étanches (`uploads.yml` seul écrit dans le dépôt et le journal,
+  `build.yml` seul déploie et n'écrit rien) ; les **groupes de `concurrency`
+  restent distincts** (sinon le workflow appelé s'interbloque avec son
+  appelant) ; l'appel `jobs.site.uses` et les filtres `paths`/`paths-ignore`
+  conservés (un commit du bot ne déclenche aucun workflow).
 - **tests** : un changement de comportement dans `scripts/` sans cas de test
   correspondant est un finding ; la normalisation se teste via les cas
   partagés de `normalize-cases.json`.
 - **`data/*.json`** : doit rester cohérent avec le code qui le produit
-  (éditeur pour `script.json`, `build_manifest` pour `manifest.json`) —
+  (éditeur pour `script.json`, `build_manifest` pour `manifest.json`,
+  `update_history` pour `history.json`) —
   pas d'édition manuelle qui divergera au prochain build, sauf montage de
   test assumé.
-- **partout** : textes visibles par l'utilisateur en français (UI, issues,
-  README, erreurs), pas de secret ni de token dans le diff.
+- **partout** : textes visibles par l'utilisateur en français (UI, README,
+  messages d'erreur de l'Action, qui finissent dans le journal des dépôts) et
+  sans tiret cadratin, pas de secret ni de token dans le diff.
 
 ## 4. Invariants du projet
 

@@ -6,6 +6,7 @@ import PageHeader from "./PageHeader.jsx";
 // bandeau de marque + message. `error` peut être une chaîne ou du JSX ;
 // `className` s'ajoute au bloc d'erreur (ex. "load-error" côté éditeur).
 export default function PageState({
+  page,
   title,
   error = null,
   loading = "Chargement de la pièce…",
@@ -13,7 +14,7 @@ export default function PageState({
 }) {
   return (
     <>
-      <PageHeader title={title} />
+      <PageHeader page={page} title={title} />
       {error != null ? (
         <div className={`empty-state ${className}`.trim()}>{error}</div>
       ) : (

@@ -1,52 +1,50 @@
 name: build
 
-# Rebuilds the site on every push: processes actor voice ZIPs from
-# uploads/voix/, recompiles data/manifest.json, deploys to GitHub Pages, and
-# only THEN commits the results back — so a failed deploy never leaves the
-# repo claiming success while the live site is stale.
+# Construit le site et le déploie sur GitHub Pages. Rien d'autre : ce workflow
+# n'écrit JAMAIS dans le dépôt (pas de commit, pas de journal). Le seul écrivain
+# est uploads.yml, qui traite les dépôts puis appelle celui-ci (`workflow_call`)
+# parce qu'un commit poussé avec le GITHUB_TOKEN ne déclenche aucun workflow.
 #
-# On failure, a GitHub issue is opened (or commented, no duplicates) with a
-# clear message in French, and the README status section reflects the
-# failure — the respo never has to read CI logs.
+# `paths-ignore: uploads/**` : un dépôt est l'affaire d'uploads.yml, qui finit
+# par nous appeler. Sans ce filtre, un dépôt déclencherait les deux en parallèle
+# et publierait un site sans les nouvelles voix.
+#
+# Le respo ne vient jamais sur GitHub en dehors du dépôt de fichiers : ce
+# workflow ne lui écrit donc rien ici, ni issue ni statut dans le README. Son
+# seul retour est le journal des dépôts de la page Avancement.
 
 on:
   push:
     branches: [main, master]
+    paths-ignore:
+      - "uploads/**"
   workflow_dispatch:
+  workflow_call:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
-  issues: write
 
-# One run at a time: the run commits back to the repo, concurrent runs would
-# race each other when several files are dropped in quick succession.
+# Un seul déploiement Pages à la fois. Groupe DIFFÉRENT de celui d'uploads.yml :
+# un workflow appelé qui partage le groupe de son appelant est détecté comme
+# interblocage et annulé.
 concurrency:
-  group: build
+  group: pages
   cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      # `ref` explicite : appelés depuis uploads.yml, nous tournons dans le run
+      # d'un push ANTÉRIEUR au commit que ce workflow vient de pousser. Sans
+      # cela, checkout prendrait ce SHA d'origine et publierait un site sans les
+      # voix qu'on vient de traiter.
+      - name: Checkout (head of the branch, not the triggering SHA)
         uses: actions/checkout@v4
-
-      - name: Check for voice ZIPs
-        id: zips
-        run: |
-          if find uploads/voix -maxdepth 1 -name '*.zip' -print -quit | grep -q .; then
-            echo "present=yes" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=no" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Install ffmpeg (only when there are ZIPs to transcode)
-        if: ${{ steps.zips.outputs.present == 'yes' }}
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y -q ffmpeg
+        with:
+          ref: ${{ github.ref_name }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -62,27 +60,14 @@ jobs:
       - name: Install front dependencies
         run: npm ci
 
-      - name: Run tests (normalization + statuses)
+      - name: Run tests (normalization + statuses + ZIP contract + journal)
         run: python -m unittest discover -s scripts/tests -v
 
-      - name: Process voice ZIPs (ffmpeg -> clips/*.mp3)
-        run: python scripts/process_uploads.py
-
+      # Le manifest est dérivé : on le reconstruit pour que le site déployé
+      # colle à script.json et clips.json même après une édition à la main dans
+      # le dépôt. Il n'est PAS commité (seul uploads.yml écrit dans le dépôt).
       - name: Rebuild data/manifest.json
         run: python scripts/build_manifest.py
-
-      - name: Report faulty ZIPs as a GitHub issue
-        if: ${{ hashFiles('uploads_errors.json') != '' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python scripts/make_issue_body.py > /tmp/issue_body.md
-          bash scripts/ci/upsert_issue.sh "⚠️ Des fichiers de voix n'ont pas pu être traités" /tmp/issue_body.md
-          python scripts/update_readme_status.py warn
-
-      - name: Update README status (success)
-        if: ${{ hashFiles('uploads_errors.json') == '' }}
-        run: python scripts/update_readme_status.py ok
 
       - name: Build site
         run: |
@@ -107,44 +92,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deploy
         uses: actions/deploy-pages@v4
-
-      # Deploy succeeded: NOW record the processed state in the repo. If an
-      # earlier step failed, the ZIPs stay in uploads/voix/ and the next push
-      # reprocesses them (merges are idempotent by line id).
-      - name: Commit processed clips and manifest
-        run: |
-          rm -f uploads_errors.json
-          bash scripts/ci/commit_push.sh "🤖 Traitement des voix et mise à jour du manifest" \
-            clips data uploads README.md
-
-      # ---- Global failure feedback (never leave the respo in the dark) ----
-      - name: Open or update an issue on failure
-        if: ${{ failure() }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          cat > /tmp/failure_body.md <<'EOF'
-          Bonjour ! 👋
-
-          La dernière mise à jour automatique du site a échoué : le site n'a **pas** été mis à jour.
-
-          **Causes fréquentes :**
-          - GitHub Pages n'est pas encore activé : allez dans **Settings → Pages** et choisissez
-            **Source : GitHub Actions**, puis relancez en déposant à nouveau un fichier (ou via
-            l'onglet **Actions → build → Run workflow**).
-          - Le fichier `data/script.json` a été abîmé lors d'une modification à la main : restaurez
-            sa version précédente depuis l'historique, ou re-téléchargez-le depuis la page Éditeur.
-          - Un fichier déposé au mauvais endroit (le `script.json` va dans `data/`, les ZIP de voix
-            dans `uploads/voix/`).
-
-          Détails techniques : ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-          Une fois le problème réglé, vous pouvez fermer cette issue.
-          EOF
-          bash scripts/ci/upsert_issue.sh "❌ La mise à jour du site a échoué" /tmp/failure_body.md || true
-
-      - name: Update README status (failure)
-        if: ${{ failure() }}
-        run: |
-          python scripts/update_readme_status.py ko || exit 0
-          bash scripts/ci/commit_push.sh "🤖 Statut du dernier traitement : échec" README.md || true

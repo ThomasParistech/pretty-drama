@@ -2,6 +2,9 @@
 
 Stateless join of data/script.json (source of truth, produced by the editor)
 and data/clips.json (state of processed clips, maintained by process_uploads).
+Y est recopié le journal des derniers dépôts (data/history.json, tenu par
+update_history.py) : les pages ne lisent que ce fichier, donc c'est ici que
+tout ce qu'elles affichent est assemblé.
 
 Status per line (spec §6):
  - clip exists and normalized text matches  -> "ok"
@@ -25,6 +28,7 @@ from normalize import normalize_text
 
 SCRIPT_PATH = REPO_ROOT / "data" / "script.json"
 CLIPS_PATH = REPO_ROOT / "data" / "clips.json"
+HISTORY_PATH = REPO_ROOT / "data" / "history.json"
 MANIFEST_PATH = REPO_ROOT / "data" / "manifest.json"
 
 
@@ -84,10 +88,12 @@ def compute_status(line: dict, clips: dict) -> str:
     return "perime"
 
 
-def build_manifest(script: dict, clips: dict) -> dict:
+def build_manifest(script: dict, clips: dict, history=None) -> dict:
     script = sanitize_script(script)
     if not isinstance(clips, dict):
         clips = {}
+    if not isinstance(history, list):
+        history = []
     names = {c["id"]: c["name"] for c in script["characters"]}
 
     def enrich(line: dict, act_title: str, scene_title: str) -> dict:
@@ -115,6 +121,12 @@ def build_manifest(script: dict, clips: dict) -> dict:
 
     return {
         "title": script["title"],
+        # Journal des derniers dépôts, affiché par la page Avancement : sans lui
+        # le respo n'a aucun retour sur ce qu'est devenu son fichier. Pas
+        # d'horodatage du run ici : un champ réécrit à chaque exécution ferait
+        # différer manifest.json à tous les pushes, donc un commit robot à
+        # chaque fois (c'est ce qui a coûté sa place au statut du README).
+        "history": history,
         "characters": script["characters"],
         "acts": acts,
         "lines": flat_lines,
@@ -129,8 +141,8 @@ def main() -> None:
         sys.exit(1)
     except json.JSONDecodeError as exc:
         print(
-            f"data/script.json n'est pas un JSON valide ({exc}) — restaurez sa version "
-            "précédente depuis l'historique GitHub ou re-téléchargez-le depuis l'éditeur.",
+            f"data/script.json n'est pas un JSON valide ({exc}) : restaurez sa version "
+            "précédente depuis l'historique GitHub ou re-téléchargez-le depuis la page Édition.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -142,7 +154,14 @@ def main() -> None:
         # "manquant" until ZIPs are re-merged).
         print("data/clips.json illisible — ignoré (statuts recalculés sans lui)", file=sys.stderr)
         clips = {}
-    manifest = build_manifest(script, clips)
+    try:
+        history = json.loads(HISTORY_PATH.read_text(encoding="utf-8")) if HISTORY_PATH.exists() else {}
+    except json.JSONDecodeError:
+        # Le journal n'est qu'un confort d'affichage : jamais un motif d'échec.
+        print("data/history.json illisible — journal ignoré", file=sys.stderr)
+        history = {}
+    runs = history.get("runs") if isinstance(history, dict) else None
+    manifest = build_manifest(script, clips, runs)
     write_json(MANIFEST_PATH, manifest)
     total = len(manifest["lines"])
     ok = sum(1 for l in manifest["lines"] if l["status"] == "ok")

@@ -1,39 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { fetchManifest } from "../shared/data.js";
+import PageMark from "../shared/PageMark.jsx";
+import { ACTOR_CARDS, PAGES } from "../shared/pages.js";
 import "./home.css";
 
-const PAGES = [
-  {
-    href: "./rehearsal.html",
-    emoji: "🎭",
-    title: "Répétition",
-    who: "Pour toute la troupe",
-    desc: "Répétez « à l'italienne » : la pièce se joue avec les vraies voix, vous dites vos répliques au bon moment.",
-  },
-  {
-    href: "./recorder.html",
-    emoji: "🎙️",
-    title: "Enregistrement",
-    who: "Pour les acteurs",
-    desc: "Choisissez votre personnage, enregistrez vos répliques, puis envoyez le fichier à votre responsable.",
-  },
-  {
-    href: "./dashboard.html",
-    emoji: "📊",
-    title: "Avancement",
-    who: "Pour le responsable",
-    desc: "Qui a enregistré quoi ? Quelles répliques restent à faire ou à refaire ?",
-  },
-  {
-    href: "./editor.html",
-    emoji: "✍️",
-    title: "Éditeur",
-    who: "Pour le responsable",
-    desc: "Saisissez et corrigez le texte de la pièce : personnages, actes, scènes et répliques.",
-  },
-];
-
-export default function App() {
+// Les deux accueils partagent tout sauf leur liste de cartes : `index.html`
+// (acteurs) et `respo.html` (les quatre pages), cf. src/shared/pages.js.
+export default function App({ cards = ACTOR_CARDS }) {
   const [title, setTitle] = useState(null);
 
   useEffect(() => {
@@ -43,25 +16,32 @@ export default function App() {
   }, []);
 
   return (
-    <div className="home">
+    <div className="home page-home">
       <header className="home-hero">
-        <div className="home-brand">🎭 PrettyDrama</div>
+        <div className="home-brand">
+          <PageMark page="home" className="home-brand-mark" />
+          PrettyDrama
+        </div>
         {title && <h1 className="home-play-title">{title}</h1>}
       </header>
 
+      {/* Les sceaux colorés en carré : l'accueil sert aussi de légende, on y
+          apprend quelle couleur va avec quelle page. */}
       <main className="home-grid">
-        {PAGES.map((p) => (
-          <a key={p.href} className="home-card card" href={p.href}>
-            <span className="home-card-emoji">{p.emoji}</span>
-            <span className="home-card-title">{p.title}</span>
-            <span className="home-card-who">{p.who}</span>
-            <span className="home-card-desc">{p.desc}</span>
-          </a>
-        ))}
+        {cards.map((key) => {
+          const p = PAGES[key];
+          return (
+            <a key={key} className={`home-card card page-${key}`} href={p.href}>
+              <PageMark page={key} className="home-card-mark" />
+              <span className="home-card-title">{p.label}</span>
+              <span className="home-card-desc">{p.desc}</span>
+            </a>
+          );
+        })}
       </main>
 
       <footer className="home-footer">
-        Un outil libre pour les troupes de théâtre —{" "}
+        Un outil libre pour les troupes de théâtre,{" "}
         <a href="https://github.com/ThomasParistech/prettydrama-voices" target="_blank" rel="noreferrer">
           PrettyDrama
         </a>

@@ -2,9 +2,11 @@
   "name": "prettydrama-voices",
   "private": true,
   "version": "2.0.0",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start": "bash scripts/dev.sh",
     "build": "vite build",
     "preview": "vite preview"
   },

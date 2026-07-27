@@ -95,12 +95,16 @@ pars du code, pas de la doc.
 - **`.github/`** : balaie **tous** les `run:` pour l'injection (contenu
   utilisateur — noms de fichiers, titres — passé via `env:`, jamais interpolé
   `${{ }}` dans le script) ; `permissions:` minimales ; `concurrency`
-  présente ; l'ordre **déployer puis committer** jamais inversé (pas de commit
-  si le déploiement échoue) ; issue d'échec + statut README en français.
+  présente et **de groupes distincts entre appelant et appelé** (sinon
+  interblocage) ; rôles étanches (`uploads.yml` seul écrit dans le dépôt et le
+  journal, `build.yml` seul déploie) ; **aucun retour au respo écrit sur
+  GitHub** (ni issue, ni statut README : son seul canal est le journal des
+  dépôts affiché par la page Avancement).
 - **`scripts/`** : toute entrée externe (ZIP, JSON uploadé à la main) traitée
-  comme hostile — ignorée ou collectée dans `uploads_errors.json`, jamais un
-  crash de workflow ; chemins via `scripts/common.py`, aucun chemin en dur ;
-  messages d'erreur destinés aux issues en français.
+  comme hostile — ignorée ou collectée dans `uploads_result.json` (puis dans le
+  journal des dépôts), jamais un crash de workflow ; chemins via
+  `scripts/common.py`, aucun chemin en dur ; messages d'erreur en français (ils
+  finissent affichés sur la page Avancement).
 - **Secrets** : aucun token/secret en clair dans l'arbre (grep large).
 
 ## 5. Dette : tests, code mort, duplication

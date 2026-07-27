@@ -45,14 +45,45 @@ function serveRepoData() {
   };
 }
 
+// Vite n'annonce qu'une URL (« Local: … »), or il y a DEUX accueils : celui des
+// acteurs à la racine et celui du responsable sur respo.html. On complète donc
+// sa liste d'URLs, en dev comme en preview, pour ne pas avoir à retenir le
+// chemin de l'accueil caché.
+function printHomeUrls() {
+  const green = (s) => `\x1b[32m${s}\x1b[0m`;
+  const bold = (s) => `\x1b[1m${s}\x1b[0m`;
+  const extend = (server) => {
+    const printUrls = server.printUrls.bind(server);
+    server.printUrls = () => {
+      printUrls();
+      // resolvedUrls est null si l'écoute a échoué : dans ce cas, rien à dire.
+      const base = server.resolvedUrls?.local?.[0];
+      if (!base) return;
+      for (const [label, path] of [
+        ["Acteurs:", ""],
+        ["Respo:", "respo.html"],
+      ]) {
+        // Même gabarit que les lignes de Vite : « Local:   » puis l'URL.
+        console.log(`  ${green("➜")}  ${bold(label.padEnd(9))}${green(base + path)}`);
+      }
+    };
+  };
+  return {
+    name: "print-home-urls",
+    configureServer: extend,
+    configurePreviewServer: extend,
+  };
+}
+
 export default defineConfig({
   // Relative base so the site works at https://<user>.github.io/<any-repo-name>/
   base: "./",
-  plugins: [react(), serveRepoData()],
+  plugins: [react(), serveRepoData(), printHomeUrls()],
   build: {
     rollupOptions: {
       input: {
         home: resolve(ROOT, "index.html"),
+        respo: resolve(ROOT, "respo.html"),
         editor: resolve(ROOT, "editor.html"),
         recorder: resolve(ROOT, "recorder.html"),
         rehearsal: resolve(ROOT, "rehearsal.html"),

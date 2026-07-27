@@ -1,0 +1,91 @@
+name: uploads
+
+# Réagit aux dépôts du respo : tout ce qu'il glisse dans uploads/ (ZIP de voix
+# des acteurs, script.json produit par la page Édition). Traite, consigne le
+# journal, commite, puis appelle build.yml pour publier.
+#
+# Deux workflows et pas un seul : celui-ci est le seul à écrire dans le dépôt et
+# le seul à écrire le journal des dépôts (data/history.json), donc le journal
+# affiché dans l'Avancement ne contient QUE des dépôts, jamais les
+# reconstructions du site déclenchées par un push de code.
+#
+# Pourquoi un appel explicite à build.yml : un commit poussé avec le
+# GITHUB_TOKEN ne déclenche AUCUN autre workflow (garde anti-récursion de
+# GitHub). Sans ce `uses:`, le site ne serait jamais republié après un dépôt.
+#
+# Ordre assumé : on commite avant de déployer (le déploiement vit dans un autre
+# job, donc un autre runner ; l'attendre imposerait de transporter clips/ et
+# data/ en artefact). Si le déploiement échoue, les données restent dans le
+# dépôt, rien n'est perdu et le prochain build les publie.
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "uploads/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Un seul traitement à la fois : ce workflow commite, deux exécutions
+# concurrentes se marcheraient dessus quand plusieurs fichiers sont déposés à la
+# suite. Groupe DIFFÉRENT de celui de build.yml : un workflow appelé qui partage
+# le groupe de son appelant est détecté comme interblocage et annulé.
+concurrency:
+  group: uploads
+  cancel-in-progress: false
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for voice ZIPs
+        id: zips
+        run: |
+          if find uploads -maxdepth 1 -name '*.zip' -print -quit | grep -q .; then
+            echo "present=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=no" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install ffmpeg (only when there are ZIPs to transcode)
+        if: ${{ steps.zips.outputs.present == 'yes' }}
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q ffmpeg
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Voix -> clips/*.mp3 + data/clips.json ; script.json validé puis promu
+      # dans data/. Un fichier fautif est retiré et consigné, jamais bloquant.
+      - name: Process uploaded files
+        run: python scripts/process_uploads.py
+
+      - name: Update the deposits journal
+        run: python scripts/update_history.py
+
+      - name: Rebuild data/manifest.json
+        run: python scripts/build_manifest.py
+
+      - name: Commit clips, data and consumed uploads
+        run: |
+          bash scripts/ci/commit_push.sh "🤖 Traitement des dépôts et mise à jour du manifest" \
+            clips data uploads
+
+  # Publie le résultat. Jobs du même run : le respo voit une seule ligne verte.
+  site:
+    needs: process
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/build.yml

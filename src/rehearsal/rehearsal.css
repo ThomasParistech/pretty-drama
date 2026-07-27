@@ -47,6 +47,14 @@
   white-space: nowrap;
 }
 
+/* Les étincelles de l'étiquette : à 11.5 px on les grossit d'un cinquième sans
+   toucher au texte, et on les assoit sur la ligne de base. */
+.tts-icon {
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: -0.25em;
+}
+
 .dialogue-card.muted.hide-text .dialogue-text {
   filter: blur(8px);
   user-select: none;

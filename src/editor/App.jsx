@@ -1,31 +1,70 @@
 import React, { useEffect, useMemo, useReducer, useState, useCallback } from "react";
 import PageState from "../shared/PageState.jsx";
-import { fetchScript, setBeforeUnloadGuard, downloadBlob, HttpError } from "../shared/data.js";
-import { scriptReducer, EMPTY_SCRIPT, allLines, newId } from "./reducer.js";
+import { fetchScript, downloadBlob, HttpError } from "../shared/data.js";
+import { EMPTY_SCRIPT, allLines, newId } from "./reducer.js";
+import { historyReducer, initHistory } from "./history.js";
 import PlayHeader from "../shared/PlayHeader.jsx";
-import { DownloadIcon } from "../shared/icons.jsx";
+import { DownloadIcon, UndoIcon, RedoIcon, WarnIcon } from "../shared/icons.jsx";
 import CharacterChips from "./CharacterPanel.jsx";
 import SceneEditor from "./SceneEditor.jsx";
 import EditableTitle from "./EditableTitle.jsx";
+import ConfirmModal from "../shared/ConfirmModal.jsx";
+import LeaveGuard from "../shared/LeaveGuard.jsx";
 import "./editor.css";
 
 export default function App() {
-  const [script, rawDispatch] = useReducer(scriptReducer, EMPTY_SCRIPT);
+  // scriptReducer wrapped in an undo stack (see history.js): `script` is the
+  // present state, `past` the previous ones, `saved` the one that matches the
+  // last downloaded script.json.
+  const [{ present: script, past, future, saved }, dispatch] = useReducer(
+    historyReducer,
+    EMPTY_SCRIPT,
+    initHistory
+  );
   const [loading, setLoading] = useState(true);
   const [loadInfo, setLoadInfo] = useState("");
   // Blocking error: the published script EXISTS but could not be read.
   // Starting empty here would let the respo overwrite the real play.
   const [loadError, setLoadError] = useState(null);
-  const [dirty, setDirty] = useState(false);
   // Line id whose textarea should grab focus (set right after ADD_LINE).
   const [focusLineId, setFocusLineId] = useState(null);
   // Pending character deletion needing a decision (has lines).
   const [deleteRequest, setDeleteRequest] = useState(null);
+  // Pending act deletion awaiting confirmation.
+  const [confirmDeleteAct, setConfirmDeleteAct] = useState(false);
+  // Is there anything to download? A state comparison, not a flag raised by
+  // the first edit: undoing back to the last downloaded state (or to the
+  // loaded script, when nothing was downloaded yet) leaves nothing to save.
+  // Identity is enough, the stack stores the very objects it restores.
+  const dirty = script !== saved;
 
-  const dispatch = useCallback((action) => {
-    rawDispatch(action);
-    if (action.type !== "LOAD_SCRIPT") setDirty(true);
-  }, []);
+  const canUndo = past.length > 0;
+  const canRedo = future.length > 0;
+  const undo = useCallback(() => dispatch({ type: "UNDO" }), [dispatch]);
+  const redo = useCallback(() => dispatch({ type: "REDO" }), [dispatch]);
+
+  // Ctrl+Z / Ctrl+Y (and Cmd+Z / Cmd+Shift+Z on Mac) anywhere, including
+  // inside a textarea: the browser's own undo would only rewind that one
+  // field, out of sync with our stack. When there is nothing to undo or redo
+  // we let the key through, so the native undo of a field still works.
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      if (e.altKey) return;
+      const key = e.key.toLowerCase();
+      const wantsRedo = key === "y" || (key === "z" && e.shiftKey);
+      const wantsUndo = key === "z" && !e.shiftKey;
+      if (wantsRedo && canRedo) {
+        e.preventDefault();
+        redo();
+      } else if (wantsUndo && canUndo) {
+        e.preventDefault();
+        undo();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [canUndo, canRedo, undo, redo]);
 
   // "Reprise" mode: load the published script.json to continue editing it.
   useEffect(() => {
@@ -33,19 +72,19 @@ export default function App() {
     fetchScript()
       .then((raw) => {
         if (cancelled) return;
-        rawDispatch({ type: "LOAD_SCRIPT", script: raw });
+        dispatch({ type: "LOAD_SCRIPT", script: raw });
       })
       .catch((err) => {
         if (cancelled) return;
         if (err instanceof HttpError && err.status === 404) {
           // Genuinely no published script yet: legitimate empty start.
-          setLoadInfo("Aucun script publié trouvé — vous partez d'une pièce vide.");
+          setLoadInfo("Aucun script publié trouvé : vous partez d'une pièce vide.");
         } else {
           setLoadError(
             "Le script publié existe mais n'a pas pu être lu (fichier abîmé ou problème réseau). " +
               "Pour ne pas risquer d'écraser votre pièce, l'éditeur est désactivé. " +
               "Rechargez la page pour réessayer ; si l'erreur persiste, le fichier data/script.json " +
-              "du dépôt est probablement abîmé — restaurez sa version précédente depuis l'historique GitHub " +
+              "du dépôt est probablement abîmé ; restaurez sa version précédente depuis l'historique GitHub " +
               "(History → bouton « ... » → View file → Raw) avant de continuer."
           );
         }
@@ -54,21 +93,15 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [dispatch]);
 
-  // One-shot session guard: warn before losing unsaved edits.
-  useEffect(() => {
-    setBeforeUnloadGuard(dirty);
-    return () => setBeforeUnloadGuard(false);
-  }, [dirty]);
-
-  const download = () => {
+  const download = useCallback(() => {
     const blob = new Blob([JSON.stringify(script, null, 2)], {
       type: "application/json",
     });
     downloadBlob(blob, "script.json");
-    setDirty(false);
-  };
+    dispatch({ type: "MARK_SAVED" });
+  }, [script, dispatch]);
 
   // Insert a new line and focus it: the UUID is minted here (not in the
   // reducer, which must stay pure) so we know which textarea to focus.
@@ -110,18 +143,14 @@ export default function App() {
     dispatch({ type: "ADD_SCENE", actIndex: safeActIndex });
     goToScene(safeActIndex, act.scenes.length);
   };
-  const deleteAct = () => {
-    const lineCount = act.scenes.reduce((n, s) => n + s.lines.length, 0);
-    if (
-      lineCount === 0 ||
-      window.confirm(
-        `Supprimer « ${act.title} » et ses ${lineCount} réplique(s) ? Cette action est définitive.`
-      )
-    ) {
-      dispatch({ type: "DELETE_ACT", actIndex: safeActIndex });
-      goToScene(Math.max(0, safeActIndex - 1), 0);
-    }
+  const actLineCount = act ? act.scenes.reduce((n, s) => n + s.lines.length, 0) : 0;
+  const doDeleteAct = () => {
+    dispatch({ type: "DELETE_ACT", actIndex: safeActIndex });
+    goToScene(Math.max(0, safeActIndex - 1), 0);
   };
+  // An act that still holds lines is confirmed first (an empty one goes
+  // silently).
+  const deleteAct = () => (actLineCount === 0 ? doDeleteAct() : setConfirmDeleteAct(true));
 
   // One O(lines) pass instead of one full-script scan per character per render.
   const lineCounts = useMemo(() => {
@@ -147,20 +176,61 @@ export default function App() {
   );
 
   if (loading) {
-    return <PageState title="Éditeur" loading="Chargement du script…" />;
+    return <PageState page="editor" title="Édition" loading="Chargement du script…" />;
   }
 
   if (loadError) {
-    return <PageState title="Éditeur" error={<>⚠️ {loadError}</>} className="load-error" />;
+    return (
+      <PageState
+        page="editor"
+        title="Édition"
+        error={
+          <>
+            <WarnIcon />
+            {loadError}
+          </>
+        }
+        className="load-error"
+      />
+    );
   }
 
   return (
     <>
       <PlayHeader
+        page="editor"
         title={script.title || "Pièce sans titre"}
         actions={
           <>
             {dirty && <span className="dirty-hint">Modifications non téléchargées</span>}
+            <span className="history-group">
+              <button
+                className="btn icon"
+                onClick={undo}
+                disabled={!canUndo}
+                aria-label="Annuler"
+                title={
+                  canUndo
+                    ? "Annuler la dernière modification (Ctrl+Z)"
+                    : "Rien à annuler pour l'instant"
+                }
+              >
+                <UndoIcon />
+              </button>
+              <button
+                className="btn icon"
+                onClick={redo}
+                disabled={!canRedo}
+                aria-label="Rétablir"
+                title={
+                  canRedo
+                    ? "Rétablir la modification annulée (Ctrl+Y)"
+                    : "Rien à rétablir pour l'instant"
+                }
+              >
+                <RedoIcon />
+              </button>
+            </span>
             <button className="btn primary" onClick={download}>
               <DownloadIcon /> Télécharger le script
             </button>
@@ -173,17 +243,26 @@ export default function App() {
           placeholder="Titre de la pièce"
           value={script.title}
           onChange={(e) => dispatch({ type: "SET_TITLE", title: e.target.value })}
+          onBlur={() => dispatch({ type: "HISTORY_BREAK" })}
         />
 
         <div className="selects-row">
-          <select value={safeActIndex} onChange={(e) => goToScene(Number(e.target.value), 0)}>
+          <select
+            aria-label="Acte"
+            value={safeActIndex}
+            onChange={(e) => goToScene(Number(e.target.value), 0)}
+          >
             {script.acts.map((a, i) => (
               <option key={i} value={i}>
                 {a.title}
               </option>
             ))}
           </select>
-          <select value={safeSceneIndex} onChange={(e) => setSceneIndex(Number(e.target.value))}>
+          <select
+            aria-label="Scène"
+            value={safeSceneIndex}
+            onChange={(e) => setSceneIndex(Number(e.target.value))}
+          >
             {(act?.scenes ?? []).map((s, i) => (
               <option key={i} value={i}>
                 {s.title} ({s.lines.length} réplique{s.lines.length > 1 ? "s" : ""})
@@ -207,10 +286,11 @@ export default function App() {
           onRequestDelete={requestDeleteCharacter}
         />
 
-        <p className="editor-header-hint">
+        <p className="header-hint editor-header-hint">
           Quand vous avez terminé : cliquez sur <strong>« Télécharger le script »</strong>, puis
-          déposez le fichier <code>script.json</code> dans le dossier <code>data/</code> de votre
-          dépôt GitHub (il remplacera l'ancien).
+          rendez-vous sur la page <a href="./dashboard.html">Avancement</a>, où le bouton de dépôt{" "}
+          <strong>« Déposer des voix ou le script de la pièce »</strong> reçoit le fichier{" "}
+          <code>script.json</code> comme les voix des acteurs.
         </p>
 
         <p className="editor-tip">
@@ -251,6 +331,36 @@ export default function App() {
             />
           )}
       </main>
+
+      {confirmDeleteAct && act && (
+        <ConfirmModal
+          title={`Supprimer « ${act.title} » ?`}
+          confirmLabel="Supprimer"
+          onCancel={() => setConfirmDeleteAct(false)}
+          onConfirm={() => {
+            setConfirmDeleteAct(false);
+            doDeleteAct();
+          }}
+        >
+          <p>
+            {actLineCount > 1
+              ? `${actLineCount} répliques seront supprimées.`
+              : "1 réplique sera supprimée."}
+          </p>
+        </ConfirmModal>
+      )}
+
+      <LeaveGuard
+        active={dirty}
+        title="Vous n'avez pas téléchargé le script"
+        saveLabel="Télécharger puis quitter"
+        onSave={download}
+      >
+        <p>
+          Vos modifications ne vivent que dans cet onglet : en quittant la page sans télécharger le
+          fichier <code>script.json</code>, vous les perdez.
+        </p>
+      </LeaveGuard>
 
       {deleteRequest && (
         <DeleteCharacterModal

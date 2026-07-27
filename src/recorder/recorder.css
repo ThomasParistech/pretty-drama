@@ -16,16 +16,136 @@
   --rec-fresh-wave: #8fcaa4;
 }
 
-.recorder-hint {
-  font-size: 13.5px;
-  color: var(--ink-soft);
-  margin: 0;
-}
+/* Le texte d'explication du bandeau utilise .header-hint (theme.css). */
 
 .mic-error {
   color: var(--accent);
   font-weight: 600;
   margin: 0;
+}
+
+/* ---- Encart d'accueil (aucun personnage choisi) ---- */
+
+/* Le select du bandeau est le second chemin vers le même choix : on le
+   souligne en accent tant qu'il est vide, pour que le lien avec l'encart
+   soit évident. */
+.character-select.unset {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.intro-card {
+  padding: 20px 22px 22px;
+  margin-top: 6px;
+}
+
+.intro-title {
+  font-size: 26px;
+  margin-bottom: 6px;
+}
+
+.intro-lead {
+  margin: 0 0 14px;
+  color: var(--ink-soft);
+}
+
+.intro-steps {
+  margin: 0 0 18px;
+  padding-left: 20px;
+  color: var(--ink-soft);
+  font-size: 14.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.intro-outro {
+  margin: 0 0 18px;
+  color: var(--ink-soft);
+  font-size: 14.5px;
+}
+
+/* Réplique miniature du bouton Télécharger de la barre basse, dans le texte :
+   l'acteur reconnaît le bouton qu'on lui décrit. */
+.intro-dl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5em;
+  height: 1.5em;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  line-height: 1;
+  /* La ligne de base d'un inline-flex est celle de son contenu (donc tout en
+     bas de la pastille) : c'est `middle` qui la centre sur le texte, pas un
+     décalage négatif. */
+  vertical-align: middle;
+}
+
+.intro-empty {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.intro-characters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.intro-character {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 11px 14px;
+  min-height: 44px;
+  text-align: left;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--ink);
+}
+
+.intro-character:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.intro-character:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.intro-character:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.intro-character-name {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.intro-character-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.intro-character-count.todo {
+  color: var(--rec-todo);
+  font-weight: 600;
+}
+
+.intro-character-count.done {
+  color: var(--rec-done);
 }
 
 /* ---- Dialogue card states ---- */
@@ -37,9 +157,16 @@
   cursor: pointer;
 }
 
-/* Fresh take, not yet in a downloaded ZIP: soft green halo. */
-.dialogue-card.own.fresh {
+/* Fresh take, not yet in a downloaded ZIP: soft green halo.
+   Le filet vert ne se pose que sur une carte NON sélectionnée : sinon, étant
+   plus spécifique (3 classes contre 2), il effacerait la bordure d'accent de
+   .dialogue-card.active (theme.css) et on ne saurait plus quelle réplique est
+   la courante. Le halo, lui, reste : sélection = bordure, prise = halo. */
+.dialogue-card.own.fresh:not(.active) {
   border-color: var(--rec-fresh-halo);
+}
+
+.dialogue-card.own.fresh {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--rec-fresh) 10%, transparent);
 }
 
@@ -329,12 +456,6 @@
 /* Le libellé « Télécharger » a été retiré partout (icône + nombre + title) :
    présentation identique mobile / PC, barre allégée des deux côtés. */
 
-.mic-svg {
-  width: 24px;
-  height: 24px;
-  display: block;
-}
-
 /* Save-state note, in the top header (kept out of the bottom bar). */
 .zip-note {
   font-size: 13px;
@@ -344,6 +465,23 @@
 
 .zip-note.warn {
   color: var(--accent);
+}
+
+/* « Vous n'avez aucune réplique dans cette scène » n'est pas un vide neutre
+   comme celui du tableau de bord : c'est une impasse (le micro et les flèches
+   de la barre basse restent inertes, il faut changer de scène ou de
+   personnage). Il porte donc l'accent, comme les autres notes du bandeau, mais
+   dans un encart plein : c'est la seule chose à lire de la page à ce
+   moment-là. */
+.no-lines-note {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 14px;
 }
 
 .zip-note.done {

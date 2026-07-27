@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -15,6 +15,7 @@ import {
 import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
 import EditableTitle from "./EditableTitle.jsx";
 import LineRow from "./LineRow.jsx";
+import ConfirmModal from "../shared/ConfirmModal.jsx";
 
 // React.memo: only the scene being edited changes identity per keystroke.
 export default React.memo(function SceneEditor({
@@ -41,6 +42,9 @@ export default React.memo(function SceneEditor({
   };
 
   const canAddLines = characters.length > 0;
+  // Deleting a scene that still holds lines asks first (an empty one goes
+  // silently).
+  const [confirming, setConfirming] = useState(false);
 
   return (
     <div className="scene-block">
@@ -58,13 +62,10 @@ export default React.memo(function SceneEditor({
             className="btn icon small"
             title="Supprimer cette scène"
             onClick={() => {
-              if (
-                scene.lines.length === 0 ||
-                window.confirm(
-                  `Supprimer « ${scene.title} » et ses ${scene.lines.length} réplique(s) ? Cette action est définitive.`
-                )
-              ) {
+              if (scene.lines.length === 0) {
                 dispatch({ type: "DELETE_SCENE", actIndex, sceneIndex });
+              } else {
+                setConfirming(true);
               }
             }}
           >
@@ -72,6 +73,24 @@ export default React.memo(function SceneEditor({
           </button>
         )}
       </div>
+
+      {confirming && (
+        <ConfirmModal
+          title={`Supprimer « ${scene.title} » ?`}
+          confirmLabel="Supprimer"
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => {
+            setConfirming(false);
+            dispatch({ type: "DELETE_SCENE", actIndex, sceneIndex });
+          }}
+        >
+          <p>
+            {scene.lines.length > 1
+              ? `${scene.lines.length} répliques seront supprimées.`
+              : "1 réplique sera supprimée."}
+          </p>
+        </ConfirmModal>
+      )}
 
       <DndContext
         sensors={sensors}
@@ -123,7 +142,7 @@ export default React.memo(function SceneEditor({
           to create that first line. */}
       {scene.lines.length === 0 && canAddLines && (
         <button className="add-first-line-btn" onClick={() => addLine(actIndex, sceneIndex, null)}>
-          Écrire la première réplique — les suivantes se créent avec la touche Entrée.
+          Écrire la première réplique : les suivantes se créent avec la touche Entrée.
         </button>
       )}
       {!canAddLines && (
