@@ -285,19 +285,25 @@ textarea:focus {
   white-space: nowrap;
 }
 
+/* Le bouton de repli avale TOUTE la rangée sauf le sceau : la marque et le
+   titre sont dedans. Sur mobile, viser le haut de la barre pour la replier
+   tombait sur le lien de la marque et renvoyait au menu principal ; le lien est
+   descendu dans les réglages (`.play-header-home`). */
 .play-header-toggle {
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
   background: none;
   border: none;
   padding: 2px 0;
+  text-align: left;
 }
 
 .play-header-title {
+  flex: 1;
+  min-width: 0;
   font-family: var(--header-serif);
   font-size: 20px;
   font-weight: 700;
@@ -305,13 +311,6 @@ textarea:focus {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* Titre sans repli (tableau de bord) : il tient la place du bouton, donc il
-   pousse les actions à droite comme lui. */
-.play-header-title-plain {
-  flex: 1;
-  min-width: 0;
 }
 
 .play-header-chevron {
@@ -370,6 +369,88 @@ textarea:focus {
 .play-header.open .play-header-settings-inner {
   opacity: 1;
   transition-delay: 0.06s; /* le contenu apparaît quand la place est faite */
+}
+
+/* Le retour à l'accueil, seul lien sortant des pages à bandeau : il ne peut se
+   toucher qu'une fois le bandeau déplié, donc jamais par mégarde en le
+   repliant. C'est le LOGO seul qui fait le bouton, sans un mot : les deux
+   masques sont la marque du site, ils disent où ils mènent. En pied du bandeau
+   et centré : une sortie de page ne se met pas au-dessus des réglages, et
+   centré le bouton ne prétend appartenir à aucune des colonnes de gauche.
+   `align-self` (et pas `text-align`) pour que la zone cliquable s'arrête au
+   logo au lieu de courir sur toute la largeur. */
+/* Le pied du bandeau : deux filets qui s'effacent vers l'extérieur, le logo au
+   milieu. Seul et centré, il avait l'air d'une pastille tombée là ; encadré, il
+   ferme le bandeau comme un cul-de-lampe ferme une page. Filets courts et
+   dégradés plutôt qu'une règle pleine d'un bord à l'autre : sous des réglages
+   déjà chargés, un trait franc de plus aurait pesé. */
+.play-header-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 2px;
+}
+
+.play-header-foot::before,
+.play-header-foot::after {
+  content: "";
+  flex: 1;
+  max-width: 110px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--border));
+}
+
+.play-header-foot::after {
+  background: linear-gradient(to left, transparent, var(--border));
+}
+
+.play-header-home {
+  display: inline-flex;
+  border-radius: 50%;
+  /* Le rembourrage porte la cible tactile à 48 px alors que la pastille n'en
+     montre que 36 : un bouton sans mot doit rester facile à viser au pouce. */
+  padding: 6px;
+}
+
+/* Les deux masques, comme dans le hero de l'accueil. Pastille de la MÊME taille
+   que le sceau de la page (donc 36 px, et 30 px sous 800 px comme lui) : le
+   bandeau ne porte que ces deux ronds, une taille chacun se lisait comme un
+   décalage. Le dessin, lui, est poussé plus près du bord de sa pastille que
+   dans un sceau de page (26 px au lieu de 20) : à 20 px les deux visages se
+   touchent, et le logo n'est plus qu'une tache. */
+.play-header-home-mark {
+  font-size: 26px;
+  /* Filet transparent posé dès le repos : le survol ne fait que le colorer,
+     donc la pastille ne se réduit pas d'un pixel au passage de la souris. */
+  border: 1px solid transparent;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+/* Survol : EXACTEMENT celui du bouton de dépôt de l'Avancement et des cartes
+   de l'accueil, ses trois effets compris (filet à la couleur de marque,
+   `--shadow-hover`, un pixel vers le haut). Un seul survol pour tout ce qui se
+   clique sur le site, plutôt qu'une trouvaille par bouton. Deux pistes
+   écartées : inverser la pastille (fond vin, dessin sable) noie les masques,
+   qui peignent leurs deux visages en `--page-mark-soft`, et il ne reste qu'une
+   tache pâle ; l'agrandir la redessine à une taille qu'elle ne supporte pas.
+   Le filet prend `--header-accent` et non `--accent` (le vin du bouton de
+   dépôt, à la même valeur) : le second est re-skinné en violet par l'éditeur,
+   et le bandeau partagé doit rendre pareil sur les quatre pages.
+   `--shadow-hover` et pas `--shadow`, pour la même raison : l'éditeur met le
+   second à `none`. */
+.play-header-home:hover .play-header-home-mark {
+  border-color: var(--header-accent);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-1px);
+}
+
+/* Même géométrie de bague que `--focus-ring` (2 px, décalée de 2 px), mais
+   bâtie sur `--header-accent` : la bague partagée dérive de `--accent`, que
+   l'éditeur re-skinne en violet, et le bandeau doit rendre pareil partout. */
+.play-header-home:focus-visible {
+  outline: 2px solid var(--header-accent);
+  outline-offset: 2px;
 }
 
 .selects-row {
@@ -711,13 +792,24 @@ textarea:focus {
    accident (`.home-brand-mark` a la même spécificité et arrive après dans la
    cascade, mais seulement parce que main.jsx importe theme.css avant home.css :
    inverser ces deux imports rapetissait la marque). Aucun autre porteur de
-   sceau n'est dans un bandeau, donc le rendu est inchangé. */
+   sceau n'est dans un bandeau, donc le rendu est inchangé.
+   La pastille du retour à l'accueil, elle, est bien dans un bandeau et suit
+   volontairement la règle : elle doit rester de la taille EXACTE du sceau de la
+   page, seul autre rond du bandeau. Seul son dessin garde l'avance qu'il a en
+   grand (les masques remplissent environ trois quarts de la pastille, un sceau
+   de page un peu plus de la moitié) : la ligne suivante la lui rend, sinon la
+   règle ci-dessus le ramènerait à 17 px, taille à laquelle les deux visages se
+   touchent. */
 @media (max-width: 800px) {
   .page-header .page-mark,
   .play-header .page-mark {
     width: 30px;
     height: 30px;
     font-size: 17px;
+  }
+
+  .play-header .play-header-home-mark {
+    font-size: 22px;
   }
 }
 

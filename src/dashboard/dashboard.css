@@ -264,15 +264,31 @@
   vertical-align: middle;
 }
 
-/* Les deux colonnes d'icônes se serrent autour de leur dessin et le centrent
-   (en-tête compris, sinon la pastille flotte sous un libellé plus large), le
-   détail prend tout le reste. */
+/* Les trois premières colonnes se serrent autour de leur contenu, la dernière
+   ramasse toute la largeur restante. Le `width: 100%` du détail est ce qui tient
+   les trois autres ensemble : sans lui, la mise en page automatique répartit le
+   surplus au prorata du contenu, donc la date (la plus large des trois) en prend
+   une grosse part et le statut s'en va flotter loin d'elle.
+   Le `:not` écarte la ligne « aucun dépôt », seule cellule à traverser les
+   quatre colonnes : elle n'est pas la première d'une rangée normale et doit
+   pouvoir s'envelopper. */
+.dash-journal-table th:nth-child(-n + 3),
+.dash-journal-table td:nth-child(-n + 3):not(.dash-journal-empty) {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.dash-journal-table th:nth-child(4),
+.dash-journal-table td:nth-child(4) {
+  width: 100%;
+}
+
+/* Les deux colonnes d'icônes centrent leur dessin, en-tête compris (sinon la
+   pastille flotte sous un libellé plus large). */
 .dash-journal-table th:nth-child(2),
 .dash-journal-table th:nth-child(3),
 .dash-journal-table td:nth-child(2),
 .dash-journal-table td:nth-child(3) {
-  width: 1%;
-  white-space: nowrap;
   text-align: center;
 }
 
@@ -342,9 +358,14 @@
   margin: 8px 0 0;
 }
 
+/* Le nom de fichier est suivi d'un complément (nombre de répliques ou motif du
+   refus) : la seule espace du JSX les collait, la mono étant plus serrée que le
+   texte autour. La marge s'ajoute à cette espace et ne la remplace pas, sinon
+   le retour à la ligne entre les deux ne serait plus permis. */
 .dash-journal-detail code {
   font-size: 12.5px;
   color: var(--ink);
+  margin-inline-end: 0.4em;
 }
 
 @media (max-width: 560px) {

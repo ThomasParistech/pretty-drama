@@ -149,7 +149,17 @@ function Dashboard({ manifest }) {
 
   return (
     <>
-      <PlayHeader page="dashboard" title={manifest.title || "Pièce sans titre"} />
+      {/* Une phrase et rien d'autre : la page n'a aucun réglage, mais son
+          bandeau se déplie comme les trois autres (il porte le retour à
+          l'accueil), et déplier pour ne trouver qu'un lien faisait vide.
+          Elle dit à quoi sert la page, jamais comment lire la grille : ça,
+          c'est le rôle de `.dash-legend`, juste sous le tableau. */}
+      <PlayHeader page="dashboard" title={manifest.title || "Pièce sans titre"}>
+        <p className="header-hint">
+          Où en est chaque personnage, scène par scène ; c'est aussi d'ici que se déposent les voix
+          des acteurs et le script de la pièce.
+        </p>
+      </PlayHeader>
       <div className="container">
         <UploadLinks />
 
