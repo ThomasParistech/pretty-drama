@@ -41,6 +41,12 @@ concurrency:
 jobs:
   process:
     runs-on: ubuntu-latest
+    # Ce job ne fait qu'écrire dans le dépôt : il n'a rien à voir avec Pages.
+    # Les permissions `pages`/`id-token` du bloc du haut n'existent que pour
+    # pouvoir les déléguer au job `site` (un workflow appelé ne peut jamais
+    # obtenir plus que son appelant), pas pour être servies ici.
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4

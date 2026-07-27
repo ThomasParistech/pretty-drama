@@ -16,8 +16,14 @@
   --accent: #7a5cc0;
   --accent-soft: #f2eefb;
   --border: #e8e1d3;
+  /* « Rail » ne veut pas d'ombre sur ses propres surfaces : les répliques sont
+     des lignes séparées d'un filet, pas des cartes posées. Le bandeau partagé,
+     lui, garde la sienne (--header-shadow, token réservé de theme.css) : elle
+     n'est pas décorative, elle détache une barre collante du texte qui défile
+     dessous, et un re-skin ne doit rien changer à un composant partagé. */
   --shadow: none;
-  /* Seule ombre conservée du thème partagé : le panneau des répliques. */
+  /* Seule ombre conservée du thème partagé pour une surface de la page : le
+     panneau des répliques. */
   --ed-panel-shadow: 0 2px 8px rgba(43, 36, 32, 0.08);
   --font-ui: "IBM Plex Sans", system-ui, sans-serif;
   --font-serif: "Spectral", Georgia, serif;
@@ -41,9 +47,12 @@
 }
 
 /* Le re-skin « Rail » couvre aussi le bouton destructif (modal de
-   suppression de personnage) : sans quoi il hérite du violet accent. */
+   suppression de personnage) : sans quoi il hérite du violet accent. Le filet
+   aussi, sinon il reste violet (theme.css le tire de --accent-soft, que ce
+   :root re-skinne) autour d'un texte devenu terre cuite. */
 .btn.danger {
   color: var(--ed-danger);
+  border-color: color-mix(in srgb, var(--ed-danger) 25%, #fff);
 }
 
 h1,
@@ -83,14 +92,19 @@ h3 {
   white-space: pre-wrap;
 }
 
-/* Ici le bouton destructif EST l'action principale (l'autre est « Annuler ») :
-   il s'affirme plus que le `.btn.danger` en retrait du modal personnage, où il
-   n'est qu'un des deux choix possibles. */
-.confirm-modal .btn.danger {
+/* Quand le bouton destructif EST l'action principale (le seul autre choix est
+   « Annuler »), il s'affirme. Il reste en retrait dans le modal personnage, où
+   il n'est qu'un des deux gestes possibles face à « Réassigner ».
+   Le test porte sur la présence d'un `.btn.primary` et pas sur une classe posée
+   par l'appelant : ConfirmModal ne rend ce bouton que si on lui donne un
+   `primaryLabel`, donc la question « y a-t-il une sortie sûre ? » est déjà
+   écrite dans le DOM. Un navigateur sans `:has()` retombe simplement sur le
+   `.btn.danger` du thème, jamais sur du cassé. */
+.confirm-modal:not(:has(.btn.primary)) .btn.danger {
   border-color: var(--ed-danger);
 }
 
-.confirm-modal .btn.danger:hover {
+.confirm-modal:not(:has(.btn.primary)) .btn.danger:hover {
   background: var(--ed-danger);
   color: #fff;
 }
@@ -181,7 +195,7 @@ h3 {
   gap: 7px;
   background: #fff;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 9px;
   box-shadow: 0 8px 24px rgba(43, 43, 40, 0.12);
 }
@@ -260,12 +274,6 @@ h3 {
   border-bottom: 1px solid var(--border);
   border-radius: 0;
   padding: 2px;
-}
-
-.editor-tip {
-  font-size: 13px;
-  color: var(--ink-soft);
-  margin: 0;
 }
 
 .act-header {
@@ -571,7 +579,9 @@ h3 {
      réplique). */
   .drag-handle,
   .chip-delete,
-  .line-delete {
+  .line-delete,
+  .btn.icon,
+  .history-group .btn {
     min-width: 40px;
     min-height: 40px;
     display: inline-flex;

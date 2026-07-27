@@ -74,7 +74,7 @@
 
 .home-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 18px rgba(43, 36, 32, 0.16);
+  box-shadow: var(--shadow-hover);
 }
 
 /* Sceau agrandi en vignette de carte (le bandeau, lui, le garde à 36 px). */

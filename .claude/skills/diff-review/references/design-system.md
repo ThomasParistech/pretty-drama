@@ -60,8 +60,8 @@ du repli du bandeau, neutralisée par le bloc `prefers-reduced-motion`).
 
 | Élément | Source | Pages |
 | --- | --- | --- |
-| Bandeau de marque (lien accueil) | `src/shared/PageHeader.jsx` | toutes sauf accueil |
-| Bandeau de pièce (marque + label + titre, repliable) | `src/shared/PlayHeader.jsx` — les sélecteurs acte/scène sont fournis par chaque page en `children` (`.selects-row`), car leurs variantes sont réelles : `disabled` pendant l'enregistrement, compteurs « à enregistrer », boutons « + Scène »/« + Acte » côté éditeur. **Sans children** (cas de l'Avancement, qui n'a aucun réglage) le titre n'est plus un bouton et le chevron disparaît (`.play-header-title-plain`) | Répétition, Enregistrement, Édition, Avancement |
+| Bandeau de marque (sceau + marque + libellé de page) | `src/shared/PageHeader.jsx` — plus monté directement par aucune page : il ne sert que d'en-tête aux écrans de `PageState`, qui n'ont pas encore le manifest et donc pas de titre de pièce à afficher | via `PageState` uniquement |
+| Bandeau de pièce (sceau + marque + titre de la pièce, repliable ; **pas** de libellé de page en toutes lettres, il encombrait la barre sur mobile : c'est le sceau qui dit la page) | `src/shared/PlayHeader.jsx` — les sélecteurs acte/scène sont fournis par chaque page en `children` (`.selects-row`), car leurs variantes sont réelles : `disabled` pendant l'enregistrement, compteurs « à enregistrer », boutons « + Scène »/« + Acte » côté éditeur. **Sans children** (cas de l'Avancement, qui n'a aucun réglage) le titre n'est plus un bouton et le chevron disparaît (`.play-header-title-plain`) | Répétition, Enregistrement, Édition, Avancement |
 | Barre de contrôle basse `.controls` + `.ctrl-btn` | CSS dans `theme.css` | Répétition, Enregistrement |
 | Slider de progression indexé | `src/shared/ProgressBar.jsx` | Répétition, Enregistrement |
 | Cartes de dialogue `.dialogue-card` (+ palette « mes répliques » `.mine` et bordure `.active` communes) | `theme.css` — les pages posent `.mine` à côté de leur classe sémantique et ne gardent que leurs vrais écarts | Répétition, Enregistrement |

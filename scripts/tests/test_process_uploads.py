@@ -256,6 +256,71 @@ class TestValidateScript(unittest.TestCase):
             validate_script(b"\xff\xfe{}", self.PLAY)
 
 
+class TestProcessZip(unittest.TestCase):
+    """Le merge est TOUT-OU-RIEN par ZIP : une prise qui refuse de se convertir
+    ne doit laisser ni mp3 publié ni entrée dans clips.json pour les prises qui
+    l'ont précédée dans le même ZIP. C'est ce qui garantit qu'un acteur ne se
+    retrouve jamais avec la moitié de ses répliques en ligne.
+
+    ffmpeg n'est pas installé dans la CI de build.yml : `transcode` est donc
+    remplacé, ce qui teste exactement la partie qui nous intéresse (l'ordre des
+    deux phases), sans dépendre du convertisseur."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.clips = Path(self.tmp.name) / "clips"
+        self.clips.mkdir()
+        self.zip_path = Path(self.tmp.name) / "voix-lea.zip"
+        with zipfile.ZipFile(self.zip_path, "w") as zf:
+            zf.writestr("manifest.json", json.dumps({"aaaa-1111": "Silence !", "bbbb-2222": "J'arrive."}))
+            zf.writestr("aaaa-1111.webm", b"x")
+            zf.writestr("bbbb-2222.webm", b"x")
+
+    def published(self):
+        return sorted(p.name for p in self.clips.iterdir())
+
+    def test_every_clip_is_published_when_all_convert(self):
+        def fake_transcode(source, dest):
+            dest.write_bytes(b"mp3")
+
+        clips_index = {"vieux-id": "déjà là"}
+        with mock.patch.multiple(process_uploads, CLIPS_DIR=self.clips, transcode=fake_transcode):
+            self.assertEqual(process_uploads.process_zip(self.zip_path, clips_index), 2)
+        self.assertEqual(self.published(), ["aaaa-1111.mp3", "bbbb-2222.mp3"])
+        # Texte BRUT au moment de l'enregistrement (la normalisation n'a lieu
+        # que dans build_manifest), et les clips déjà là sont conservés.
+        self.assertEqual(
+            clips_index, {"vieux-id": "déjà là", "aaaa-1111": "Silence !", "bbbb-2222": "J'arrive."}
+        )
+
+    def test_one_failed_conversion_publishes_nothing_at_all(self):
+        calls = []
+
+        def failing_transcode(source, dest):
+            calls.append(source.name)
+            if len(calls) == 1:
+                dest.write_bytes(b"mp3")
+                return
+            raise UploadError("la conversion audio a échoué")
+
+        clips_index = {"vieux-id": "déjà là"}
+        with mock.patch.multiple(process_uploads, CLIPS_DIR=self.clips, transcode=failing_transcode):
+            with self.assertRaises(UploadError):
+                process_uploads.process_zip(self.zip_path, clips_index)
+        # Ni la prise convertie avant l'échec ni la suivante : rien n'est publié,
+        # et l'index n'a pas bougé.
+        self.assertEqual(self.published(), [])
+        self.assertEqual(clips_index, {"vieux-id": "déjà là"})
+
+    def test_a_corrupted_archive_is_an_upload_error(self):
+        broken = Path(self.tmp.name) / "abime.zip"
+        broken.write_bytes(b"pas un zip du tout")
+        with mock.patch.object(process_uploads, "CLIPS_DIR", self.clips):
+            with self.assertRaises(UploadError):
+                process_uploads.process_zip(broken, {})
+
+
 class TestMain(unittest.TestCase):
     """Le script tel que le workflow l'appelle, sur un vrai dossier `uploads/`.
 

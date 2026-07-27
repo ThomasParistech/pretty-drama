@@ -61,11 +61,12 @@ export default React.memo(function LineRow({
       <button
         className="drag-handle"
         title="Glisser pour déplacer"
+        aria-label="Glisser pour déplacer"
         style={{ color: color ?? "var(--ed-ghost)" }}
         {...attributes}
         {...listeners}
       >
-        ⠿
+        <span aria-hidden="true">⠿</span>
       </button>
 
       <select
@@ -115,6 +116,7 @@ export default React.memo(function LineRow({
       <button
         className="btn icon small line-delete"
         title="Supprimer cette réplique"
+        aria-label="Supprimer cette réplique"
         onClick={() => {
           if (line.text.trim() === "") {
             dispatch({ type: "DELETE_LINE", actIndex, sceneIndex, lineId: line.id });
@@ -123,7 +125,7 @@ export default React.memo(function LineRow({
           }
         }}
       >
-        ✕
+        <span aria-hidden="true">✕</span>
       </button>
 
       {confirming && (

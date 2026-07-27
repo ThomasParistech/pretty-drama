@@ -24,13 +24,13 @@
 
 .dash-upload:hover {
   border-color: var(--accent);
-  box-shadow: 0 4px 12px rgba(43, 36, 32, 0.12);
+  box-shadow: var(--shadow-hover);
   transform: translateY(-1px);
 }
 
 .dash-upload:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Les sceaux des deux pages dont le dépôt reçoit le travail (micro pour les voix
@@ -217,9 +217,8 @@
 }
 
 .dash-journal h2 {
-  font-family: var(--font-serif);
+  /* font-family et font-weight viennent de la règle h1,h2,h3 de theme.css. */
   font-size: 18px;
-  font-weight: 700;
   margin: 0 0 12px;
 }
 

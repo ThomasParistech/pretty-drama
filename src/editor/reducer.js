@@ -120,10 +120,6 @@ export function allLines(script) {
   return script.acts.flatMap((a) => a.scenes.flatMap((s) => s.lines));
 }
 
-export function countLinesOfCharacter(script, characterId) {
-  return allLines(script).filter((l) => l.characterId === characterId).length;
-}
-
 // Character of a line inserted after index `idx` in `scene`: the SAME
 // character as the line it follows (Enter continues the current speaker);
 // falls back to the play's first character.

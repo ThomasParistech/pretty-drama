@@ -20,6 +20,15 @@
   cursor: pointer;
 }
 
+/* Ce sont les commandes principales de la page sur téléphone (« Muet »,
+   « Cacher mon texte »…) : une case de 16 px sur une ligne de texte fait une
+   cible d'environ 21 px de haut. On agrandit la zone du label, pas la case. */
+@media (max-width: 800px) {
+  .checks-row label {
+    min-height: 40px;
+  }
+}
+
 /* Cases à cocher aux couleurs du thème (rouge/doré) plutôt que le bleu
    système. */
 .checks-row input[type="checkbox"] {
@@ -35,11 +44,8 @@
   cursor: pointer;
 }
 
-/* Palette « mes répliques » (.mine) et bordure active : dans theme.css. */
-
-.dialogue-card.active:not(.mine) {
-  background: #fffdf8;
-}
+/* Palette « mes répliques » (.mine), bordure active et teinte de la carte
+   courante : dans theme.css, communes aux deux pages. */
 
 .tts-hint {
   font-size: 11.5px;

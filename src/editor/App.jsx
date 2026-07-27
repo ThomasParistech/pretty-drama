@@ -4,6 +4,7 @@ import { fetchScript, downloadBlob, HttpError } from "../shared/data.js";
 import { EMPTY_SCRIPT, allLines, newId } from "./reducer.js";
 import { historyReducer, initHistory } from "./history.js";
 import PlayHeader from "../shared/PlayHeader.jsx";
+import { PAGES } from "../shared/pages.js";
 import { DownloadIcon, UndoIcon, RedoIcon, WarnIcon } from "../shared/icons.jsx";
 import CharacterChips from "./CharacterPanel.jsx";
 import SceneEditor from "./SceneEditor.jsx";
@@ -84,8 +85,8 @@ export default function App() {
             "Le script publié existe mais n'a pas pu être lu (fichier abîmé ou problème réseau). " +
               "Pour ne pas risquer d'écraser votre pièce, l'éditeur est désactivé. " +
               "Rechargez la page pour réessayer ; si l'erreur persiste, le fichier data/script.json " +
-              "du dépôt est probablement abîmé ; restaurez sa version précédente depuis l'historique GitHub " +
-              "(History → bouton « ... » → View file → Raw) avant de continuer."
+              "du dépôt est probablement abîmé ; sur GitHub, ouvrez l'historique du fichier, choisissez une " +
+              "version antérieure et affichez-la en version brute, puis redéposez-la avant de continuer."
           );
         }
       })
@@ -288,12 +289,12 @@ export default function App() {
 
         <p className="header-hint editor-header-hint">
           Quand vous avez terminé : cliquez sur <strong>« Télécharger le script »</strong>, puis
-          rendez-vous sur la page <a href="./dashboard.html">Avancement</a>, où le bouton de dépôt{" "}
+          rendez-vous sur la page <a href={PAGES.dashboard.href}>{PAGES.dashboard.label}</a>, où le bouton de dépôt{" "}
           <strong>« Déposer des voix ou le script de la pièce »</strong> reçoit le fichier{" "}
           <code>script.json</code> comme les voix des acteurs.
         </p>
 
-        <p className="editor-tip">
+        <p className="header-hint">
           Astuce : dans une réplique, la touche <strong>Entrée</strong> crée la réplique suivante
           (<strong>Maj + Entrée</strong> pour un retour à la ligne).
         </p>
@@ -310,8 +311,13 @@ export default function App() {
                 onChange={(title) => dispatch({ type: "RENAME_ACT", actIndex: safeActIndex, title })}
               />
               {script.acts.length > 1 && (
-                <button className="btn icon small" title="Supprimer cet acte" onClick={deleteAct}>
-                  ✕
+                <button
+                  className="btn icon small"
+                  title="Supprimer cet acte"
+                  aria-label="Supprimer cet acte"
+                  onClick={deleteAct}
+                >
+                  <span aria-hidden="true">✕</span>
                 </button>
               )}
             </div>
@@ -379,44 +385,42 @@ export default function App() {
 
 // Guard against ghost data: a character that still owns lines cannot be
 // silently removed — the user chooses to reassign or delete those lines.
+//
+// Bâti sur le ConfirmModal partagé, comme les confirmations de réplique, de
+// scène et d'acte : il réimplémentait la même boîte à la main, et se
+// distinguait donc en silence sur tout ce que ce composant apporte (Escape,
+// focus initial, rendu en portail, role="dialog"). La réassignation est la
+// sortie sûre, donc le `primaryLabel` ; supprimer les répliques est le geste
+// destructif. Sans autre personnage à qui les donner, il ne reste que lui.
 function DeleteCharacterModal({ request, characters, onCancel, onConfirm }) {
   const others = characters.filter((c) => c.id !== request.character.id);
   const [reassignTo, setReassignTo] = useState(others[0]?.id ?? null);
 
   return (
-    <div className="modal-backdrop" onClick={onCancel}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3>Supprimer « {request.character.name} » ?</h3>
-        <p>
-          Ce personnage a encore <strong>{request.count} réplique{request.count > 1 ? "s" : ""}</strong>.
-          Que faut-il en faire ?
-        </p>
-        {others.length > 0 && (
-          <label className="reassign-row">
-            Réassigner à&nbsp;:
-            <select value={reassignTo ?? ""} onChange={(e) => setReassignTo(e.target.value)}>
-              {others.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        <div className="modal-actions">
-          <button className="btn" onClick={onCancel}>
-            Annuler
-          </button>
-          <button className="btn danger" onClick={() => onConfirm("deleteLines")}>
-            Supprimer ses répliques
-          </button>
-          {others.length > 0 && (
-            <button className="btn primary" onClick={() => onConfirm("reassign", reassignTo)}>
-              Réassigner
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    <ConfirmModal
+      title={`Supprimer « ${request.character.name} » ?`}
+      confirmLabel="Supprimer ses répliques"
+      onConfirm={() => onConfirm("deleteLines")}
+      primaryLabel={others.length > 0 ? "Réassigner" : undefined}
+      onPrimary={() => onConfirm("reassign", reassignTo)}
+      onCancel={onCancel}
+    >
+      <p>
+        Ce personnage a encore <strong>{request.count} réplique{request.count > 1 ? "s" : ""}</strong>.
+        Que faut-il en faire ?
+      </p>
+      {others.length > 0 && (
+        <label className="reassign-row">
+          Réassigner à&nbsp;:
+          <select value={reassignTo ?? ""} onChange={(e) => setReassignTo(e.target.value)}>
+            {others.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+    </ConfirmModal>
   );
 }

@@ -80,6 +80,7 @@ function CharacterChip({ character, lineCount, onRename, onSetHue, onDelete }) {
       <button
         className="character-swatch"
         title="Changer la couleur"
+        aria-label={`Changer la couleur de ${character.name}`}
         style={{ background: hueColor(character.hue) }}
         onClick={() => setPickerOpen((o) => !o)}
       />
@@ -126,8 +127,13 @@ function CharacterChip({ character, lineCount, onRename, onSetHue, onDelete }) {
         </button>
       )}
       <span className="character-count">{lineCount}</span>
-      <button className="chip-delete" title="Supprimer ce personnage" onClick={onDelete}>
-        ✕
+      <button
+        className="chip-delete"
+        title="Supprimer ce personnage"
+        aria-label={`Supprimer ${character.name}`}
+        onClick={onDelete}
+      >
+        <span aria-hidden="true">✕</span>
       </button>
     </span>
   );

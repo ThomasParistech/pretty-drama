@@ -4,6 +4,7 @@
   --paper: #faf6ef;
   --paper-dark: #f1eadd;
   --card: #ffffff;
+  --card-active: #fffdf8; /* carte de dialogue courante : un souffle de crème */
   --ink: #2b2420;
   --ink-soft: #6b5f56;
   --accent: #8b2635;
@@ -17,13 +18,28 @@
   --warn-soft: #fdeede;
   --radius: 10px;
   --shadow: 0 2px 8px rgba(43, 36, 32, 0.08);
+  /* Survol d'une carte cliquable (cartes de l'accueil, bouton de dépôt de
+     l'Avancement) : le même léger soulèvement partout, il était écrit deux
+     fois avec deux valeurs voisines. */
+  --shadow-hover: 0 6px 18px rgba(43, 36, 32, 0.16);
+  /* Bague de focus des éléments qui n'en ont pas une par défaut (slider,
+     cartes, liens-cartes) : une seule source pour le triple 2px/accent/2px,
+     qui était recopié dans trois CSS de page. */
+  --focus-ring: 2px solid var(--accent);
+  --focus-ring-offset: 2px;
   --font-ui: "Inter", system-ui, sans-serif;
   --font-serif: "Cormorant Garamond", Georgia, serif;
   /* Bandeau partagé (PlayHeader/PageHeader) : ces tokens ne doivent JAMAIS
      être re-skinnés par une page — la marque et le titre rendent
-     identiquement sur toutes les pages, re-skin « Rail » compris. */
+     identiquement sur toutes les pages, re-skin « Rail » compris.
+     --header-shadow est réservé pour la même raison que les deux autres : le
+     bandeau est collant, son ombre est ce qui le détache du contenu qui défile
+     dessous. Il tirait cette ombre de --shadow, que le :root local de
+     l'éditeur écrase en `none` pour ses propres panneaux : le bandeau y
+     rendait donc à plat, seul de tout le site. */
   --header-accent: #8b2635;
   --header-serif: "Cormorant Garamond", Georgia, serif;
+  --header-shadow: 0 2px 8px rgba(43, 36, 32, 0.08);
   /* Repli du bandeau : sortie franche puis freinage long, pour que le contenu
      semble se poser plutôt que s'arrêter net. */
   --ease-header: cubic-bezier(0.22, 0.61, 0.24, 1);
@@ -245,7 +261,7 @@ textarea:focus {
   z-index: 60;
   background: var(--card);
   border-bottom: 1px solid var(--border);
-  box-shadow: var(--shadow);
+  box-shadow: var(--header-shadow);
 }
 
 .play-header-row {
@@ -437,8 +453,8 @@ textarea:focus {
 }
 
 .progress-container:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .progress-fill {
@@ -532,8 +548,8 @@ textarea:focus {
 /* ---- Dialogue cards (shared look between Répétition & Enregistrement) ---- */
 
 .dialogue-card:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .dialogue-card {
@@ -561,6 +577,15 @@ textarea:focus {
      le même bordeaux figé en rgba : un composant partagé ne fixe pas une
      couleur qu'une page peut re-skinner. */
   box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* La carte courante s'éclaircit d'un souffle sur le blanc des autres : la
+   bordure seule se perd dans une longue liste. Commun aux deux pages (la
+   Répétition l'avait pour elle seule, en dur, et l'Enregistrement s'en passait).
+   `:not(.mine)` et pas un simple `.active` : sur mes propres répliques la
+   palette rose/dorée doit rester, et `.active` la suit dans la cascade. */
+.dialogue-card.active:not(.mine) {
+  background: var(--card-active);
 }
 
 .dialogue-meta {

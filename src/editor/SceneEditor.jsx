@@ -61,6 +61,7 @@ export default React.memo(function SceneEditor({
           <button
             className="btn icon small"
             title="Supprimer cette scène"
+            aria-label="Supprimer cette scène"
             onClick={() => {
               if (scene.lines.length === 0) {
                 dispatch({ type: "DELETE_SCENE", actIndex, sceneIndex });
@@ -69,7 +70,7 @@ export default React.memo(function SceneEditor({
               }
             }}
           >
-            ✕
+            <span aria-hidden="true">✕</span>
           </button>
         )}
       </div>
