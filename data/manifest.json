@@ -1,6 +1,17 @@
 {
   "title": "Transport de Femmes",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-07-27T20:14:56Z",
+      "files": [
+        {
+          "file": "voix-serge (4).zip",
+          "kind": "voix",
+          "clips": 1
+        }
+      ]
+    }
+  ],
   "characters": [
     {
       "id": "ecfd3c65-fccb-4c87-9fd2-bd7bf486d6d2",
@@ -245,8 +256,8 @@
               "characterId": "8c5ae733-a9ae-4824-b7c6-458ab41aceed",
               "character": "Serge",
               "text": "Si vous avez quelque chose à demander c’est à lui. Il s’appelle Tim.",
-              "status": "manquant",
-              "clip": null,
+              "status": "ok",
+              "clip": "clips/81634e10-f9d8-4f86-91fc-a0bc29716c43.mp3",
               "act": "Acte I",
               "scene": "Scène 1"
             },
@@ -11706,8 +11717,8 @@
       "characterId": "8c5ae733-a9ae-4824-b7c6-458ab41aceed",
       "character": "Serge",
       "text": "Si vous avez quelque chose à demander c’est à lui. Il s’appelle Tim.",
-      "status": "manquant",
-      "clip": null,
+      "status": "ok",
+      "clip": "clips/81634e10-f9d8-4f86-91fc-a0bc29716c43.mp3",
       "act": "Acte I",
       "scene": "Scène 1"
     },
