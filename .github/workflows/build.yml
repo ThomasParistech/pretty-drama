@@ -42,18 +42,23 @@ jobs:
       # cela, checkout prendrait ce SHA d'origine et publierait un site sans les
       # voix qu'on vient de traiter.
       - name: Checkout (head of the branch, not the triggering SHA)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref_name }}
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          # Node 24 (LTS Krypton) : Node 20 est en fin de vie depuis avril 2026.
+          # Le `npm ci` qui suit tourne donc avec npm 11, qui n'exécute plus les
+          # scripts d'installation sans accord explicite et saute le postinstall
+          # d'esbuild : sans effet, le binaire vient du paquet de plateforme
+          # `@esbuild/linux-x64` et `vite build` s'en contente (vérifié).
+          node-version: 24
           cache: npm
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -83,18 +88,23 @@ jobs:
           cp -r clips dist/clips
 
       - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
         with:
           # Auto-enables Pages (source: GitHub Actions) on first run when the
           # token has the required permissions; otherwise the respo enables it
           # once in Settings -> Pages.
           enablement: true
 
+      # Depuis la v4 cette action EXCLUT les fichiers cachés de l'artefact (il
+      # existe un `include-hidden-files` pour les rattraper). Sans effet ici, et
+      # à garder ainsi : rien de ce que le site sert ne commence par un point.
+      # Le seul dotfile qui arrive dans dist/ est le clips/.gitkeep recopié
+      # au-dessus, qui n'a aucune raison d'être publié.
       - name: Upload site artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
       - name: Deploy to GitHub Pages
         id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

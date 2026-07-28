@@ -56,8 +56,8 @@ virgule, parenthèses ou une phrase de plus.
     journal, plus les **contrats inter-fichiers** (`test_contracts.py`, voir
     plus bas). Un seul test :
     `python3 -m unittest scripts.tests.test_normalize.TestNormalizeSharedCases.test_idempotent`.
-  - JS, `npm test` = `node --test src/` : la logique **pure** du front, celle
-    qui ne se relit pas à l'œil. `reducer.test.js` (réparation d'un
+  - JS, `npm test` = `node --test` **sans argument** : la logique **pure** du
+    front, celle qui ne se relit pas à l'œil. `reducer.test.js` (réparation d'un
     `script.json` douteux, ids jamais recyclés, qui parle après une
     suppression), `history.test.js` (fusion des frappes, « Modifications non
     téléchargées »), `data.test.js` (URL de dépôt, slugs), `useRecorder.test.js`
@@ -66,6 +66,18 @@ virgule, parenthèses ou une phrase de plus.
     modules sont du JS pur sans React ni DOM, et un fork de troupe ne doit pas
     payer un `npm ci` plus lourd pour ça. Pas de test de composant React, donc
     pas de rendu : ce qui touche au DOM se vérifie toujours à la main.
+    **Pas d'argument de chemin**, et c'est voulu : `node --test src/` marchait
+    sur Node 20 mais Node 22+ traite un positionnel comme un fichier de test, pas
+    comme un dossier à parcourir (« Cannot find module .../src »). Sans argument,
+    Node applique ses motifs par défaut (`**/*.test.js`, `node_modules` exclu) et
+    trouve exactement les mêmes fichiers, de Node 20 à Node 24. Contrepartie
+    assumée : le périmètre n'est plus `src/` mais tout le dépôt, donc un futur
+    `test-*.js`, `*-test.js` ou un dossier nommé `test/` (au singulier, motif
+    `**/test/**`) serait exécuté sans qu'on l'ait demandé ; `scripts/tests/` y
+    échappe parce qu'il est au pluriel. La piste écartée est le glob explicite
+    `node --test 'src/**/*.test.js'` : correct sur Node 22+ seulement, et ses
+    guillemets simples ne sont pas des guillemets pour le `cmd.exe` que npm
+    utilise sous Windows.
 
   Build de prod à tester à la main (l'Action copie `data/` et `clips/` dans
   `dist/`) : `npm run build && cp -r data clips dist/ && npm run preview`.
