@@ -14,6 +14,10 @@ function serveRepoData() {
   const types = {
     ".json": "application/json; charset=utf-8",
     ".mp3": "audio/mpeg",
+    // data/script.pdf, que le bouton de l'Avancement télécharge : gitignoré,
+    // donc absent tant qu'on n'a pas lancé build_script_pdf.py à la main, mais
+    // servi comme en prod dès qu'il est là.
+    ".pdf": "application/pdf",
   };
   return {
     name: "serve-repo-data",
@@ -39,6 +43,13 @@ function serveRepoData() {
         }
         res.setHeader("Content-Type", types[extname(file)] || "application/octet-stream");
         res.setHeader("Cache-Control", "no-store");
+        // L'Avancement sonde `data/script.pdf` en HEAD avant d'afficher son
+        // bouton de téléchargement : il ne lit que le code de retour, et une
+        // réponse HEAD n'a pas de corps.
+        if (req.method === "HEAD") {
+          res.end();
+          return;
+        }
         fs.createReadStream(file).pipe(res);
       });
     },

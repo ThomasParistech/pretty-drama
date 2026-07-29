@@ -1,9 +1,71 @@
-/* Le raccourci de dépôt du respo : une seule carte (un seul dossier `uploads/`
-   pour les deux sortes de fichiers), centrée en tête de page. */
-.dash-uploads {
+/* Les deux gestes de la page, empilés et centrés en tête : déposer ce qu'on
+   reçoit, emporter le script imprimable. Ils ne se ressemblent PAS, et c'est
+   voulu : le dépôt est une carte blanche (une destination, on part sur GitHub),
+   le téléchargement est le bouton plein du site. Ils ont donc chacun leur
+   largeur, d'où `align-items: center` et non `stretch` : les aligner sur la
+   même largeur laisserait le bouton étiré sur toute la carte, ce qu'aucun
+   autre bouton du site ne fait. */
+.dash-actions {
   display: flex;
-  justify-content: center;
-  margin-bottom: 26px;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: 0 auto 26px;
+}
+
+/* Les DEUX gestes peuvent manquer en même temps : la carte de dépôt hors
+   github.io, le bouton quand le PDF n'a pas été produit (c'est le cas courant en
+   dev). Sans ceci, le bloc vide gardait ses 26 px de marge basse et ouvrait une
+   gouttière au-dessus du tableau, sans rien pour l'expliquer. `:empty` suffit,
+   React ne laisse aucun nœud de texte entre les deux éléments. */
+.dash-actions:empty {
+  display: none;
+}
+
+/* Le PDF prend le bouton de téléchargement du site, `.btn.primary` : le même
+   que le ZIP des prises (Enregistrement) et que le script (Édition). Un
+   téléchargement se présente pareil partout, et l'aplat d'accent le distingue
+   d'emblée de la carte de dépôt juste au-dessus.
+   Ne restent ici que les deux choses que `.btn` ne prévoit pas, faute d'avoir
+   jamais servi sur un <a> : le soulignement que le navigateur pose sur un lien,
+   et le repli du libellé quand la fenêtre se resserre.
+   Le survol vient de `.lift-hover` (theme.css), la classe du geste commun à
+   toutes les surfaces cliquables du site : les deux gestes de la page réagissent
+   donc pareil sous la souris, même s'ils ne se ressemblent pas au repos. Ce qui
+   ne s'y reprend pas, c'est le filet teinté en accent de la carte de dépôt :
+   l'aplat du bouton a déjà sa bordure en accent, il n'y aurait rien à voir. Il
+   garde à la place l'assombrissement de `.btn.primary:hover`, ce que font les
+   boutons de téléchargement partout ailleurs. */
+.dash-script-btn {
+  text-decoration: none;
+  text-align: center;
+  text-wrap: balance;
+  /* `.btn` ne fait glisser que `background` et `border-color`, et une
+     déclaration de `transition` écrase la précédente au lieu de s'y ajouter :
+     c'est donc ici que `transform` et `box-shadow`, ceux de `.lift-hover`,
+     doivent être listés, sinon le soulèvement apparaît d'un coup. */
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+/* La bague partagée, comme la carte de dépôt juste au-dessus : les deux gestes
+   de la page s'annoncent pareil au clavier. Un `.btn` s'en passe partout
+   ailleurs (l'anneau du navigateur suffit sur un aplat), mais celui-ci est un
+   `<a>` posé à côté d'une carte qui, elle, porte la bague : deux anneaux
+   différents dans le même bloc se lisaient comme deux natures de contrôle.
+   L'accent sur le crème de la page reste visible, l'aplat du bouton étant à
+   l'intérieur du décalage. */
+.dash-script-btn:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Comme « (ZIP) » et « (JSON) » sur la carte de dépôt : l'extension est dite,
+   pas criée. Elle garde ici le blanc du libellé, la graisse et la taille
+   suffisent : une opacité sur l'aplat d'accent tomberait sous le seuil de
+   contraste (c'est déjà le motif du choix sur .dash-upload-format). */
+.dash-script-format {
+  font-weight: 400;
+  font-size: 0.86em;
 }
 
 /* Un vrai bouton, largeur de son contenu : pleine largeur, les deux sceaux se
@@ -22,10 +84,10 @@
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 
+/* Le soulèvement et l'ombre viennent de `.lift-hover` (theme.css) ; ne reste ici
+   que ce qui est propre à cette carte, le filet qui passe en accent. */
 .dash-upload:hover {
   border-color: var(--accent);
-  box-shadow: var(--shadow-hover);
-  transform: translateY(-1px);
 }
 
 .dash-upload:focus-visible {

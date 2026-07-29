@@ -1,10 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import PageMark from "../shared/PageMark.jsx";
 import PlayHeader from "../shared/PlayHeader.jsx";
 import PageState from "../shared/PageState.jsx";
 import useManifest from "../shared/useManifest.js";
-import { CheckIcon, CrossIcon, WarnIcon } from "../shared/icons.jsx";
-import { githubUploadUrl } from "../shared/data.js";
+import { CheckIcon, CrossIcon, DownloadIcon, WarnIcon } from "../shared/icons.jsx";
+import { githubUploadUrl, slugify } from "../shared/data.js";
 import "./dashboard.css";
 
 // Pure read of data/manifest.json: recording progress per character, so the
@@ -12,10 +12,10 @@ import "./dashboard.css";
 export default function App() {
   const { manifest, error: loadError } = useManifest();
   if (loadError) {
-    return <PageState page="dashboard" title="Avancement" error={loadError} />;
+    return <PageState page="dashboard" error={loadError} />;
   }
   if (!manifest) {
-    return <PageState page="dashboard" title="Avancement" />;
+    return <PageState page="dashboard" />;
   }
   return <Dashboard manifest={manifest} />;
 }
@@ -157,7 +157,10 @@ function Dashboard({ manifest }) {
           (la carte de dépôt est juste en dessous, elle se lit seule). */}
       <PlayHeader page="dashboard" title={manifest.title || "Pièce sans titre"} />
       <div className="container">
-        <UploadLinks />
+        <div className="dash-actions">
+          <UploadLinks />
+          <ScriptPdfLink title={manifest.title || ""} />
+        </div>
 
         {orphanLines.length > 0 && (
           <div className="dash-orphans card">
@@ -334,23 +337,103 @@ function KindMark({ kind }) {
 function UploadLinks() {
   const url = githubUploadUrl();
   if (!url) return null;
+  // Pas de conteneur ici : les deux cartes de la page partagent `.dash-actions`,
+  // qui les aligne sur la même largeur (cf. dashboard.css).
   return (
-    <div className="dash-uploads">
-      <a className="dash-upload card" href={url} target="_blank" rel="noreferrer">
-        <PageMark page="recorder" className="dash-upload-mark" />
-        <span className="dash-upload-text">
-          Déposer des{" "}
-          <span className="dash-upload-word page-recorder">
-            voix <span className="dash-upload-format">(ZIP)</span>
-          </span>{" "}
-          ou le{" "}
-          <span className="dash-upload-word page-editor">
-            script de la pièce <span className="dash-upload-format">(JSON)</span>
-          </span>
+    <a className="dash-upload card lift-hover" href={url} target="_blank" rel="noreferrer">
+      <PageMark page="recorder" className="dash-upload-mark" />
+      <span className="dash-upload-text">
+        Déposer des{" "}
+        <span className="dash-upload-word page-recorder">
+          voix <span className="dash-upload-format">(ZIP)</span>
+        </span>{" "}
+        ou le{" "}
+        <span className="dash-upload-word page-editor">
+          script de la pièce <span className="dash-upload-format">(JSON)</span>
         </span>
-        <PageMark page="editor" className="dash-upload-mark" />
-      </a>
-    </div>
+      </span>
+      <PageMark page="editor" className="dash-upload-mark" />
+    </a>
+  );
+}
+
+// Le script de la pièce mis en page pour l'impression, construit à chaque
+// déploiement par scripts/build_script_pdf.py depuis le MÊME script.json que le
+// site (donc jamais un brouillon de l'éditeur : ce qui n'a pas été déposé n'est
+// pas dedans).
+//
+// Sur l'Avancement et pas sur un accueil, parce que c'est au respo de décider
+// quelle version fait foi et quand la distribuer. Le fichier reste servi à une
+// URL publique du site : c'est la même discrétion que respo.html, pas un verrou.
+//
+// `.btn.primary`, le bouton de téléchargement du site : le même que le ZIP des
+// prises (Enregistrement) et que le script (Édition). Un téléchargement se
+// présente pareil partout, et l'aplat d'accent le sépare franchement de la
+// carte de dépôt juste au-dessus, qui est l'autre geste de la page (aller
+// déposer sur GitHub) et n'a aucune raison de lui ressembler.
+//
+// Pas de sceau ici, contrairement à la carte de dépôt : la plume y désigne le
+// script.json qu'on DÉPOSE, la reprendre pour un PDF qu'on TÉLÉCHARGE ferait
+// lire deux gestes opposés sous la même pastille. La flèche du téléchargement
+// dit tout.
+//
+// « la pièce à imprimer » et non « le script de la pièce » : la carte de dépôt
+// juste au-dessus dit déjà « script de la pièce (JSON) », et deux libellés
+// partageant leur groupe de mots ne se distinguaient plus que par l'acronyme.
+// Or PDF est le seul des trois (ZIP, JSON, PDF) qu'un respo lit sans y penser :
+// on ne peut pas faire porter la différence à celui qu'il ne connaît pas.
+// « à imprimer » dit l'usage, et le mot « script » reste au dépôt, où il
+// désigne le fichier de travail.
+const SCRIPT_PDF_HREF = "data/script.pdf";
+
+function ScriptPdfLink({ title }) {
+  // Le PDF est gitignoré et produit par DEUX étapes `continue-on-error` de
+  // build.yml : il manque dès que l'install LaTeX ou la compilation échoue, sur
+  // une pièce jamais saisie, et en dev tant qu'on n'a pas lancé le script à la
+  // main. On sonde donc avant de proposer le bouton, exactement comme
+  // `githubUploadUrl()` masque la carte de dépôt plutôt que de forger un 404 :
+  // dans le seul canal de retour du respo, un téléchargement qui rend une page
+  // d'erreur renommée « transport-de-femmes.pdf » est bien pire que pas de
+  // bouton du tout, parce qu'il se croit réussi.
+  //
+  // `null` = pas encore su, et on n'affiche rien : le bouton apparaît un instant
+  // après la page, il ne disparaît JAMAIS sous la souris. `HEAD` parce qu'on ne
+  // veut que le code de retour, pas 150 ko de PDF à chaque ouverture.
+  const [ready, setReady] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(SCRIPT_PDF_HREF, { method: "HEAD" })
+      .then((res) => {
+        if (!cancelled) setReady(res.ok);
+      })
+      .catch(() => {
+        if (!cancelled) setReady(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  if (!ready) return null;
+
+  // Le repli du slug est passé en paramètre : « ??? » est un titre non vide dont
+  // il ne reste rien après nettoyage, et le défaut de slugify (« personnage »,
+  // son usage d'origine) n'a aucun sens sur un PDF de pièce.
+  const name = slugify(title, "script");
+  return (
+    // `download` renomme au passage : le respo reçoit « transport-de-femmes.pdf »
+    // et pas « script.pdf », qui ne dit rien une fois dans le dossier des
+    // téléchargements.
+    <a
+      className="btn primary dash-script-btn lift-hover"
+      href={SCRIPT_PDF_HREF}
+      download={`${name}.pdf`}
+    >
+      <DownloadIcon />
+      <span>
+        Télécharger la pièce à imprimer{" "}
+        <span className="dash-script-format">(PDF)</span>
+      </span>
+    </a>
   );
 }
 

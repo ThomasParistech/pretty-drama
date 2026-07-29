@@ -20,6 +20,18 @@ seule : aucun Edit/Write, ton livrable est une liste de findings.
 3. Croise systématiquement — ne te contente pas d'un grep par mot-clé :
    - **Structure** : la page importe bien les composants partagés prévus
      (PageHeader, PlayHeader, ProgressBar…) et n'en recode aucun localement.
+   - **États de la page** : une page n'est pas un seul écran. Énumère TOUS les
+     `return` conditionnels de son `App.jsx` (chargement, erreur, page murée,
+     rien de sélectionné, liste vide) et confronte **chacun** au contrat, comme
+     si c'était une page à lui. Un écran qu'on traverse (chargement, erreur de
+     lecture) a droit au libellé de page dans son bandeau ; un écran
+     **définitif** (le contenu final de la page pour cet utilisateur, ex.
+     l'Édition sur pointeur tactile) doit nommer la pièce comme les quatre
+     bandeaux. Regarde aussi **ce que la page n'a pas chargé** dans cet état :
+     un `if (…) return` placé avant un `fetch`, ou un `fetch` sauté par une
+     condition, prive le bandeau du titre de la pièce, et ça ne se voit dans
+     aucun CSS. C'est précisément le bug que cette revue avait laissé passer sur
+     `src/editor/App.jsx` (mur tactile → « Édition » au lieu du titre).
    - **Fuite de re-skin dans les composants partagés** : pour chaque page qui
      re-skinne des tokens dans un `:root` local (l'éditeur), liste les tokens
      re-skinnés puis vérifie, sélecteur par sélecteur, que les composants

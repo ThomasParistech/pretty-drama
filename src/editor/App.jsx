@@ -74,10 +74,12 @@ export default function App() {
   }, [canUndo, canRedo, undo, redo]);
 
   // "Reprise" mode: load the published script.json to continue editing it.
+  // Chargé même quand la page est murée (écran tactile), et pas pour rien : le
+  // bandeau de cet écran nomme la pièce comme les quatre autres bandeaux du
+  // site. Sauter le fetch était une économie de rien du tout (un JSON, sur une
+  // page qui n'affiche ensuite qu'une phrase) payée par la seule rangée du haut
+  // du site à écrire « Édition » au lieu du titre de la pièce.
   useEffect(() => {
-    // Rien à charger tant que la page est murée : l'écran tactile n'affichera
-    // pas le script. Si le pointeur change (clavier rattaché), l'effet rejoue.
-    if (touchOnly) return;
     let cancelled = false;
     fetchScript()
       .then((raw) => {
@@ -103,7 +105,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [dispatch, touchOnly]);
+  }, [dispatch]);
 
   const download = useCallback(() => {
     const blob = new Blob([JSON.stringify(script, null, 2)], {
@@ -185,13 +187,22 @@ export default function App() {
     [dispatch, lineCounts]
   );
 
-  // Avant tout le reste, y compris le chargement : sur un écran tactile la
-  // page ne montre jamais l'éditeur, seulement pourquoi et où l'ouvrir.
+  if (loading) {
+    return <PageState page="editor" loading="Chargement du script…" />;
+  }
+
+  // Avant le reste des états chargés : sur un écran tactile la page ne montre
+  // jamais l'éditeur, seulement pourquoi et où l'ouvrir. Elle nomme quand même
+  // la pièce, comme les quatre bandeaux du site : c'est un écran définitif et
+  // pas une attente. Il passe donc APRÈS le chargement (le titre n'arrive qu'avec
+  // le script, et le bandeau ne dit rien tant qu'il ne le connaît pas) mais AVANT
+  // l'erreur de lecture : un script illisible n'apprend rien à qui ne peut pas
+  // éditer.
   if (touchOnly) {
     return (
       <PageState
         page="editor"
-        title="Édition"
+        title={script.title || "Pièce sans titre"}
         error={
           <>
             <WarnIcon />
@@ -203,15 +214,10 @@ export default function App() {
     );
   }
 
-  if (loading) {
-    return <PageState page="editor" title="Édition" loading="Chargement du script…" />;
-  }
-
   if (loadError) {
     return (
       <PageState
         page="editor"
-        title="Édition"
         error={
           <>
             <WarnIcon />

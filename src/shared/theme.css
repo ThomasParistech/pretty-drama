@@ -65,7 +65,7 @@
    assez proches pour qu'on n'y lise pas une distinction, assez différentes pour
    qu'on les croie ratées. Ce sont les icônes (les masques, les bulles, le micro)
    qui disent où on est. Vin sur sable est l'accord du fichier de design d'origine
-   (drama-token.svg), c'est donc lui qu'on étend aux trois.
+   (design/drama-token.svg), c'est donc lui qu'on étend aux trois.
    Seuls les deux modes du responsable gardent leur couleur propre : elles ne
    séparent plus deux pages voisines, elles marquent un autre territoire. */
 .page-home,
@@ -157,6 +157,11 @@ select {
 .page-header {
   background: var(--card);
   border-bottom: 1px solid var(--border);
+  /* La même ombre que `.play-header`, pour la même raison : les deux bandeaux
+     sont collants, et celui-ci est l'attente de celui-là. Sans elle, le bandeau
+     GAGNAIT son ombre à l'arrivée du manifest, exactement comme la marque
+     sautait de la rangée du haut au pied avant `HomeLink`. */
+  box-shadow: var(--header-shadow);
   padding: 10px 18px 14px;
   display: flex;
   flex-direction: column;
@@ -173,11 +178,14 @@ select {
   flex-wrap: wrap;
 }
 
-.page-header .page-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--ink-soft);
-}
+/* Le titre de CE bandeau vit dans la règle partagée de `.play-header-title`
+   (plus bas) : depuis que les écrans définitifs nomment la pièce, les deux
+   bandeaux écrivent la même chaîne au même endroit, et la rendaient
+   différemment (15 px gris dans la font UI ici, serif 20 px là). Le titre
+   changeait donc de corps, de graisse, de couleur ET de fonte à l'arrivée du
+   manifest, et sur l'Édition il prenait au passage l'IBM Plex du re-skin
+   local, alors que `--header-serif` existe précisément pour qu'un bandeau
+   partagé rende pareil partout. */
 
 .spacer {
   flex: 1;
@@ -320,9 +328,13 @@ textarea:focus {
    Le trio `-webkit-` est l'idiome rendu partout (Firefox 68+, et c'est lui que
    la propriété standard `line-clamp` définit) ; il remplace `text-overflow`,
    qui n'agit pas dans une boîte `-webkit-box` : c'est le clamp qui pose son
-   ellipse en fin de deuxième ligne. */
-.play-header-title {
-  flex: 1;
+   ellipse en fin de deuxième ligne.
+   Une seule règle pour les DEUX bandeaux, et pas deux qui se ressemblent : ils
+   écrivent la même chaîne au même endroit, l'un pendant que l'autre charge, donc
+   la moindre divergence se voit comme un saut. Même motif que le `HomeLink`
+   unique du pied. */
+.play-header-title,
+.page-header .page-title {
   min-width: 0;
   font-family: var(--header-serif);
   font-size: 20px;
@@ -333,6 +345,14 @@ textarea:focus {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+/* Seul le bandeau de pièce mange la largeur restante : sa rangée n'a pas de
+   `.spacer`, c'est le bouton de repli qui suit le titre. Celle de `PageHeader`
+   en a un, et deux `flex: 1` dans la même rangée se partageraient la place, ce
+   qui couperait le titre à mi-barre. */
+.play-header-title {
+  flex: 1;
 }
 
 .play-header-chevron {
@@ -810,6 +830,28 @@ textarea:focus {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+}
+
+/* Le geste de survol commun à toutes les surfaces cliquables du site : la
+   surface se soulève d'un pas et prend l'ombre haute. Il était recopié sur les
+   cartes des deux accueils, sur le bouton de dépôt et sur le bouton du PDF, dans
+   trois fichiers pour deux déclarations, alors que le projet le décrit partout
+   comme UN geste. Une divergence d'un pixel entre deux surfaces voisines ne se
+   nomme pas, elle se remarque juste.
+   `--lift` pour le pas, parce qu'il dépend de la taille de la surface et non du
+   geste : une carte d'accueil est haute et se lève de 3 px, un bouton ou une
+   barre d'une ligne de 1 px (le défaut). C'est le seul écart légitime.
+   La `transition` reste chez chaque surface, et n'est pas remontée ici exprès :
+   `transition` est UNE propriété, donc une déclaration locale (le bouton du PDF
+   fait aussi glisser son fond) écraserait celle d'ici au lieu de s'y ajouter, et
+   le soulèvement apparaîtrait d'un coup. Contrepartie à tenir : toute surface qui
+   prend cette classe doit lister `transform` et `box-shadow` dans SA transition.
+   Ne convient pas au retour à l'accueil du bandeau (`.play-header-home`) : il
+   garde le pas d'un pixel mais remplace l'ombre par la nappe crème du sceau,
+   c'est donc un autre geste, pas celui-ci mal réglé. */
+.lift-hover:hover {
+  transform: translateY(var(--lift, -1px));
+  box-shadow: var(--shadow-hover);
 }
 
 .empty-state {

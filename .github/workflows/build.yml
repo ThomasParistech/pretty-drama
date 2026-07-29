@@ -80,6 +80,36 @@ jobs:
       - name: Rebuild data/manifest.json
         run: python scripts/build_manifest.py
 
+      # Le PDF du script est un confort, jamais une condition de déploiement :
+      # d'où le continue-on-error ici, et le code de retour 0 que
+      # build_script_pdf.py rend même quand LaTeX échoue. Sans ces deux
+      # filets, une réplique mal formée ferait disparaître le site entier
+      # sans que le respo en soit averti (ce workflow n'écrit ni issue ni
+      # journal, il n'a aucun moyen de le lui dire).
+      # Les paquets TeX de la distribution, et rien d'autre. tectonic a été
+      # essayé et écarté : plus rapide en régime établi (un binaire statique de
+      # 26 Mo, ~0,5 s de compilation contre 0,25 s ici, contre ~300 Mo de
+      # paquets), mais il demandait une URL de release figée, une empreinte
+      # sha256 à faire suivre à chaque montée de version et un cache
+      # `actions/cache` pour ne pas repayer 40 s de téléchargement de fichiers
+      # TeX. Trois choses qui pourrissent, dans un dépôt fait pour être forké
+      # par une troupe et laissé tranquille des années, et tout ça pour gagner
+      # moins d'une minute sur un job qui tourne une fois par semaine. Les
+      # paquets apt sont signés par la distribution, se résolvent encore dans
+      # dix ans et n'ajoutent aucune relation de confiance.
+      - name: Install LaTeX (script PDF)
+        continue-on-error: true
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-recommended texlive-lang-french texlive-fonts-recommended lmodern
+
+      # Écrit data/script.pdf, que la copie de data/ ci-dessous emporte dans
+      # dist/. Doit donc rester AVANT « Build site ».
+      - name: Build data/script.pdf
+        continue-on-error: true
+        run: python scripts/build_script_pdf.py
+
       - name: Build site
         run: |
           npm run build

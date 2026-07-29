@@ -65,6 +65,19 @@ test("slugify ne rend jamais une chaîne vide ni de caractère hasardeux", () =>
   assert.equal(slugify("!!!"), "personnage");
 });
 
+test("le repli de slugify se choisit par appelant, et sur le résultat", () => {
+  // Le PDF de la pièce ne peut pas s'appeler « personnage.pdf ». Le piège est
+  // qu'un titre peut être non vide ET ne rien laisser au slug (« ??? » passe un
+  // test sur l'entrée), donc c'est bien le résultat qui décide du repli.
+  assert.equal(slugify("Transport de Femmes", "script"), "transport-de-femmes");
+  assert.equal(slugify("", "script"), "script");
+  assert.equal(slugify("???", "script"), "script");
+  assert.equal(slugify("   ", "script"), "script");
+  // Et une pièce réellement intitulée « Personnage » garde son nom : le repli
+  // n'est pas une valeur sentinelle qu'on reconnaîtrait après coup.
+  assert.equal(slugify("Personnage", "script"), "personnage");
+});
+
 // ------------------------------------------------------------ myLineNumbers
 
 test("myLineNumbers numérote MES répliques dans l'ordre de la scène", () => {

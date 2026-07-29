@@ -2,5 +2,10 @@ node_modules/
 dist/
 __pycache__/
 *.pyc
+.mypy_cache/
 .DS_Store
 uploads_result.json
+# Dérivé de data/script.json à chaque déploiement, jamais une donnée. Cette
+# ligne porte du poids : uploads.yml commite `data` en entier, donc sans elle
+# un binaire de 150 Ko entrerait dans l'historique à chaque dépôt de script.
+data/script.pdf

@@ -107,15 +107,24 @@ export function githubUploadUrl() {
 }
 
 // "Serge" -> "serge", "Éléonore d'Aquitaine" -> "eleonore-d-aquitaine"
-// (used only for the ZIP filename — readability, not identity)
-export function slugify(name) {
+// Ne nomme jamais rien d'identifiant : uniquement des fichiers téléchargés, pour
+// qu'ils se relisent dans un dossier de téléchargements. Deux appelants, le ZIP
+// des prises (noms de personnages) et le PDF de la pièce (son titre).
+//
+// `fallback` est un paramètre et pas une constante parce que le repli finit dans
+// le nom du fichier obtenu : « personnage.pdf » pour la pièce serait un mot de
+// travers. Et c'est bien ICI qu'il se choisit, pas chez l'appelant : une chaîne
+// peut être non vide et ne rien laisser au slug (un titre tout en ponctuation,
+// « ??? »), donc tester l'entrée avant d'appeler ne suffit pas. Seul le résultat
+// sait s'il est vide.
+export function slugify(name, fallback = "personnage") {
   return (
     name
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "personnage"
+      .replace(/^-+|-+$/g, "") || fallback
   );
 }
 

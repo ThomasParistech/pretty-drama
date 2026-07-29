@@ -182,8 +182,8 @@ export function SparkleIcon() {
 // Accueil, et donc la marque : les deux masques du théâtre.
 //
 // GÉOMÉTRIE FOURNIE, À NE PAS RETOUCHER. Les 8 tracés viennent tels quels de
-// `drama-wine.svg` (livraison design « Drama rehearsal tool icons »), viewBox
-// 329x345 d'origine comprise. Seules les VALEURS de remplissage ont changé,
+// `design/drama-wine.svg` (la livraison design, gardée dans le dépôt pour
+// pouvoir comparer), viewBox 329x345 d'origine comprise. Seules les VALEURS de remplissage ont changé,
 // pour que la marque suive le système des sceaux au lieu de figer des hex :
 // le vin devient `currentColor` (donc `--page-mark`) et les deux aplats
 // d'intérieur suivent le fond de la pastille (`--page-mark-soft`).

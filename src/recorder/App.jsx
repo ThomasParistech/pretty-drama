@@ -172,18 +172,22 @@ export default function App() {
   };
 
   if (loadError) {
-    return <PageState page="recorder" title="Enregistrement" error={loadError} />;
+    return <PageState page="recorder" error={loadError} />;
   }
 
   if (!manifest) {
-    return <PageState page="recorder" title="Enregistrement" />;
+    return <PageState page="recorder" />;
   }
 
+  // Écran définitif (le navigateur n'enregistrera pas), et pas une attente :
+  // il nomme donc la pièce comme le bandeau de la page, ce qu'il peut faire
+  // puisqu'il vient après le chargement du manifest. Seuls les deux états
+  // au-dessus, où il n'y a pas encore de titre, portent le libellé de page.
   if (!supported) {
     return (
       <PageState
         page="recorder"
-        title="Enregistrement"
+        title={manifest.title || "Pièce sans titre"}
         error="Votre navigateur ne permet pas d'enregistrer du son. Essayez avec une version récente de Chrome, Firefox ou Safari."
       />
     );
@@ -204,7 +208,7 @@ export default function App() {
           doublon). La phrase compacte du bandeau, elle, reste toujours là. */}
       <PlayHeader
         page="recorder"
-        title={manifest.title || "Enregistrement"}
+        title={manifest.title || "Pièce sans titre"}
         hint={
           characterId === ""
             ? null

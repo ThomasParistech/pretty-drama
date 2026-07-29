@@ -240,16 +240,20 @@ export default function App() {
   useEffect(() => () => clearPending(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loadError) {
-    return <PageState page="rehearsal" title="Répétition" error={loadError} />;
+    return <PageState page="rehearsal" error={loadError} />;
   }
   if (!manifest) {
-    return <PageState page="rehearsal" title="Répétition" />;
+    return <PageState page="rehearsal" />;
   }
+  // Écran définitif, le troisième du site : on y reste jusqu'à ce que le respo
+  // saisisse la pièce, rien ne se chargera de plus sur cet appareil. Il vient
+  // après le manifest, donc il connaît le titre et le dit, comme les quatre
+  // bandeaux. Seul l'état au-dessus (`!manifest`) garde le libellé de page.
   if (lines.length === 0 && acts.every((a) => a.scenes.every((s) => s.lines.length === 0))) {
     return (
       <PageState
         page="rehearsal"
-        title="Répétition"
+        title={manifest.title || "Pièce sans titre"}
         error="La pièce est vide pour l'instant. Le responsable doit d'abord la saisir dans la page Édition."
       />
     );
@@ -260,7 +264,7 @@ export default function App() {
       {/* Pas de `hint` ici : les quatre cases à cocher juste en dessous portent
           des libellés explicites, une phrase qui les redirait ne servait qu'à
           repousser les réglages. */}
-      <PlayHeader page="rehearsal" title={manifest.title || "Répétition"}>
+      <PlayHeader page="rehearsal" title={manifest.title || "Pièce sans titre"}>
         <div className="selects-row">
           <select
             aria-label="Acte"

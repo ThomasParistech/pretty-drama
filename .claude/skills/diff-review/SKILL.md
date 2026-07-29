@@ -1,6 +1,6 @@
 ---
 name: diff-review
-description: Revue complète du travail en cours (tout ce qui n'est pas encore publié sur la branche principale) — fond (bugs, régressions, sécurité du workflow), invariants du projet (ids, contrat ZIP, normalisation, uploads hostiles), tests Python + build, et audit front (agent front-reviewer contre le design system) si l'UI est touchée. Corrige ce qui est sûr, liste le reste, un seul rapport. À utiliser avant de committer/pousser, après des changements d'UI, ou sur demande (/diff-review).
+description: Revue complète du travail en cours (tout ce qui n'est pas encore publié sur la branche principale) — fond (bugs, régressions, sécurité du workflow), invariants du projet (ids, contrat ZIP, normalisation, uploads hostiles), tests Python + build, et audit front (agent front-reviewer contre le design system) si l'UI est touchée. Corrige ce qui est sûr, liste le reste, un seul rapport, et finit par un titre de PR prêt à coller. À utiliser avant de committer/pousser, après des changements d'UI, ou sur demande (/diff-review).
 ---
 
 # Revue du diff courant
@@ -9,7 +9,8 @@ Revue de **tout ce qui n'est pas encore publié** : commits non poussés,
 modifications indexées ou non, fichiers non suivis. L'audit front en fait
 partie (agent `front-reviewer`, revue statique contre le design system :
 la cohérence visuelle est garantie *par construction* — composants partagés,
-tokens — pas en comparant des rendus). Un seul rapport final.
+tokens — pas en comparant des rendus). Un seul rapport final, qui se termine par
+un titre de PR prêt à coller (§8).
 
 ## 1. Base et périmètre
 
@@ -93,6 +94,15 @@ finding sur la seule lecture du diff**. Par zone :
   `update_history` pour `history.json`) —
   pas d'édition manuelle qui divergera au prochain build, sauf montage de
   test assumé.
+- **`src/<page>/App.jsx`** : passe en revue **tous les états de la page**, pas
+  seulement celui que tu as sous les yeux. Liste ses `return` conditionnels
+  (chargement, erreur de lecture, page murée, rien de sélectionné, liste vide)
+  et juge chacun comme un écran à part entière : quel bandeau, quel titre,
+  quelles données ont été chargées pour lui. Un état atteint sur un seul
+  appareil (pointeur tactile, absence de micro) n'est jamais visité pendant la
+  revue et c'est là que le contrat se perd en silence : un `fetch` sauté ou un
+  `return` placé avant lui laisse le bandeau sans titre de pièce sans qu'aucun
+  CSS ne le montre.
 - **partout** : textes visibles par l'utilisateur en français (UI, README,
   messages d'erreur de l'Action, qui finissent dans le journal des dépôts) et
   sans tiret cadratin, pas de secret ni de token dans le diff.
@@ -171,7 +181,34 @@ suivis »). Puis findings front + back confondus, chacun au format :
 
 Trois sections, par sévérité décroissante : **Corrigé**, **À valider**
 (fix proposé, pour décision), **RAS** (une ligne par dimension entièrement
-conforme : invariants, tests, front…).
+conforme : invariants, tests, front…). Puis le titre du §8, qui ferme le
+rapport.
+
+## 8. Titre de PR
+
+Le rapport se termine par **une ligne prête à coller**, le titre de la PR (ou
+du commit : ce dépôt travaille surtout en direct sur `master`).
+
+Convention à lire dans `git log`, pas à inventer : gitmoji en forme textuelle
+(`:sparkles:` pour une fonctionnalité, `:art:` pour l'UI et le polissage,
+`:bug:` pour un correctif) puis une phrase courte en minuscules, en français
+dès qu'elle porte du contenu.
+
+- Il dit ce que le diff **fait**, jamais ce que la revue y a corrigé : les
+  findings sont un moyen, pas le sujet. « corrections de revue » n'apprend rien
+  à qui relira l'historique dans deux ans.
+- Une ligne, sans point final, sous une soixantaine de caractères.
+- Il nomme le sujet **dominant**. Si le diff en porte plusieurs sans rapport
+  entre eux, **le dire** et proposer les coutures (un titre par lot et les
+  fichiers de chacun) : c'est un constat sur le diff, pas un service en plus.
+  Jamais de titre-valise (« divers », « MAJ UI + PDF + CI »).
+- Il ne mentionne ni la doc (`CLAUDE.md`, `.claude/`) ni les tests ajoutés :
+  ils suivent le sujet, ils ne sont pas le sujet.
+- Un corps en 3 à 5 puces (une par sujet, dans l'ordre de risque du §1) ne
+  s'ajoute que si le diff porte plus d'un sujet. Sinon le titre se suffit.
+- Comme le reste de cette revue, c'est une **proposition** : ni commit, ni
+  stage, ni push, même si le titre est validé dans la réponse suivante (il faut
+  une demande explicite).
 
 ## Garde-fous
 

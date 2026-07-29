@@ -32,7 +32,7 @@ export default function App({ cards = ACTOR_CARDS }) {
         {cards.map((key) => {
           const p = PAGES[key];
           return (
-            <a key={key} className={`home-card card page-${key}`} href={p.href}>
+            <a key={key} className={`home-card card lift-hover page-${key}`} href={p.href}>
               {/* Décoratif : le libellé de la page suit immédiatement. */}
               <PageMark page={key} className="home-card-mark" label="" />
               <span className="home-card-title">{p.label}</span>
