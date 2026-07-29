@@ -13,6 +13,8 @@ import {
   EMPTY_SCRIPT,
   SAFE_ID,
   allLines,
+  indexAfterMove,
+  indexAfterRemoval,
   sanitizeScript,
   scriptReducer,
 } from "./reducer.js";
@@ -39,6 +41,24 @@ const play = (overrides = {}) => ({
   ],
   ...overrides,
 });
+
+// Une pièce à DEUX actes : SET_LINE_TEXTS est le seul cas « lignes » qui n'est
+// pas borné à une scène, donc le seul qui ne se vérifie pas sur un acte unique.
+const twoActs = () =>
+  play({
+    acts: [
+      play().acts[0],
+      {
+        title: "Acte II",
+        scenes: [
+          {
+            title: "Scène 1",
+            lines: [{ id: "l-3", characterId: "c-philinte", text: "Encore vous ?" }],
+          },
+        ],
+      },
+    ],
+  });
 
 const firstScene = (script) => script.acts[0].scenes[0];
 const lineIds = (script) => allLines(script).map((l) => l.id);
@@ -277,14 +297,60 @@ test("une action refusée rend l'état PRÉCIS reçu, pas une copie", () => {
   // d'annulation : une copie ferait naître des étapes vides, et « Modifications
   // non téléchargées » s'allumerait sans qu'on ait rien modifié.
   const before = play();
-  for (const action of [
+  const edit = (edits) => ({ type: "SET_LINE_TEXTS", edits });
+  const retype = (lineId, text) => ({ type: "EDIT_TEXT", actIndex: 0, sceneIndex: 0, lineId, text });
+  for (const [i, action] of [
     { type: "ADD_CHARACTER", id: "c-neuf", name: "   " },
     { type: "RENAME_CHARACTER", id: "c-alceste", name: "  " },
     { type: "ACTION_INCONNUE" },
     { type: "MOVE_LINE", actIndex: 0, sceneIndex: 0, activeId: "l-1", overId: "l-1" },
-  ]) {
-    assert.equal(scriptReducer(before, action), before, `action : ${action.type}`);
+    // Un remplacement sans effet : lot vide, réplique inconnue, texte déjà en
+    // place, lot malformé.
+    edit([]),
+    edit([{ lineId: "l-inconnue", text: "Ailleurs." }]),
+    edit([{ lineId: "l-1", text: "Laissez-moi." }]),
+    edit("pas un tableau"),
+    edit([null, { lineId: "l-1" }, { text: "sans id" }]),
+    // Et une frappe qui repose le texte courant.
+    retype("l-1", "Laissez-moi."),
+    retype("l-inconnue", "Ailleurs."),
+  ].entries()) {
+    assert.equal(scriptReducer(before, action), before, `action ${i} : ${action.type}`);
   }
+});
+
+test("SET_LINE_TEXTS réécrit plusieurs répliques de plusieurs actes en un seul état", () => {
+  const before = twoActs();
+  const after = scriptReducer(before, {
+    type: "SET_LINE_TEXTS",
+    edits: [
+      { lineId: "l-1", text: "Laissez-nous." },
+      { lineId: "l-3", text: "Encore nous ?" },
+    ],
+  });
+  // Les ids ne bougent pas : ils nomment les mp3 déjà enregistrés.
+  assert.deepEqual(lineIds(after), ["l-1", "l-2", "l-3"]);
+  assert.deepEqual(
+    allLines(after).map((l) => l.text),
+    ["Laissez-nous.", "Qu'est-ce donc ?", "Encore nous ?"]
+  );
+});
+
+test("SET_LINE_TEXTS garde l'identité de ce qu'il ne touche pas", () => {
+  // C'est ce qui laisse React.memo sauter le reste de la pièce : un
+  // remplacement dans l'acte II ne doit pas faire re-rendre l'acte I.
+  const before = twoActs();
+  const after = scriptReducer(before, {
+    type: "SET_LINE_TEXTS",
+    edits: [{ lineId: "l-3", text: "Encore nous ?" }],
+  });
+  assert.notEqual(after, before);
+  assert.equal(after.acts[0], before.acts[0], "l'acte intact garde son objet");
+  assert.equal(
+    firstScene(after).lines[1],
+    firstScene(before).lines[1],
+    "la réplique intacte garde son objet"
+  );
 });
 
 test("un nouveau personnage reçoit une teinte libre de la palette", () => {
@@ -292,6 +358,69 @@ test("un nouveau personnage reçoit une teinte libre de la palette", () => {
   const oronte = after.characters.find((c) => c.id === "c-oronte");
   assert.ok(CHARACTER_HUES.includes(oronte.hue));
   assert.equal(new Set(after.characters.map((c) => c.hue)).size, 3);
+});
+
+// ---- Remaniement du plan (section « Structure » du rail) ----
+
+test("MOVE_ACT réordonne les actes et les répliques suivent leur scène", () => {
+  const before = twoActs();
+  const after = scriptReducer(before, { type: "MOVE_ACT", from: 1, to: 0 });
+  assert.deepEqual(
+    after.acts.map((a) => a.title),
+    ["Acte II", "Acte I"]
+  );
+  // Les ids nomment les mp3 : réordonner ne doit jamais en reminter un.
+  assert.deepEqual(lineIds(after).sort(), lineIds(before).sort());
+  assert.equal(after.acts[0], before.acts[1], "l'acte déplacé garde son objet");
+});
+
+test("MOVE_SCENE réordonne dans son acte et laisse les autres intacts", () => {
+  const before = scriptReducer(twoActs(), { type: "ADD_SCENE", actIndex: 0 });
+  const after = scriptReducer(before, { type: "MOVE_SCENE", actIndex: 0, from: 1, to: 0 });
+  assert.deepEqual(
+    after.acts[0].scenes.map((s) => s.title),
+    ["Scène 2", "Scène 1"]
+  );
+  assert.equal(after.acts[1], before.acts[1], "l'acte non touché garde son objet");
+});
+
+test("un déplacement sans effet rend l'état PRÉCIS reçu", () => {
+  // Sinon history.js y verrait une modification : reposer une scène là où elle
+  // était allumerait « Modifications non téléchargées » et laisserait une étape
+  // vide à annuler (même contrat que MOVE_LINE et EDIT_TEXT).
+  const before = twoActs();
+  for (const action of [
+    { type: "MOVE_ACT", from: 1, to: 1 },
+    { type: "MOVE_ACT", from: 0, to: 7 },
+    { type: "MOVE_ACT", from: -1, to: 0 },
+    { type: "MOVE_SCENE", actIndex: 0, from: 0, to: 0 },
+    { type: "MOVE_SCENE", actIndex: 0, from: 0, to: 3 },
+    { type: "MOVE_SCENE", actIndex: 9, from: 0, to: 0 },
+  ]) {
+    assert.equal(scriptReducer(before, action), before, JSON.stringify(action));
+  }
+});
+
+test("indexAfterMove fait suivre la scène affichée", () => {
+  // Ce qu'on regarde est ce qui bouge : il suit.
+  assert.equal(indexAfterMove(2, 2, 0), 0);
+  // Un voisin traverse ce qu'on regarde : on se décale d'un cran, dans le sens
+  // inverse de sa traversée.
+  assert.equal(indexAfterMove(0, 2, 0), 1);
+  assert.equal(indexAfterMove(1, 0, 2), 0);
+  // Une traversée qui ne passe pas par nous ne change rien.
+  assert.equal(indexAfterMove(0, 1, 2), 0);
+  assert.equal(indexAfterMove(3, 0, 1), 3);
+});
+
+test("indexAfterRemoval recule sur ce qui précède quand la scène regardée part", () => {
+  assert.equal(indexAfterRemoval(2, 2), 1);
+  // Le premier supprimé : il n'y a rien avant, on reste au rang 0 (qui est
+  // maintenant celui du suivant).
+  assert.equal(indexAfterRemoval(0, 0), 0);
+  // Suppression avant nous : notre rang recule d'un cran. Après nous : rien.
+  assert.equal(indexAfterRemoval(2, 0), 1);
+  assert.equal(indexAfterRemoval(1, 3), 1);
 });
 
 test("EMPTY_SCRIPT est un script que sanitizeScript accepte tel quel", () => {

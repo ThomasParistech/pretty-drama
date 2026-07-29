@@ -190,6 +190,99 @@ function mapAllLines(state, fn) {
   };
 }
 
+// Applique un lot de textes de répliques (`[{ lineId, text }]`) en UN état.
+//
+// Deux choses la distinguent de mapAllLines, qui reconstruit toujours tout :
+//  - elle rend l'état PRÉCIS reçu quand aucune édition ne change quoi que ce
+//    soit (lot vide, id inconnu, texte identique, lot malformé). history.js
+//    reconnaît une action sans effet à l'identité, donc sans cette sortie un
+//    « Tout remplacer » sans occurrence laisserait une étape vide à annuler et
+//    allumerait « Modifications non téléchargées » ;
+//  - elle garde l'identité des actes, des scènes et des répliques intacts, donc
+//    React.memo continue de sauter tout ce que le remplacement n'a pas touché.
+//
+// Les ids de réplique étant uniques dans TOUTE la pièce (sanitizeScript le
+// garantit, ADD_LINE mint un UUID), une Map par id suffit : pas d'indices
+// d'acte ni de scène dans le lot.
+function applyTextEdits(state, edits) {
+  if (!Array.isArray(edits) || edits.length === 0) return state;
+  const byLine = new Map();
+  for (const edit of edits) {
+    // Le lot vient du navigateur, pas d'un fichier : une entrée malformée est
+    // un bug d'appelant, on l'ignore plutôt que de jeter au milieu d'un
+    // remplacement à moitié appliqué.
+    if (edit && typeof edit.lineId === "string" && typeof edit.text === "string") {
+      byLine.set(edit.lineId, edit.text);
+    }
+  }
+  if (byLine.size === 0) return state;
+
+  let changed = false;
+  const acts = state.acts.map((act) => {
+    let actChanged = false;
+    const scenes = act.scenes.map((scene) => {
+      let sceneChanged = false;
+      const lines = scene.lines.map((line) => {
+        if (!byLine.has(line.id)) return line;
+        const text = byLine.get(line.id);
+        if (text === line.text) return line;
+        sceneChanged = true;
+        return { ...line, text };
+      });
+      if (!sceneChanged) return scene;
+      actChanged = true;
+      return { ...scene, lines };
+    });
+    if (!actChanged) return act;
+    changed = true;
+    return { ...act, scenes };
+  });
+  return changed ? { ...state, acts } : state;
+}
+
+// Copie du tableau avec l'élément `from` posé en `to`, ou `null` quand il n'y a
+// rien à faire (indices hors bornes, ou déplacement sur place). Le `null` n'est
+// pas de la coquetterie : les deux appelants rendent alors l'état PRÉCIS reçu, et
+// c'est ce qui empêche une scène reposée là où elle était d'allumer
+// « Modifications non téléchargées » et de laisser une étape vide à annuler
+// (même règle que updateScene, cf. son commentaire).
+function moved(list, from, to) {
+  const ok = (i) => Number.isInteger(i) && i >= 0 && i < list.length;
+  if (!ok(from) || !ok(to) || from === to) return null;
+  const next = [...list];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
+
+// ---- Où regarder après un remaniement du plan ----
+//
+// L'éditeur montre une scène à la fois, désignée par deux rangs. Déplacer ou
+// supprimer un acte ou une scène change les rangs de ses voisins, donc sans ces
+// deux fonctions le même couple d'indices ne désigne plus la même scène : glisser
+// l'acte III au-dessus de l'acte I pendant qu'on y travaille faisait sauter la
+// colonne de texte sur un autre acte. Elles sont ici, à côté de MOVE_* et
+// DELETE_*, parce qu'elles décrivent exactement la permutation que ces actions
+// appliquent : les faire diverger est le bug qu'on cherche à éviter.
+
+// Rang de suivi d'un élément après le déplacement `from` -> `to` : celui qui
+// bouge suit, ceux que sa traversée décale d'un cran se décalent d'un cran.
+export function indexAfterMove(index, from, to) {
+  if (index === from) return to;
+  if (from < index && index <= to) return index - 1;
+  if (to <= index && index < from) return index + 1;
+  return index;
+}
+
+// Rang de suivi après la suppression de `removed`. Quand c'est l'élément regardé
+// qui disparaît, on regarde le précédent (et non le suivant, qui a pris son
+// rang) : c'est celui qu'on avait sous les yeux avant lui, donc le retour en
+// arrière que le geste laisse attendre.
+export function indexAfterRemoval(index, removed) {
+  if (index === removed) return Math.max(0, removed - 1);
+  return index > removed ? index - 1 : index;
+}
+
 export function scriptReducer(state, action) {
   switch (action.type) {
     case "LOAD_SCRIPT":
@@ -288,6 +381,33 @@ export function scriptReducer(state, action) {
         ),
       };
 
+    // Réordonner le plan de la pièce (section « Structure » du rail). Les actes
+    // et les scènes n'ont pas d'id, ils sont désignés par leur rang : un
+    // déplacement est donc un couple d'indices, et non deux ids comme MOVE_LINE.
+    // Ça ne coûte rien ici, les indices ne bougent pas pendant un glissement, et
+    // les répliques déplacées avec leur scène gardent les leurs (donc leurs mp3).
+    //
+    // Une scène ne change pas d'acte : la borner à son acte est ce qui garde
+    // l'action à un seul indice de conteneur, et un glissement d'un acte à
+    // l'autre demanderait de choisir en plus où elle atterrit dans l'acte
+    // d'arrivée. Le geste manquant est la découpe d'un acte, qui se fait
+    // aujourd'hui en ajoutant l'acte puis en redéplaçant les répliques.
+    case "MOVE_ACT": {
+      const acts = moved(state.acts, action.from, action.to);
+      return acts ? { ...state, acts } : state;
+    }
+
+    case "MOVE_SCENE": {
+      const act = state.acts[action.actIndex];
+      if (!act) return state;
+      const scenes = moved(act.scenes, action.from, action.to);
+      if (!scenes) return state;
+      return {
+        ...state,
+        acts: state.acts.map((a, i) => (i !== action.actIndex ? a : { ...a, scenes })),
+      };
+    }
+
     // ---- Lines (all scoped to one scene: O(scene), not O(whole play)) ----
 
     case "ADD_LINE": {
@@ -312,10 +432,28 @@ export function scriptReducer(state, action) {
     }
 
     case "EDIT_TEXT":
-      return updateScene(state, action.actIndex, action.sceneIndex, (scene) => ({
-        ...scene,
-        lines: scene.lines.map((l) => (l.id === action.lineId ? { ...l, text: action.text } : l)),
-      }));
+      return updateScene(state, action.actIndex, action.sceneIndex, (scene) => {
+        const line = scene.lines.find((l) => l.id === action.lineId);
+        // Texte inchangé (ou réplique disparue) : on rend la scène telle quelle,
+        // et updateScene rend donc l'état tel quel. Sans ça, `map` allouait
+        // toujours une nouvelle scène, history.js y voyait une vraie
+        // modification, et une frappe qui ne change rien (un remplacement au
+        // texte identique, une valeur reposée par du code) laissait une étape
+        // vide à annuler et allumait « Modifications non téléchargées ».
+        if (!line || line.text === action.text) return scene;
+        return {
+          ...scene,
+          lines: scene.lines.map((l) => (l.id === action.lineId ? { ...l, text: action.text } : l)),
+        };
+      });
+
+    // Un lot de textes de répliques, à travers TOUTE la pièce : le remplacement
+    // de la recherche (une occurrence ou toutes). Seul cas « lignes » qui n'est
+    // pas borné à une scène, exprès, un remplacement traversant la pièce.
+    // Nommé d'après ce qu'il fait au script et pas d'après la fonctionnalité :
+    // le reducer ne sait rien d'une recherche.
+    case "SET_LINE_TEXTS":
+      return applyTextEdits(state, action.edits);
 
     case "SET_LINE_CHARACTER":
       return updateScene(state, action.actIndex, action.sceneIndex, (scene) => ({

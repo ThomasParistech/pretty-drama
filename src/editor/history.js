@@ -21,14 +21,27 @@ const HISTORY_LIMIT = 100;
 // Actions dispatched on EVERY keystroke: a run of them on the SAME target is
 // merged into a single step (otherwise one undo = one character). The run is
 // closed by any other action, by an undo/redo, or by HISTORY_BREAK (field
-// blurred). Everything else (add/delete/move/rename, which commit on blur or
-// Enter) is one step per action.
+// blurred). Everything else (add/delete/move) is one step per action.
+//
+// Les trois noms du plan de la pièce (titre, actes, scènes) sont dans le lot
+// depuis qu'ils sont des champs en clair et non plus des boutons qui se
+// changeaient en champ pour un aller-retour : ils se renomment maintenant à la
+// frappe, comme le texte d'une réplique.
+//
+// Les actes et les scènes n'ont pas d'id, la clé est donc leur RANG, et ça tient
+// pour la seule raison qui compte : tout ce qui déplace un rang (MOVE_ACT,
+// MOVE_SCENE, une suppression) a une clé nulle, donc ferme la rafale au passage.
+// Deux objets différents ne peuvent pas se retrouver dans la même étape.
 function coalesceKey(action) {
   switch (action.type) {
     case "EDIT_TEXT":
       return `EDIT_TEXT:${action.lineId}`;
     case "SET_TITLE":
       return "SET_TITLE";
+    case "RENAME_ACT":
+      return `RENAME_ACT:${action.actIndex}`;
+    case "RENAME_SCENE":
+      return `RENAME_SCENE:${action.actIndex}:${action.sceneIndex}`;
     default:
       return null;
   }

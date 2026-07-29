@@ -63,14 +63,9 @@
   }
 }
 
-/* Cases à cocher aux couleurs du thème (rouge/doré) plutôt que le bleu
-   système. */
-.checks-row input[type="checkbox"] {
-  accent-color: var(--accent);
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
+/* Les cases à cocher elles-mêmes (accent de la page plutôt que bleu système)
+   vivent dans `theme.css` : la Recherche de l'Édition en a maintenant aussi, et
+   les deux pages les veulent identiques. */
 
 /* ---- Dialogue card states ---- */
 

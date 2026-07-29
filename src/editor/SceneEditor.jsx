@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   DndContext,
   closestCenter,
@@ -13,20 +13,17 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
-import EditableTitle from "./EditableTitle.jsx";
 import LineRow from "./LineRow.jsx";
-import ConfirmModal from "../shared/ConfirmModal.jsx";
 
 // React.memo: only the scene being edited changes identity per keystroke.
 export default React.memo(function SceneEditor({
   scene,
   actIndex,
   sceneIndex,
-  sceneCount,
   characters,
   dispatch,
   addLine,
-  focusLineId,
+  focusRequest,
   onFocusHandled,
 }) {
   const sensors = useSensors(
@@ -42,56 +39,19 @@ export default React.memo(function SceneEditor({
   };
 
   const canAddLines = characters.length > 0;
-  // Deleting a scene that still holds lines asks first (an empty one goes
-  // silently).
-  const [confirming, setConfirming] = useState(false);
 
   return (
     <div className="scene-block">
+      {/* Le titre et le compte, rien de plus : renommer la scène et la supprimer
+          sont des gestes du plan de la pièce (section « Structure » du rail),
+          pas du texte qu'on écrit. La colonne dit où l'on est, le rail façonne
+          et nomme. */}
       <div className="scene-header">
-        <EditableTitle
-          value={scene.title}
-          className="scene-title"
-          onChange={(title) => dispatch({ type: "RENAME_SCENE", actIndex, sceneIndex, title })}
-        />
+        <h3 className="scene-title">{scene.title}</h3>
         <span className="scene-line-count">
           {scene.lines.length} réplique{scene.lines.length > 1 ? "s" : ""}
         </span>
-        {sceneCount > 1 && (
-          <button
-            className="btn icon small"
-            title="Supprimer cette scène"
-            aria-label="Supprimer cette scène"
-            onClick={() => {
-              if (scene.lines.length === 0) {
-                dispatch({ type: "DELETE_SCENE", actIndex, sceneIndex });
-              } else {
-                setConfirming(true);
-              }
-            }}
-          >
-            <span aria-hidden="true">✕</span>
-          </button>
-        )}
       </div>
-
-      {confirming && (
-        <ConfirmModal
-          title={`Supprimer « ${scene.title} » ?`}
-          confirmLabel="Supprimer"
-          onCancel={() => setConfirming(false)}
-          onConfirm={() => {
-            setConfirming(false);
-            dispatch({ type: "DELETE_SCENE", actIndex, sceneIndex });
-          }}
-        >
-          <p>
-            {scene.lines.length > 1
-              ? `${scene.lines.length} répliques seront supprimées.`
-              : "1 réplique sera supprimée."}
-          </p>
-        </ConfirmModal>
-      )}
 
       <DndContext
         sensors={sensors}
@@ -114,12 +74,16 @@ export default React.memo(function SceneEditor({
                     </button>
                   </div>
                 )}
+                {/* `focusRequest` est passé tel quel à la rangée visée, et
+                    `null` à toutes les autres : `null` est superficiellement égal
+                    à leur rendu précédent, donc React.memo continue de les
+                    sauter, et seule la rangée visée se rend à nouveau. */}
                 <LineRow
                   line={line}
                   characters={characters}
                   actIndex={actIndex}
                   sceneIndex={sceneIndex}
-                  autoFocus={focusLineId === line.id}
+                  focusRequest={focusRequest?.lineId === line.id ? focusRequest : null}
                   onFocusHandled={onFocusHandled}
                   dispatch={dispatch}
                   addLine={addLine}
@@ -148,7 +112,8 @@ export default React.memo(function SceneEditor({
       )}
       {!canAddLines && (
         <p className="scene-empty-hint">
-          Ajoutez d'abord un personnage dans le bandeau ci-dessus pour pouvoir saisir des répliques.
+          Ajoutez d'abord un personnage (icône « Personnages » du rail, à gauche) pour pouvoir
+          saisir des répliques.
         </p>
       )}
     </div>

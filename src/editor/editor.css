@@ -30,9 +30,33 @@
 
   --ed-title: #26261f;
   --ed-rule: #ece5d6;
+  /* Le fond du rail. Ce token portait déjà ce nom quand il n'était le fond
+     d'aucune barre latérale (il servait aux puces de personnage, dans le
+     bandeau blanc) : la direction s'appelle « Rail » depuis le début, la page
+     n'en avait pas. */
   --ed-sidebar: #f5f0e5;
   --ed-danger: #c0603f;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* La bande d'icônes du rail, toujours visible, et la section ouverte.
+     272 px de panneau laissent 248 px utiles : de quoi tenir une puce de
+     personnage complète sur une ligne, la palette de couleurs et un extrait de
+     réplique d'une quarantaine de caractères sur deux lignes. 300 px coupait
+     l'extrait trop court pour reconnaître la réplique, 360 px mangeait la
+     gouttière de la colonne dès 1280 px de fenêtre.
+     Ce n'est plus qu'un DÉPART : `EditorRail` redéfinit `--ed-rail-panel` en
+     ligne, la poignée du bord droit permettant de régler la largeur (bornes et
+     pas du clavier dans le composant, avec leurs raisons). Le token reste ici
+     parce que c'est lui que la géométrie du rail consomme, et qu'une valeur par
+     défaut doit vivre à côté des autres. */
+  --ed-rail-strip: 48px;
+  --ed-rail-panel: 272px;
+  /* Le bord droit du panneau : la poignée de largeur, et rien d'autre depuis que
+     ce sont les icônes de la bande qui replient. 10 px, la largeur d'une poignée
+     qui se vise sans être cherchée : une de 6 px se rate à la souris, et les 14 px
+     de la version qui portait une languette de repli laissaient une gouttière
+     morte entre le texte du panneau et la colonne de la pièce. */
+  --ed-rail-edge: 10px;
 }
 
 /* Pas de règle de focus ici : celle de theme.css dérive de --accent, que ce
@@ -59,6 +83,76 @@ h1,
 h2,
 h3 {
   color: var(--ed-title);
+}
+
+/* ---- Coquille de la page : le bandeau, puis le rail et la colonne ----
+
+   La page d'édition ne défile plus en entier : elle occupe la hauteur de la
+   fenêtre, et ce sont le rail et la colonne de texte qui défilent, chacun pour
+   son compte. Motif : le rail (et donc la liste des correspondances) doit rester
+   sous les yeux pendant qu'on parcourt les répliques, et la seule autre façon de
+   l'obtenir, un rail collant sous le bandeau, demande de connaître la hauteur du
+   bandeau. Or c'est un inconnu ANIMÉ : titre sur deux lignes, deux paragraphes
+   de doc, repli sur 0,26 s. Il faudrait la mesurer en JS, la remesurer à chaque
+   repli, et le `top` du rail traînerait un quart de seconde derrière l'animation
+   à chaque geste. Ici rien n'est mesuré, aucun nombre ne circule entre le CSS et
+   le JS.
+   `PlayHeader` n'est pas touché pour autant : son `position: sticky` dans un
+   ancêtre qui ne défile pas se comporte comme `relative`, il tient le haut parce
+   qu'il EST en haut.
+   `vh` et pas `dvh` : une barre d'adresse qui se rétracte est un problème de
+   téléphone, et cette page ne s'ouvre pas au doigt (cf. useTouchPointer.js).
+   La coquille est posée sur un élément de l'éditeur et jamais sur `body` : les
+   deux écrans pleine page de la page (script illisible, ouverture au doigt)
+   gardent le défilement normal, leur carte pouvant dépasser d'une fenêtre
+   basse. */
+.editor-shell {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-layout {
+  flex: 1;
+  /* Sans lui, les deux zones défilantes poussent la coquille au-delà de la
+     fenêtre au lieu de défiler : le minimum automatique d'un élément flex vaut
+     sa hauteur de contenu (même piège que le `min-height: 0` de
+     `.play-header-settings-inner`, theme.css). */
+  min-height: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  /* La rangée s'écrit `minmax(0, 1fr)` et JAMAIS implicitement (`auto`) ni `1fr`
+     tout court, exactement pour la raison déjà payée sur le repli du bandeau : le
+     minimum d'une piste `auto` ou `fr` vaut la contribution min-content de son
+     contenu. Sans cette ligne, la rangée grandissait à la hauteur DÉPLIÉE de la
+     liste des résultats (mesuré : 8643 px pour 144 correspondances), donc le rail
+     dépassait la fenêtre, son bord droit avec, et le bouton de repli, centré
+     verticalement sur ce bord, se retrouvait à quatre mille pixels sous l'écran.
+     Ça tenait avant par accident : le rail était en `overflow: hidden`, donc un
+     conteneur de défilement, dont la contribution min-content vaut zéro. Il est
+     passé en `overflow: clip` (cf. le bégaiement de la bande d'icônes) et l'accident
+     a cessé de nous couvrir. */
+  grid-template-rows: minmax(0, 1fr);
+}
+
+/* La zone défilante occupe TOUTE la largeur restante, et c'est le bloc
+   intérieur (`.editor-main`) qui se centre sur 860 px : l'ascenseur appartient
+   au bord de la fenêtre, pas à la colonne de texte. Ouvrir le rail décale donc
+   le texte de la moitié de la largeur gagnée (136 px), ce qui est assumé, et
+   c'est la raison pour laquelle le rail s'anime. Piste écartée : compenser par
+   une marge gauche égale à la largeur du rail, pour garder le texte centré sur
+   la fenêtre ; elle mange la gouttière gauche jusqu'à ce que le texte touche le
+   panneau, et sur 1280 px il finit collé.
+   `container` : le repli étroit des rangées de réplique se mesure désormais sur
+   CETTE largeur et plus sur celle de la fenêtre (cf. la section « Fenêtre
+   étroite » en fin de fichier). Contrepartie à connaître : `container-type`
+   implique le confinement de mise en page, donc cet élément devient le bloc
+   conteneur des descendants en `position: fixed`. Ne rien poser de `fixed` dans
+   la colonne (même piège que le transform dnd-kit, qui a valu son portail à
+   ConfirmModal). */
+.editor-column {
+  overflow: auto;
+  container: ed-column / inline-size;
 }
 
 .editor-main {
@@ -158,25 +252,248 @@ h3 {
   margin: 0 0 14px;
 }
 
-/* ---- Character chips (in the play header, where the other pages have
-   their character select) ---- */
+/* ---- Le rail ----
 
-.characters-row {
+   Une bande de trois icônes toujours visible (Structure, Personnages,
+   Recherche) et une section ouverte à la fois, à gauche de la colonne de texte.
+   L'animation est une LARGEUR, et pas la ruse `minmax(0, 0fr)` du bandeau : là
+   bas la hauteur du contenu est inconnue et ne s'interpole pas, ici la largeur
+   ouverte est un nombre qu'on choisit. Et une piste `fr` ferait dépendre la
+   largeur du rail de son contenu, donc un nom de personnage à rallonge
+   élargirait le panneau. On garde en revanche la leçon de la grille : c'est le
+   RAIL qui rogne et le panneau qui garde sa largeur, un panneau élastique
+   reflowant son texte à chaque image du glissement, ce qui se lit comme un
+   défaut d'affichage.
+   Ne PAS donner de `position` ni de `z-index` au rail : il créerait un contexte
+   d'empilement et enfermerait le `z-index: 20` de la palette de couleurs, qui
+   doit passer au-dessus du fond plein écran à 19. `overflow: hidden` seul n'en
+   crée pas. */
+.editor-rail {
+  display: flex;
+  flex: none;
+  /* Replié, il n'y a QUE la bande d'icônes. Le bord droit, qui ne règle plus que
+     la largeur, n'existe pas dans cet état : replié, il n'y a aucune largeur à
+     régler, et une seconde barre verticale collée à la bande se lisait comme un
+     morceau de mobilier oublié là (du temps où elle portait un bouton de repli,
+     un chevron y était perdu au milieu). Ce sont donc les icônes qui rouvrent, et
+     elles disent en plus quelle section. */
+  width: var(--ed-rail-strip);
+  /* `clip` et NON `hidden`, et c'est un bug déjà payé : `hidden` fait du rail un
+     conteneur de défilement (invisible, mais défilable par programme), donc au
+     montage du panneau, quand le champ de recherche prend le focus, le navigateur
+     faisait défiler le rail horizontalement pour amener ce champ à l'écran. La
+     bande d'icônes sortait par la gauche (mesuré : left = -104) puis revenait à
+     mesure que la largeur arrivait, ce qui se lisait comme un bégaiement de la
+     barre permanente. `clip` rogne sans créer de conteneur de défilement, donc il
+     n'y a plus rien à faire défiler. Les pistes écartées supposaient toutes de
+     retarder le focus derrière un minuteur, c'est-à-dire de faire revenir la
+     machinerie que le repli du bandeau vient de perdre. */
+  overflow: clip;
+  background: var(--ed-sidebar);
+  border-right: 1px solid var(--border);
+  /* La même courbe et la même durée que le repli du bandeau (`--ease-header`,
+     theme.css, emprunté et jamais redéfini) : la page a deux surfaces qui se
+     replient, elles doivent se replier du même geste. */
+  transition: width 0.26s var(--ease-header);
+}
+
+.editor-rail.open {
+  width: calc(var(--ed-rail-strip) + var(--ed-rail-panel) + var(--ed-rail-edge));
+}
+
+/* Pendant le glissement de la poignée, la transition de largeur est coupée :
+   sinon le panneau poursuit le curseur avec un quart de seconde de retard, ce qui
+   se lit comme une latence et pas comme une animation. */
+.editor-rail.resizing {
+  transition: none;
+}
+
+/* ---- Le bord droit du rail : la poignée de largeur ----
+
+   Elle ne fait plus QUE la largeur : le repli est passé aux icônes de la bande
+   (cf. EditorRail.jsx, où la languette qui vivait ici a laissé le récit de son
+   bug de capture du pointeur). Le bord n'a donc plus besoin ni de `position` ni de
+   place pour un bouton, et on tire n'importe où dessus. */
+.editor-rail-edge {
+  flex: none;
+  width: var(--ed-rail-edge);
+  background: var(--ed-sidebar);
+  cursor: col-resize;
+  /* Le glissement ne doit pas devenir un défilement sur pavé tactile. */
+  touch-action: none;
+  /* Le filet de séparation du rail vit sur ce bord, et c'est LUI qui s'épaissit
+     et prend l'accent quand on s'apprête à tirer : un filet qui passe de 1 à 2 px
+     dit « cette ligne est saisissable » sans rien colorer d'autre. La première
+     version teintait tout le bord sur ses 14 px de large, ce qui posait un pavé
+     violet en travers de la page pour annoncer un geste d'un pixel. */
+  border-right: 1px solid var(--border);
+  transition: border-right-color 0.15s, border-right-width 0.15s;
+}
+
+.editor-rail-edge:hover,
+.editor-rail-edge:focus-visible,
+.editor-rail.resizing .editor-rail-edge {
+  border-right: 2px solid var(--accent);
+}
+
+.editor-rail-strip {
+  flex: none;
+  width: var(--ed-rail-strip);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  /* 8 px de remplissage pour un bouton de 32 px : la bague de focus (2 px à 2 px
+     de décalage) tient ainsi DANS le rail, dont l'`overflow: clip` l'aurait
+     rognée par le côté. Une bague rognée est un défaut d'accessibilité qui ne se
+     voit pas en relisant la règle. */
+  padding: 8px;
+  border-right: 1px solid var(--border);
+}
+
+.editor-rail-tab {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-soft);
+  font-size: 18px; /* les icônes se dimensionnent dessus (1em) */
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.editor-rail-tab:hover {
+  background: var(--paper-dark);
+  color: var(--ink);
+}
+
+/* L'état de la section est porté par `aria-expanded` et rien d'autre : le CSS le
+   lit sur l'attribut plutôt que sur une classe de plus, donc l'aspect ne peut
+   pas se désaccorder du nom accessible. */
+.editor-rail-tab[aria-expanded="true"] {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  color: var(--accent);
+}
+
+/* Le panneau NE DÉFILE PAS : c'est chaque section qui accorde le défilement à
+   ce qui doit défiler, et à lui seul (la liste des résultats, la liste des
+   personnages). Sinon les réglages de la recherche partaient vers le haut dès
+   qu'on parcourait les correspondances, et les faire redescendre chercher pour
+   relire la requête ou recocher « Mot entier » était le geste le plus fréquent de
+   l'écran. */
+.editor-rail-panel {
+  /* Largeur FIXE, cf. l'`overflow` du rail : c'est le rail qui rogne, le panneau
+     ne bouge pas. D'où `flex: none`, qui n'est pas décoratif : par défaut un
+     élément flex a `flex-shrink: 1`, donc pendant le repli (le rail passe de
+     ~480 px à 48) le panneau se serait laissé écraser au lieu d'être rogné, et son
+     texte se serait recomposé à chaque image du glissement. C'est exactement ce
+     que la géométrie du rail cherche à éviter. */
+  flex: none;
+  width: var(--ed-rail-panel);
+  overflow: hidden;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.editor-rail-head {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+}
+
+/* Titre de section : petite capitale espacée, le vocabulaire du nom de
+   personnage sur les cartes de dialogue. En `--font-ui` et non dans la serif des
+   h1/h2/h3 : c'est une étiquette d'outil, pas un titre de contenu (les titres
+   d'acte et de scène, eux, restent en Spectral). */
+.editor-rail-title {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+/* Ce qui reste du panneau sous sa tête : les sections y posent elles-mêmes leur
+   zone défilante, d'où le `min-height: 0` (sans lui, le minimum automatique d'un
+   élément flex vaut sa hauteur de contenu et rien ne défilerait, même piège que
+   `.play-header-settings-inner` et `.editor-layout`). */
+.editor-rail-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---- Puces de personnage (section « Personnages » du rail) ----
+
+   Elles vivaient dans le bandeau, où les autres pages ont leur select de
+   personnage. Le bandeau est partagé par quatre pages et n'a de place que pour
+   ce que les quatre ont en commun ; les puces y étaient le seul bloc propre à
+   une page de cette taille, elles poussaient les deux paragraphes de doc et le
+   retour à l'accueil vers le bas, et elles grandissaient avec la distribution,
+   donc la barre d'une pièce à quinze personnages n'avait plus de rapport avec
+   celle d'une pièce à trois. */
+
+/* Une puce par ligne, et non plus une rangée qui passe à la ligne : dans une
+   colonne de 248 px, des pastilles de largeurs inégales se lisaient en escalier,
+   et alignés les comptes de répliques forment enfin une colonne, donc une
+   distribution de la pièce qui se lit sans compter. */
+.character-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* La liste est ce qui défile dans cette section (le panneau, lui, ne défile
+     plus) : le formulaire d'ajout reste donc sous les yeux d'une distribution à
+     vingt personnages, alors qu'il fallait avant descendre le chercher.
+     `flex: 0 1 auto` et surtout PAS `flex: 1` : elle doit faire la hauteur de son
+     contenu et ne se laisser comprimer (donc défiler) que quand il n'y a plus la
+     place. Avec `flex: 1` elle prenait toute la colonne même à trois
+     personnages, et poussait le formulaire d'ajout tout en bas du panneau, à un
+     écran de la liste qu'il complète. */
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+/* Le personnage et, quand elle est ouverte, sa palette : deux blocs empilés
+   dans le même élément de liste. */
+.character-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .character-chip {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 7px;
-  background: var(--ed-sidebar);
+  /* Blanc sur le crème du rail : les puces portent du contenu, donc elles se
+     posent sur le papier comme tout le reste du site (cartes de dialogue,
+     panneau des répliques, cartes d'accueil). Le crème, lui, est passé au fond
+     du rail, qui est la barre latérale que `--ed-sidebar` annonçait. */
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 3px 6px 3px 8px;
-  position: relative;
+  /* Plus de `position: relative` : la palette de couleurs n'est plus accrochée
+     à la puce, elle se pose dans le flux du panneau. */
 }
 
 .chip-delete {
@@ -212,10 +529,20 @@ h3 {
   z-index: 19;
 }
 
+/* La palette ne pend plus sous la puce : elle se pose DANS LE FLUX du panneau,
+   sous le personnage, et pousse les suivants. Trois raisons, dont deux nouvelles.
+   (1) Le panneau du rail défile, donc il rogne tout enfant absolu : accrochée à
+   la puce, la palette serait coupée par le bord du panneau.
+   (2) Elle mesure environ 161 px et le panneau en offre 248 : il n'y a plus rien
+   à faire déborder, ce qui était TOUTE la raison de la barre basse en fenêtre
+   étroite (règle supprimée, avec l'agrandissement des pastilles qui allait avec).
+   (3) Dans une colonne, un tiroir qui pousse la liste se lit mieux qu'une boîte
+   qui recouvre le personnage voisin.
+   Il ne reste que `position: relative` + `z-index`, et pour le seul empilement :
+   le fond plein écran qui ferme la palette est à 19, elle doit passer au-dessus.
+   C'est aussi pour ça que le rail ne prend ni `position` ni `z-index`. */
 .swatch-popover {
-  position: absolute;
-  top: 24px;
-  left: 0;
+  position: relative;
   z-index: 20;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -239,45 +566,13 @@ h3 {
   transform: scale(1.15);
 }
 
-/* En fenêtre étroite, le popover devient une barre en bas d'écran plutôt qu'une
-   boîte accrochée sous la puce. La raison est le débordement : accroché à
-   gauche de sa puce il mesure environ 163 px et sortait du bord droit dès que
-   la puce était en fin de rangée (défilement horizontal sur une page qui n'en a
-   nulle part ailleurs). Elle vaut à la souris comme au doigt, donc elle survit
-   au blocage de la page sur écran tactile (cf. useTouchPointer.js) ; la seconde
-   raison d'origine, « des pastilles de 18 px sont intouchables au doigt », a
-   disparu avec lui. Ce qui reste d'elle, l'agrandissement des pastilles
-   ci-dessous, se justifie autrement : une barre pleine largeur semée de points
-   de 18 px se lit comme un ruban vide.
-   Le fond plein-écran qui le ferme existe déjà, donc l'interaction ne change
-   pas : on clique une couleur, ou à côté pour renoncer.
-   `fixed` est sûr ici : aucun ancêtre du popover ne porte de transform (ce qui
-   en ferait le bloc conteneur), et cela le sort du rognage que le bandeau
-   applique pendant son repli. */
-@media (max-width: 800px) {
-  .swatch-popover {
-    position: fixed;
-    top: auto;
-    bottom: 16px;
-    left: 16px;
-    right: 16px;
-    gap: 10px;
-    padding: 14px;
-    justify-items: center;
-  }
-
-  .swatch-popover .swatch {
-    width: 100%;
-    max-width: 46px;
-    aspect-ratio: 1;
-    height: auto;
-  }
-}
-
 .swatch-popover .swatch.current {
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink);
 }
 
+/* Le nom prend la place et se coupe en « … » : un nom à rallonge ne doit pas
+   pousser le compte de répliques et le ✕ hors du rail (même règle que
+   `.dash-name-text` dans la colonne figée de l'Avancement). */
 .character-name {
   background: none;
   border: none;
@@ -286,6 +581,12 @@ h3 {
   color: var(--ink);
   padding: 2px;
   border-radius: 6px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .character-name:hover {
@@ -293,12 +594,18 @@ h3 {
 }
 
 .character-rename-input {
-  width: 130px;
+  /* Élastique, là où 130 px étaient mesurés pour une rangée horizontale. */
+  flex: 1;
+  min-width: 0;
   padding: 2px 6px;
   font-size: 13.5px;
 }
 
-.character-count {
+/* Le même compte de répliques dans les deux sections du rail qui en portent un,
+   la distribution et le plan : une seule règle, sinon les deux colonnes de
+   chiffres du même panneau finissent par ne plus se ressembler. */
+.character-count,
+.structure-count {
   font-family: var(--font-mono);
   font-size: 11.5px;
   color: var(--ink-soft);
@@ -312,58 +619,571 @@ h3 {
   color: var(--ink-soft);
 }
 
+/* En colonne, comme la liste au-dessus : les 170 px du champ étaient mesurés
+   pour une rangée horizontale dans le bandeau. Il se pose JUSTE SOUS la liste (le
+   `gap` du panneau suffit à l'en écarter) et ne défile pas avec elle, donc il
+   reste sous les yeux d'une distribution à vingt noms.
+   Pas de filet ici, contrairement à la Recherche : là-bas il annonce une
+   frontière réelle, la liste des résultats défilant toujours ; ici la liste
+   s'arrête à son contenu la plupart du temps, et un trait en travers du panneau
+   sous trois personnages ne séparerait rien. Quand elle défile pour de bon, c'est
+   son ascenseur qui le dit. */
 .character-add {
+  flex: none;
   display: flex;
+  flex-direction: column;
   gap: 6px;
 }
 
 .character-add input {
-  width: 170px;
+  width: 100%;
   padding: 4px 8px;
   font-size: 13.5px;
 }
 
-/* ---- Main column ---- */
+.character-add .btn {
+  align-self: flex-end;
+}
 
+/* ---- Plan de la pièce (section « Structure » du rail) ----
+
+   Elle a remplacé les deux `<select>` du bandeau partagé et les boutons
+   « + Scène » / « + Acte » qui les suivaient, comme les puces de personnage
+   avaient remplacé son select de personnage, et pour le même motif : sur la
+   Répétition et l'Enregistrement on CHOISIT une scène dans un contenu figé, dans
+   l'Édition on la façonne. Une liste déroulante n'affiche qu'une ligne à la fois,
+   donc la forme de la pièce ne se lisait nulle part.
+
+   L'ordre des blocs raconte la pièce du général au particulier : son titre, ses
+   actes, ses scènes ; et « + Acte » est en pied, hors du défilement. */
+
+/* Les trois noms de la pièce sont des CHAMPS, au même cadre blanc : la pièce, ses
+   actes, ses scènes. Ce qui se modifie doit se reconnaître sans qu'on l'ait
+   appris, et le plan est la seule partie de la page dont le contenu ne se lisait
+   pas déjà comme une saisie (une réplique est un textarea, un personnage a son
+   champ). Les noms d'acte et de scène ont été des mots qu'on cliquait, le titre
+   de la pièce était alors le seul champ des trois, et rien ne disait que les
+   deux autres niveaux se renommaient.
+   Le cadre vient de `theme.css` (`input[type="text"]`, plus spécifique qu'une
+   classe seule) ; il ne reste ici qu'à dire le survol, qui manquait au titre de
+   la pièce : le filet prend l'accent, le fond ne bouge pas. C'est le geste le
+   plus discret qui distingue un champ d'un titre affiché, et il faut qu'il le
+   soit : cette colonne en aligne une quinzaine. */
+.structure-field:hover {
+  border-color: var(--accent);
+}
+
+/* La racine du plan. Le champ vivait dans le bandeau, en 19 px : ici il en fait
+   18, la largeur utile passant de la barre entière aux 248 px du panneau.
+   Il garde le cadre blanc que `theme.css` donne à tout `input[type="text"]`, comme
+   les deux autres champs du rail (l'ajout de personnage, la requête de recherche),
+   et n'ajoute que sa serif : c'est ce qui le fait lire comme un champ et pas comme
+   un titre affiché, alors que la rangée du haut du bandeau montre la même chaîne
+   au même instant. Il portait `border: none` plus un filet du bas pour ressembler
+   à un titre souligné, et ces déclarations n'ont jamais rien fait : `input[type=
+   "text"]` (un élément plus un attribut) est plus spécifique qu'une classe seule,
+   donc le cadre partagé gagnait déjà du temps du bandeau. Elles sont retirées
+   plutôt que rendues gagnantes, l'aspect obtenu étant celui qu'on veut ici. */
 .play-title-input {
+  flex: none;
   width: 100%;
   font-family: var(--font-serif);
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--ed-title);
-  border: none;
-  background: transparent;
-  border-bottom: 1px solid var(--border);
-  border-radius: 0;
-  padding: 2px;
+  padding: 4px 8px;
 }
 
-.act-header {
+/* La liste est ce qui défile dans cette section, comme celle des personnages, et
+   pour la même raison : `flex: 0 1 auto` et surtout pas `flex: 1`, sinon une pièce
+   à deux actes pousse « + Acte » au bas du panneau, loin du plan qu'il complète.
+   Elle porte en revanche le filet de `.search-results`, que la liste des
+   personnages n'a pas : le plan d'une vraie pièce (dix scènes dans le premier acte
+   de la nôtre) défile toujours, donc la frontière avec le champ de titre fixe est
+   réelle, et une scène coupée en haut de la liste se lirait comme un défaut
+   d'affichage. Il file jusqu'aux bords du panneau (marges négatives de son
+   remplissage), sinon c'est un soulignement de bloc et pas une division. */
+.structure-acts {
+  list-style: none;
+  margin: 0 -12px;
+  padding: 10px 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  border-top: 1px solid var(--border);
+}
+
+/* Deux pixels entre les rangées, et pas un seul : depuis que chaque nom porte le
+   cadre d'un champ, deux rangées collées mettent deux filets à deux pixels l'un
+   de l'autre, ce qui se lit comme un trait double. Il en va de même entre les
+   scènes d'un acte, d'où le flex sur leur liste. */
+.structure-act {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.structure-scenes {
+  list-style: none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* Le retrait des scènes sous leur acte : c'est TOUT ce qui dit la hiérarchie
+     (pas de filet ni de guide vertical, qui dans une colonne de 248 px ajoutent
+     une ligne à lire pour une information que l'alignement donne déjà). Il vaut
+     la poignée plus son écart, donc une scène commence là où commence le nom de
+     son acte. */
+  padding: 0 0 0 19px;
+}
+
+/* Une rangée de plan : la poignée, le nom, le compte, le ✕. Le filet transparent
+   au repos est ce qui empêche la scène courante de décaler ses voisines quand
+   elle prend le sien (même règle que `.search-hit`). */
+.structure-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 1px 4px 1px 0;
 }
 
-.act-title.title-display,
-.act-title.title-input {
+.structure-row.act .structure-name {
   font-family: var(--font-serif);
-  font-size: 24px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--ed-title);
+}
+
+/* Une rangée de SCÈNE s'ouvre en entier, pas seulement par son champ : c'est la
+   ligne qui est l'objet, et le survol doit donc allumer la ligne et pas le mot.
+   Il pose le filet que la rangée garde transparent au repos, plus le crème du
+   papier : le champ blanc ressort alors de sa rangée, ce qui dit du même coup
+   les deux gestes qu'elle porte (ouvrir la scène, écrire son nom). Le `:not` est
+   nécessaire, à égalité de spécificité avec la règle du dessous. Les rangées
+   d'acte n'en prennent rien : leur nom ne mène nulle part. */
+.structure-row.scene {
+  cursor: pointer;
+}
+
+.structure-row.scene:not(.current):hover {
+  border-color: var(--border);
+  background: var(--paper-dark);
+}
+
+/* La scène ouverte, en accent : c'est la rangée qui dit où on est, et elle le dit
+   aussi par `aria-current` (cf. StructurePanel.jsx). */
+.structure-row.scene.current {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* L'acte qui la contient prend l'accent sur son seul nom, et pas le cadre de la
+   scène : deux rangées encadrées l'une sous l'autre se disputeraient le « vous
+   êtes ici », alors que la scène est le seul objet vraiment ouvert. Il sert à
+   retrouver où l'on est dans un plan qui dépasse la hauteur du panneau, quand la
+   scène courante a défilé hors de vue. */
+.structure-row.act.current .structure-name {
+  color: var(--accent);
+}
+
+/* Même poignée que les répliques (classe `drag-handle` conservée sur le bouton) :
+   c'est le même geste sur un autre objet de la pièce. Il n'en reste qu'à
+   resserrer la boîte, taillée là-bas pour une rangée haute de 40 px. */
+.structure-handle {
+  font-size: 13px;
+  line-height: 1;
+  padding: 3px 1px;
+  color: var(--ed-ghost);
+}
+
+/* Le nom prend la place et se coupe en « … », comme celui d'un personnage : un
+   titre à rallonge ne doit pas pousser le compte et le ✕ hors du panneau (sur un
+   champ, la coupure ne se voit qu'au repos, le navigateur faisant défiler son
+   contenu dès qu'on y écrit). Le remplissage du thème (8px 10px) est repris pour
+   une rangée de 13.5 px, et le rayon suit celui de la rangée qui l'entoure. */
+.structure-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  color: var(--ink);
+  padding: 2px 6px;
+  border-radius: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* « + Scène » sous les scènes de SON acte, au retrait des scènes : c'est là qu'il
+   ajoute. Discret, mais LISIBLE au repos, et pas la pastille au survol de
+   « + insérer » : celle-là se cache parce que la zone qui la porte est un
+   entre-deux de répliques, invisible par nature, alors qu'ici il y a un acte sous
+   les yeux et que c'est le geste courant de la page (on ajoute plus de scènes que
+   d'actes, d'où le vrai bouton pour « + Acte » et cette forme-là pour celui-ci). */
+.structure-add-scene {
+  align-self: flex-start;
+  margin-left: 19px;
   background: none;
   border: none;
-  padding: 2px 6px;
-  text-align: left;
-}
-
-.act-title.title-display:hover {
-  background: var(--paper-dark);
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  padding: 2px 4px;
   border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s;
 }
 
-.act-title.title-input {
-  border-bottom: 2px solid var(--accent);
+.structure-add-scene:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Hors du défilement de la liste, comme le formulaire d'ajout des personnages, et
+   aligné à droite comme son bouton. */
+.structure-add-act {
+  flex: none;
+  align-self: flex-end;
+}
+
+/* ---- Recherche (section « Recherche » du rail) ----
+
+   L'ordre des blocs : comment je cherche (les deux cases), ce que je cherche, ce
+   que je mets à la place, combien et où, puis les résultats. Ce sont les deux
+   CHAMPS qui doivent se toucher, comme dans un éditeur de code : on tape l'un,
+   on tape l'autre, on relit les deux avant de remplacer, et le chevron qui ouvre
+   le second doit être à côté de ce qu'il fait apparaître. Les cases, qui règlent
+   la recherche, se lisent très bien avant elle ; entre les deux champs, elles les
+   séparaient de trois blocs et le remplacement ne se lisait plus comme la suite
+   de la requête. */
+
+/* Les réglages, en tête et hors du défilement. */
+.search-controls {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.search-query-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Le chevron de dévoilement du remplacement. Il pointe vers le bas quand il est
+   fermé, vers le haut quand il est ouvert : il désigne ce qu'il fait apparaître.
+   **Encadré au repos et haut comme le champ** (`align-self: stretch`, donc aucune
+   hauteur à tenir synchrone avec le remplissage du champ) : c'est le seul chemin
+   vers le remplacement, or le premier essai n'était qu'un glyphe gris sans cadre
+   posé au bord d'un champ de saisie, où il se lisait comme une décoration du champ
+   plutôt que comme un bouton. Un cadre et un fond de carte en font un contrôle
+   attaché au champ, comme la boîte de recherche d'un éditeur de code. Ouvert, il
+   passe à l'accent, plein comme une case cochée : il dit alors que le champ du
+   dessous vient de lui. */
+.search-replace-toggle {
+  flex: none;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--ink-soft);
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.search-replace-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.search-replace-toggle svg {
+  transition: transform 0.15s var(--ease-header);
+}
+
+.search-replace-toggle[aria-expanded="true"] {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+}
+
+.search-replace-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+/* Décalé de la largeur du chevron plus la gouttière de sa rangée (26 + 4) : le
+   champ de remplacement s'aligne ainsi exactement sur le champ de requête, et le
+   bloc entier se lit comme le dépliage du bouton qui est à sa gauche. Sans ce
+   décalage les deux champs faisaient deux largeurs différentes, et le second
+   avait l'air d'appartenir au panneau plutôt qu'à la requête. */
+.search-replace {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-left: 30px;
+}
+
+.search-field {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 13.5px;
+}
+
+/* Le champ de requête partage sa rangée avec le chevron. */
+.search-query-row .search-field {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Les deux cases côte à côte, et en `flex-wrap` comme les quatre réglages de la
+   Répétition : jamais un nombre de colonnes fixé, qui alignerait la courte sur la
+   longue. Elles tiennent dans les 248 px du panneau par défaut, et repassent l'une
+   sous l'autre d'elles-mêmes quand on resserre le panneau vers ses 200 px. */
+.search-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.search-options label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.search-count-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Le temps que le rendu rattrape la frappe (cf. `searching` dans useSearch.js) :
+   on estompe au lieu de figer, et sans transition d'entrée, sinon un clignotement
+   s'ajoute à chaque caractère tapé. Le retour à l'opacité pleine, lui, est adouci :
+   c'est le moment où la liste devient juste. */
+.search-count.stale,
+.search-results.stale {
+  opacity: 0.45;
+}
+
+.search-count,
+.search-results {
+  transition: opacity 0.12s ease;
+}
+
+/* Le compte prend la place restante : les flèches restent collées au bord droit
+   du panneau, donc elles ne bougent pas quand le nombre change de longueur. */
+.search-count {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.search-nav {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.search-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* La SEULE zone défilante de la section : les réglages restent en tête.
+   Le filet du haut n'est pas décoratif : une fois qu'une partie du panneau est
+   fixe et l'autre défilante, rien ne disait plus où passait la frontière, et un
+   résultat coupé en haut de la liste se lisait comme un défaut d'affichage plutôt
+   que comme le bord d'une zone qui défile. Il file jusqu'aux bords du panneau
+   (marges négatives de son remplissage) : une ligne qui s'arrête à douze pixels
+   des bords se lit comme un soulignement de bloc, pas comme une division de
+   panneau. La zone gagne au passage la pleine largeur, donc son ascenseur se pose
+   au bord du panneau. */
+.search-results {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  border-top: 1px solid var(--border);
+  margin: 0 -12px;
+  padding: 0 12px;
+}
+
+/* ---- Le contrat de hauteurs de la liste fenêtrée ----
+   `ResultList` (SearchPanel.jsx) ne rend que la tranche visible et calcule les
+   positions à partir de DEUX nombres : 66 px par rangée, 30 px par en-tête de
+   scène. Ils sont écrits ici et là-bas ; les faire diverger décale la liste sous
+   l'ascenseur. Toute hauteur ci-dessous est donc fixe et jamais dérivée du
+   contenu, ce qui rend aussi la hauteur totale exacte dès le premier rendu, donc
+   un ascenseur qui ne se recale pas sous la souris en cours de route. */
+.search-flat {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: block;
+}
+
+/* 66 = 62 px de rangée + 4 px de gouttière, en REMPLISSAGE bas et pas en `gap` :
+   un `gap` ne compterait pas dans la hauteur de l'élément, donc pas dans le
+   calcul des positions. */
+.search-row {
+  height: 66px;
+  padding-bottom: 4px;
+}
+
+.search-group-head {
+  height: 30px;
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 6px;
+}
+
+/* Sur UNE ligne, coupée en « … » : l'en-tête entre dans le contrat des 30 px, et
+   deux titres d'acte et de scène à rallonge passeraient sinon à deux lignes. */
+.search-group-title {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.search-group-title > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* L'acte s'efface derrière la scène : c'est la scène qu'on va ouvrir, l'acte ne
+   sert qu'à la situer. Deux graisses, donc rien à séparer par un signe. */
+/* `--ink-soft` et pas `--ed-ghost` : ce dernier est taillé pour la poignée de
+   glisser d'une réplique sans personnage, un dessin, donc visé à « ≥ 3:1 » ; ici
+   c'est du texte informatif de 12 px, qui demande l'encre la plus claire admise
+   pour du texte (≥ 4.5:1). L'acte s'efface derrière la scène par sa seule
+   graisse, ce qui suffisait déjà à les distinguer. */
+.search-group-act {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.search-group-scene {
+  color: var(--ink-soft);
+}
+
+/* Un résultat : le personnage puis l'extrait, sur un bloc blanc posé sur le
+   crème du rail, comme les puces de personnage juste à côté.
+   `height: 100%` remplit la rangée, ce qui est la seule façon d'avoir des cartes
+   toutes de la même hauteur : un extrait qui tient sur une ligne, ou une réplique
+   dont le personnage a disparu, en ferait autrement une plus courte que ses
+   voisines et l'interligne de la liste aurait l'air de changer d'une rangée à
+   l'autre (c'est le bug qu'a valu un `<li>` de trop entre les deux : un
+   pourcentage se résout contre la hauteur du PARENT, donc contre les 66 px de
+   `.search-row`, et pas contre un intermédiaire à hauteur automatique). Rien ne
+   doit donc s'insérer entre la rangée et ce bouton. */
+.search-hit {
+  width: 100%;
+  height: 100%;
+  display: block;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 5px 7px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.search-hit:hover {
+  border-color: var(--border);
+}
+
+/* La correspondance courante n'est pas signalée par la seule couleur : son
+   bouton porte aussi `aria-current`. */
+.search-hit.current {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.search-hit-who {
+  display: block;
+  /* Hauteur de ligne explicite : elle entre dans l'addition des 62 px. */
+  line-height: 14px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* En Spectral, comme partout où le site cite la pièce (texte des répliques,
+   cartes de dialogue, citation des confirmations).
+   Deux lignes, pas plus, et coupé net au-delà : c'est ce qui donne à la rangée sa
+   hauteur fixe, donc un défileur qui ne mente pas et une liste fenêtrable
+   (cf. `.search-row`). On ne
+   perd rien d'essentiel, l'extrait sert à reconnaître la réplique et pas à la
+   lire, et l'occurrence est garantie visible parce que ce qui la précède est bridé
+   à peu près à une ligne (EXCERPT_BEFORE dans search.js).
+   `line-height` en pixels et pas en multiple : c'est un terme de l'addition des
+   62 px, il ne doit pas dépendre de l'arrondi d'un produit. */
+.search-hit-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-family: var(--font-serif);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink);
+}
+
+/* `<mark>` restylé : son jaune par défaut est hors palette, et il est le seul
+   fond de couleur pleine que le navigateur impose. */
+.search-hit mark {
+  background: color-mix(in srgb, var(--accent) 22%, #fff);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+.search-hit.current mark {
+  background: color-mix(in srgb, var(--accent) 34%, #fff);
+}
+
+/* ---- Main column ----
+
+   Les deux titres ne sont plus que des titres : ils DISENT où l'on écrit, et le
+   plan de la pièce (section « Structure » du rail) fait tout le reste, y compris
+   les renommer. Ils étaient des boutons qui se changeaient en champ au clic,
+   d'où la paire de classes `title-display` / `title-input` qui a disparu d'ici,
+   et d'où aussi leur remplissage de 2px 6px, qui était la boîte du bouton et pas
+   celle du titre : il partait avec, donc les deux titres s'alignent maintenant
+   sur le bord gauche du panneau des répliques, au lieu d'être rentrés de 6 px
+   par rapport à lui. Ce sont des `<h2>` et `<h3>`, qui prennent la serif et
+   `--ed-title` des règles d'en-tête ; il ne reste ici que leur corps, leur
+   graisse et l'écart au bloc suivant. */
+
+.act-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 6px;
 }
 
 .scene-block {
@@ -378,21 +1198,9 @@ h3 {
   margin-bottom: 6px;
 }
 
-.scene-title.title-display,
-.scene-title.title-input {
-  font-family: var(--font-serif);
+.scene-title {
   font-size: 19px;
   font-weight: 600;
-  background: none;
-  border: none;
-  padding: 2px 6px;
-  text-align: left;
-  color: var(--ed-title);
-}
-
-.scene-title.title-display:hover {
-  background: var(--paper-dark);
-  border-radius: 6px;
 }
 
 .scene-line-count {
@@ -684,11 +1492,17 @@ h3 {
 
 /* Repli étroit des répliques : la ligne unique tient tant que le texte garde
    une largeur de saisie décente (~280 px). En dessous, deux rangées —
-   poignée + personnage + ✕ en tête, texte en pleine largeur dessous. Le seuil
-   est franchement plus bas que celui du popover de couleur ci-dessus : la
-   colonne de l'éditeur fait 820 px de contenu, replier dès 800 px repliait
-   quasiment toujours. */
-@media (max-width: 620px) {
+   poignée + personnage + ✕ en tête, texte en pleine largeur dessous.
+   Requête de CONTENEUR et non de fenêtre (cf. `container: ed-column` en tête de
+   fichier) : depuis que le rail prend sa largeur sur la colonne, la largeur de
+   la fenêtre ne dit plus rien de la place qui reste pour taper. Rail ouvert, une
+   fenêtre de 940 px ne laisse que 620 px à la colonne, et une requête de fenêtre
+   ne se déclenchait pas ; rail replié, le seuil arrive à 668 px de fenêtre, soit
+   les 48 px de la bande d'icônes. C'est le même seuil, mesuré au bon endroit, et
+   le chiffre garde donc sa raison d'être. Base technique : les requêtes de
+   conteneur sont de la génération du `:has()` dont ce fichier dépend déjà, et la
+   page est réservée à l'ordinateur. */
+@container ed-column (max-width: 620px) {
   .line-row {
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas:
@@ -709,3 +1523,15 @@ h3 {
   }
 }
 
+/* ---- Mouvement réduit ----
+   Pendant du bloc de fin de theme.css, qui neutralise le repli du bandeau :
+   chaque fichier neutralise SES animations, et faire connaître des classes de
+   l'éditeur au thème partagé casserait le sens des deux fichiers. Le rail se
+   replie toujours, il devient instantané, et le chevron du remplacement pivote
+   toujours, il arrive d'un coup. */
+@media (prefers-reduced-motion: reduce) {
+  .editor-rail,
+  .search-replace-toggle svg {
+    transition-duration: 0s;
+  }
+}

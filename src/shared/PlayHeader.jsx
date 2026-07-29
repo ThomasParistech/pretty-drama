@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import PageMark from "./PageMark.jsx";
 import HomeLink from "./HomeLink.jsx";
 import { PAGES } from "./pages.js";
@@ -41,27 +41,19 @@ import { PAGES } from "./pages.js";
 // que le bandeau ajoute : les précisions qui n'auraient aucun sens sur une
 // carte, quand on choisit encore où aller. Deux paragraphes au total, jamais
 // trois : c'est la place que laisse un bandeau au-dessus du contenu.
+// Les réglages sont rognés en permanence (`overflow: hidden` sur
+// `.play-header-settings`, theme.css). Ce composant a porté un état `animating`
+// et un minuteur de 340 ms pour lever ce rognage dès que le bandeau était ouvert
+// et immobile, et cela n'avait qu'une raison : le popover de couleur d'une puce
+// de personnage devait pouvoir dépasser du bandeau de l'éditeur. Les puces
+// vivent maintenant dans le rail de l'Édition, donc plus aucune des quatre pages
+// n'a de contenu qui dépasse de ses réglages, et aucune ne fait plus tourner de
+// minuteur à chaque repli.
 export default function PlayHeader({ page, title, actions, hint, children }) {
   const [open, setOpen] = useState(true);
-  // Le repli est animé, donc les réglages doivent être rognés PENDANT le
-  // mouvement seulement : ouverts et immobiles, ils laissent dépasser ce qui
-  // doit dépasser (le popover de couleur de l'éditeur, posé sous sa puce).
-  const [animating, setAnimating] = useState(false);
-
-  // Minuteur plutôt que `transitionend` : l'événement ne se déclenche pas quand
-  // la transition est neutralisée (mouvement réduit) ni si un navigateur
-  // n'animait pas `grid-template-rows`, et le bandeau resterait rogné. Doit
-  // couvrir la plus longue transition du repli (`.play-header-settings*` dans
-  // theme.css : 0.26 s, plus 0.06 s de retard à l'ouverture).
-  useEffect(() => {
-    const timer = setTimeout(() => setAnimating(false), 340);
-    return () => clearTimeout(timer);
-  }, [open]);
 
   return (
-    <header
-      className={`play-header page-${page} ${open ? "open" : ""} ${animating ? "animating" : ""}`}
-    >
+    <header className={`play-header page-${page} ${open ? "open" : ""}`}>
       <div className="play-header-row">
         <PageMark page={page} />
         {/* Infobulle en un seul libellé, et pas « les réglages » : le bandeau
@@ -71,10 +63,7 @@ export default function PlayHeader({ page, title, actions, hint, children }) {
           className="play-header-toggle"
           title="Déplier ou replier le bandeau"
           aria-expanded={open}
-          onClick={() => {
-            setAnimating(true);
-            setOpen((o) => !o);
-          }}
+          onClick={() => setOpen((o) => !o)}
         >
           <span className="play-header-title">{title}</span>
           {/* Un seul chevron qui pivote (et non ▲/▼ échangés) : le repli est

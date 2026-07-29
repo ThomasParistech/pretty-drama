@@ -13,11 +13,19 @@ export function characterColorById(characters, id) {
   return character ? hueColor(character.hue) : null;
 }
 
-// Character management, inline in the play header: one chip per character
-// (color swatch + inline rename + line count + delete) and an add form.
-// Lines only ever reference these entries by id, so renames propagate
-// everywhere and never touch line ids.
-export default function CharacterChips({ characters, lineCounts, dispatch, onRequestDelete }) {
+// La gestion des personnages : une puce par personnage (pastille de couleur,
+// renommage en place, compte de répliques, suppression) et le formulaire
+// d'ajout. Les répliques ne référencent ces entrées que par id, donc un
+// renommage se propage partout et ne touche jamais un id de réplique.
+//
+// Elle vit dans la section « Personnages » du rail (cf. EditorRail.jsx), et
+// plus dans le bandeau, où les autres pages ont leur select de personnage : le
+// bandeau est partagé par quatre pages et n'a de place que pour ce que les
+// quatre ont en commun, alors que cette liste grandit avec la distribution.
+//
+// Une vraie `<ul>` : un lecteur d'écran annonce « liste de 7 éléments », donc la
+// distribution de la pièce devient un objet et pas une suite de boutons.
+export default function CharacterPanel({ characters, lineCounts, dispatch, onRequestDelete }) {
   const [newName, setNewName] = useState("");
 
   const add = () => {
@@ -28,19 +36,22 @@ export default function CharacterChips({ characters, lineCounts, dispatch, onReq
   };
 
   return (
-    <div className="characters-row">
-      {characters.map((c) => (
-        <CharacterChip
-          key={c.id}
-          character={c}
-          lineCount={lineCounts.get(c.id) ?? 0}
-          onRename={(name) => dispatch({ type: "RENAME_CHARACTER", id: c.id, name })}
-          onSetHue={(hue) => dispatch({ type: "SET_CHARACTER_HUE", id: c.id, hue })}
-          onDelete={() => onRequestDelete(c)}
-        />
-      ))}
-      {characters.length === 0 && (
-        <span className="character-empty">Aucun personnage pour l'instant :</span>
+    <>
+      {characters.length === 0 ? (
+        <p className="character-empty">Aucun personnage pour l'instant :</p>
+      ) : (
+        <ul className="character-list">
+          {characters.map((c) => (
+            <CharacterItem
+              key={c.id}
+              character={c}
+              lineCount={lineCounts.get(c.id) ?? 0}
+              onRename={(name) => dispatch({ type: "RENAME_CHARACTER", id: c.id, name })}
+              onSetHue={(hue) => dispatch({ type: "SET_CHARACTER_HUE", id: c.id, hue })}
+              onDelete={() => onRequestDelete(c)}
+            />
+          ))}
+        </ul>
       )}
 
       <form
@@ -56,15 +67,19 @@ export default function CharacterChips({ characters, lineCounts, dispatch, onReq
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
         />
+        {/* « + Personnage » et pas « + Ajouter » : les trois boutons d'ajout du
+            rail se lisent dans le même meuble (« + Acte », « + Scène »), donc ils
+            nomment tous l'objet qu'ils créent, et le champ voisin dit déjà
+            « Nom du personnage ». */}
         <button type="submit" className="btn small" disabled={!newName.trim()}>
-          + Ajouter
+          + Personnage
         </button>
       </form>
-    </div>
+    </>
   );
 }
 
-function CharacterChip({ character, lineCount, onRename, onSetHue, onDelete }) {
+function CharacterItem({ character, lineCount, onRename, onSetHue, onDelete }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(character.name);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -76,14 +91,65 @@ function CharacterChip({ character, lineCount, onRename, onSetHue, onDelete }) {
   };
 
   return (
-    <span className="character-chip">
-      <button
-        className="character-swatch"
-        title="Changer la couleur"
-        aria-label={`Changer la couleur de ${character.name}`}
-        style={{ background: hueColor(character.hue) }}
-        onClick={() => setPickerOpen((o) => !o)}
-      />
+    <li className="character-item">
+      <span className="character-chip">
+        <button
+          className="character-swatch"
+          title="Changer la couleur"
+          aria-label={`Changer la couleur de ${character.name}`}
+          style={{ background: hueColor(character.hue) }}
+          onClick={() => setPickerOpen((o) => !o)}
+        />
+
+        {editing ? (
+          <input
+            type="text"
+            className="character-rename-input"
+            value={draft}
+            autoFocus
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commit();
+              if (e.key === "Escape") {
+                setDraft(character.name);
+                setEditing(false);
+              }
+            }}
+          />
+        ) : (
+          <button className="character-name" title="Renommer" onClick={() => setEditing(true)}>
+            {character.name}
+          </button>
+        )}
+        {/* Un nombre nu ne dit pas ce qu'il compte : « Marie, 12 » à la voix, et
+            rien du tout à la souris. Le `role="img"` plus l'`aria-label` sont le
+            motif du sceau (`PageMark`), le seul qui rende un `aria-label` valable
+            sur un `<span>`. Le chiffre reste seul à l'écran, la colonne des
+            comptes devant s'aligner. */}
+        <span
+          className="character-count"
+          role="img"
+          aria-label={`${lineCount} réplique${lineCount > 1 ? "s" : ""}`}
+          title={`${lineCount} réplique${lineCount > 1 ? "s" : ""}`}
+        >
+          {lineCount}
+        </span>
+        <button
+          className="chip-delete"
+          title="Supprimer ce personnage"
+          aria-label={`Supprimer ${character.name}`}
+          onClick={onDelete}
+        >
+          <span aria-hidden="true">✕</span>
+        </button>
+      </span>
+
+      {/* La palette est SŒUR de la puce et plus son enfant : elle se pose dans le
+          flux du panneau, sous le personnage, et pousse les suivants (le panneau
+          du rail défile, donc il rognerait une boîte accrochée à la puce).
+          Le fond plein écran qui la ferme reste : on clique une couleur, ou à
+          côté pour renoncer. */}
       {pickerOpen && (
         <>
           <div className="swatch-backdrop" onClick={() => setPickerOpen(false)} />
@@ -104,37 +170,6 @@ function CharacterChip({ character, lineCount, onRename, onSetHue, onDelete }) {
           </div>
         </>
       )}
-
-      {editing ? (
-        <input
-          type="text"
-          className="character-rename-input"
-          value={draft}
-          autoFocus
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") commit();
-            if (e.key === "Escape") {
-              setDraft(character.name);
-              setEditing(false);
-            }
-          }}
-        />
-      ) : (
-        <button className="character-name" title="Renommer" onClick={() => setEditing(true)}>
-          {character.name}
-        </button>
-      )}
-      <span className="character-count">{lineCount}</span>
-      <button
-        className="chip-delete"
-        title="Supprimer ce personnage"
-        aria-label={`Supprimer ${character.name}`}
-        onClick={onDelete}
-      >
-        <span aria-hidden="true">✕</span>
-      </button>
-    </span>
+    </li>
   );
 }

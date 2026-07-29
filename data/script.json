@@ -5802,6 +5802,35 @@
           ]
         }
       ]
+    },
+    {
+      "title": "Acte II",
+      "scenes": [
+        {
+          "title": "Scène 1",
+          "lines": [
+            {
+              "id": "tmp-0",
+              "characterId": "ecfd3c65-fccb-4c87-9fd2-bd7bf486d6d2",
+              "text": "Mais on va être comme des coqs en pâte!"
+            },
+            {
+              "id": "tmp-1",
+              "characterId": "8c5ae733-a9ae-4824-b7c6-458ab41aceed",
+              "text": "Silence! C'est moi le chef ici. Mettez‑vous ça dans l'crâne."
+            },
+            {
+              "id": "tmp-2",
+              "characterId": "0efe8009-ad49-476e-9a4b-2e95963314d2",
+              "text": "Cause toujours."
+            }
+          ]
+        },
+        {
+          "title": "Scène 2 au titre vraiment très long pour tester",
+          "lines": []
+        }
+      ]
     }
   ]
 }

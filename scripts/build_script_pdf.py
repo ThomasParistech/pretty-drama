@@ -206,13 +206,18 @@ def render_tex(script: dict) -> str:
     out.append("")
 
     empty = True
+    # Une pièce en un seul acte n'affiche pas son titre d'acte : il ne distingue
+    # rien, et le lecteur d'un script d'un acte n'a que des scènes à repérer. Il
+    # reste dans script.json (l'éditeur travaille toujours par acte), c'est la
+    # mise en page qui le tait.
+    show_acts = len(script["acts"]) > 1
     for act_index, act in enumerate(script["acts"]):
         act_title = act["title"].strip()
         # Chaque acte sauf le premier ouvre une page : \clearpage et non
         # \newpage, qui ne ferait que passer à la colonne suivante.
         if act_index > 0:
             out.append(r"\clearpage")
-        if act_title:
+        if show_acts and act_title:
             out.append(r"\actheading{" + latex_escape(act_title) + "}")
 
         for scene_index, scene in enumerate(act["scenes"]):

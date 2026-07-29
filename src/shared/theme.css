@@ -257,6 +257,21 @@ textarea:focus {
   outline-offset: 1px;
 }
 
+/* Cases à cocher à l'accent de la page (bordeaux ici, violet dans l'éditeur
+   re-skinné) plutôt qu'au bleu du système. Sélecteur d'élément et pas de classe,
+   et ici et pas dans une page : deux pages en ont maintenant (les quatre
+   réglages de la Répétition, les deux options de la Recherche) et elles les
+   veulent identiques. Précédent nommé : `.confirm-quote`, descendue ici le jour
+   où l'Enregistrement a cité une réplique à son tour.
+   La zone de clic agrandie sous 800 px reste, elle, locale à la Répétition :
+   elle est justifiée par le pouce, et l'Édition ne s'ouvre pas au doigt. */
+input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
 /* ---- Collapsible play header (shared between Répétition, Enregistrement et
    Éditeur) : sceau de page + titre de la pièce, puis les sélecteurs
    d'acte/scène/personnage, et la marque en pied du bandeau déplié. ---- */
@@ -379,23 +394,28 @@ textarea:focus {
   display: grid;
   grid-template-rows: minmax(0, 0fr);
   visibility: hidden;
+  /* Le rognage vit ICI, sur la grille, et pas sur son enfant : en `border-box`,
+     un enfant de hauteur 0 garde quand même ses 14 px de padding bas, qui
+     débordaient sous le bandeau fermé et l'épaississaient sans raison visible.
+     Il est actif EN PERMANENCE. Il ne l'était pas : une classe `animating`,
+     posée par le composant et retirée par un minuteur de 340 ms, le levait dès
+     que le bandeau était ouvert et immobile, pour une seule et unique raison,
+     le popover de couleur d'une puce de personnage, qui devait pouvoir dépasser
+     du bandeau de l'éditeur. Les puces vivent maintenant dans le rail de
+     l'Édition et leur palette se pose dans son flux, donc plus aucune des
+     quatre pages n'a de contenu qui dépasse de ses réglages, et quatre pages
+     n'ont plus à faire tourner un minuteur à chaque repli pour personne. La
+     doctrine qui allait avec n'a plus d'objet, mais elle se note au cas où un
+     futur contenu débordant ferait revenir la question : c'était un minuteur et
+     pas un `transitionend`, parce qu'à mouvement réduit l'événement ne vient
+     jamais et le bandeau resterait rogné. */
+  overflow: hidden;
   transition: grid-template-rows 0.26s var(--ease-header), visibility 0.26s;
 }
 
 .play-header.open .play-header-settings {
   grid-template-rows: minmax(0, 1fr);
   visibility: visible;
-}
-
-/* Le rognage vit ICI, sur la grille, et pas sur l'enfant : en `border-box`, un
-   enfant de hauteur 0 garde quand même ses 14 px de padding bas, qui
-   débordaient sous le bandeau fermé et l'épaississaient sans raison visible.
-   Actif seulement fermé ou en mouvement : ouvert et immobile, le bandeau doit
-   laisser dépasser le popover de couleur de l'éditeur. D'où la classe
-   `animating` posée par le composant. */
-.play-header:not(.open) .play-header-settings,
-.play-header.animating .play-header-settings {
-  overflow: hidden;
 }
 
 .play-header-settings-inner {

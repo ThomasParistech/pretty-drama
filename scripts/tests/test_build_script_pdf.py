@@ -130,6 +130,16 @@ class TestRenderTex(unittest.TestCase):
         self.assertEqual(body.count(r"\hlinecol"), 1)
         self.assertLess(body.index(r"\sceneheading{Scène 1}"), body.index(r"\hlinecol"))
 
+    def test_a_single_act_hides_its_heading_but_keeps_its_scenes(self):
+        # Un titre d'acte ne sert qu'à distinguer deux actes. Seul, il ajoute un
+        # intertitre au-dessus de la première scène sans rien apprendre.
+        script = dict(SCRIPT, acts=SCRIPT["acts"][:1])
+        tex = render_tex(script)
+        self.assertNotIn(r"\actheading{", tex.split(r"\begin{document}", 1)[1])
+        self.assertIn(r"\sceneheading{Scène 1}", tex)
+        self.assertIn(r"\sceneheading{Scène 2}", tex)
+        self.assertIn("On étouffe ici.", tex)
+
     def test_new_act_opens_a_page_but_not_the_first(self):
         # \clearpage et pas \newpage : en deux colonnes, \newpage se
         # contenterait de passer à la colonne de droite.

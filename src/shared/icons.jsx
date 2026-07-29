@@ -145,6 +145,84 @@ export function TrashIcon() {
   );
 }
 
+// Recherche (rail de l'Édition) : le cercle et son manche.
+export function SearchIcon() {
+  return (
+    <svg {...strokeSvg}>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="M15.5 15.5L21 21" />
+    </svg>
+  );
+}
+
+// Personnages (rail de l'Édition). UNE tête, alors que la section est au
+// pluriel : le dessin fait 18 px, taille à laquelle une seconde tête derrière
+// la première n'ajoute qu'une bavure (même leçon que le couvercle retiré de
+// TrashIcon). C'est l'infobulle qui dit « Personnages ».
+export function PersonIcon() {
+  return (
+    <svg {...strokeSvg}>
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6" />
+    </svg>
+  );
+}
+
+// Structure (rail de l'Édition) : le plan de la pièce, un acte et ses deux
+// scènes en retrait. Trois traits, pas quatre : à 18 px un second acte ramène
+// l'espacement sous quatre pixels et le dessin redevient une trame (même leçon
+// que la seconde tête retirée de PersonIcon). C'est le retrait, et lui seul, qui
+// distingue un plan d'un menu.
+export function OutlineIcon() {
+  return (
+    <svg {...strokeSvg}>
+      <path d="M4 6h16" />
+      <path d="M9 12h11" />
+      <path d="M9 18h11" />
+    </svg>
+  );
+}
+
+// Un seul chevron, qui PIVOTE selon ce qu'il ouvre (et non deux dessins
+// échangés) : c'est déjà la règle du chevron de repli du bandeau, pour la même
+// raison, le mouvement doit suivre celui du panneau. Il sert au repli du rail
+// (tourné d'un quart vers la bande) et au dévoilement du champ de remplacement.
+// En SVG et pas le caractère `▼` du bandeau : celui-là ne pivote bien qu'à sa
+// taille de texte, et la liste des caractères tolérés du projet est fermée.
+export function ChevronIcon() {
+  return (
+    <svg {...strokeSvg}>
+      <path d="M7 10l5 5 5-5" />
+    </svg>
+  );
+}
+
+// Correspondance précédente / suivante (recherche de l'Édition). Deux flèches
+// verticales, parce qu'on parcourt une liste de haut en bas. Ni ▲/▼ (la liste
+// des caractères tolérés est fermée, et ▼ est déjà le vocabulaire du repli sur
+// cette page, le même glyphe dirait deux choses), ni SkipPrev/SkipNext (aplat,
+// famille réservée aux contrôles de lecture, et horizontales).
+export function ArrowUpIcon() {
+  return (
+    <svg {...strokeSvg}>
+      <path d="M12 19V5" />
+      <path d="M6 11l6-6 6 6" />
+    </svg>
+  );
+}
+
+// Distincte de DownloadIcon, qui porte en plus le trait de réception au sol ;
+// les deux ne se côtoient jamais (l'une est dans le bandeau, l'autre dans le
+// rail).
+export function ArrowDownIcon() {
+  return (
+    <svg {...strokeSvg}>
+      <path d="M12 5v14" />
+      <path d="M18 13l-6 6-6-6" />
+    </svg>
+  );
+}
+
 // Avertissement : remplace l'emoji ⚠️, qui rendait en couleur pleine (jaune et
 // noir) sur mobile comme les ▶/⏸ d'avant, donc hors palette, et dont la
 // hauteur variait d'une plateforme à l'autre. Il ne sert qu'en tête de phrase,

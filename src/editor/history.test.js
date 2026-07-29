@@ -26,6 +26,26 @@ const PLAY = {
   ],
 };
 
+// Deux répliques : un remplacement en touche plusieurs à la fois, c'est ce qui
+// le distingue d'une frappe.
+const DUO = {
+  ...PLAY,
+  acts: [
+    {
+      title: "Acte I",
+      scenes: [
+        {
+          title: "Scène 1",
+          lines: [
+            { id: "l-1", characterId: "c-alceste", text: "un mot" },
+            { id: "l-2", characterId: "c-alceste", text: "un mot aussi" },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
 const type = (text) => ({
   type: "EDIT_TEXT",
   actIndex: 0,
@@ -100,6 +120,53 @@ test("les frappes sur DEUX répliques différentes ne fusionnent pas", () => {
   assert.equal(state.past.length, 3);
 });
 
+// ------------------------------------------- noms du plan (titre, actes, scènes)
+
+test("renommer un acte à la frappe ne fait qu'UNE étape", () => {
+  // Les trois noms du plan sont des champs en clair, donc ils se renomment
+  // lettre par lettre comme le texte d'une réplique : sans fusion, revenir sur
+  // un titre demanderait un Ctrl+Z par caractère.
+  const state = apply(
+    initHistory(PLAY),
+    { type: "RENAME_ACT", actIndex: 0, title: "P" },
+    { type: "RENAME_ACT", actIndex: 0, title: "Pr" },
+    { type: "RENAME_ACT", actIndex: 0, title: "Prologue" }
+  );
+  assert.equal(state.present.acts[0].title, "Prologue");
+  assert.equal(state.past.length, 1);
+  assert.equal(historyReducer(state, { type: "UNDO" }).present.acts[0].title, "Acte I");
+});
+
+test("deux noms différents ne fusionnent jamais entre eux", () => {
+  // La clé de fusion d'un acte ou d'une scène est son RANG (ils n'ont pas
+  // d'id) : deux rangs, deux étapes, et le titre de la pièce en est une
+  // troisième.
+  const twoActs = { ...PLAY, acts: [PLAY.acts[0], { title: "Acte II", scenes: [] }] };
+  const state = apply(
+    initHistory(twoActs),
+    { type: "RENAME_ACT", actIndex: 0, title: "Prologue" },
+    { type: "RENAME_ACT", actIndex: 1, title: "Épilogue" },
+    { type: "RENAME_SCENE", actIndex: 0, sceneIndex: 0, title: "Ouverture" },
+    { type: "SET_TITLE", title: "Autre" }
+  );
+  assert.equal(state.past.length, 4);
+});
+
+test("un déplacement d'acte ferme la rafale de renommage", () => {
+  // Ce qui rend le rang utilisable comme clé : tout ce qui décale les rangs a
+  // une clé nulle, donc ferme l'étape en cours. Sans ça, renommer l'acte 1,
+  // le déplacer, puis renommer celui qui a pris sa place fusionnerait deux
+  // objets différents dans la même étape.
+  const twoActs = { ...PLAY, acts: [PLAY.acts[0], { title: "Acte II", scenes: [] }] };
+  const state = apply(
+    initHistory(twoActs),
+    { type: "RENAME_ACT", actIndex: 0, title: "Prologue" },
+    { type: "MOVE_ACT", from: 0, to: 1 },
+    { type: "RENAME_ACT", actIndex: 0, title: "Épilogue" }
+  );
+  assert.equal(state.past.length, 3);
+});
+
 test("annuler puis rétablir revient exactement au même état", () => {
   const edited = apply(initHistory(PLAY), type("Laissez"));
   const roundTrip = apply(edited, { type: "UNDO" }, { type: "REDO" });
@@ -130,6 +197,45 @@ test("une action refusée par le reducer n'empile aucune étape", () => {
     { type: "ADD_CHARACTER", id: "c-neuf", name: "   " },
     { type: "MOVE_LINE", actIndex: 0, sceneIndex: 0, activeId: "l-1", overId: "l-1" }
   );
+  assert.equal(state.past.length, 0);
+  assert.equal(dirty(state), false);
+});
+
+// ------------------------------------------- remplacement (recherche)
+
+test("un remplacement de plusieurs répliques ne fait qu'UNE étape d'annulation", () => {
+  // C'est toute la raison d'une action de lot : une boucle d'EDIT_TEXT en
+  // aurait fait une par réplique (les clés de fusion diffèrent par lineId),
+  // donc autant de Ctrl+Z que de répliques touchées.
+  const before = initHistory(DUO);
+  const state = historyReducer(before, {
+    type: "SET_LINE_TEXTS",
+    edits: [
+      { lineId: "l-1", text: "un terme" },
+      { lineId: "l-2", text: "un terme aussi" },
+    ],
+  });
+  assert.equal(state.past.length, 1);
+  // La pile restitue l'OBJET d'avant, pas un équivalent : c'est ce qui permet
+  // à `dirty` de se comparer par identité.
+  assert.equal(historyReducer(state, { type: "UNDO" }).present, before.present);
+});
+
+test("un remplacement ne fusionne jamais avec une rafale de frappes", () => {
+  // Ni dans un sens ni dans l'autre. Avec un EDIT_TEXT à la place, le
+  // remplacement aurait laissé la rafale OUVERTE sur cette réplique, et un
+  // seul Ctrl+Z aurait annulé la frappe suivante avec lui.
+  const state = apply(
+    initHistory(PLAY),
+    type("La"),
+    { type: "SET_LINE_TEXTS", edits: [{ lineId: "l-1", text: "Remplacé" }] },
+    type("Lb")
+  );
+  assert.equal(state.past.length, 3);
+});
+
+test("un remplacement sans occurrence n'empile rien et n'allume pas l'étiquette", () => {
+  const state = apply(initHistory(PLAY), { type: "SET_LINE_TEXTS", edits: [] });
   assert.equal(state.past.length, 0);
   assert.equal(dirty(state), false);
 });

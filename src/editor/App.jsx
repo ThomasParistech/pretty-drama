@@ -1,15 +1,18 @@
 import React, { useEffect, useMemo, useReducer, useState, useCallback } from "react";
 import PageState from "../shared/PageState.jsx";
 import { fetchScript, downloadBlob, HttpError } from "../shared/data.js";
-import { EMPTY_SCRIPT, allLines, newId } from "./reducer.js";
+import { EMPTY_SCRIPT, allLines, newId, indexAfterMove, indexAfterRemoval } from "./reducer.js";
 import { historyReducer, initHistory } from "./history.js";
 import PlayHeader from "../shared/PlayHeader.jsx";
 import PageMark from "../shared/PageMark.jsx";
 import { PAGES } from "../shared/pages.js";
 import { DownloadIcon, UndoIcon, RedoIcon, WarnIcon } from "../shared/icons.jsx";
-import CharacterChips from "./CharacterPanel.jsx";
+import CharacterPanel from "./CharacterPanel.jsx";
+import EditorRail from "./EditorRail.jsx";
+import SearchPanel from "./SearchPanel.jsx";
+import useSearch from "./useSearch.js";
+import StructurePanel from "./StructurePanel.jsx";
 import SceneEditor from "./SceneEditor.jsx";
-import EditableTitle from "./EditableTitle.jsx";
 import ConfirmModal from "../shared/ConfirmModal.jsx";
 import LeaveGuard from "../shared/LeaveGuard.jsx";
 import useTouchPointer from "./useTouchPointer.js";
@@ -29,12 +32,16 @@ export default function App() {
   // Blocking error: the published script EXISTS but could not be read.
   // Starting empty here would let the respo overwrite the real play.
   const [loadError, setLoadError] = useState(null);
-  // Line id whose textarea should grab focus (set right after ADD_LINE).
-  const [focusLineId, setFocusLineId] = useState(null);
+  // Demande de focus et/ou de sélection adressée à UNE réplique, effacée dès
+  // qu'elle est honorée : `{ lineId, selection: [start, end] | null, focus }`.
+  // Généralise le `focusLineId` d'origine (la réplique qu'on vient de créer
+  // prend le curseur) : la recherche a besoin de sélectionner en plus, et parfois
+  // SANS voler le focus. L'objet s'auto-effaçant, son identité suffit à
+  // distinguer deux demandes successives sur la même réplique, donc pas de
+  // numéro de série ici (contrairement au champ de recherche, cf. useSearch.js).
+  const [focusRequest, setFocusRequest] = useState(null);
   // Pending character deletion needing a decision (has lines).
   const [deleteRequest, setDeleteRequest] = useState(null);
-  // Pending act deletion awaiting confirmation.
-  const [confirmDeleteAct, setConfirmDeleteAct] = useState(false);
   // Is there anything to download? A state comparison, not a flag raised by
   // the first edit: undoing back to the last downloaded state (or to the
   // loaded script, when nothing was downloaded yet) leaves nothing to save.
@@ -123,17 +130,20 @@ export default function App() {
     (actIndex, sceneIndex, afterLineId) => {
       const id = newId();
       dispatch({ type: "ADD_LINE", id, actIndex, sceneIndex, afterLineId });
-      setFocusLineId(id);
+      setFocusRequest({ lineId: id, selection: null, focus: true });
     },
     [dispatch]
   );
 
   // Stable identity: LineRow uses it in an effect dependency list.
-  const handleFocusHandled = useCallback(() => setFocusLineId(null), []);
+  const handleFocusHandled = useCallback(() => setFocusRequest(null), []);
 
-  // One scene edited at a time, picked in the banner (same navigation as
-  // the rehearsal page). Indices are clamped so a deletion can never leave
-  // them dangling.
+  // Une scène à la fois, désignée dans la section « Structure » du rail (elle
+  // portait les deux selects du bandeau, cf. StructurePanel.jsx). Les indices
+  // sont bornés au rendu, donc une suppression ne peut jamais en laisser un
+  // pendre ; les gestes ci-dessous les remettent en plus là où il faut, pour que
+  // la colonne de texte continue de montrer LA MÊME scène après un remaniement du
+  // plan.
   const [actIndex, setActIndex] = useState(0);
   const [sceneIndex, setSceneIndex] = useState(0);
   const safeActIndex = Math.max(0, Math.min(actIndex, script.acts.length - 1));
@@ -151,18 +161,35 @@ export default function App() {
     dispatch({ type: "ADD_ACT" });
     goToScene(script.acts.length, 0);
   };
-  const addScene = () => {
-    dispatch({ type: "ADD_SCENE", actIndex: safeActIndex });
-    goToScene(safeActIndex, act.scenes.length);
+  // Un acte donné, et plus « l'acte courant » : le plan du rail ajoute la scène
+  // là où on la lui demande.
+  const addScene = (ai) => {
+    dispatch({ type: "ADD_SCENE", actIndex: ai });
+    goToScene(ai, script.acts[ai].scenes.length);
   };
-  const actLineCount = act ? act.scenes.reduce((n, s) => n + s.lines.length, 0) : 0;
-  const doDeleteAct = () => {
-    dispatch({ type: "DELETE_ACT", actIndex: safeActIndex });
-    goToScene(Math.max(0, safeActIndex - 1), 0);
+
+  // Suppressions : la question a déjà été posée (le plan confirme quand l'objet
+  // n'est pas vide, cf. StructurePanel), il ne reste que le déplacement du regard.
+  const deleteAct = (ai) => {
+    dispatch({ type: "DELETE_ACT", actIndex: ai });
+    const nextAct = indexAfterRemoval(safeActIndex, ai);
+    goToScene(nextAct, nextAct === safeActIndex ? safeSceneIndex : 0);
   };
-  // An act that still holds lines is confirmed first (an empty one goes
-  // silently).
-  const deleteAct = () => (actLineCount === 0 ? doDeleteAct() : setConfirmDeleteAct(true));
+  const deleteScene = (ai, si) => {
+    dispatch({ type: "DELETE_SCENE", actIndex: ai, sceneIndex: si });
+    if (ai === safeActIndex) setSceneIndex(indexAfterRemoval(safeSceneIndex, si));
+  };
+
+  // Réordonner : le regard suit l'objet déplacé, et se décale quand c'est un
+  // voisin qui l'a traversé (indexAfterMove, testé à côté de MOVE_*).
+  const moveAct = (from, to) => {
+    dispatch({ type: "MOVE_ACT", from, to });
+    setActIndex(indexAfterMove(safeActIndex, from, to));
+  };
+  const moveScene = (ai, from, to) => {
+    dispatch({ type: "MOVE_SCENE", actIndex: ai, from, to });
+    if (ai === safeActIndex) setSceneIndex(indexAfterMove(safeSceneIndex, from, to));
+  };
 
   // One O(lines) pass instead of one full-script scan per character per render.
   const lineCounts = useMemo(() => {
@@ -174,6 +201,44 @@ export default function App() {
     }
     return counts;
   }, [script]);
+
+  // Section ouverte du rail, ou null (replié). « Structure » à l'arrivée, et plus
+  // « Personnages » : c'est elle qui porte maintenant la navigation de la page,
+  // donc la refermer serait cacher le choix de la scène, que les deux selects du
+  // bandeau affichaient d'office. Elle montre au passage le champ de titre de la
+  // pièce, qui vivait aussi dans le bandeau. Une constante suffit, là où « ouvrir
+  // sur Personnages seulement si la pièce n'en a aucun » demanderait un effet de
+  // semis après le fetch.
+  const [railSection, setRailSection] = useState("structure");
+  const openSearch = useCallback(() => setRailSection("search"), []);
+  const closeRail = useCallback(() => setRailSection(null), []);
+
+  // Aller à une correspondance. Les quatre changements d'état vivent dans le
+  // MÊME gestionnaire, donc React les regroupe en un seul rendu : la scène cible
+  // y est déjà désignée, la rangée visée se monte avec sa demande de focus dans
+  // le même commit, et l'effet tourne après, sur un textarea posé et mesuré. Ni
+  // setTimeout ni requestAnimationFrame.
+  const goToMatch = useCallback((match, focus) => {
+    setActIndex(match.actIndex);
+    setSceneIndex(match.sceneIndex);
+    setFocusRequest({
+      lineId: match.lineId,
+      selection: [match.start, match.end],
+      focus: Boolean(focus),
+    });
+  }, []);
+
+  const search = useSearch({
+    script,
+    dispatch,
+    goToMatch,
+    isOpen: railSection !== null,
+    onOpen: openSearch,
+    onClose: closeRail,
+    // Sur l'écran du mur tactile, Ctrl+F serait confisqué au navigateur pour une
+    // page qui n'affiche qu'une phrase.
+    enabled: !touchOnly && !loadError,
+  });
 
   const requestDeleteCharacter = useCallback(
     (character) => {
@@ -230,18 +295,43 @@ export default function App() {
   }
 
   return (
-    <>
+    // Coquille de la hauteur de la fenêtre : le bandeau en haut dans le flux,
+    // puis le rail et la colonne de texte, qui défilent chacun pour son compte
+    // (cf. `.editor-shell` dans editor.css). Elle est posée ici et pas sur
+    // `body` : les écrans pleine page rendus plus haut gardent le défilement
+    // normal.
+    <div className="editor-shell">
+      {/* Un bandeau SANS réglages, comme celui de l'Avancement : le titre de la
+          pièce et le choix de la scène sont partis dans la section « Structure »
+          du rail (cf. StructurePanel.jsx), donc il ne reste ici que ce que les
+          quatre pages du site ont en commun, le titre de la pièce en serif, la
+          doc et le retour à l'accueil. Il se replie quand même, comme les quatre
+          autres. */}
       <PlayHeader
         page="editor"
         title={script.title || "Pièce sans titre"}
         hint={
           <>
-            {/* Impératif en tête, comme les quatre `desc` et l'autre `hint`
-                (cf. pages.js). Et pas d'« appuyez sur le bouton » : c'est le
-                verbe du doigt, et c'est la seule page qu'il n'ouvre pas
-                (cf. useTouchPointer.js). */}
-            Téléchargez le script avec le bouton en haut de la page quand vos modifications sont
-            terminées, puis déposez le fichier obtenu sur la page{" "}
+            {/* Les deux phrases sont dans l'ordre où on les vit : ce qui sert
+                pendant la saisie d'abord, ce qui sert une fois qu'on a fini
+                ensuite (taper, télécharger, déposer). L'inverse annonçait la
+                sortie de la page avant d'y entrer, et coupait en deux le
+                parcours du fichier. Prix assumé : le `hint` de cette page est
+                le seul à ne pas ouvrir sur un impératif (cf. pages.js), il
+                arrive une phrase plus tard. Et pas d'« appuyez sur le
+                bouton » : c'est le verbe du doigt, et c'est la seule page
+                qu'il n'ouvre pas (cf. useTouchPointer.js). */}
+            Dans une réplique, <strong>Entrée</strong> crée la suivante,{" "}
+            <strong>Maj + Entrée</strong> un retour à la ligne.
+            {/* Un `<br />` et surtout pas un troisième paragraphe : le bandeau
+                n'en porte que deux (cf. PlayHeader.jsx), et les deux phrases
+                sont bien la même voix, à un moment du travail près. La ligne
+                coupe donc à l'endroit où le travail change de nature, pendant
+                la saisie puis une fois qu'elle est finie, plutôt qu'à la
+                largeur de la fenêtre. */}
+            <br />
+            Une fois vos modifications terminées, téléchargez le script avec le bouton en haut de la
+            page, puis déposez le fichier obtenu sur la page{" "}
             {/* Le sceau vert de l'Avancement plutôt qu'un mot souligné : la
                 destination est une page du site, que la troupe reconnaît à sa
                 pastille (accueil, bandeaux, journal des dépôts), et un
@@ -252,8 +342,7 @@ export default function App() {
               <PageMark page="dashboard" className="hint-page-mark" label="" />
               {PAGES.dashboard.label}
             </a>{" "}
-            comme pour les voix des acteurs. Dans une réplique, <strong>Entrée</strong> crée la
-            suivante, <strong>Maj + Entrée</strong> un retour à la ligne.
+            comme pour les voix des acteurs.
           </>
         }
         actions={
@@ -333,113 +422,93 @@ export default function App() {
             </span>
           </>
         }
-      >
-        <input
-          type="text"
-          className="play-title-input"
-          placeholder="Titre de la pièce"
-          value={script.title}
-          onChange={(e) => dispatch({ type: "SET_TITLE", title: e.target.value })}
-          onBlur={() => dispatch({ type: "HISTORY_BREAK" })}
-        />
+      />
 
-        <div className="selects-row">
-          <select
-            aria-label="Acte"
-            value={safeActIndex}
-            onChange={(e) => goToScene(Number(e.target.value), 0)}
-          >
-            {script.acts.map((a, i) => (
-              <option key={i} value={i}>
-                {a.title}
-              </option>
-            ))}
-          </select>
-          <select
-            aria-label="Scène"
-            value={safeSceneIndex}
-            onChange={(e) => setSceneIndex(Number(e.target.value))}
-          >
-            {(act?.scenes ?? []).map((s, i) => (
-              <option key={i} value={i}>
-                {s.title} ({s.lines.length} réplique{s.lines.length > 1 ? "s" : ""})
-              </option>
-            ))}
-          </select>
-          <button className="btn small" onClick={addScene}>
-            + Scène
-          </button>
-          <button className="btn small" onClick={addAct}>
-            + Acte
-          </button>
-        </div>
-
-        {/* The character select of the other pages becomes, here, the
-            character MANAGEMENT. */}
-        <CharacterChips
-          characters={script.characters}
-          lineCounts={lineCounts}
-          dispatch={dispatch}
-          onRequestDelete={requestDeleteCharacter}
-        />
-
-      </PlayHeader>
-
-      <main className="editor-main">
-        {loadInfo && <p className="load-info">{loadInfo}</p>}
-
-        {act && (
-            <div className="act-header">
-              <EditableTitle
-                value={act.title}
-                className="act-title"
-                onChange={(title) => dispatch({ type: "RENAME_ACT", actIndex: safeActIndex, title })}
-              />
-              {script.acts.length > 1 && (
-                <button
-                  className="btn icon small"
-                  title="Supprimer cet acte"
-                  aria-label="Supprimer cet acte"
-                  onClick={deleteAct}
-                >
-                  <span aria-hidden="true">✕</span>
-                </button>
-              )}
-            </div>
-          )}
-
-          {scene && (
-            <SceneEditor
-              scene={scene}
+      {/* Le rail AVANT le contenu, dans le DOM comme à l'écran : la tabulation
+          part du bandeau, passe par le rail, arrive aux répliques, ce qui est
+          aussi l'ordre qu'avaient les puces de personnage du temps où elles
+          suivaient les selects d'acte et de scène. */}
+      <div className="editor-layout">
+        <EditorRail
+          section={railSection}
+          onSection={setRailSection}
+          structure={
+            <StructurePanel
+              script={script}
               actIndex={safeActIndex}
               sceneIndex={safeSceneIndex}
-              sceneCount={act.scenes.length}
-              characters={script.characters}
               dispatch={dispatch}
-              addLine={addLine}
-              focusLineId={focusLineId}
-              onFocusHandled={handleFocusHandled}
+              onGo={goToScene}
+              onAddAct={addAct}
+              onAddScene={addScene}
+              onDeleteAct={deleteAct}
+              onDeleteScene={deleteScene}
+              onMoveAct={moveAct}
+              onMoveScene={moveScene}
             />
-          )}
-      </main>
+          }
+          characters={
+            <CharacterPanel
+              characters={script.characters}
+              lineCounts={lineCounts}
+              dispatch={dispatch}
+              onRequestDelete={requestDeleteCharacter}
+            />
+          }
+          search={
+            <SearchPanel
+              characters={script.characters}
+              query={search.query}
+              setQuery={search.setQuery}
+              shownQuery={search.shownQuery}
+              replacement={search.replacement}
+              setReplacement={search.setReplacement}
+              caseSensitive={search.caseSensitive}
+              setCaseSensitive={search.setCaseSensitive}
+              wholeWord={search.wholeWord}
+              setWholeWord={search.setWholeWord}
+              replaceOpen={search.replaceOpen}
+              setReplaceOpen={search.setReplaceOpen}
+              total={search.total}
+              groups={search.groups}
+              searching={search.searching}
+              currentMatch={search.currentIndex >= 0 ? search.matches[search.currentIndex] : null}
+              next={search.next}
+              prev={search.prev}
+              onSelect={search.select}
+              replaceCurrent={search.replaceCurrent}
+              replaceAll={search.replaceAll}
+              focusSeq={search.focusSeq}
+            />
+          }
+        />
 
-      {confirmDeleteAct && act && (
-        <ConfirmModal
-          title={`Supprimer « ${act.title} » ?`}
-          confirmLabel="Supprimer"
-          onCancel={() => setConfirmDeleteAct(false)}
-          onConfirm={() => {
-            setConfirmDeleteAct(false);
-            doDeleteAct();
-          }}
-        >
-          <p>
-            {actLineCount > 1
-              ? `${actLineCount} répliques seront supprimées.`
-              : "1 réplique sera supprimée."}
-          </p>
-        </ConfirmModal>
-      )}
+        <main className="editor-column">
+          <div className="editor-main">
+            {loadInfo && <p className="load-info">{loadInfo}</p>}
+
+            {/* Le titre de l'acte, en clair : la colonne DIT où l'on écrit, le
+                rail fait tout le reste (créer, renommer, supprimer, réordonner,
+                naviguer). Il a porté le renommage de l'acte et le ✕ qui le
+                supprimait ; il ne reste rien qui apparaisse, disparaisse ou
+                s'ouvre au-dessus du texte qu'on est en train de saisir. */}
+            {act && <h2 className="act-title">{act.title}</h2>}
+
+            {scene && (
+              <SceneEditor
+                scene={scene}
+                actIndex={safeActIndex}
+                sceneIndex={safeSceneIndex}
+                characters={script.characters}
+                dispatch={dispatch}
+                addLine={addLine}
+                focusRequest={focusRequest}
+                onFocusHandled={handleFocusHandled}
+              />
+            )}
+          </div>
+        </main>
+      </div>
 
       <LeaveGuard
         active={dirty}
@@ -464,7 +533,7 @@ export default function App() {
           }}
         />
       )}
-    </>
+    </div>
   );
 }
 
