@@ -33,7 +33,7 @@ export function fetchScript() {
 
 export const MANIFEST_ERROR_MESSAGE =
   "Impossible de charger la pièce. Le site n'est peut-être pas encore publié : " +
-  "réessayez dans quelques minutes ou contactez votre responsable.";
+  "réessayez dans quelques minutes ou contactez le responsable.";
 
 // Numérotation « (n/total) » de mes répliques dans la scène courante,
 // partagée par les pages Répétition et Enregistrement : Map lineId -> n

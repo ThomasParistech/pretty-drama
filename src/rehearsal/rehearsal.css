@@ -4,11 +4,19 @@
 
 /* .character-row / .character-select sont partagés (shared/theme.css) : le
    personnage est sur sa propre ligne dans les deux pages. Ici : uniquement les
-   cases à cocher, propres à la répétition, qui se rangent à côté du select. */
+   cases à cocher, propres à la répétition, qui se rangent à côté du select.
+   Rangée qui passe à la ligne, et surtout PAS une grille à colonnes fixes : les
+   libellés sont devenus des phrases (« Couper ma voix », « Démarrer une réplique
+   avant la mienne »… : « Muet » et « Avant » ne se comprenaient qu'une fois
+   essayés), et une largeur de colonne imposée aux quatre les fait tous se
+   replier sur la longueur du plus long, donc quatre cases hautes de deux lignes
+   sur téléphone. En `flex-wrap`, chaque case garde sa largeur propre, il en tient
+   autant par ligne que la fenêtre le permet, et le repli suit la place
+   disponible au lieu d'un nombre de colonnes décidé d'avance. */
 .checks-row {
   display: flex;
-  gap: 10px 18px;
   flex-wrap: wrap;
+  gap: 10px 18px;
   font-size: 14px;
 }
 
@@ -20,12 +28,38 @@
   cursor: pointer;
 }
 
-/* Ce sont les commandes principales de la page sur téléphone (« Muet »,
-   « Cacher mon texte »…) : une case de 16 px sur une ligne de texte fait une
-   cible d'environ 21 px de haut. On agrandit la zone du label, pas la case. */
+/* Ce sont les commandes principales de la page sur téléphone (« Couper ma
+   voix », « Cacher mon texte »…) : une case de 16 px sur une ligne de texte fait
+   une cible d'environ 21 px de haut. On agrandit la zone du label, pas la case.
+   **La hauteur de cette zone EST l'interligne**, et c'est ce qui fixe le
+   chiffre : une étiquette de 32 px contient une ligne de texte de 21 px, donc
+   elle porte 5 ou 6 px de vide de chaque côté, et deux lignes de cases se
+   retrouvent séparées d'une dizaine de pixels, la même valeur qu'à la souris. À
+   40 px (le premier essai) le vide passait à 19 px, plus large que les 18 px qui
+   séparent deux cases côte à côte : la rangée se lisait comme deux groupes de
+   réglages sans rapport, d'autant que ces 40 px arrivaient exactement au moment
+   où la fenêtre devient trop étroite pour tenir les quatre cases sur une ligne.
+   Le `row-gap` tombe donc à zéro (il s'ajoutait à ce vide) et c'est la hauteur
+   des étiquettes qui espace les lignes, un seul chiffre à régler au lieu de
+   deux. Les cibles se touchent, ce qui est sans effet : ce sont des cases
+   voisines, pas des boutons dangereux. Ce qu'on perd sur la recommandation des
+   44 px se rattrape en largeur, chaque étiquette étant une phrase entière
+   cliquable. */
 @media (max-width: 800px) {
+  .checks-row {
+    row-gap: 0;
+    /* Les 5 px de vide que la zone tactile ajoute au-dessus de la première ligne
+       de cases et sous la dernière sont reprises ici : ils ne servent qu'à
+       espacer les cases ENTRE elles, et au bord du bloc ils s'ajoutaient au
+       `row-gap` de `.character-row`, donc l'écart au select « Qui jouez-vous ? »
+       grandissait au passage sous 800 px (et l'espace sous les cases avec lui).
+       Un bloc dont la boîte extérieure épouse le texte : ce qui l'entoure garde
+       le même écart qu'à la souris, la cible reste haute à l'intérieur. */
+    margin-block: -5px;
+  }
+
   .checks-row label {
-    min-height: 40px;
+    min-height: 32px;
   }
 }
 

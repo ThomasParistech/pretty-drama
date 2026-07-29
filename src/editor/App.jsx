@@ -4,6 +4,7 @@ import { fetchScript, downloadBlob, HttpError } from "../shared/data.js";
 import { EMPTY_SCRIPT, allLines, newId } from "./reducer.js";
 import { historyReducer, initHistory } from "./history.js";
 import PlayHeader from "../shared/PlayHeader.jsx";
+import PageMark from "../shared/PageMark.jsx";
 import { PAGES } from "../shared/pages.js";
 import { DownloadIcon, UndoIcon, RedoIcon, WarnIcon } from "../shared/icons.jsx";
 import CharacterChips from "./CharacterPanel.jsx";
@@ -11,6 +12,7 @@ import SceneEditor from "./SceneEditor.jsx";
 import EditableTitle from "./EditableTitle.jsx";
 import ConfirmModal from "../shared/ConfirmModal.jsx";
 import LeaveGuard from "../shared/LeaveGuard.jsx";
+import useTouchPointer from "./useTouchPointer.js";
 import "./editor.css";
 
 export default function App() {
@@ -38,6 +40,10 @@ export default function App() {
   // loaded script, when nothing was downloaded yet) leaves nothing to save.
   // Identity is enough, the stack stores the very objects it restores.
   const dirty = script !== saved;
+
+  // Page réservée à l'ordinateur (cf. useTouchPointer) : au doigt, elle rend un
+  // écran d'explication à la place de l'éditeur.
+  const touchOnly = useTouchPointer();
 
   const canUndo = past.length > 0;
   const canRedo = future.length > 0;
@@ -69,6 +75,9 @@ export default function App() {
 
   // "Reprise" mode: load the published script.json to continue editing it.
   useEffect(() => {
+    // Rien à charger tant que la page est murée : l'écran tactile n'affichera
+    // pas le script. Si le pointeur change (clavier rattaché), l'effet rejoue.
+    if (touchOnly) return;
     let cancelled = false;
     fetchScript()
       .then((raw) => {
@@ -94,7 +103,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [dispatch]);
+  }, [dispatch, touchOnly]);
 
   const download = useCallback(() => {
     const blob = new Blob([JSON.stringify(script, null, 2)], {
@@ -176,6 +185,24 @@ export default function App() {
     [dispatch, lineCounts]
   );
 
+  // Avant tout le reste, y compris le chargement : sur un écran tactile la
+  // page ne montre jamais l'éditeur, seulement pourquoi et où l'ouvrir.
+  if (touchOnly) {
+    return (
+      <PageState
+        page="editor"
+        title="Édition"
+        error={
+          <>
+            <WarnIcon />
+            Pour des raisons de praticité, le mode Édition n'est disponible que depuis un
+            ordinateur.
+          </>
+        }
+      />
+    );
+  }
+
   if (loading) {
     return <PageState page="editor" title="Édition" loading="Chargement du script…" />;
   }
@@ -201,40 +228,103 @@ export default function App() {
       <PlayHeader
         page="editor"
         title={script.title || "Pièce sans titre"}
+        hint={
+          <>
+            {/* Impératif en tête, comme les quatre `desc` et l'autre `hint`
+                (cf. pages.js). Et pas d'« appuyez sur le bouton » : c'est le
+                verbe du doigt, et c'est la seule page qu'il n'ouvre pas
+                (cf. useTouchPointer.js). */}
+            Téléchargez le script avec le bouton en haut de la page quand vos modifications sont
+            terminées, puis déposez le fichier obtenu sur la page{" "}
+            {/* Le sceau vert de l'Avancement plutôt qu'un mot souligné : la
+                destination est une page du site, que la troupe reconnaît à sa
+                pastille (accueil, bandeaux, journal des dépôts), et un
+                hyperlien classique au milieu d'une phrase de doc y faisait la
+                seule chose soulignée de tout le bandeau. Le mot reste dans le
+                lien : c'est lui qui nomme la page, le sceau est décoratif. */}
+            <a className="hint-page-link page-dashboard" href={PAGES.dashboard.href}>
+              <PageMark page="dashboard" className="hint-page-mark" label="" />
+              {PAGES.dashboard.label}
+            </a>{" "}
+            comme pour les voix des acteurs. Dans une réplique, <strong>Entrée</strong> crée la
+            suivante, <strong>Maj + Entrée</strong> un retour à la ligne.
+          </>
+        }
         actions={
           <>
             {dirty && <span className="dirty-hint">Modifications non téléchargées</span>}
+            {/* Les trois boutons de cette rangée s'éteignent, et chacun explique
+                pourquoi dans son infobulle. Elle est donc portée par une enveloppe
+                et jamais par le bouton : un contrôle `disabled` ne reçoit aucun
+                événement souris, donc son `title` ne s'affiche pas (Chrome,
+                Safari), et l'explication n'arrivait jamais au moment où elle est
+                utile. Le nom accessible, lui, reste sur le bouton : c'est
+                l'`aria-label`, qui ne change pas d'un état à l'autre (le nom d'un
+                bouton ne dépend pas de son état, seule l'infobulle dit pourquoi
+                il dort). */}
             <span className="history-group">
-              <button
-                className="btn icon"
-                onClick={undo}
-                disabled={!canUndo}
-                aria-label="Annuler"
+              <span
+                className="btn-tip"
                 title={
                   canUndo
                     ? "Annuler la dernière modification (Ctrl+Z)"
                     : "Rien à annuler pour l'instant"
                 }
               >
-                <UndoIcon />
-              </button>
-              <button
-                className="btn icon"
-                onClick={redo}
-                disabled={!canRedo}
-                aria-label="Rétablir"
+                <button
+                  className="btn icon"
+                  onClick={undo}
+                  disabled={!canUndo}
+                  aria-label="Annuler"
+                >
+                  <UndoIcon />
+                </button>
+              </span>
+              <span
+                className="btn-tip"
                 title={
                   canRedo
                     ? "Rétablir la modification annulée (Ctrl+Y)"
                     : "Rien à rétablir pour l'instant"
                 }
               >
-                <RedoIcon />
+                <button
+                  className="btn icon"
+                  onClick={redo}
+                  disabled={!canRedo}
+                  aria-label="Rétablir"
+                >
+                  <RedoIcon />
+                </button>
+              </span>
+            </span>
+            {/* Icône seule : le bouton vit à côté de la paire annuler/rétablir,
+                déjà sans mots, et son libellé écrit était le seul texte de la
+                rangée à concurrencer le titre de la pièce sur une fenêtre
+                étroite. Le verbe est porté par l'infobulle et l'aria-label, et
+                la phrase de doc du bandeau dit à quoi sert le geste.
+                Éteint quand il n'y a rien à télécharger (`dirty` est un
+                comparatif d'états, pas un drapeau : annuler jusqu'au dernier
+                téléchargement l'éteint aussi), comme les deux boutons
+                d'historique à côté : redéposer le script tel qu'il est déjà
+                publié n'apprend rien à l'Action, et un bouton toujours vif fait
+                douter qu'il reste quelque chose à envoyer. Infobulle sur
+                l'enveloppe, comme les deux autres, pour la même raison. */}
+            <span
+              className="btn-tip"
+              title={
+                dirty ? "Télécharger le script" : "Aucune modification à télécharger pour l'instant"
+              }
+            >
+              <button
+                className="btn primary icon script-download-btn"
+                onClick={download}
+                disabled={!dirty}
+                aria-label="Télécharger le script"
+              >
+                <DownloadIcon />
               </button>
             </span>
-            <button className="btn primary" onClick={download}>
-              <DownloadIcon /> Télécharger le script
-            </button>
           </>
         }
       >
@@ -287,17 +377,6 @@ export default function App() {
           onRequestDelete={requestDeleteCharacter}
         />
 
-        <p className="header-hint editor-header-hint">
-          Quand vous avez terminé : cliquez sur <strong>« Télécharger le script »</strong>, puis
-          rendez-vous sur la page <a href={PAGES.dashboard.href}>{PAGES.dashboard.label}</a>, où le bouton de dépôt{" "}
-          <strong>« Déposer des voix ou le script de la pièce »</strong> reçoit le fichier{" "}
-          <code>script.json</code> comme les voix des acteurs.
-        </p>
-
-        <p className="header-hint">
-          Astuce : dans une réplique, la touche <strong>Entrée</strong> crée la réplique suivante
-          (<strong>Maj + Entrée</strong> pour un retour à la ligne).
-        </p>
       </PlayHeader>
 
       <main className="editor-main">

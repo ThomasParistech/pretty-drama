@@ -16,7 +16,9 @@
   --rec-fresh-wave: #8fcaa4;
 }
 
-/* Le texte d'explication du bandeau utilise .header-hint (theme.css). */
+/* La page n'écrit plus aucun texte d'explication : la doc du bandeau est rendue
+   par PlayHeader (le `desc` de pages.js, plus le `hint` que la page lui passe
+   une fois le personnage choisi), en .header-hint (theme.css). */
 
 .mic-error {
   color: var(--accent);
@@ -494,7 +496,12 @@
   }
 }
 
-.download-btn {
+/* Nom qualifié (`zip-`) : l'Édition a son propre bouton de téléchargement, avec
+   des règles contraires (31 px de haut, calés sur ses boutons d'historique).
+   Les deux CSS ne se croisent pas, chacun n'étant chargé que par sa page, mais
+   deux `.download-btn` de valeurs opposées se casseraient en silence le jour où
+   l'un des deux remonterait dans theme.css. */
+.zip-download-btn {
   white-space: nowrap;
   /* Cible tactile ≥ 40 px comme les autres boutons de la barre basse. */
   min-height: 40px;

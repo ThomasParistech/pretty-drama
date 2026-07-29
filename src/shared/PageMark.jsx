@@ -3,9 +3,11 @@ import { PAGES } from "./pages.js";
 
 // Le « sceau » d'une page : pastille ronde colorée portant l'icône de la page.
 // Il remplace l'emoji 🎭 en tête des bandeaux partagés, sert de vignette aux
-// cartes de l'accueil et aux boutons de dépôt du tableau de bord. Non
-// cliquable (le retour à l'accueil reste sur le lien de la marque, juste à
-// côté) : c'est une image porteuse de sens, d'où le role/aria-label.
+// cartes de l'accueil et aux boutons de dépôt du tableau de bord. Il ne porte
+// jamais lui-même de clic : c'est une image porteuse de sens, d'où le
+// role/aria-label. Quand il vit DANS un lien (le retour à l'accueil en pied de
+// bandeau, le lien de page d'une phrase de doc), c'est le lien qui est
+// cliquable et le sceau qui passe décoratif, cf. `label=""` plus bas.
 // La classe `page-<clé>` qu'il pose sur lui-même porte ses couleurs, donc il
 // s'affiche correctement partout, y compris hors d'un bandeau coloré.
 // `label` : à passer quand le sceau ne désigne PAS sa page. Le journal des

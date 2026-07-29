@@ -149,17 +149,13 @@ function Dashboard({ manifest }) {
 
   return (
     <>
-      {/* Une phrase et rien d'autre : la page n'a aucun réglage, mais son
-          bandeau se déplie comme les trois autres (il porte le retour à
-          l'accueil), et déplier pour ne trouver qu'un lien faisait vide.
-          Elle dit à quoi sert la page, jamais comment lire la grille : ça,
-          c'est le rôle de `.dash-legend`, juste sous le tableau. */}
-      <PlayHeader page="dashboard" title={manifest.title || "Pièce sans titre"}>
-        <p className="header-hint">
-          Où en est chaque personnage, scène par scène ; c'est aussi d'ici que se déposent les voix
-          des acteurs et le script de la pièce.
-        </p>
-      </PlayHeader>
+      {/* Sa phrase compacte et rien d'autre (pas de `hint`) : la page n'a aucun
+          réglage, mais son bandeau se déplie comme les trois autres (il porte le
+          retour à l'accueil), et déplier pour ne trouver qu'un lien faisait
+          vide. Elle dit à quoi sert la page, jamais comment lire la grille (ça,
+          c'est le rôle de `.dash-legend`, sous le tableau) ni comment déposer
+          (la carte de dépôt est juste en dessous, elle se lit seule). */}
+      <PlayHeader page="dashboard" title={manifest.title || "Pièce sans titre"} />
       <div className="container">
         <UploadLinks />
 
@@ -226,8 +222,16 @@ function Journal({ runs }) {
     <section className="dash-journal">
       <h2>Derniers dépôts de fichiers</h2>
       {/* Le conteneur défile, jamais la page : le journal garde une trentaine de
-          dépôts, il ne doit pas allonger l'Avancement sans fin. */}
-      <div className="dash-journal-wrap">
+          dépôts, il ne doit pas allonger l'Avancement sans fin. Comme la grille
+          au-dessus, c'est donc une région nommée et focalisable : il défile sur
+          les deux axes et ne contient rien de focalisable, donc sans `tabIndex`
+          il ne se parcourrait ni au clavier ni au lecteur d'écran. */}
+      <div
+        className="dash-journal-wrap"
+        tabIndex={0}
+        role="region"
+        aria-label="Journal des dépôts"
+      >
         <table className="dash-journal-table">
           <thead>
             <tr>
@@ -353,9 +357,20 @@ function UploadLinks() {
 // Characters × scenes grid: "recorded / total" ratio in each cell. Acts,
 // scene numbers and character names carry the same ambre/vert tint as the
 // cells, so a whole row, column or act reads as done at a glance.
+//
+// La colonne des noms est figée (CSS), le reste défile dans le conteneur : une
+// pièce à quinze scènes ne tient sur aucun téléphone, et une case « 2/5 » sans
+// son nom ne dit rien. Le conteneur défilant est donc une région nommée et
+// focalisable : il ne contient aucun élément focalisable, donc sans `tabIndex`
+// il ne se parcourrait ni au clavier ni au lecteur d'écran.
 function ProgressTable({ acts, scenes, rows }) {
   return (
-    <div className="dash-table-wrap">
+    <div
+      className="dash-table-wrap"
+      tabIndex={0}
+      role="region"
+      aria-label="Avancement par personnage et par scène"
+    >
       <table className="dash-table">
         <thead>
           <tr>
@@ -386,8 +401,14 @@ function ProgressTable({ acts, scenes, rows }) {
         <tbody>
           {rows.map((row) => (
             <tr key={row.character.id}>
-              <th className={`dash-name ${statusClass(row.ok, row.total)}`}>
-                {row.character.name}
+              {/* Le nom est enveloppé pour pouvoir être coupé quand la place
+                  manque (la colonne est figée, elle prend sur les scènes) ;
+                  le `title` le rend alors en entier. */}
+              <th
+                className={`dash-name ${statusClass(row.ok, row.total)}`}
+                title={row.character.name}
+              >
+                <span className="dash-name-text">{row.character.name}</span>
               </th>
               {row.cells.map((cell, i) =>
                 // Pas de réplique dans cette scène : case vide, sans marqueur.

@@ -29,6 +29,28 @@ THEME_CSS = SRC / "shared" / "theme.css"
 PAGES_JS = SRC / "shared" / "pages.js"
 REDUCER_JS = SRC / "editor" / "reducer.js"
 
+# Tokens qu'une règle de bandeau partagé ne doit pas consommer : chacun est
+# re-skinné quelque part, donc le bandeau ne rendrait plus pareil d'une page à
+# l'autre. `--accent`, `--font-serif` et `--shadow` le sont par l'éditeur
+# (direction « Rail ») ; `--page-mark` et `--page-mark-soft` le sont par CHAQUE
+# page, via la classe `page-<clé>` que les deux bandeaux posent sur leur racine.
+FORBIDDEN_IN_HEADER = (
+    "--accent",
+    "--font-serif",
+    "--shadow",
+    "--page-mark",
+    "--page-mark-soft",
+)
+
+# Une seule exception, et elle est délibérée : le retour à l'accueil. Il dit la
+# MARQUE et non la page, donc il porte lui-même `page-home` (HomeLink.jsx), ce
+# qui ramène son sceau au sable des masques sur les quatre pages au lieu de
+# prendre le vert de l'Avancement ou le violet de l'Édition. Ce garde ne lit que
+# du CSS et ne peut pas voir cette classe posée en JSX : l'exemption est donc
+# écrite ici, ce qui vaut acte. Elle ne porte QUE sur les tokens de sceau.
+HEADER_TOKEN_EXEMPT_PREFIX = ".play-header-home"
+EXEMPT_TOKENS = ("--page-mark", "--page-mark-soft")
+
 
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
@@ -104,20 +126,29 @@ class TestReservedHeaderTokens(unittest.TestCase):
 
     def test_the_shared_header_never_consumes_a_reskinnable_token_for_its_identity(self):
         # L'identité du bandeau (encre de la marque, serif du titre, ombre) doit
-        # passer par les tokens réservés. --accent, --font-serif et --shadow
-        # sont re-skinnés par l'éditeur : les voir ici voudrait dire que le
-        # bandeau change d'aspect selon la page.
+        # passer par les tokens réservés. Les tokens surveillés sont re-skinnés
+        # par une page ou l'autre : les voir ici voudrait dire que le bandeau
+        # change d'aspect selon la page.
         theme = css(THEME_CSS)
+        # Le retrait de tête est toléré des deux côtés de la règle : sans lui, le
+        # garde ne voyait que les règles de premier niveau et laissait passer
+        # tout ce qui vit dans un `@media`, où le bandeau a justement ses règles
+        # mobiles (taille des sceaux, dessin du logo de retour).
         header_rules = re.findall(
-            r"^(\.page-header[^{]*|\.play-header[^{]*)\{(.*?)^\}",
+            r"^[ \t]*(\.page-header[^{]*|\.play-header[^{]*)\{(.*?)^[ \t]*\}",
             theme,
             re.DOTALL | re.MULTILINE,
         )
         self.assertGreater(len(header_rules), 0, "aucune règle de bandeau trouvée")
         leaks = []
         for selector, body in header_rules:
-            for token in ("--accent", "--font-serif", "--shadow"):
-                # var(--shadow) ne doit pas être confondu avec var(--shadow-hover).
+            exempt = selector.strip().startswith(HEADER_TOKEN_EXEMPT_PREFIX)
+            for token in FORBIDDEN_IN_HEADER:
+                if exempt and token in EXEMPT_TOKENS:
+                    continue
+                # var(--shadow) ne doit pas être confondu avec var(--shadow-hover),
+                # ni var(--page-mark) avec var(--page-mark-soft) : la parenthèse
+                # fermante fait la différence.
                 if re.search(rf"var\(\s*{re.escape(token)}\s*\)", body):
                     leaks.append(f"{selector.strip()} consomme var({token})")
         self.assertEqual(

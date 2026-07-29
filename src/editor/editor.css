@@ -79,6 +79,33 @@ h3 {
   padding: 7px 10px;
 }
 
+/* Le téléchargement est lui aussi une icône seule, à côté de cette paire (cf.
+   App.jsx : son libellé écrit concurrençait le titre de la pièce dans la rangée
+   toujours visible). Il reste l'action principale de la page, donc son dessin
+   est plus grand, mais la HAUTEUR est calée sur celle des boutons d'historique
+   (19 + 2x6 = 17 + 2x7 = 31 px) : trois boutons voisins dont un dépasse de deux
+   pixels se lisent comme un défaut d'alignement, pas comme une hiérarchie.
+   C'est la largeur, plus généreuse, qui la dit avec la couleur d'accent. */
+/* Sélecteur en `.btn.script-download-btn` et pas sur la classe seule : `.btn.icon`
+   (theme.css) pose déjà un padding et gagnerait sur une classe simple.
+   Nom qualifié (`script-`) parce que l'Enregistrement a son propre bouton de
+   téléchargement, avec des règles contraires (cible tactile de 40 px, contre
+   31 px ici) : les deux CSS ne se croisent pas aujourd'hui, chacun n'étant
+   chargé que par sa page, mais deux `.download-btn` de valeurs opposées se
+   casseraient en silence le jour où l'un des deux remonterait dans theme.css. */
+.btn.script-download-btn {
+  font-size: 19px;
+  padding: 6px 12px;
+}
+
+/* Enveloppe qui porte l'infobulle des boutons qui s'éteignent (cf. App.jsx : un
+   contrôle `disabled` ne reçoit aucun événement souris, donc son propre `title`
+   ne s'affiche jamais). Purement structurelle : elle épouse son bouton et ne
+   doit rien changer à la rangée qui la contient. */
+.btn-tip {
+  display: inline-flex;
+}
+
 /* Quand le bouton destructif EST l'action principale (le seul autre choix est
    « Annuler »), il s'affirme. Il reste en retrait dans le modal personnage, où
    il n'est qu'un des deux gestes possibles face à « Réassigner ».
@@ -105,9 +132,22 @@ h3 {
   padding: 4px 12px;
 }
 
+/* Les deux écrans pleine page de l'éditeur (script illisible, page ouverte au
+   doigt) posent la carte partagée `.page-notice`, qui tire son ombre de
+   `--shadow` : à `none` ici. Elle reprend donc celle que « Rail » réserve à son
+   panneau de contenu, puisque cette carte EST le contenu de l'écran ; sans
+   quoi c'est la seule surface du site posée sur le papier sans rien dessous. */
+.page-notice {
+  box-shadow: var(--ed-panel-shadow);
+}
+
+/* Script publié illisible : la carte partagée `.page-notice` (theme.css) reçoit
+   ici plusieurs paragraphes de marche à suivre, donc elle s'élargit et aligne à
+   gauche. Le blocage sur écran tactile (cf. useTouchPointer.js) ne prend PAS
+   cette classe : sa phrase unique reste dans la carte étroite et centrée,
+   comme les états pleine page des autres pages. */
 .load-error {
-  max-width: 640px;
-  margin: 0 auto;
+  max-width: min(660px, calc(100% - var(--notice-gutter)));
   text-align: left;
   line-height: 1.6;
 }
@@ -199,13 +239,18 @@ h3 {
   transform: scale(1.15);
 }
 
-/* Sur téléphone, le popover devient une barre en bas d'écran plutôt qu'une
-   boîte accrochée sous la puce. Deux raisons, pas une : accroché à gauche de sa
-   puce il mesure environ 163 px et débordait du bord droit dès que la puce
-   était en fin de rangée (défilement horizontal sur une page qui n'en a
-   nulle part ailleurs) ; et ses pastilles de 18 px sont intouchables au doigt.
+/* En fenêtre étroite, le popover devient une barre en bas d'écran plutôt qu'une
+   boîte accrochée sous la puce. La raison est le débordement : accroché à
+   gauche de sa puce il mesure environ 163 px et sortait du bord droit dès que
+   la puce était en fin de rangée (défilement horizontal sur une page qui n'en a
+   nulle part ailleurs). Elle vaut à la souris comme au doigt, donc elle survit
+   au blocage de la page sur écran tactile (cf. useTouchPointer.js) ; la seconde
+   raison d'origine, « des pastilles de 18 px sont intouchables au doigt », a
+   disparu avec lui. Ce qui reste d'elle, l'agrandissement des pastilles
+   ci-dessous, se justifie autrement : une barre pleine largeur semée de points
+   de 18 px se lit comme un ruban vide.
    Le fond plein-écran qui le ferme existe déjà, donc l'interaction ne change
-   pas : on tape une couleur, ou à côté pour renoncer.
+   pas : on clique une couleur, ou à côté pour renoncer.
    `fixed` est sûr ici : aucun ancêtre du popover ne porte de transform (ce qui
    en ferait le bloc conteneur), et cela le sort du rognage que le bandeau
    applique pendant son repli. */
@@ -545,28 +590,102 @@ h3 {
   font-size: 14.5px;
 }
 
-/* La base (taille, couleur, marge) vient de .header-hint (theme.css), posée à
-   côté dans le JSX : ici, seulement ce que l'éditeur a en plus (un lien et du
-   code inline dans la phrase). */
-.editor-header-hint a {
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+/* Les deux paragraphes de doc du bandeau sont rendus par PlayHeader, dans la
+   même `.header-hint` (theme.css). L'éditeur est le seul à y mettre un lien,
+   d'où les seules règles qui restent ici.
+   Ce lien vers une autre page du site est le sceau de la page visée PLUS son
+   nom, jamais un mot souligné : c'est la forme qu'a déjà le retour à l'accueil
+   en pied de bandeau (logo + mot, sans soulignement), et le site nomme ses
+   pages par leur pastille partout ailleurs (cartes d'accueil, bandeaux, journal
+   des dépôts). Les couleurs viennent de la classe `page-<clé>` posée sur le
+   lien : rien de codé en dur ici, et l'accent violet de l'éditeur ne teinte pas
+   une destination qui est verte. */
+/* Élément `inline` et pas `inline-flex` : le mot doit s'asseoir sur la ligne de
+   base du paragraphe comme n'importe quel autre mot, et une boîte flex n'expose
+   pas la ligne de base de son texte (il fallait la recentrer à la main, avec
+   `vertical-align: middle`, et elle retombait un pixel trop bas). Le sceau, lui,
+   est décalé pour son propre compte (cf. `.hint-page-mark`), sur le modèle de
+   `.warn-icon` dans theme.css. `nowrap` garde le sceau et le mot sur la même
+   ligne : le rond seul en fin de ligne ne voudrait rien dire. */
+.hint-page-link {
+  white-space: nowrap;
+  /* Sur un élément inline, le remplissage vertical peint la nappe sans écarter
+     les lignes du paragraphe : il n'est là que pour couvrir le sceau, qui
+     dépasse de la boîte de contenu du texte. Le remplissage droit, lui, sert la
+     nappe et pas l'espacement, d'où la marge négative qui l'annule : sans elle
+     le mot suivant se retrouvait à deux espaces du lien, ce qui se lit comme
+     une coquille. L'espace du JSX reste, lui : c'est la seule occasion de
+     retour à la ligne entre le lien et la suite de la phrase. */
+  padding: 3px 6px 3px 3px;
+  margin-right: -5px;
+  border-radius: 999px;
+  color: var(--page-mark);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s;
 }
 
-.editor-header-hint code {
-  font-family: var(--font-mono);
-  background: var(--paper-dark);
-  border-radius: 4px;
-  padding: 1px 5px;
+/* Même intention que le retour à l'accueil (le fond du sceau s'étend et englobe
+   le mot, pour qu'ils se lisent comme un seul objet), mais PAS le même moyen, et
+   la différence est voulue : là-bas la nappe est un dégradé radial en `::before`,
+   parce qu'un fond plein y laissait une arête au bord de sa boîte sur les 36 px
+   de pastille posés au milieu d'un bandeau vide. Ici la pastille fait 19 px dans
+   une ligne de texte, la « boîte » est une gélule haute d'une ligne serrée entre
+   deux mots, et son bord est exactement ce qu'on veut voir : c'est lui qui
+   montre où commence et où finit le lien. Pas de pas d'un pixel vers le haut non
+   plus, il ferait sauter la ligne de texte autour. */
+.hint-page-link:hover {
+  background: var(--page-mark-soft);
 }
 
-/* ---- Mobile ---- */
+/* Bague bâtie sur la couleur de la page visée, comme celle du lien de retour à
+   l'accueil l'est sur `--header-accent` : la bague partagée dérive de
+   `--accent`, que cette page re-skinne en violet. */
+.hint-page-link:focus-visible {
+  outline: 2px solid var(--page-mark);
+  outline-offset: 2px;
+}
+
+/* La pastille de doc est la plus petite du site : elle vit dans du 13.5 px, où
+   les 36 px du sceau feraient trois lignes de haut. L'icône de l'Avancement
+   (deux barres) se lit encore à cette taille ; un sceau au dessin plus fin
+   demanderait de remonter.
+   Préfixée par `.play-header` pour la même raison que `.play-header-home-mark`
+   l'est dans theme.css : la règle mobile qui rapetisse les sceaux du bandeau
+   vise `.play-header .page-mark`, et sans ce préfixe elle ramènerait cette
+   pastille de 19 à 30 px sous 800 px, soit plus grande qu'en large. */
+.play-header .hint-page-mark {
+  width: 19px;
+  height: 19px;
+  font-size: 12px;
+  margin-right: 5px;
+  /* Le rond se cale sur la bande des CAPITALES du texte et non sur sa hauteur
+     d'x : le mot qu'il précède commence par une majuscule, et centré sur l'x le
+     sceau se lisait un pixel et demi trop bas.
+     D'où ce couple, et pas un `vertical-align` en longueur : `middle` centre la
+     boîte de MARGE sur la ligne de base plus la moitié de la hauteur d'x, donc
+     3 px de marge basse remontent la pastille de 1,5 px, pile la différence
+     entre les deux bandes. Une longueur aurait été plus directe mais elle se
+     mesure depuis la ligne de base du sceau, et un `inline-flex` dont l'unique
+     enfant est un SVG n'en a pas de fiable (Chrome la synthétise, la spec parle
+     du bord bas de la marge : 4 px d'écart d'un navigateur à l'autre). */
+  vertical-align: middle;
+  margin-bottom: 3px;
+}
+
+/* ---- Fenêtre étroite ----
+   Et pas « mobile » : la page ne s'ouvre plus du tout sur un pointeur tactile
+   (cf. useTouchPointer.js), donc tout ce qui suit ne vise que la fenêtre
+   rétrécie d'un ordinateur, souris et clavier compris. Les règles de cibles
+   tactiles qui vivaient ici (micro-boutons portés à 40 px, zone de clic de la
+   pastille de couleur étendue par un ::after) ont été retirées : plus aucun
+   doigt ne les atteint, et elles épaississaient les rangées exactement là où
+   la place manque le plus. */
 
 /* Repli étroit des répliques : la ligne unique tient tant que le texte garde
    une largeur de saisie décente (~280 px). En dessous, deux rangées —
-   poignée + personnage + ✕ en tête, texte en pleine largeur dessous. Le
-   seuil est bien plus bas que celui des cibles tactiles ci-dessous : la
+   poignée + personnage + ✕ en tête, texte en pleine largeur dessous. Le seuil
+   est franchement plus bas que celui du popover de couleur ci-dessus : la
    colonne de l'éditeur fait 820 px de contenu, replier dès 800 px repliait
    quasiment toujours. */
 @media (max-width: 620px) {
@@ -590,35 +709,3 @@ h3 {
   }
 }
 
-@media (max-width: 800px) {
-  /* Cibles tactiles ≥ 40 px sur mobile, sans grossir les glyphes : on agrandit
-     la zone cliquable des micro-boutons de l'éditeur (poignée, ✕ de puce et de
-     réplique). */
-  .drag-handle,
-  .chip-delete,
-  .line-delete,
-  .btn.icon,
-  .history-group .btn {
-    min-width: 40px;
-    min-height: 40px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* La pastille de couleur reste visuellement à 15 px : sa zone cliquable est
-     étendue à 40 px par un pseudo-élément centré (le clic sur ::after déclenche
-     bien le bouton hôte). */
-  .character-swatch {
-    position: relative;
-  }
-  .character-swatch::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 40px;
-    height: 40px;
-    transform: translate(-50%, -50%);
-  }
-}

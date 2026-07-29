@@ -199,7 +199,18 @@ export default function App() {
 
   return (
     <div className="recorder-page">
-      <PlayHeader page="recorder" title={manifest.title || "Enregistrement"}>
+      {/* Le mode d'emploi n'est passé qu'une fois le personnage choisi : avant,
+          il vit dans l'encart d'accueil, à la place des répliques (pas de
+          doublon). La phrase compacte du bandeau, elle, reste toujours là. */}
+      <PlayHeader
+        page="recorder"
+        title={manifest.title || "Enregistrement"}
+        hint={
+          characterId === ""
+            ? null
+            : "Placez-vous sur une de vos répliques, puis appuyez sur le micro pour l'enregistrer. Quand vous avez fini (toutes vos répliques ou seulement une partie), téléchargez le fichier."
+        }
+      >
         <div className="selects-row">
           <select
             aria-label="Acte"
@@ -252,16 +263,6 @@ export default function App() {
             ))}
           </select>
         </div>
-        {/* Tant qu'aucun personnage n'est choisi, le mode d'emploi vit dans
-            l'encart d'accueil (à la place des répliques) : pas de doublon. */}
-        {characterId !== "" && (
-          <p className="header-hint">
-            Placez-vous sur une de vos répliques, puis appuyez sur le micro en bas : il démarre
-            aussitôt. Une prise peut être réécoutée, refaite ou jetée. Vous pouvez changer de
-            personnage pour enregistrer plusieurs voix dans le même fichier, à envoyer ensuite à
-            votre responsable.
-          </p>
-        )}
         {micError && <p className="mic-error">{micError}</p>}
         {hasUnexported && (
           <p className="zip-note warn">
@@ -271,7 +272,7 @@ export default function App() {
           </p>
         )}
         {downloaded && takenCount > 0 && (
-          <p className="zip-note done">✓ Fichier téléchargé. Envoyez-le à votre responsable.</p>
+          <p className="zip-note done">✓ Fichier téléchargé. Envoyez-le au responsable.</p>
         )}
         {/* Ce message vit dans le bandeau (et pas dans la liste) parce que le
             bandeau est sticky : il reste sous les yeux pendant qu'on parcourt
@@ -440,7 +441,7 @@ export default function App() {
             </button>
             <span className="controls-side right">
               <button
-                className="btn primary download-btn"
+                className="btn primary zip-download-btn"
                 title="Télécharger le ZIP des prises"
                 aria-label={`Télécharger le ZIP des prises (${takenCount})`}
                 disabled={takenCount === 0}
@@ -495,8 +496,7 @@ function IntroCard({ characters, lines, isTodo, onPick }) {
         <span className="intro-dl">
           <DownloadIcon />
         </span>{" "}
-        pour sauvegarder vos prises et les
-        transmettre à la personne qui suit les enregistrements dans la troupe.
+        pour sauvegarder vos prises et les envoyer au responsable.
       </p>
       {stats.length === 0 ? (
         <p className="intro-empty">

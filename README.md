@@ -62,8 +62,9 @@ chaque fichier tout seul.
 **Écrire ou corriger la pièce** (page Édition)
 1. Ajoutez vos personnages, tapez les répliques (la touche **Entrée** crée la
    suivante), choisissez qui parle.
-2. Cliquez sur **« Télécharger le script »** : un fichier `script.json` arrive
-   dans vos téléchargements.
+2. Cliquez sur le bouton de téléchargement (la flèche vers le bas, en haut à
+   droite) : un fichier `script.json` arrive dans vos téléchargements. Il reste
+   éteint tant que vous n'avez rien modifié.
 3. Déposez-le avec le bouton ci-dessus.
 
 **Publier les voix reçues** (page Avancement) : déposez le ou les fichiers

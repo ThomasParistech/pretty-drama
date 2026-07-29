@@ -27,6 +27,10 @@
      qui était recopié dans trois CSS de page. */
   --focus-ring: 2px solid var(--accent);
   --focus-ring-offset: 2px;
+  /* Gouttière des cartes pleine page (`.page-notice` et le `.load-error` qui
+     l'élargit) : elles se centrent en `margin: auto`, donc leur seul garde-fou
+     sur un téléphone étroit est ce retrait, à tenir identique des deux côtés. */
+  --notice-gutter: 32px;
   --font-ui: "Inter", system-ui, sans-serif;
   --font-serif: "Cormorant Garamond", Georgia, serif;
   /* Bandeau partagé (PlayHeader/PageHeader) : ces tokens ne doivent JAMAIS
@@ -102,15 +106,6 @@
   margin-right: 0.35em;
 }
 
-/* Sceau + marque : bloc insécable, le flex-wrap des bandeaux ne doit jamais
-   les renvoyer sur deux lignes. */
-.header-identity {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: none;
-}
-
 * {
   box-sizing: border-box;
 }
@@ -153,26 +148,29 @@ select {
 
 /* ---- Common components ---- */
 
+/* Même géométrie que `.play-header` : une rangée du haut, puis le pied qui porte
+   la marque et le retour à l'accueil (cf. HomeLink.jsx). Ces écrans sont
+   l'attente des quatre pages à bandeau de pièce, la marque ne peut pas être à un
+   endroit ici et à un autre là : elle sauterait à l'arrivée du manifest. D'où
+   aussi le passage en colonne et les mêmes valeurs de rembourrage que
+   `.play-header-row` + `.play-header-settings-inner`. */
 .page-header {
   background: var(--card);
   border-bottom: 1px solid var(--border);
-  padding: 12px 20px;
+  padding: 10px 18px 14px;
   display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 10px;
   position: sticky;
   top: 0;
   z-index: 50;
 }
 
-.page-header .brand {
-  font-family: var(--header-serif);
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--header-accent);
-  text-decoration: none;
-  white-space: nowrap;
+.page-header-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
 .page-header .page-title {
@@ -252,8 +250,8 @@ textarea:focus {
 }
 
 /* ---- Collapsible play header (shared between Répétition, Enregistrement et
-   Éditeur) : sceau de page + marque + titre de la pièce, puis les sélecteurs
-   d'acte/scène/personnage. ---- */
+   Éditeur) : sceau de page + titre de la pièce, puis les sélecteurs
+   d'acte/scène/personnage, et la marque en pied du bandeau déplié. ---- */
 
 .play-header {
   position: sticky;
@@ -276,24 +274,25 @@ textarea:focus {
    du titre. Le repli n'enlève que les réglages du dessous ; le titre reste
    centré dans une barre au padding symétrique. */
 
-.header-brand {
-  font-family: var(--header-serif);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--header-accent);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-/* Le bouton de repli avale TOUTE la rangée sauf le sceau : la marque et le
-   titre sont dedans. Sur mobile, viser le haut de la barre pour la replier
-   tombait sur le lien de la marque et renvoyait au menu principal ; le lien est
-   descendu dans les réglages (`.play-header-home`). */
+/* Le bouton de repli avale TOUTE la rangée sauf le sceau : le titre de la pièce
+   est dedans, et lui seul (le mot « PrettyDrama » est descendu en pied du
+   bandeau, avec le logo : dans la seule rangée toujours visible, il prenait la
+   place que le titre de la pièce coupait en « … » sur mobile). Sur mobile,
+   viser le haut de la barre pour la replier tombait sur le lien de la marque et
+   renvoyait au menu principal ; le lien est descendu dans les réglages
+   (`.play-header-home`). */
 .play-header-toggle {
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
+  /* `stretch` et pas la hauteur naturelle du titre : le bouton doit faire toute
+     la hauteur de la rangée, que le sceau fixe déjà à 36 px. Sans lui il ne
+     mesurait que ses 28 px de titre, et `align-items: center` sur la rangée
+     laissait quatre pixels morts de part et d'autre, en haut de la barre,
+     exactement là où le pouce vise pour replier. Rien ne bouge à l'écran : le
+     fond est transparent et le contenu reste centré. */
+  align-self: stretch;
   gap: 10px;
   background: none;
   border: none;
@@ -301,16 +300,39 @@ textarea:focus {
   text-align: left;
 }
 
+/* Deux lignes au maximum, puis l'ellipse : un titre de pièce qui ne tient pas
+   sur la largeur du téléphone se lisait « Les Fourberies de Sca… », et il n'est
+   récupérable nulle part (le survol de la rangée donne l'infobulle du repli, et
+   sur mobile il n'y a pas de survol). Le plafond des deux lignes vaut dans les
+   DEUX états du repli, comme le reste de la rangée du haut : le pouce replie la
+   barre plusieurs fois par répétition, et un titre qui changerait de nombre de
+   lignes à chaque appui claquerait, le saut de ligne n'étant pas interpolable
+   là où les réglages glissent sur 0.26 s. Un titre long fait donc grandir la
+   barre une fois pour toutes, pas à chaque geste.
+   `line-height: 1.2` en fait le prix : le 1.5 hérité du corps donnerait 60 px
+   de titre sur deux lignes, alors qu'à 1.2 une ligne mesure 24 px et passe sous
+   les 30 px du sceau, qui fixe déjà la hauteur de la rangée. Un titre court ne
+   change donc rien du tout, un titre long ajoute 18 px.
+   Piste écartée : rétrécir le corps du titre (sur mobile, ou au repli). Elle
+   achète deux ou trois caractères, elle donne deux tailles typographiques à la
+   même chaîne sur le même écran, et un `font-size` en transition sur une serif
+   se lit comme un défaut de zoom (reflow subpixel de toute la ligne).
+   Le trio `-webkit-` est l'idiome rendu partout (Firefox 68+, et c'est lui que
+   la propriété standard `line-clamp` définit) ; il remplace `text-overflow`,
+   qui n'agit pas dans une boîte `-webkit-box` : c'est le clamp qui pose son
+   ellipse en fin de deuxième ligne. */
 .play-header-title {
   flex: 1;
   min-width: 0;
   font-family: var(--header-serif);
   font-size: 20px;
   font-weight: 700;
+  line-height: 1.2;
   color: var(--ink);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .play-header-chevron {
@@ -373,17 +395,16 @@ textarea:focus {
 
 /* Le retour à l'accueil, seul lien sortant des pages à bandeau : il ne peut se
    toucher qu'une fois le bandeau déplié, donc jamais par mégarde en le
-   repliant. C'est le LOGO seul qui fait le bouton, sans un mot : les deux
-   masques sont la marque du site, ils disent où ils mènent. En pied du bandeau
-   et centré : une sortie de page ne se met pas au-dessus des réglages, et
-   centré le bouton ne prétend appartenir à aucune des colonnes de gauche.
-   `align-self` (et pas `text-align`) pour que la zone cliquable s'arrête au
-   logo au lieu de courir sur toute la largeur. */
-/* Le pied du bandeau : deux filets qui s'effacent vers l'extérieur, le logo au
-   milieu. Seul et centré, il avait l'air d'une pastille tombée là ; encadré, il
-   ferme le bandeau comme un cul-de-lampe ferme une page. Filets courts et
-   dégradés plutôt qu'une règle pleine d'un bord à l'autre : sous des réglages
-   déjà chargés, un trait franc de plus aurait pesé. */
+   repliant. Le logo aux deux masques et le mot « PrettyDrama » à sa droite font
+   le bouton ensemble : c'est ici que le nom du site se lit, la rangée du haut
+   n'ayant plus qu'à dire le titre de la pièce. En pied du bandeau et centré :
+   une sortie de page ne se met pas au-dessus des réglages, et centré le bouton
+   ne prétend appartenir à aucune des colonnes de gauche. */
+/* Le pied du bandeau : deux filets qui s'effacent vers l'extérieur, la marque au
+   milieu. Seule et centrée, elle avait l'air d'une pastille tombée là ;
+   encadrée, elle ferme le bandeau comme un cul-de-lampe ferme une page. Filets
+   courts et dégradés plutôt qu'une règle pleine d'un bord à l'autre : sous des
+   réglages déjà chargés, un trait franc de plus aurait pesé. */
 .play-header-foot {
   display: flex;
   align-items: center;
@@ -406,11 +427,30 @@ textarea:focus {
 }
 
 .play-header-home {
+  position: relative; /* ancre la lueur du survol, cf. ::before */
   display: inline-flex;
-  border-radius: 50%;
-  /* Le rembourrage porte la cible tactile à 48 px alors que la pastille n'en
-     montre que 36 : un bouton sans mot doit rester facile à viser au pouce. */
-  padding: 6px;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  /* Plus rien ne peint ce bord (le survol est une nappe de lumière, pas un
+     fond) : il ne reste que pour donner sa forme d'ovale à la bague de focus. */
+  border-radius: 999px;
+  /* Le rembourrage porte la cible tactile à 48 px de haut alors que la pastille
+     n'en montre que 36. Plus de marge à droite du mot qu'à gauche du logo : le
+     rond a déjà son propre blanc tournant, le mot n'en a aucun. */
+  padding: 6px 16px 6px 6px;
+  transition: transform 0.18s;
+}
+
+/* Le nom du site, dans la serif réservée au bandeau et à l'encre de la marque :
+   exactement ce qu'il rendait dans la rangée du haut, au même corps (le pied du
+   bandeau n'est pas un pied de page, c'est la signature du site). */
+.play-header-home-word {
+  font-family: var(--header-serif);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--header-accent);
+  white-space: nowrap;
 }
 
 /* Les deux masques, comme dans le hero de l'accueil. Pastille de la MÊME taille
@@ -421,27 +461,81 @@ textarea:focus {
    touchent, et le logo n'est plus qu'une tache. */
 .play-header-home-mark {
   font-size: 26px;
-  /* Filet transparent posé dès le repos : le survol ne fait que le colorer,
-     donc la pastille ne se réduit pas d'un pixel au passage de la souris. */
-  border: 1px solid transparent;
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 
-/* Survol : EXACTEMENT celui du bouton de dépôt de l'Avancement et des cartes
-   de l'accueil, ses trois effets compris (filet à la couleur de marque,
-   `--shadow-hover`, un pixel vers le haut). Un seul survol pour tout ce qui se
-   clique sur le site, plutôt qu'une trouvaille par bouton. Deux pistes
-   écartées : inverser la pastille (fond vin, dessin sable) noie les masques,
-   qui peignent leurs deux visages en `--page-mark-soft`, et il ne reste qu'une
-   tache pâle ; l'agrandir la redessine à une taille qu'elle ne supporte pas.
-   Le filet prend `--header-accent` et non `--accent` (le vin du bouton de
-   dépôt, à la même valeur) : le second est re-skinné en violet par l'éditeur,
-   et le bandeau partagé doit rendre pareil sur les quatre pages.
-   `--shadow-hover` et pas `--shadow`, pour la même raison : l'éditeur met le
-   second à `none`. */
-.play-header-home:hover .play-header-home-mark {
-  border-color: var(--header-accent);
-  box-shadow: var(--shadow-hover);
+/* Le survol du lien : le **crème du sceau de la marque s'étend et englobe le
+   bloc entier** (logo + mot), sans jamais dessiner de bord. C'est le sable de la
+   pastille des masques qui déborde d'elle et enveloppe le nom du site : les deux
+   ne font plus qu'un seul objet posé sur un fond chaud, au lieu d'un rond crème
+   suivi d'un mot.
+   Trois essais gardés ici parce qu'ils sont tentants :
+   (1) un filet à la couleur de marque autour de la pastille du logo, comme celui
+   des cartes de l'accueil et du bouton de dépôt. Sauf que là-bas le filet existe
+   déjà au repos (c'est la bordure de la carte, le survol ne fait que la teinter) :
+   ici il apparaissait de nulle part et cernait les masques comme une cible. En
+   plus il n'allumait que le rond, laissant le mot éteint à côté, et le bouton se
+   lisait comme deux objets dont un seul répondait. D'où la règle : ce qui répond
+   au survol, c'est l'OVALE ENTIER, logo et mot ensemble.
+   (2) un fond teinté + des `box-shadow` flous sur cet ovale. Un fond s'arrête net
+   au bord de sa boîte, et une ombre portée redessine la silhouette : dans les
+   deux cas une arête apparaissait, exactement ce qu'on ne veut pas.
+   (3) la même nappe qu'ici, mais dans le vin de la marque : ça faisait une lueur
+   rouge autour du logo, une alerte plutôt qu'un accueil. La couleur qui doit
+   s'étendre est celle du FOND du sceau (le sable), pas celle de son encre.
+   D'où un dégradé radial du crème vers le transparent, qui atteint la
+   transparence AVANT le bord de son propre calque (`closest-side`, dernier arrêt
+   transparent), et un calque plus grand que l'ovale (les `inset` négatifs) pour
+   que la nappe finisse de s'éteindre dehors : plus rien ne se termine sur une
+   ligne, le crème naît au centre et se perd dans le blanc du bandeau. Les arrêts
+   intermédiaires servent la même cause : deux arrêts seuls laissent une frange
+   visible là où la pente est la plus raide.
+   Plein crème au centre, là où le vin devait rester sous les 20 % : le sable est
+   assez proche du blanc du bandeau pour le supporter. Ce lien est la seule sortie
+   de page des quatre bandeaux et n'a aucun mot d'action pour se signaler, donc la
+   nappe doit se voir ; c'est sa largeur et sa pente douce, pas sa pâleur, qui
+   l'empêchent de se montrer. Elle apparaît en 0.26 s, plus lentement que le pas
+   d'un pixel de l'ovale (0.18 s) : le fond monte au lieu de s'allumer d'un coup.
+   La couleur vient de `--page-mark-soft`, que la classe `page-home` posée sur le
+   lien lui-même (cf. PlayHeader.jsx) ramène au sable de la marque : ni hex
+   recopié ici, ni token de plus, et sur les pages du responsable la nappe reste
+   crème au lieu de prendre le vert ou le violet du bandeau.
+   `z-index: -1` passe la nappe SOUS le logo et le mot (sans quoi ce calque
+   absolu couvrirait les masques) mais pas sous le bandeau : le `.play-header`
+   collant crée le contexte d'empilement, l'ovale n'en crée pas
+   (`position: relative` sans `z-index`), donc la nappe se peint entre le fond du
+   bandeau et son contenu. `pointer-events: none` garde la cible du clic sur
+   l'ovale, que les `inset` négatifs auraient élargie. */
+.play-header-home::before {
+  content: "";
+  position: absolute;
+  inset: -14px -30px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side ellipse at 50% 50%,
+    var(--page-mark-soft) 0%,
+    color-mix(in srgb, var(--page-mark-soft) 82%, transparent) 42%,
+    color-mix(in srgb, var(--page-mark-soft) 45%, transparent) 68%,
+    color-mix(in srgb, var(--page-mark-soft) 16%, transparent) 84%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.26s;
+}
+
+.play-header-home:hover::before {
+  opacity: 1;
+}
+
+/* Le pas d'un pixel vers le haut, celui du bouton de dépôt de l'Avancement :
+   c'est ce qui reste du survol partagé, la nappe de crème remplaçant son filet
+   et son ombre. (Les cartes de l'accueil, elles, montent de 3 px : elles sont
+   les seules à ne rien avoir autour, un pas plus franc s'y lit sans peser.)
+   Deux pistes écartées pour la pastille du logo : l'inverser (fond
+   vin, dessin sable) noie les masques, qui peignent leurs deux visages en
+   `--page-mark-soft`, et il ne reste qu'une tache pâle ; l'agrandir la redessine
+   à une taille qu'elle ne supporte pas. */
+.play-header-home:hover {
   transform: translateY(-1px);
 }
 
@@ -478,8 +572,12 @@ textarea:focus {
   min-width: 160px;
 }
 
-/* Texte d'explication en tête des réglages (commun Répétition/Enregistrement) :
-   à quoi sert la page et comment s'en servir. */
+/* La doc du bandeau, sur les quatre pages : rendue par PlayHeader, jamais par
+   les pages. Deux paragraphes qui encadrent les réglages : le `desc` compact de
+   pages.js (le même que la carte de l'accueil) en tête du bandeau déplié, les
+   précisions propres au bandeau en pied. Une seule classe pour les deux, donc un
+   seul style : c'est la même voix, à un cran de détail près, et c'est leur place
+   qui les distingue. */
 .header-hint {
   font-size: 13.5px;
   color: var(--ink-soft);
@@ -721,10 +819,48 @@ textarea:focus {
   font-size: 17px;
 }
 
-.loading-state {
+/* Message pleine page de `PageState` : il vit dans une carte blanche, comme
+   TOUT ce qui porte du contenu sur ce site (cartes de l'accueil, encart « Qui
+   jouez-vous ? », panneaux de l'Avancement, cartes de dialogue). En texte nu sur
+   le crème, ces écrans étaient les seuls du site à ne rien poser sur le papier :
+   on lisait une page à moitié chargée plutôt qu'une réponse.
+   **Les DEUX états la prennent**, le message (navigateur incapable
+   d'enregistrer, manifest illisible, Édition ouverte au doigt) et le chargement :
+   ce sont deux moments du même écran, et l'un succédant souvent à l'autre, une
+   carte qui n'apparaîtrait qu'au second se lirait comme un changement de page.
+   Le mot reste au centre et court (une phrase, pas un paragraphe), donc pas de
+   titre : la carte et le sceau du bandeau situent déjà l'écran.
+   `min()` plutôt qu'une marge latérale : `margin: auto` centre, et il faut
+   quand même une gouttière sur un téléphone étroit. La gouttière est un token
+   parce que la carte de l'éditeur relève son plafond sans changer le bord
+   (`.load-error`), et deux `calc()` recopiés dériveraient.
+   L'ombre suit `--shadow`, donc l'éditeur (qui le met à `none`) rend la carte
+   à plat : c'est sa direction « Rail », et ses propres panneaux sont plats. */
+.page-notice {
+  max-width: min(480px, calc(100% - var(--notice-gutter)));
+  margin: 40px auto;
+  padding: 24px 26px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
   text-align: center;
+  color: var(--ink);
+  font-size: 16.5px;
+  line-height: 1.55;
+}
+
+/* Le triangle prend la couleur d'avertissement du thème : sur une carte
+   blanche, l'encre seule ne disait pas qu'il y a quelque chose à savoir. */
+.page-notice .warn-icon {
+  color: var(--warn);
+}
+
+/* L'attente, dans la même carte : seule l'encre s'adoucit, et le texte respire
+   un peu plus haut qu'un message qui, lui, se lit une fois et se referme. */
+.page-notice.loading-state {
   color: var(--ink-soft);
-  padding: 80px 20px;
+  padding: 40px 26px;
   font-size: 17px;
 }
 
@@ -808,7 +944,11 @@ textarea:focus {
     font-size: 17px;
   }
 
-  .play-header .play-header-home-mark {
+  /* Visé par le lien de retour et non par un bandeau : `HomeLink` est le même
+     objet dans les deux, et la règle ci-dessus l'a déjà ramené à 30 px de
+     pastille (il porte `page-mark`). Il ne reste qu'à lui rendre son dessin, qui
+     occupe les trois quarts du rond là où un sceau de page en occupe la moitié. */
+  .play-header-home .play-header-home-mark {
     font-size: 22px;
   }
 }

@@ -96,13 +96,33 @@
   font-size: 15.5px;
 }
 
-/* Characters × scenes grid. The wrapper scrolls, never the page. */
+/* Characters × scenes grid. The wrapper scrolls, never the page : sur un écran
+   étroit ce sont les scènes qui défilent sous la colonne des noms, restée figée
+   (cf. `position: sticky` plus bas). `overscroll-behavior-x: contain` pour que
+   le bout du défilement n'enchaîne pas sur le geste « page précédente » du
+   navigateur mobile. La zone est atteignable au clavier (`tabindex` posé par le
+   JSX) : elle défile et ne contient rien de focalisable, donc sans ça elle
+   serait inaccessible sans souris ni doigt. */
 .dash-table-wrap {
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.dash-table-wrap:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .dash-table {
-  border-collapse: collapse;
+  /* Modèle SÉPARÉ, et pas `collapse` : sous `collapse` les filets sont peints
+     par le tableau et non par les cellules, donc ils ne suivent pas une cellule
+     `sticky` et la colonne des noms perdait toutes ses bordures dès le premier
+     pixel de défilement (elles restaient à leur place et glissaient dessous).
+     Chaque cellule porte donc son filet droit et bas, et les deux bords
+     extérieurs que le modèle séparé ne partage plus sont rendus juste après :
+     le résultat est identique à `collapse`, un filet d'1 px partout. */
+  border-collapse: separate;
+  border-spacing: 0;
   width: 100%;
   font-size: 14px;
 }
@@ -111,13 +131,54 @@
 .dash-table td {
   padding: 8px 10px;
   text-align: center;
-  border: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   background: var(--card);
 }
 
+/* Les bords sans voisin pour les porter : le filet gauche des noms (bord gauche
+   du tableau), le filet haut de la rangée des actes (elle n'a rien au-dessus) et
+   celui du premier nom (il n'a que le coin, sans bordure).
+   Le filet haut ne se pose SURTOUT pas sur tous les noms : hors modèle
+   `collapse`, il s'ajouterait au filet bas du nom précédent et donnerait une
+   ligne de 2 px entre chaque personnage. */
+.dash-table .dash-name {
+  border-left: 1px solid var(--border);
+}
+
+.dash-table .dash-act,
+.dash-table tbody tr:first-child .dash-name {
+  border-top: 1px solid var(--border);
+}
+
+/* Colonne des noms figée à gauche : c'est elle qui dit de qui parle la rangée,
+   une case « 2/5 » toute seule à l'écran ne veut rien dire. Le coin appartient à
+   la même colonne et la suit donc, sinon les en-têtes d'actes et de scènes
+   passeraient à côté d'elle au défilement. */
+.dash-table .dash-name,
+.dash-table .dash-corner {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+/* Pas d'ombre au bord de la colonne figée : essayée, elle salissait chaque nom
+   d'un dégradé gris. Ce qui sépare, c'est le filet continu du haut du tableau à
+   son pied (le `border-right` du coin puis celui des noms). */
+
+/* Le coin reste vide (ni fond de carte ni filet autour : il ferme la grille en
+   haut à gauche), avec deux exceptions dues au figeage. Fond OPAQUE, celui de la
+   page : en `background: none` les numéros de scène défilaient visiblement
+   par-dessous. Et c'est LUI qui porte le filet gauche des deux rangées
+   d'en-tête, pas la première cellule d'acte ou de scène : celle-là part au
+   défilement (elle emmenait le bord gauche du haut du tableau avec elle, et les
+   en-têtes se retrouvaient ouverts à gauche), tandis que le coin ne bouge pas.
+   Il prolonge donc vers le haut le filet droit de la colonne des noms, exactement
+   comme le faisait la bordure partagée du modèle `collapse`. */
 .dash-table .dash-corner {
   border: none;
-  background: none;
+  border-right: 1px solid var(--border);
+  background: var(--paper);
 }
 
 .dash-table .dash-act {
@@ -163,6 +224,17 @@
   text-align: left;
   white-space: nowrap;
   padding-right: 14px;
+}
+
+/* Le nom est enveloppé pour pouvoir se couper : la colonne étant figée, elle
+   mange la largeur des scènes, et un nom à rallonge ne doit pas laisser un
+   filet de grille pour tout le reste. Coupé, il reste lisible en entier dans
+   l'infobulle du `title` porté par la cellule. */
+.dash-name-text {
+  display: block;
+  max-width: 12em;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Même teinte « en retard » / « tout enregistré » que les cases, portée aussi
@@ -231,6 +303,13 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--card);
+}
+
+/* Bague identique à celle de la grille : les deux zones défilantes de la page
+   s'atteignent au clavier, elles doivent le dire de la même façon. */
+.dash-journal-wrap:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .dash-journal-table {
@@ -393,5 +472,27 @@
   .dash-journal-table th,
   .dash-journal-table td {
     padding: 7px 8px;
+  }
+
+  /* Grille d'avancement : la colonne figée coûte de la largeur à celles qui
+     défilent, donc c'est elle qu'on resserre d'abord (nom plus court, moins de
+     gouttière), et les cases ensuite. Le pas des scènes descend à 44 px, de quoi
+     tenir « 12/12 » sans écraser les chiffres. */
+  .dash-name-text {
+    max-width: 6.5em;
+  }
+
+  .dash-table .dash-name {
+    font-size: 15.5px;
+    padding-right: 8px;
+  }
+
+  .dash-table th,
+  .dash-table td {
+    padding: 7px 6px;
+  }
+
+  .dash-table .dash-scene {
+    min-width: 44px;
   }
 }

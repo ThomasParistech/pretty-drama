@@ -35,7 +35,9 @@ passent par les tokens du `:root` : `--paper`, `--paper-dark`, `--card`,
 `--radius`, `--shadow`, `--shadow-hover` (survol d'une carte cliquable),
 `--card-active` (carte de dialogue courante), `--focus-ring` /
 `--focus-ring-offset` (bague de focus des éléments qui n'en ont pas par
-défaut : slider, cartes, liens-cartes), `--font-ui`, `--font-serif`, plus les
+défaut : slider, cartes, liens-cartes), `--notice-gutter` (gouttière latérale
+des cartes pleine page `.page-notice` et `.load-error`, qui se centrent en
+`margin: auto`), `--font-ui`, `--font-serif`, plus les
 tokens réservés `--header-accent` / `--header-serif` / `--header-shadow`
 (cf. plus bas) et `--ease-header` (courbe du repli du bandeau, neutralisée par
 le bloc `prefers-reduced-motion`).
@@ -50,7 +52,11 @@ le bloc `prefers-reduced-motion`).
   page ne redéfinit. **`scripts/tests/test_contracts.py` le vérifie en CI** :
   il lit la liste des `--header-*` dans theme.css, échoue si un CSS de page en
   redéfinit un, et échoue aussi si une règle de bandeau consomme `--accent`,
-  `--font-serif` ou `--shadow` (tous re-skinnés par l'éditeur). C'est
+  `--font-serif`, `--shadow` (re-skinnés par l'éditeur) ou `--page-mark(-soft)`
+  (re-skinnés par CHAQUE page, via la classe `page-<clé>` que les deux bandeaux
+  posent sur leur racine). Une seule exemption, `.play-header-home*` : le retour
+  à l'accueil dit la marque et non la page, donc il porte lui-même `page-home`,
+  classe posée en JSX que ce garde, qui ne lit que du CSS, ne peut pas voir. C'est
   exactement par là qu'une ombre de bandeau a disparu sur la seule page
   Édition. Si l'identité d'un composant partagé (couleur d'accent, font,
   taille) passe par un token re-skinnable, c'est un finding haute ; les
@@ -69,18 +75,19 @@ le bloc `prefers-reduced-motion`).
 
 | Élément | Source | Pages |
 | --- | --- | --- |
-| Bandeau de marque (sceau + marque + libellé de page) | `src/shared/PageHeader.jsx` — plus monté directement par aucune page : il ne sert que d'en-tête aux écrans de `PageState`, qui n'ont pas encore le manifest et donc pas de titre de pièce à afficher | via `PageState` uniquement |
-| Bandeau de pièce (sceau + marque + titre de la pièce, repliable ; **pas** de libellé de page en toutes lettres, il encombrait la barre sur mobile : c'est le sceau qui dit la page) | `src/shared/PlayHeader.jsx` — les sélecteurs acte/scène sont fournis par chaque page en `children` (`.selects-row`), car leurs variantes sont réelles : `disabled` pendant l'enregistrement, compteurs « à enregistrer », boutons « + Scène »/« + Acte » côté éditeur. **Sans children** (cas de l'Avancement, qui n'a aucun réglage) le titre n'est plus un bouton et le chevron disparaît (`.play-header-title-plain`) | Répétition, Enregistrement, Édition, Avancement |
+| Bandeau de marque (sceau + libellé de page en rangée du haut, marque et retour à l'accueil en pied) | `src/shared/PageHeader.jsx` — plus monté directement par aucune page : il ne sert que d'en-tête aux écrans de `PageState`, qui n'ont pas encore le manifest et donc pas de titre de pièce à afficher. **Même géométrie que `PlayHeader`, et le même `HomeLink` en pied** : ces écrans sont l'attente des quatre pages à bandeau de pièce, donc une marque placée ici en haut et là en bas sautait d'un bout à l'autre du bandeau à l'arrivée du manifest | via `PageState` uniquement |
+| Bandeau de pièce (sceau + titre de la pièce, repliable ; **pas** de libellé de page en toutes lettres, il encombrait la barre sur mobile : c'est le sceau qui dit la page) | `src/shared/PlayHeader.jsx` — la rangée du haut ne dit QUE le titre de la pièce, le bouton de repli l'avale en entier ; le mot « PrettyDrama » et le retour à l'accueil vivent en pied du bandeau déplié (`.play-header-home`, logo + mot, classe `page-home` posée sur le lien pour la nappe crème de son survol). Les sélecteurs acte/scène sont fournis par chaque page en `children` (`.selects-row`), car leurs variantes sont réelles : `disabled` pendant l'enregistrement, compteurs « à enregistrer », boutons « + Scène »/« + Acte » côté éditeur. **Le bandeau se replie sur les quatre pages, l'Avancement compris** (qui n'a pourtant aucun réglage) : sa zone dépliée ne contient alors que la doc et le retour à l'accueil, et une page qui ne se replierait pas serait la seule à garder son bandeau sous le pouce | Répétition, Enregistrement, Édition, Avancement |
 | Barre de contrôle basse `.controls` + `.ctrl-btn` | CSS dans `theme.css` | Répétition, Enregistrement |
 | Slider de progression indexé | `src/shared/ProgressBar.jsx` | Répétition, Enregistrement |
 | Cartes de dialogue `.dialogue-card` (+ palette « mes répliques » `.mine` et bordure `.active` communes) | `theme.css` — les pages posent `.mine` à côté de leur classe sémantique et ne gardent que leurs vrais écarts | Répétition, Enregistrement |
 | Boutons `.btn` / `.btn.primary` | `theme.css` | toutes |
-| Sceau de page (pastille ronde + icône) | `src/shared/PageMark.jsx` (+ `PAGES` de `src/shared/pages.js`) — la classe `page-<clé>` qu'il pose porte ses couleurs, il s'affiche donc juste partout, y compris hors d'un bandeau. Prop `label` quand le sceau ne désigne pas sa page (colonne Type du journal : le micro y veut dire « Voix »), et `label=""` quand il est **décoratif**, c'est-à-dire quand le mot est déjà écrit juste à côté (cartes de l'accueil, marque du hero) : sinon chaque lien s'annonce « Répétition, Répétition, Répétez… » | les deux bandeaux, les cartes de l'accueil, le bouton de dépôt de l'Avancement, et les DEUX colonnes d'icônes de son journal (la colonne Statut réutilise la pastille `.page-mark` avec les teintes `--ok`/`--warn` au lieu d'une couleur de page) |
-| Texte d'explication en tête des réglages `.header-hint` | `theme.css` | Répétition, Enregistrement, Édition |
+| Retour à l'accueil (logo aux deux masques + le mot « PrettyDrama », entre deux filets courts) | `src/shared/HomeLink.jsx`, **un seul composant pour les deux bandeaux**. Porte `page-home` sur le lien lui-même : c'est ce qui donne au survol le crème de la marque (`--page-mark-soft`) au lieu du vert ou du violet du bandeau. `test_contracts.py` interdit les tokens de sceau aux règles de bandeau et exempte nommément `.play-header-home*`, cette classe posée en JSX lui étant invisible | les deux bandeaux, donc les quatre pages et leurs écrans d'attente |
+| Sceau de page (pastille ronde + icône) | `src/shared/PageMark.jsx` (+ `PAGES` de `src/shared/pages.js`) — la classe `page-<clé>` qu'il pose porte ses couleurs, il s'affiche donc juste partout, y compris hors d'un bandeau. Prop `label` quand le sceau ne désigne pas sa page (colonne Type du journal : le micro y veut dire « Voix »), et `label=""` quand il est **décoratif**, c'est-à-dire quand le mot est déjà écrit juste à côté (cartes de l'accueil, marque du hero, le retour à l'accueil en pied de bandeau qui porte déjà son `aria-label`, et le lien de page d'une phrase de doc `.hint-page-mark`) : sinon chaque lien s'annonce « Répétition, Répétition, Répétez… » | les deux bandeaux, les cartes de l'accueil, le bouton de dépôt de l'Avancement, et les DEUX colonnes d'icônes de son journal (la colonne Statut réutilise la pastille `.page-mark` avec les teintes `--ok`/`--warn` au lieu d'une couleur de page) |
+| Doc du bandeau `.header-hint` (une seule classe, les deux paragraphes ont le même style : c'est leur place qui les distingue) | `theme.css` pour le style, mais **rendue par `PlayHeader` lui-même**, jamais par les pages : le premier paragraphe est `PAGES[page].desc` (le même que la carte de l'accueil, un seul endroit pour les deux emplois), le second la prop `hint`, facultative. Les deux encadrent les réglages (`desc` en tête du bandeau déplié, `hint` en pied) | les quatre : `desc` partout, `hint` seulement sur Enregistrement et Édition |
 | Confirmation d'action destructive | `src/shared/ConfirmModal.jsx` — rendu en portail, Escape annule, focus initial sur le bouton à proposer. **Jamais de `window.confirm`** (dialogue natif hors thème). Citation de la réplique visée : `.confirm-quote` (`theme.css`) + `excerpt` (`data.js`) | Édition (réplique, scène, acte), Enregistrement (jeter une prise), et via `LeaveGuard` |
 | Garde de sortie de page (travail non téléchargé) | `src/shared/LeaveGuard.jsx` — clics de liens interceptés en capture + `beforeunload` en filet | Édition, Enregistrement |
 | Fetch manifest | `src/shared/useManifest.js` | Répétition, Enregistrement, Avancement (l'accueil appelle `fetchManifest` directement : il n'a ni écran de chargement ni écran d'erreur, un manifest absent laisse juste le titre vide) |
-| Écran chargement/erreur plein-page | `src/shared/PageState.jsx` | toutes sauf accueil |
+| Écran chargement/erreur plein-page | `src/shared/PageState.jsx` : les DEUX états prennent la carte partagée `.page-notice` (l'attente comme le message : c'est le même écran à deux moments, et le second succède presque toujours au premier) | toutes sauf accueil |
 
 Règles associées :
 
@@ -108,7 +115,13 @@ Règles associées :
 - Focus visible sur tout élément interactif (le `:focus` global de
   `theme.css` ou un équivalent par page).
 - Tout bouton-icône porte un `title` ou `aria-label` en français.
-- Zones tactiles ≥ 40 px dans les barres de contrôle (usage mobile).
+- Zones tactiles ≥ 40 px dans les barres de contrôle (usage mobile). Deux
+  exceptions assumées, à ne pas rouvrir : les étiquettes de case à cocher de la
+  Répétition restent à 32 px sous 800 px (`rehearsal.css`), parce que cette
+  hauteur EST l'interligne de la rangée et qu'à 40 px les deux lignes de cases
+  se lisaient comme deux groupes sans rapport ; la largeur cliquable, une phrase
+  entière, compense. Et l'Édition ne compte plus aucune cible tactile : la page
+  ne s'ouvre pas sur un pointeur `coarse` (`src/editor/useTouchPointer.js`).
 - Contrastes lisibles sur fond crème (`--ink-soft` est le minimum pour du
   texte informatif ; pas de texte plus clair).
 

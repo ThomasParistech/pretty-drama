@@ -257,78 +257,78 @@ export default function App() {
 
   return (
     <div className="rehearsal-page">
+      {/* Pas de `hint` ici : les quatre cases à cocher juste en dessous portent
+          des libellés explicites, une phrase qui les redirait ne servait qu'à
+          repousser les réglages. */}
       <PlayHeader page="rehearsal" title={manifest.title || "Répétition"}>
         <div className="selects-row">
-              <select
-                aria-label="Acte"
-                value={actIndex}
-                onChange={(e) => changeAct(Number(e.target.value))}
-              >
-                {acts.map((a, i) => (
-                  <option key={i} value={i}>
-                    {a.title}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="Scène"
-                value={sceneIndex}
-                onChange={(e) => changeScene(Number(e.target.value))}
-              >
-                {(acts[actIndex]?.scenes ?? []).map((s, i) => {
-                  const count =
-                    characterId === ""
-                      ? null
-                      : s.lines.filter((l) => l.characterId === characterId).length;
-                  return (
-                    <option key={i} value={i}>
-                      {s.title}
-                      {count != null ? ` (${count} réplique${count > 1 ? "s" : ""})` : ""}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-            <div className="character-row">
-              <select
-                className="character-select"
-                aria-label="Mon personnage"
-                value={characterId}
-                onChange={(e) => setCharacterId(e.target.value)}
-              >
-                <option value="">Qui jouez-vous ?</option>
-                {manifest.characters.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              <div className="checks-row">
-                <label title="Je dis mes répliques moi-même : leur audio est coupé">
-                  <input type="checkbox" checked={muet} onChange={(e) => setMuet(e.target.checked)} />
-                  Muet
-                </label>
-                <label title="Flouter le texte de mes répliques">
-                  <input
-                    type="checkbox"
-                    checked={hideText}
-                    onChange={(e) => setHideText(e.target.checked)}
-                  />
-                  Cacher mon texte
-                </label>
-                <label title="Bip sonore avant chacune de mes répliques">
-                  <input type="checkbox" checked={bip} onChange={(e) => setBip(e.target.checked)} />
-                  Bip
-                </label>
-                <label title="Les sauts « ma réplique » se placent sur la réplique précédente">
-                  <input type="checkbox" checked={avant} onChange={(e) => setAvant(e.target.checked)} />
-                  Avant
-                </label>
-              </div>
+          <select
+            aria-label="Acte"
+            value={actIndex}
+            onChange={(e) => changeAct(Number(e.target.value))}
+          >
+            {acts.map((a, i) => (
+              <option key={i} value={i}>
+                {a.title}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="Scène"
+            value={sceneIndex}
+            onChange={(e) => changeScene(Number(e.target.value))}
+          >
+            {(acts[actIndex]?.scenes ?? []).map((s, i) => {
+              const count =
+                characterId === ""
+                  ? null
+                  : s.lines.filter((l) => l.characterId === characterId).length;
+              return (
+                <option key={i} value={i}>
+                  {s.title}
+                  {count != null ? ` (${count} réplique${count > 1 ? "s" : ""})` : ""}
+                </option>
+              );
+            })}
+          </select>
         </div>
-        <p className="header-hint">
-          Répétez votre texte à l'italienne avec les vraies voix de la troupe.
-        </p>
+        <div className="character-row">
+          <select
+            className="character-select"
+            aria-label="Mon personnage"
+            value={characterId}
+            onChange={(e) => setCharacterId(e.target.value)}
+          >
+            <option value="">Qui jouez-vous ?</option>
+            {manifest.characters.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <div className="checks-row">
+            <label title="Mes répliques ne sont pas jouées : je les dis moi-même">
+              <input type="checkbox" checked={muet} onChange={(e) => setMuet(e.target.checked)} />
+              Couper ma voix
+            </label>
+            <label title="Flouter le texte de mes répliques">
+              <input
+                type="checkbox"
+                checked={hideText}
+                onChange={(e) => setHideText(e.target.checked)}
+              />
+              Cacher mon texte
+            </label>
+            <label title="Un bip sonore annonce chacune de mes répliques">
+              <input type="checkbox" checked={bip} onChange={(e) => setBip(e.target.checked)} />
+              Bip avant ma réplique
+            </label>
+            <label title="Les flèches « ma réplique » s'arrêtent sur la réplique qui me lance, pas sur la mienne">
+              <input type="checkbox" checked={avant} onChange={(e) => setAvant(e.target.checked)} />
+              Démarrer une réplique avant la mienne
+            </label>
+          </div>
+        </div>
       </PlayHeader>
 
       <main className="dialogue-container" ref={listRef}>

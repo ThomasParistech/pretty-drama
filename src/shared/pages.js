@@ -10,7 +10,17 @@ import {
 // « sceau » (l'icône reprise dans le bandeau, sur les cartes d'accueil et dans
 // le favicon). Les couleurs, elles, vivent en CSS : cf. les classes
 // `.page-<clé>` de src/shared/theme.css, qui portent --page-mark.
-// `desc` ne sert qu'aux cartes de l'accueil.
+// `desc` est la phrase de doc COMPACTE de la page, à un seul endroit pour ses
+// deux emplois : la carte de l'accueil, et la première ligne de son bandeau
+// (`PlayHeader` la rend lui-même, cf. PlayHeader.jsx). Une carte qui promet une
+// chose et un bandeau qui en dit une autre décrivaient deux pages différentes.
+// Chaque mode a donc DEUX éléments de doc et pas plus : ce `desc` partout, plus
+// le `hint` que son bandeau ajoute en dessous (les précisions qui n'ont pas de
+// sens quand on choisit encore sa page).
+// Une seule forme pour les quatre, et la même pour les `hint` : un verbe
+// d'action à l'impératif en tête, une dizaine de mots, deux phrases au grand
+// maximum pour un `hint`. Pas de question posée au lecteur, pas de « Pour les
+// acteurs » (l'URL le dit), et les deux-points seulement pour énumérer.
 export const PAGES = {
   home: {
     href: "./index.html",
@@ -21,25 +31,25 @@ export const PAGES = {
     href: "./rehearsal.html",
     label: "Répétition",
     Icon: DialogueIcon,
-    desc: "Répétez « à l'italienne » : la pièce se joue avec les vraies voix, vous dites vos répliques au bon moment.",
+    desc: "Répétez à l'italienne, avec les vraies voix de la troupe.",
   },
   recorder: {
     href: "./recorder.html",
     label: "Enregistrement",
     Icon: MicIcon,
-    desc: "Choisissez votre personnage, enregistrez vos répliques, puis envoyez le fichier à votre responsable.",
+    desc: "Enregistrez vos répliques, puis envoyez le fichier au responsable.",
   },
   dashboard: {
     href: "./dashboard.html",
     label: "Avancement",
     Icon: BarsIcon,
-    desc: "Qui a enregistré quoi ? Quelles répliques restent à faire ou à refaire ?",
+    desc: "Suivez l'avancement des enregistrements et déposez les fichiers que vous recevez.",
   },
   editor: {
     href: "./editor.html",
     label: "Édition",
     Icon: QuillIcon,
-    desc: "Saisissez et corrigez le texte de la pièce : personnages, actes, scènes et répliques.",
+    desc: "Éditez la pièce : personnages, actes, scènes et répliques.",
   },
 };
 

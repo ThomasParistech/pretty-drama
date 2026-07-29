@@ -77,6 +77,15 @@
   box-shadow: var(--shadow-hover);
 }
 
+/* Bague partagée, comme sur les deux autres liens-cartes du site (le bouton de
+   dépôt de l'Avancement, les personnages de l'encart d'enregistrement) : sans
+   elle, les six cartes des deux accueils retombaient sur l'anneau par défaut du
+   navigateur, hors palette. */
+.home-card:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
 /* Sceau agrandi en vignette de carte (le bandeau, lui, le garde à 36 px). */
 .home-card-mark {
   width: 52px;
