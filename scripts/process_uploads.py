@@ -243,6 +243,16 @@ def process_zip(zip_path: Path, clips_index: dict) -> int:
             raw.write_bytes(read_member_capped(archive, file_name, MAX_CLIP_BYTES))
             out = tmp_dir / f"{line_id}.mp3"
             transcode(raw, out)
+            # La source ne sert plus (transcode l'a lue deux fois, une passe
+            # volumedetect puis la conversion) : elle quitte le disque tout de
+            # suite. Sans ça, le pic d'occupation du dossier temporaire est la
+            # SOMME des sources, soit MAX_CLIPS_PER_ZIP x MAX_CLIP_BYTES au pire,
+            # bien au-delà de ce qu'un runner a de libre. Un disque plein n'est
+            # pas contenu au fichier fautif comme le reste : il emporterait
+            # l'écriture de clips.json et le commit, donc les dépôts déjà fusionnés
+            # dans ce run. Les mp3 produits, eux, s'accumulent forcément (c'est le
+            # merge tout-ou-rien) mais pèsent 64 kbps mono.
+            raw.unlink(missing_ok=True)
             transcoded.append((line_id, out, text))
 
         # Phase 2: everything succeeded — publish atomically-ish.

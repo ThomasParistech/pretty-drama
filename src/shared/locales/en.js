@@ -73,6 +73,10 @@ export const EN = {
     other: "{count} lines",
   },
 
+  "common.actScene": "{act}, {scene}",
+
+  "common.myLineNumber": " ({n}/{total})",
+
   // `{page}` is the Editing page's name, INTERPOLATED from `page.editor.label`
   // and never copied: six entries per catalogue name it. Note the word order
   // differs from the French ("in the Editing page" against "dans la page
@@ -119,10 +123,7 @@ export const EN = {
   "structure.act": "Act {n}",
   "structure.scene": "Scene {n}",
 
-  "rehearsal.sceneLines": {
-    one: " ({count} line)",
-    other: " ({count} lines)",
-  },
+  "rehearsal.sceneLines": " ({lines})",
   "recorder.sceneTodo": " ({count} to record)",
 
   "structure.moveAct": "Move {act}",
@@ -330,6 +331,8 @@ export const EN = {
   "recorder.stop": "Finish the recording",
   "recorder.downloadZip": "Download the ZIP of your takes",
   "recorder.downloadZipCount": "Download the ZIP of your takes ({count})",
+  "recorder.downloadCount": "({count})",
+  "recorder.lineCounter": "{n}/{total}",
   "recorder.zipName": "voices-{names}",
   "recorder.zipFallback": "takes",
   "recorder.characterSlug": "character",
@@ -355,6 +358,7 @@ export const EN = {
   "recorder.intro.allDone": "all recorded",
   "recorder.intro.todo": "{count} to record",
 
+  "recorder.player.time": "{elapsed} / {total}",
   "recorder.player.play": "Play",
   "recorder.player.pause": "Pause",
   "recorder.player.delete": "Delete this take",
@@ -369,7 +373,6 @@ export const EN = {
 
   "stats.scope.all": "the whole play",
   "stats.scope.act": "{act}, in full",
-  "stats.scope.scene": "{act}, {scene}",
 
   "stats.columns": "Words per line",
   "stats.columns.tip":
@@ -430,8 +433,8 @@ export const EN = {
   "dashboard.journal.empty":
     "No uploads yet: every file you upload will appear here, with what the tool made of it.",
   "dashboard.journal.more": {
-    one: "{count} older upload not shown.",
-    other: "{count} older uploads not shown.",
+    one: "{count} older uploaded file not shown.",
+    other: "{count} older uploaded files not shown.",
   },
   "dashboard.journal.detailVoices": "{file} {count}",
   // `{reason}` comes from the Action and stays French: the REPOSITORY is French,

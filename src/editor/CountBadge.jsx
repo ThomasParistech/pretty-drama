@@ -1,5 +1,5 @@
 import React from "react";
-import { t } from "../shared/locale.js";
+import { fmt, t } from "../shared/locale.js";
 
 // Le compte de répliques d'un objet de la pièce : un personnage dans la section
 // « Personnages » du rail, un acte ou une scène dans son plan.
@@ -18,11 +18,17 @@ import { t } from "../shared/locale.js";
 // (`.character-count, .structure-count` dans editor.css), ce qui disait bien
 // qu'il n'y avait qu'un objet ; les deux classes restent pour que chaque panneau
 // garde la main sur son gabarit.
+// Le chiffre passe par `fmt.number`, le formateur des nombres écrits SEULS, hors
+// de toute phrase. Ce n'est pas de la précaution : l'`aria-label` juste à côté est
+// une phrase, donc le moteur y groupe déjà le nombre lui-même, et sans ça le même
+// compte se lisait « 1144 » à l'écran et s'annonçait « 1 144 répliques » à la
+// voix. Les deux viennent du même `Intl.NumberFormat`, ils ne peuvent plus
+// diverger.
 export default function CountBadge({ count, className }) {
   const label = t("common.lineCount", { count });
   return (
     <span className={className} role="img" aria-label={label} title={label}>
-      {count}
+      {fmt.number(count)}
     </span>
   );
 }

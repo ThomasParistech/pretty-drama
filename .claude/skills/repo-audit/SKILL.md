@@ -1,6 +1,6 @@
 ---
 name: repo-audit
-description: Audit de santé du dépôt ENTIER (pas seulement le diff) — invariants vérifiés à l'échelle de tout l'arbre, sécurité du workflow CI, robustesse du back sur entrées hostiles, couverture de tests, code mort et duplication, cohérence front des 5 pages (agent front-reviewer), et dérive de la doc (CLAUDE.md, design-system.md) vs le code réel. Corrige avec confiance ce qui est sûr, pose des questions quand il y a un doute, un seul rapport priorisé. À utiliser pour établir une base de santé, après un gros refactor, ou sur demande (/repo-audit). Pour « suis-je bon pour committer », utilise plutôt diff-review.
+description: Audit de santé du dépôt ENTIER (pas seulement le diff) — invariants vérifiés à l'échelle de tout l'arbre, sécurité du workflow CI, robustesse du back sur entrées hostiles, couverture de tests, code mort et duplication, cohérence front des 5 pages (agent front-reviewer), et dérive de la doc (CLAUDE.md, design-system.md) vs le code réel. Tranche et corrige tout ce qui est technique (invariants, formats, factorisation, langue, a11y, code mort, doc) et n'escalade que les questions de produit, d'UX et d'UI ; un seul rapport priorisé. À utiliser pour établir une base de santé, après un gros refactor, ou sur demande (/repo-audit). Pour « suis-je bon pour committer », utilise plutôt diff-review.
 ---
 
 # Audit du dépôt entier
@@ -9,8 +9,8 @@ Passe délibéré sur **tout le code de `HEAD`**, pas sur le travail en cours.
 C'est le pendant de `diff-review` : là où `diff-review` juge un *changement*
 en contexte avant un commit, `repo-audit` cherche les problèmes
 **systémiques** (un invariant discrètement violé quelque part, du code mort,
-une doc périmée) sur tout l'arbre. Comme `diff-review`, il **corrige avec
-confiance ce qui est sûr et pose des questions quand il y a un doute** — le
+une doc périmée) sur tout l'arbre. Comme `diff-review`, il **tranche lui-même
+tout ce qui est technique et n'escalade que le produit, l'UX et l'UI** (§7) — le
 livrable est un worktree assaini + un rapport priorisé.
 
 Si l'intention est « est-ce que je peux committer ce que je viens de faire »,
@@ -21,12 +21,12 @@ c'est `diff-review` qu'il faut, pas ce skill.
 - **Périmètre = l'arbre entier à `HEAD`**, pas `git diff`. On ne calcule pas
   de base : on lit le code tel qu'il est. Ignore `dist/`, `node_modules/`,
   `clips/*.mp3` et les binaires.
-- **Corrige, mais avec discernement (§7).** Applique sans demander les fixes
-  sûrs (bug local sans changement d'API/format, test manquant, texte en dur à
-  passer au catalogue, token en dur, duplication à remonter) ; **demande d'abord** dès qu'il y a un
-  doute ou un choix (changement de format/contrat, comportement visible,
-  extraction de composant, suppression de code cru mort). Ce skill ne fait
-  **ni commit, ni stage, ni push** : les fixes restent dans le worktree.
+- **Corrige, et tranche (§7).** Tout ce qui est technique t'appartient, même
+  lourd : bug, changement de format quand les deux côtés bougent ensemble,
+  factorisation, extraction de composant, texte en dur, token, code mort dont le
+  non-usage est prouvé, doc périmée. N'escalade que ce qui relève du produit, de
+  l'UX ou de l'UI. Ce skill ne fait **ni commit, ni stage, ni push** : les fixes
+  restent dans le worktree.
 - **Pas de blâme.** Un audit whole-repo ne dit pas « tu viens de casser ça »
   mais « ça ne tient pas » ; peu importe depuis quel commit. Ne relance pas
   `git blame` pour attribuer.
@@ -47,11 +47,16 @@ whole-UI : il balaie les 5 pages contre le design system, indépendamment
 de tout diff — son périmètre naturel coïncide avec celui de ce skill.
 Il tourne en arrière-plan pendant les §2–§6.
 
-Ses findings arrivent `fichier:ligne` marqués `Sûr: oui|non`. Relis chaque
-finding dans le code pour le confirmer (un finding invérifiable est abandonné,
-pas corrigé « au cas où »), puis traite-les avec les règles du §7 : `Sûr: oui`
-→ applique, `Sûr: non` → mets en attente pour validation. Fusionne-les dans le
-rapport final (§8).
+Ses findings arrivent `fichier:ligne` marqués `Sûr: oui|non`. **Son marquage
+n'est pas une décision**, c'est une estimation : relis chaque finding dans le
+code, puis traite-le avec les règles du §7, qui décident seules. Les deux sens
+comptent. Un `Sûr: non` purement technique s'applique (il l'a marqué ainsi parce
+qu'il touche au comportement ou au JSX, pas parce que le choix t'échappe). Et un
+`Sûr: oui` se **RÉFUTE** quand une mesure, un précédent du dépôt ou une
+contrainte qu'il ne voyait pas dit le contraire : un refus argumenté est un
+résultat d'audit, qui va dans le rapport ET dans un commentaire du code, pour que
+la question ne se rouvre pas au prochain passage. Un finding invérifiable est
+abandonné, pas corrigé « au cas où ». Fusionne le tout dans le rapport (§9).
 
 ## 2. Zones, par risque décroissant
 
@@ -148,40 +153,72 @@ mets à jour `CLAUDE.md` (table « Repères rapides ») et/ou
 à une doc périmée. Rappel : le re-skin « Rail » de l'éditeur est volontaire —
 ses écarts de tokens documentés ne sont pas des findings.
 
-## 7. Corrections : avec confiance, mais bornées
+## 7. Corrections : tranche toi-même, escalade ce qui n'est pas technique
 
-Tu corriges, tu ne te contentes pas de rapporter. Le partage est le même que
-`diff-review`, appliqué à l'échelle du dépôt.
+Tu corriges, tu ne te contentes pas de rapporter, et **tu décides**. La ligne de
+partage n'est pas « risqué / pas risqué », c'est **à qui la décision
+appartient** : une question technique, même lourde, est la tienne (tu as le code,
+les tests et de quoi mesurer) ; une question de produit, d'UX ou d'UI est celle du
+responsable, parce que rien dans le dépôt ne la tranche. C'est le même partage que
+`diff-review`, à l'échelle du dépôt.
 
-**Applique sans demander** (fix sûr) :
+**Tranche et applique, sans demander** — liste ouverte, ce qui est technique
+t'appartient même s'il n'y figure pas :
 
-- bug évident dont le fix est local, sans changement d'API ni de format de
-  données, couvert ensuite par un test ;
-- test manquant pour un comportement déjà voulu ;
-- texte visible en dur → clé de catalogue, dans les DEUX langues ; clé manquante
-  d'un côté ; libellés incohérents alignés sur la version majoritaire ; message
-  d'erreur absent ou trompeur ;
-- côté front, tout ce qui ne change ni le comportement ni la structure JSX :
-  hex/ombre/rayon en dur → token existant ; bloc CSS dupliqué entre ≥ 2
-  fichiers → remonté dans `theme.css`, copies supprimées ; helper JS dupliqué
-  → remonté dans `src/shared/` ; `title`/`aria-label` manquants, focus,
-  tailles tactiles ;
-- mise à jour de la doc (`CLAUDE.md`, `design-system.md`) quand le code a
-  raison contre elle (§6).
+- tout bug, cas limite ou test manquant, y compris quand le fix traverse
+  plusieurs fichiers ;
+- **un changement de format de données ou du contrat ZIP**, à condition de bouger
+  les DEUX côtés dans le même passage et de le couvrir par un test — c'est
+  précisément ce que `test_contracts.py` existe pour tenir ;
+- une factorisation à l'échelle de l'arbre : remonter un bloc CSS ou un helper
+  dans `theme.css` / `src/shared/`, extraire un composant JSX partagé, changer une
+  structure DOM quand le rendu ne bouge pas ;
+- texte visible en dur → clé de catalogue dans les DEUX langues, clé manquante,
+  libellé recopié qui devient une clé interpolée, ponctuation ou séparateur
+  remonté du JSX vers la chaîne, message d'erreur absent ou trompeur ;
+- accessibilité : `title` / `aria-label` manquants, bague de focus, rôle, taille
+  tactile, enveloppe d'infobulle sur un contrôle qui s'éteint ;
+- la doc (`CLAUDE.md`, `design-system.md`) quand le code a raison contre elle
+  (§6) ;
+- **la suppression de code mort**, à condition de PROUVER le non-usage : grep du
+  symbole, des clés composées à l'exécution (`page.${x}.label`), des entrées
+  `.html`, des classes posées en JSX, des noms atteints par réflexion. Preuve
+  faite, supprime ; preuve impossible, garde le code et dis-le en une ligne du
+  rapport. C'est la preuve qui décide, pas le confort.
 
-**Demande d'abord** (doute ou choix) :
+**Escalade, et seulement ça** (`AskUserQuestion` si ça bloque un lot de fixes,
+sinon la section « À valider ») :
 
-- tout changement de format de données ou du contrat ZIP, toute modification
-  d'un invariant, tout comportement visible non dicté par un invariant ;
-- l'extraction d'un composant JSX partagé ou tout changement de structure DOM,
-  tout choix visuel non dicté par le contrat (nouvelles couleurs, espacements) ;
-- **la suppression de code cru mort** : un usage indirect (entrée `.html`,
-  chaîne dynamique, réflexion) est vite raté — présente la preuve de non-usage
-  et laisse trancher. En cas de doute : pas sûr, on demande.
+- **produit** : ce qu'une page doit faire, ce qui entre ou sort du périmètre, un
+  geste à ajouter ou à retirer, une donnée à commencer à stocker ;
+- **UX** : ce qu'on demande à l'utilisateur, ce qu'un geste veut dire, ce qui se
+  confirme ou non ;
+- **UI** : un choix visible que ni le contrat ni un précédent du site ne
+  tranchent (une couleur nouvelle, une hiérarchie, une mise en page) ;
+- le **ton** d'un libellé quand il porte une position produit (comment le site
+  parle à la troupe), jamais sa grammaire ni sa ponctuation ;
+- toute action hors du worktree (commit, push, écriture dans `data/`).
 
-Quand une question bloque un lot de fixes, utilise `AskUserQuestion` plutôt que
-d'abandonner en silence. Ce skill ne fait **ni commit, ni stage, ni push** :
-les fixes restent dans le worktree.
+Trois réflexes avant d'escalader quelque chose qui *ressemble* à une question
+d'UI. Un audit whole-repo en produit beaucoup, et la plupart ont une réponse dans
+le dépôt :
+
+1. **Mesure.** « Ces deux verts sont-ils le même ? » se calcule (ratio de
+   contraste sur le fond RÉEL, ΔE), et la mesure peut REFUSER le changement :
+   c'est ce qui a sauvé `--rec-fresh`, qui ressemblait à un doublon de `--ok` et
+   tient l'AA sur la carte rose là où `--ok` échoue à 4,31:1. Une mesure vaut
+   mieux qu'une question, et elle se garde dans un commentaire pour que la
+   question ne se rouvre pas au prochain audit.
+2. **Cherche le précédent.** Le site nomme déjà, sépare déjà, aligne déjà.
+   S'aligner sur ce qui existe (`common.actScene` plutôt qu'un « · » inventé) est
+   un choix technique : la décision a déjà été prise ailleurs, tu la retrouves.
+3. **Choisis, puis dis-le.** S'il faut vraiment arbitrer et que l'effet visible
+   est mince, prends l'option la plus défendable, applique-la, et écris en une
+   ligne ce qui change à l'écran. Un rapport qui annonce un changement visible
+   vaut mieux qu'une question qui bloque un lot de corrections.
+
+Ce skill ne fait **ni commit, ni stage, ni push** : les fixes restent dans le
+worktree.
 
 ## 8. Vérifications exécutables
 
@@ -212,9 +249,15 @@ temps. Puis findings front + back confondus, triés par sévérité décroissant
   `donnees`, `ci`, `doc`, `i18n`, ou celles du front-reviewer (`structure`,
   `tokens`, `duplication`, `a11y`, `responsive`, `textes`, `contrat`).
 
-Trois sections, par sévérité décroissante : **Corrigé**, **À valider** (fix
-proposé, pour décision), **RAS** (une ligne par dimension entièrement conforme :
-invariants, CI, tests, front, doc…). Termine par une phrase de synthèse (santé
+Trois sections, par sévérité décroissante : **Corrigé**, **À valider** — et
+celle-ci ne contient QUE des questions de produit, d'UX ou d'UI (§7) : une entrée
+technique qui y atterrit est une correction que tu n'as pas faite, pas un choix à
+soumettre. Elle est souvent vide, et c'est le bon signe. Chaque entrée y pose la
+question en une phrase, dit ce que tu ferais et pourquoi, et ce que ça change à
+l'écran —, et **RAS** (une ligne par dimension entièrement conforme :
+invariants, CI, tests, front, doc…). Un finding de l'agent front que tu as
+RÉFUTÉ se dit aussi, avec sa mesure : c'est ce qui empêche l'audit suivant de le
+reproposer. Termine par une phrase de synthèse (santé
 générale du dépôt).
 
 ## Garde-fous
@@ -222,7 +265,12 @@ générale du dépôt).
 - Chaque finding est vérifié en relisant le code incriminé — `fichier:ligne`
   exacts, jamais de finding « probable ». Un finding invérifiable est
   abandonné, pas corrigé « au cas où ».
-- Ne « répare » jamais `data/` à la main pour faire passer une vérification.
+- Ne « répare » jamais `data/` à la main pour faire passer une vérification :
+  si une donnée du dépôt contredit la doc, c'est la doc qui dit dans quel état le
+  TEMPLATE se livre, la donnée du prototypage se nettoyant à part.
+- Une question technique ne se pose pas au responsable : elle se mesure, se
+  cherche dans les précédents du dépôt, ou se tranche (§7). Ce qui se pose, c'est
+  le produit, l'UX et l'UI.
 - Ne corrige jamais le code pour coller à une doc périmée : c'est la doc qui
   suit le code (§6).
 - Ne confonds pas avec `diff-review` : si le périmètre voulu est le travail en

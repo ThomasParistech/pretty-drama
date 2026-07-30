@@ -1,6 +1,6 @@
 ---
 name: diff-review
-description: Revue complète du travail en cours (tout ce qui n'est pas encore publié sur la branche principale) — fond (bugs, régressions, sécurité du workflow), invariants du projet (ids, contrat ZIP, normalisation, uploads hostiles), passe langue du front bilingue (aucun texte en dur hors catalogues, parité fr/en), tests Python + JS + build, et audit front (agent front-reviewer contre le design system) si l'UI est touchée. Corrige ce qui est sûr, liste le reste, un seul rapport, et finit par un titre de PR prêt à coller. À utiliser avant de committer/pousser, après des changements d'UI, ou sur demande (/diff-review).
+description: Revue complète du travail en cours (tout ce qui n'est pas encore publié sur la branche principale) — fond (bugs, régressions, sécurité du workflow), invariants du projet (ids, contrat ZIP, normalisation, uploads hostiles), passe langue du front bilingue (aucun texte en dur hors catalogues, parité fr/en), tests Python + JS + build, et audit front (agent front-reviewer contre le design system) si l'UI est touchée. Tranche et corrige tout ce qui est technique (bugs, formats, factorisation, langue, a11y, doc) et n'escalade que les questions de produit, d'UX et d'UI ; un seul rapport, qui finit par un titre de PR prêt à coller. À utiliser avant de committer/pousser, après des changements d'UI, ou sur demande (/diff-review).
 ---
 
 # Revue du diff courant
@@ -197,29 +197,70 @@ corrections (celles issues de l'audit front comprises). Un échec final est
 un finding de
 sévérité haute, sortie citée verbatim.
 
-## 6. Corrections sûres
+## 6. Corrections : tranche toi-même, escalade ce qui n'est pas technique
 
-Applique sans demander :
+La ligne de partage n'est **pas** « risqué / pas risqué », c'est **à qui la
+décision appartient**. Une question technique, même lourde, est la tienne : tu as
+le code, les tests et de quoi mesurer. Une question de produit, d'UX ou d'UI est
+celle du responsable du projet, parce que rien dans le dépôt ne la tranche.
 
-- bug évident dont le fix est local, sans changement d'API ni de format de
-  données, couvert ensuite par un test ;
-- test manquant pour un comportement déjà voulu ;
-- texte visible en dur → clé de catalogue, dans les DEUX langues (c'est le fix
-  le plus courant de cette revue, et il est sûr : la chaîne française existe
-  déjà, il ne reste qu'à la déplacer et à écrire son anglais) ; clé manquante
-  d'un côté ; libellés incohérents alignés sur la version majoritaire ; message
-  d'erreur absent ou trompeur ;
-- côté front, tout ce qui ne change ni le comportement ni la structure JSX :
-  hex/ombre/rayon en dur → token existant ; bloc CSS dupliqué entre ≥ 2
-  pages → déplacé dans `theme.css`, copies supprimées ; `title`/`aria-label`
-  manquants, focus, tailles tactiles.
+**Tranche et applique, sans demander** — et cette liste est ouverte, ce qui est
+technique t'appartient même s'il n'y figure pas :
 
-**Demande d'abord** pour : tout changement de format de données ou du contrat
-ZIP, toute modification de comportement visible non dictée par un invariant,
-l'extraction de composants JSX partagés ou tout changement de structure DOM,
-et tout choix visuel non dicté par le contrat (nouvelles couleurs, nouveaux
-espacements). En cas de doute : pas sûr. Cette revue ne fait **ni commit,
-ni stage, ni push** — les fixes restent dans le worktree.
+- tout bug, cas limite ou test manquant, y compris quand le fix touche plusieurs
+  fichiers ;
+- **un changement de format de données ou du contrat ZIP**, à condition de bouger
+  les DEUX côtés dans le même diff et de le couvrir par un test (c'est
+  exactement ce que `test_contracts.py` existe pour tenir) ;
+- une factorisation : remonter un bloc CSS ou un helper dans `theme.css` /
+  `src/shared/`, extraire un composant JSX partagé, changer une structure DOM
+  quand le rendu ne bouge pas ;
+- texte visible en dur → clé de catalogue dans les DEUX langues, clé manquante,
+  libellé recopié qui devient une clé interpolée, ponctuation ou séparateur
+  remonté du JSX vers la chaîne ;
+- accessibilité : `title` / `aria-label` manquants, bague de focus, rôle,
+  enveloppe `.btn-tip` sur un bouton qui s'éteint ;
+- la doc (`CLAUDE.md`, `references/design-system.md`) quand le code a raison
+  contre elle ;
+- **la suppression de code mort**, à condition de prouver le non-usage : grep du
+  symbole ET des clés composées à l'exécution (`page.${x}.label`), des entrées
+  `.html`, des classes posées en JSX. Preuve faite, supprime ; preuve
+  impossible, garde et dis-le en une ligne.
+
+**Escalade, et seulement ça** (`AskUserQuestion` si ça bloque un lot, sinon la
+section « À valider » du rapport) :
+
+- **produit** : ce qu'une page doit faire, ce qui entre ou sort du périmètre, un
+  geste à ajouter ou à retirer ;
+- **UX** : ce qu'on demande à l'utilisateur, ce qu'un geste veut dire, ce qui est
+  confirmé ou non ;
+- **UI** : un choix visible que ni le contrat ni un précédent du site ne
+  tranchent (une couleur nouvelle, une hiérarchie, une mise en page) ;
+- le **ton** d'un libellé quand il porte une position produit (comment le site
+  parle à la troupe), pas sa grammaire ni sa ponctuation ;
+- toute action hors du worktree (commit, push, écriture dans `data/`).
+
+Trois réflexes avant d'escalader quelque chose qui *ressemble* à une question
+d'UI :
+
+1. **Mesure.** Beaucoup de ces questions ont une réponse chiffrée. « Ces deux
+   verts sont-ils le même ? » se calcule (un ratio de contraste sur le fond réel,
+   un ΔE), et la mesure peut refuser le changement : c'est ce qui a sauvé
+   `--rec-fresh`, qui ressemblait à un doublon de `--ok` et tient l'AA là où
+   `--ok` échoue. Une mesure vaut mieux qu'une question, et elle se garde dans un
+   commentaire pour que la question ne se rouvre pas.
+2. **Cherche le précédent.** Le site nomme déjà, sépare déjà, aligne déjà.
+   S'aligner sur ce qui existe (`common.actScene` plutôt qu'un « · » inventé) est
+   un choix technique, pas un choix d'UI : la décision a déjà été prise ailleurs.
+3. **Choisis, puis dis-le.** S'il faut vraiment arbitrer et que l'effet visible
+   est mince, prends l'option la plus défendable, applique-la, et écris en une
+   ligne du rapport ce qui change à l'écran. Un rapport qui annonce un
+   changement visible est meilleur qu'une question qui bloque un lot de fixes.
+
+En cas de doute réel, le doute porte presque toujours sur le PÉRIMÈTRE (« est-ce
+que ça fait encore partie de ce diff ? ») et pas sur la solution : dans ce cas,
+applique et signale, ne demande pas. Cette revue ne fait **ni commit, ni stage,
+ni push** — les fixes restent dans le worktree.
 
 ## 7. Rapport
 
@@ -241,8 +282,12 @@ suivis »). Puis findings front + back confondus, chacun au format :
   clé manquante, le pluriel bricolé, le calque anglais ; `textes` reste le ton et
   la cohérence des libellés, langue mise à part.
 
-Trois sections, par sévérité décroissante : **Corrigé**, **À valider**
-(fix proposé, pour décision), **RAS** (une ligne par dimension entièrement
+Trois sections, par sévérité décroissante : **Corrigé**, **À valider** — et
+celle-ci ne contient QUE des questions de produit, d'UX ou d'UI (§6) : une entrée
+technique qui y atterrit est une correction que tu n'as pas faite, pas un choix à
+soumettre. Elle est souvent vide, et c'est le bon signe. Chaque entrée y pose la
+question en une phrase, dit ce que tu ferais et pourquoi, et ce que ça change à
+l'écran —, **RAS** (une ligne par dimension entièrement
 conforme : invariants, tests, front, langue…). La ligne « langue » est
 obligatoire dès que le diff touche `src/` : elle dit combien de fichiers front
 ont été relus chaîne par chaîne, et non pas seulement que les gardes passent. Puis le titre du §8, qui ferme le
@@ -283,6 +328,13 @@ dès qu'elle porte du contenu.
   rien en silence — ce qui n'a été que survolé est listé comme tel dans le
   rapport.
 - Ne « répare » jamais `data/` à la main pour faire passer une vérification.
+- Une question technique ne se pose pas au responsable : elle se mesure, se
+  cherche dans les précédents du dépôt, ou se tranche (§6). Ce qui se pose, c'est
+  le produit, l'UX et l'UI.
+- Un finding proposé par l'agent front n'est pas une décision prise : `Sûr: oui`
+  se relit et peut être RÉFUTÉ (mesure, précédent, contrainte que l'agent ne
+  voyait pas). Un refus argumenté est un résultat de revue, à écrire dans le
+  rapport et dans un commentaire du code, pas un finding qu'on laisse traîner.
 - L'éditeur a un re-skin volontaire (« Rail ») : ses différences de tokens
   listées dans le contrat ne sont pas des findings.
 - Si le code a raison contre la doc (catégorie `contrat` du front-reviewer,

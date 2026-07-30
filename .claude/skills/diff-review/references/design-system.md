@@ -38,7 +38,9 @@ passent par les tokens du `:root` : `--paper`, `--paper-dark`, `--card`,
 `--ink`, `--ink-soft`, `--accent`, `--accent-dark` (hover des boutons pleins),
 `--accent-soft`, `--gold`, `--border`, `--ok(-soft)`, `--warn(-soft)`,
 `--radius`, `--shadow`, `--shadow-hover` (survol d'une carte cliquable, à ne
-consommer qu'à travers `.lift-hover`, voir ci-dessous),
+consommer qu'à travers `.lift-hover`, voir ci-dessous), `--shadow-float`
+(calque qui FLOTTE au-dessus de la page, pas posé dessus : le modal et la pop-up
+« À vous… » de la Répétition, qui l'écrivaient chacun de leur côté),
 `--card-active` (carte de dialogue courante), `--focus-ring` /
 `--focus-ring-offset` (bague de focus des éléments qui n'en ont pas par
 défaut : slider, cartes, liens-cartes), `--notice-gutter` (gouttière latérale
@@ -105,8 +107,27 @@ le bloc `prefers-reduced-motion`).
   transition, et `.play-header-home` ne la prend **pas** (il garde le pas mais
   remplace l'ombre par la nappe crème du sceau : autre geste, pas celui-ci mal
   réglé).
+- **Classes partagées à préférer plutôt que de recopier leurs déclarations**,
+  toutes dans `theme.css` et toutes posées en JSX : `.truncate` (le triplet
+  overflow/ellipsis/nowrap d'un nom qui ne doit pas pousser ses voisins ; la
+  largeur maximale et le `flex`, eux, restent locaux, et l'appelant doit toujours
+  doubler d'un `title`), `.btn-tip` (l'enveloppe qui porte l'infobulle d'un bouton
+  qui s'ÉTEINT, un contrôle `disabled` ne recevant aucun événement souris : à
+  employer partout où un bouton peut être `disabled`, l'`aria-label` restant sur
+  le bouton), `.page-shell` / `.page-scroll` (coquille à la hauteur de la fenêtre
+  dont seul le contenu défile, réglée par `--shell-height` : `100vh` sur
+  l'Édition, le `100dvh` par défaut ailleurs), et la règle
+  `.checks-row label, .search-options label` (la géométrie d'une étiquette de case
+  à cocher). Réécrire l'une de ces déclarations dans un CSS de page est un finding
+  `duplication`.
 - **Invariant** : le fond de page reste le crème partagé — `--paper` vaut
   `#faf6ef` sur toutes les pages, re-skin compris.
+- **Une couleur locale n'est pas forcément une duplication.** Avant de proposer
+  de faire dériver un token de page d'un token du thème de même sémantique,
+  vérifier le FOND sur lequel il est peint : `--rec-todo` / `--rec-fresh`
+  (`recorder.css`) ressemblent à `--warn` / `--ok` mais vivent sur la carte rose
+  « mes répliques » (`--accent-soft`), où `--ok` tombe à 4,31:1 et échoue l'AA. La
+  mesure est dans le commentaire du fichier, ce n'est pas un finding.
 - Pas de couleur/ombre/rayon en dur dans un CSS de page quand un token
   équivalent existe. Les valeurs en dur sont réservées aux cas vraiment
   locaux (et doivent rester harmonieuses sur fond crème).
@@ -130,6 +151,8 @@ le bloc `prefers-reduced-motion`).
 | Phrase portant du balisage | `src/shared/T.jsx` — `<T k="…" p={{ … }} />`, le morceau de JSX devenant un PARAMÈTRE de la phrase. Une phrase découpée en fragments dans le composant est un finding, cf. la section Langue | toutes celles qui citent un `<strong>`, un `<code>`, une icône ou un lien au milieu d'une phrase |
 | Libellés d'acte et de scène | `src/shared/structureLabels.js` — DÉRIVÉS du rang (`actLabel(t, i)`, `sceneLabel(t, i)`), les actes et les scènes ne portant aucun titre dans `script.json`. Pur, `t` reçu en argument. Le Python en tient une seconde implémentation pour le papier (`STRUCTURE`, `roman_numeral` dans `build_script_pdf.py`), depuis la langue de la PIÈCE, et `TestStructureLabels` interdit aux deux de diverger | les deux selects de portée, l'Avancement, la Répartition, la Recherche, le plan du rail, le PDF |
 | Compte de répliques d'un objet de la pièce | `src/editor/CountBadge.jsx` — chiffre nu à l'écran (la colonne des comptes doit s'aligner), la phrase dans l'`aria-label`, `role="img"` pour le rendre valable sur un `<span>`. Les deux panneaux du rail en avaient chacun leur copie, alors que leur CSS était déjà commun (`.character-count, .structure-count`) | les sections « Structure » et « Personnages » du rail de l'Édition |
+| Montage d'une page | `src/shared/mountPage.jsx` — `applyDocumentLanguage` puis `createRoot(...).render(...)`, et l'import de `theme.css`, dont l'ORDRE compte (avant le CSS de la page, qui le surcharge) : d'où l'import de ce module AVANT `App.jsx` dans chaque point d'entrée. Les sept entrées étaient sept copies du même corps | les sept `main.jsx` / `respo.jsx` |
+| Numérotation « (3/12) » de mes répliques | `src/shared/data.js` — `myLineNumbers` (la Map) et `myLineNumber` (le libellé, `t` reçu en argument : ce module est couvert par `node --test`). Le gabarit était écrit dans deux JSX, parenthèses et barre comprises | Répétition, Enregistrement |
 | Fetch manifest | `src/shared/useManifest.js` | Répétition, Enregistrement, Répartition, Avancement (l'accueil appelle `fetchManifest` directement : il n'a ni écran de chargement ni écran d'erreur, un manifest absent laisse juste le titre vide) |
 | Écran chargement/erreur plein-page | `src/shared/PageState.jsx` : les DEUX états prennent la carte partagée `.page-notice` (l'attente comme le message : c'est le même écran à deux moments, et le second succède presque toujours au premier) | toutes sauf accueil |
 
@@ -246,10 +269,16 @@ dans un composant**. Tout passe par les catalogues `src/shared/locales/fr.js` et
 - **La typographie française vit DANS les chaînes** (insécable avant `?`, `!`,
   `:`, guillemets), jamais dans le JSX : c'est un fait de langue, donc l'affaire
   du traducteur, et l'anglais ne le porte pas.
-- **Un libellé partagé n'existe qu'une fois.** Quand deux endroits nomment la
-  même chose, le second INTERPOLE la clé du premier (le vide de la Répartition
-  cite `stats.scopeAllOption`, l'aide d'une scène vide cite `rail.characters`)
-  au lieu de recopier le mot. Cas le plus lourd, et le seul tenu par la CI : le
+- **Un libellé partagé n'existe qu'une fois**, et cela vaut jusqu'à la
+  PONCTUATION : un séparateur, une parenthèse et une barre de fraction sont des
+  faits de langue, donc ils vivent dans la chaîne et jamais dans le JSX. Quand deux
+  endroits nomment la même chose, le second INTERPOLE la clé du premier (le vide de
+  la Répartition cite `stats.scopeAllOption`, l'aide d'une scène vide cite
+  `rail.characters`, le suffixe de scène `rehearsal.sceneLines` cite
+  `common.lineCount` pour ne régler le pluriel qu'à un endroit) ou les deux
+  partagent une clé commune (`common.actScene` nomme le couple acte + scène pour
+  la Répartition ET l'Avancement, qui y écrivait un « · » à la main ;
+  `common.myLineNumber` nomme « (3/12) » pour la Répétition et l'Enregistrement). Cas le plus lourd, et le seul tenu par la CI : le
   **nom d'une page citée dans une phrase** passe par un `{page}` alimenté par
   `t(pageLabelKey(...))`, jamais par le mot écrit en clair. Le garde de
   `test_contracts.py` ne voit que la tournure « page X » / « mode X », et c'est

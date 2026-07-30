@@ -292,11 +292,15 @@ export default function App() {
 
   return (
     // Coquille de la hauteur de la fenêtre : le bandeau en haut dans le flux,
-    // puis le rail et la colonne de texte, qui défilent chacun pour son compte
-    // (cf. `.editor-shell` dans editor.css). Elle est posée ici et pas sur
-    // `body` : les écrans pleine page rendus plus haut gardent le défilement
-    // normal.
-    <div className="editor-shell">
+    // puis le rail et la colonne de texte, qui défilent chacun pour son compte.
+    // `.page-shell` est partagée avec la Répartition (theme.css) ; `.editor-shell`
+    // ne pose plus que la hauteur, `vh` au lieu du `dvh` par défaut. Le rôle de
+    // zone défilante n'est PAS tenu par `.page-scroll` ici : c'est
+    // `.editor-layout`, une grille dont les deux colonnes défilent chacune pour
+    // son compte, là où la Répartition n'a qu'un seul flux à faire défiler.
+    // Posée ici et pas sur `body` : les écrans pleine page rendus plus haut
+    // gardent le défilement normal.
+    <div className="page-shell editor-shell">
       {/* Un bandeau SANS réglages, comme celui de l'Avancement : le titre de la
           pièce et le choix de la scène sont partis dans la section « Structure »
           du rail (cf. StructurePanel.jsx), donc il ne reste ici que ce que les

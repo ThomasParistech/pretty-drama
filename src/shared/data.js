@@ -51,6 +51,20 @@ export function myLineNumbers(lines, characterId) {
   return numbers;
 }
 
+// Le suffixe « (3/12) » collé au nom du personnage sur MES cartes, rendu par les
+// deux mêmes pages. Il vit ici, à côté de la Map qui le calcule, parce que le
+// gabarit était écrit deux fois dans deux JSX (parenthèses et barre comprises),
+// donc à deux mots d'une divergence silencieuse côté français.
+// `t` arrive en ARGUMENT et n'est pas importé : ce module est couvert par
+// `node --test`, et `locale.js` lit l'URL, le stockage et le navigateur dès son
+// import (même règle que `stats.js`).
+// Rend la chaîne vide quand la réplique n'est pas de moi, donc l'appelant n'a
+// aucun test à faire de son côté.
+export function myLineNumber(t, numbers, lineId) {
+  const n = numbers.get(lineId);
+  return n == null ? "" : t("common.myLineNumber", { n, total: numbers.size });
+}
+
 // Warn before closing the tab when there is unsaved in-memory work.
 export function setBeforeUnloadGuard(enabled) {
   window.onbeforeunload = enabled

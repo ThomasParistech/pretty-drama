@@ -196,8 +196,15 @@ function Dashboard({ manifest }) {
             <ul>
               {orphanLines.map((l) => (
                 <li key={l.id}>
+                  {/* Le couple acte + scène par la clé partagée `common.actScene`,
+                      comme la portée de la Répartition : le séparateur est un fait
+                      de langue, il était un « · » écrit dans le JSX ici et une
+                      virgule là-bas, sur le même site. */}
                   <span className="dash-pending-loc">
-                    {actLabel(t, l.actIndex)} · {sceneLabel(t, l.sceneIndex)}
+                    {t("common.actScene", {
+                      act: actLabel(t, l.actIndex),
+                      scene: sceneLabel(t, l.sceneIndex),
+                    })}
                   </span>{" "}
                   <span className="dash-pending-text">{l.text}</span>
                 </li>
@@ -505,7 +512,7 @@ function ProgressTable({ acts, scenes, rows }) {
             {scenes.map((scene) => (
               <th
                 key={scene.key}
-                title={`${scene.act} · ${scene.title}`}
+                title={t("common.actScene", { act: scene.act, scene: scene.title })}
                 className={`dash-scene ${statusClass(scene.ok, scene.total)}`}
               >
                 {scene.label}
@@ -523,7 +530,7 @@ function ProgressTable({ acts, scenes, rows }) {
                 className={`dash-name ${statusClass(row.ok, row.total)}`}
                 title={row.character.name}
               >
-                <span className="dash-name-text">{row.character.name}</span>
+                <span className="dash-name-text truncate">{row.character.name}</span>
               </th>
               {row.cells.map((cell, i) =>
                 // Pas de réplique dans cette scène : case vide, sans marqueur.
@@ -531,8 +538,12 @@ function ProgressTable({ acts, scenes, rows }) {
                   <td key={scenes[i].key} className="empty" />
                 ) : (
                   <td key={scenes[i].key} className={statusClass(cell.ok, cell.total)}>
-                    <span className="dash-cell-ok">{cell.ok}</span>
-                    <span className="dash-cell-total">/{cell.total}</span>
+                    {/* Deux éléments et pas une chaîne : les deux nombres n'ont
+                        pas la même graisse (l'enregistré ressort du total). Chacun
+                        passe par `fmt.number`, le formateur des nombres écrits
+                        seuls, hors de toute phrase. */}
+                    <span className="dash-cell-ok">{fmt.number(cell.ok)}</span>
+                    <span className="dash-cell-total">/{fmt.number(cell.total)}</span>
                   </td>
                 )
               )}

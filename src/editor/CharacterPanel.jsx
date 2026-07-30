@@ -110,7 +110,7 @@ function CharacterItem({ character, lineCount, onRename, onSetColor, onDelete })
           />
         ) : (
           <button
-            className="character-name"
+            className="character-name truncate"
             title={t("characters.rename")}
             onClick={() => setEditing(true)}
           >

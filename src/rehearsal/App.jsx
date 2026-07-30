@@ -3,7 +3,7 @@ import PageState from "../shared/PageState.jsx";
 import useScrollToActiveCard from "../shared/useScrollToActiveCard.js";
 import PlayHeader from "../shared/PlayHeader.jsx";
 import ProgressBar from "../shared/ProgressBar.jsx";
-import { myLineNumbers } from "../shared/data.js";
+import { myLineNumbers, myLineNumber } from "../shared/data.js";
 import {
   PlayIcon,
   PauseIcon,
@@ -256,7 +256,9 @@ export default function App() {
   // Écran définitif, le troisième du site : on y reste jusqu'à ce que le respo
   // saisisse la pièce, rien ne se chargera de plus sur cet appareil. Il vient
   // après le manifest, donc il connaît le titre et le dit, comme les cinq
-  // bandeaux. Seul l'état au-dessus (`!manifest`) garde le libellé de page.
+  // bandeaux. Les deux états au-dessus, eux, ne nomment rien : la pièce n'est pas
+  // encore connue, et `PageHeader` ne rend pas de titre sans titre (jamais un
+  // libellé de page à la place, il se ferait recouvrir).
   if (lines.length === 0 && acts.every((a) => a.scenes.every((s) => s.lines.length === 0))) {
     return (
       <PageState
@@ -298,7 +300,12 @@ export default function App() {
               return (
                 <option key={i} value={i}>
                   {sceneLabel(t, i)}
-                  {count != null ? t("rehearsal.sceneLines", { count }) : ""}
+                  {/* Le décompte est interpolé depuis `common.lineCount` : le
+                      pluriel ne se règle qu'à un endroit, cette clé-ci ne dit
+                      plus que la parenthèse. */}
+                  {count != null
+                    ? t("rehearsal.sceneLines", { lines: t("common.lineCount", { count }) })
+                    : ""}
                 </option>
               );
             })}
@@ -371,7 +378,7 @@ export default function App() {
               <div className="dialogue-meta">
                 <span className="dialogue-character">
                   {line.character}
-                  {mine ? ` (${myNumbers.get(line.id)}/${myNumbers.size})` : ""}
+                  {myLineNumber(t, myNumbers, line.id)}
                 </span>
                 {line.status !== "ok" && (
                   <span className="tts-hint" title={t("rehearsal.tts.tip")}>

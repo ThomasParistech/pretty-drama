@@ -27,6 +27,7 @@ from process_uploads import (
     parse_manifest,
     parse_peak_dbfs,
     read_member_capped,
+    short,
     validate_script,
 )
 
@@ -132,6 +133,32 @@ class TestParseManifest(unittest.TestCase):
         archive = make_archive({}, manifest=manifest)
         with self.assertRaises(UploadError):
             parse_manifest(archive)
+
+
+class TestShort(unittest.TestCase):
+    """Le seul point de passage du texte NON FIABLE vers l'écran du respo : nom de
+    fichier choisi par le ZIP, extrait de manifest, sortie de ffmpeg. Tout ce que
+    `short` promet est consommé par une cellule de tableau (le journal des dépôts
+    de l'Avancement), donc les deux propriétés comptent autant l'une que l'autre :
+    une seule ligne, et une longueur bornée."""
+
+    def test_whitespace_is_flattened_to_single_spaces(self):
+        # Un saut de ligne casserait la rangée du tableau, et un journal de LaTeX
+        # ou de ffmpeg en est plein.
+        self.assertEqual(short("voix\nde\t serge  .zip", 100), "voix de serge .zip")
+
+    def test_a_long_text_is_capped_and_says_so(self):
+        self.assertEqual(short("a" * 12, 10), "a" * 10 + "…")
+
+    def test_a_text_at_the_cap_is_left_alone(self):
+        # Pas d'ellipse pour rien : la limite est incluse.
+        self.assertEqual(short("a" * 10, 10), "a" * 10)
+
+    def test_a_non_string_is_accepted(self):
+        # Les appelants passent l'EXCEPTION elle-même (`short(exc, ...)`), pas son
+        # message : sans le `str()`, la seule voie de retour du respo lèverait au
+        # moment de raconter l'échec.
+        self.assertEqual(short(UploadError("le ZIP est\nabîmé"), 100), "le ZIP est abîmé")
 
 
 class TestReadMemberCapped(unittest.TestCase):

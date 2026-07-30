@@ -9,36 +9,13 @@
    thème ne connaît pas : un anneau, une légende, et un bloc de carrés. */
 
 /* ----------------------------------------------------------- la coquille
-   La page ne défile pas en entier : la coquille fait la hauteur de la fenêtre, le
-   bandeau et la barre des personnages tiennent le haut, et seul `.stats-scroll`
-   défile. C'est la géométrie de la coquille de l'Édition (`.editor-shell`), et le
-   motif est le même : obtenir une barre collée SOUS le bandeau sans avoir à
-   connaître la hauteur de celui-ci, qui est un inconnu animé (cf. le commentaire
-   de `Stats` dans App.jsx). `PlayHeader` n'est donc pas touché ; son
-   `position: sticky` dans un ancêtre qui ne défile pas se comporte comme
-   `relative`.
-
-   `dvh` et pas les `vh` de l'Édition : celle-ci ne s'ouvre qu'à la souris, alors
-   que la Répartition est dans les cartes des acteurs, donc au téléphone, où une
-   barre d'adresse qui se rétracte change vraiment la hauteur utile.
-
-   La coquille est posée sur un élément de la PAGE et jamais sur `body` : les deux
-   écrans pleine page de `PageState` (chargement, manifest illisible) gardent le
-   défilement normal, leur carte pouvant dépasser d'une fenêtre basse. */
-.stats-shell {
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-}
-
-.stats-scroll {
-  flex: 1;
-  /* Sans lui, la zone défilante pousse la coquille au-delà de la fenêtre au lieu
-     de défiler : le minimum automatique d'un élément flex vaut sa hauteur de
-     contenu (même piège que `.editor-layout` et `.play-header-settings-inner`). */
-  min-height: 0;
-  overflow-y: auto;
-}
+   La page ne défile pas en entier : le bandeau et la barre des personnages tiennent
+   le haut, et seul le contenu au-dessous défile. Ce sont les classes partagées
+   `.page-shell` / `.page-scroll` (theme.css), posées en JSX, et cette page n'a
+   AUCUNE règle à écrire ici : son `--shell-height` est le défaut du thème,
+   `100dvh`, parce qu'elle est dans les cartes des acteurs, donc au téléphone, où
+   une barre d'adresse qui se rétracte change vraiment la hauteur utile (l'Édition,
+   qui ne s'ouvre qu'à la souris, est celle qui doit le poser à `100vh`). */
 
 /* ------------------------------------------- la barre des personnages
    La légende de la page, sous le bandeau et au-dessus du contenu. Fond de carte
@@ -301,13 +278,10 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 22%, transparent);
 }
 
-/* Le nom prend la place et se coupe en « … » : un nom à rallonge ne doit pas
-   pousser le décompte et la part hors de la carte (même règle que
-   `.dash-name-text` dans la colonne figée de l'Avancement). */
+/* Le nom prend la place et se coupe en « … » (classe partagée `.truncate` de
+   theme.css, posée en JSX) : un nom à rallonge ne doit pas pousser le décompte et
+   la part hors de la carte. Ne reste ici que son encre. */
 .stats-legend-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   color: var(--ink);
 }
 

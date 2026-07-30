@@ -24,7 +24,17 @@
   --shadow: none;
   /* Seule ombre conservée du thème partagé pour une surface de la page : le
      panneau des répliques. */
-  --ed-panel-shadow: 0 2px 8px rgba(43, 36, 32, 0.08);
+  /* Le `--shadow` du thème est mis à `none` juste au-dessus (le design « Rail »
+     pose ses panneaux au filet), mais deux surfaces de la page en veulent une
+     vraie : le panneau de répliques et la carte pleine page. On LIT le token
+     réservé du bandeau plutôt que de recopier sa valeur : le contrat interdit de
+     redéfinir un `--header-*`, pas de le lire (précédent nommé, la barre de
+     légende de la Répartition), et cette valeur était écrite trois fois à
+     l'identique dans le dépôt (`--shadow`, `--header-shadow`, ici). Le site n'a
+     qu'UNE ombre d'élévation pour une surface posée sur le papier, et
+     `--header-shadow` est la seule des trois qu'une page ne re-skinne jamais,
+     donc la seule qui puisse la porter. */
+  --ed-panel-shadow: var(--header-shadow);
   --font-ui: "IBM Plex Sans", system-ui, sans-serif;
   --font-serif: "Spectral", Georgia, serif;
 
@@ -106,10 +116,13 @@ h3 {
    deux écrans pleine page de la page (script illisible, ouverture au doigt)
    gardent le défilement normal, leur carte pouvant dépasser d'une fenêtre
    basse. */
+/* La géométrie est la classe partagée `.page-shell` (theme.css), que la
+   Répartition emploie aussi ; il ne reste ici que la hauteur, et c'est le seul
+   écart réel entre les deux : `vh` et pas le `dvh` par défaut, une barre d'adresse
+   qui se rétracte étant un problème de téléphone et cette page ne s'ouvrant pas au
+   doigt (cf. useTouchPointer.js). */
 .editor-shell {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
+  --shell-height: 100vh;
 }
 
 .editor-layout {
@@ -192,13 +205,9 @@ h3 {
   padding: 6px 12px;
 }
 
-/* Enveloppe qui porte l'infobulle des boutons qui s'éteignent (cf. App.jsx : un
-   contrôle `disabled` ne reçoit aucun événement souris, donc son propre `title`
-   ne s'affiche jamais). Purement structurelle : elle épouse son bouton et ne
-   doit rien changer à la rangée qui la contient. */
-.btn-tip {
-  display: inline-flex;
-}
+/* `.btn-tip`, l'enveloppe qui porte l'infobulle des boutons qui s'éteignent, est
+   dans theme.css : l'Enregistrement en a besoin pour les quatre boutons de sa
+   barre basse. */
 
 /* Quand le bouton destructif EST l'action principale (le seul autre choix est
    « Annuler »), il s'affirme. Il reste en retrait dans le modal personnage, où
@@ -369,6 +378,17 @@ h3 {
 .editor-rail-tab:hover {
   background: var(--paper-dark);
   color: var(--ink);
+}
+
+/* La bague du projet et pas celle du navigateur, comme partout ailleurs dans ce
+   panneau (`.editor-rail-edge`, `.structure-scene-name`, `.search-hit`). C'est
+   aussi celle que les 8 px de remplissage de la bande réservent juste au-dessus :
+   la place était provisionnée, la règle manquait, donc les trois icônes qui
+   ouvrent le rail étaient les seules commandes de la page à s'allumer au clavier
+   dans un autre style que leurs voisines. */
+.editor-rail-tab:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* L'état de la section est porté par `aria-expanded` et rien d'autre : le CSS le
@@ -587,9 +607,11 @@ h3 {
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink);
 }
 
-/* Le nom prend la place et se coupe en « … » : un nom à rallonge ne doit pas
-   pousser le compte de répliques et le ✕ hors du rail (même règle que
-   `.dash-name-text` dans la colonne figée de l'Avancement). */
+/* Le nom prend la place et se coupe en « … » (classe partagée `.truncate` de
+   theme.css, posée en JSX) : un nom à rallonge ne doit pas pousser le compte de
+   répliques et le ✕ hors du rail. `min-width: 0` va avec dans un conteneur flex,
+   sans quoi l'élément refuse de descendre sous la largeur de son texte et ne se
+   coupe jamais. */
 .character-name {
   background: none;
   border: none;
@@ -601,9 +623,6 @@ h3 {
   flex: 1;
   min-width: 0;
   text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .character-name:hover {
@@ -810,18 +829,16 @@ h3 {
   color: var(--ed-ghost);
 }
 
-/* Le nom prend la place et se coupe en « … », comme celui d'un personnage : un
-   libellé à rallonge ne doit pas pousser le compte et le ✕ hors du panneau. Le
-   remplissage du thème (8px 10px) est repris pour une rangée de 13.5 px. */
+/* Le nom prend la place et se coupe en « … » comme celui d'un personnage, par la
+   même classe partagée `.truncate` (theme.css) : un libellé à rallonge ne doit pas
+   pousser le compte et le ✕ hors du panneau. Le remplissage du thème (8px 10px)
+   est repris pour une rangée de 13.5 px. */
 .structure-name {
   flex: 1;
   min-width: 0;
   font-size: 13.5px;
   color: var(--ink);
   padding: 2px 6px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* Le nom d'un acte : du texte, rien de plus. Il reprend la géométrie de
@@ -1083,13 +1100,13 @@ h3 {
   gap: 4px 12px;
 }
 
+/* La géométrie de l'étiquette (case + texte sur une ligne, toute l'étiquette
+   cliquable) vient de la règle partagée `.checks-row label, .search-options label`
+   de theme.css : la Répétition a la même rangée. Ne reste ici que la voix du
+   panneau, plus petite et à l'encre douce. */
 .search-options label {
-  display: flex;
-  align-items: center;
-  gap: 7px;
   font-size: 13px;
   color: var(--ink-soft);
-  cursor: pointer;
 }
 
 .search-count-row {

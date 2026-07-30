@@ -140,6 +140,22 @@ class TestMalformedScriptTolerance(unittest.TestCase):
         manifest = build_manifest(script, {})
         self.assertEqual([c["name"] for c in manifest["characters"]], ["Napo"])
 
+    def test_a_character_without_a_real_name_is_dropped_like_in_the_editor(self):
+        """Miroir de `c.name.trim()` (sanitizeScript, éditeur) : les deux lecteurs
+        doivent laisser tomber les mêmes entrées.
+
+        Gardé ici, un personnage anonyme mettait une ligne sans nom dans la grille
+        de l'Avancement et un bouton sans libellé dans la légende de la
+        Répartition, alors que l'Édition montrait ses répliques non attribuées.
+        Écarté, ses répliques retombent sur le « ? » commun."""
+        script = {
+            "characters": [{"id": SERGE, "name": "  "}, {"id": NAPO, "name": ""}],
+            "acts": [{"scenes": [{"lines": [{"id": "l1", "characterId": SERGE, "text": "Bon."}]}]}],
+        }
+        manifest = build_manifest(script, {})
+        self.assertEqual(manifest["characters"], [])
+        self.assertEqual(manifest["lines"][0]["character"], "?")
+
     def test_character_color_reaches_the_manifest(self):
         """Sans elle, la page Répartition n'a rien pour colorer ses camemberts.
 

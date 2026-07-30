@@ -73,7 +73,21 @@ def sanitize_script(raw: dict) -> dict:
     # quand il manque ou qu'il est mal formé.
     characters = []
     for c in raw.get("characters") or []:
-        if not (isinstance(c, dict) and _is_id(c.get("id")) and isinstance(c.get("name"), str)):
+        # Le nom doit être NON VIDE, comme côté éditeur (`c.name.trim()` dans
+        # sanitizeScript) : les deux miroirs doivent laisser tomber les mêmes
+        # entrées. Un personnage sans nom ne peut pas venir de l'éditeur (ADD_ et
+        # RENAME_CHARACTER refusent tous deux un nom vide), donc c'est une édition
+        # à la main dans le dépôt ; le garder ici mettait une ligne anonyme dans la
+        # grille de l'Avancement, un bouton sans libellé dans la légende de la
+        # Répartition et un « : » nu dans le PDF, là où l'Édition, elle, montrait
+        # ses répliques comme non attribuées. Écarté, ses répliques retombent sur
+        # le « ? » de build_manifest, ce que l'éditeur montre déjà.
+        if not (
+            isinstance(c, dict)
+            and _is_id(c.get("id"))
+            and isinstance(c.get("name"), str)
+            and c["name"].strip()
+        ):
             continue
         character = {"id": c["id"], "name": c["name"]}
         color = _color_of(c)

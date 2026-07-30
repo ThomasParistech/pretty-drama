@@ -34,7 +34,9 @@ function scopeText(scope) {
   if (scope.kind === "all") return t("stats.scope.all");
   const act = actLabel(t, scope.actIndex);
   if (scope.kind === "act") return t("stats.scope.act", { act });
-  return t("stats.scope.scene", { act, scene: sceneLabel(t, scope.sceneIndex) });
+  // `common.actScene` et pas une entrée propre à cette page : l'Avancement nomme
+  // le même couple, et un libellé que deux endroits nomment n'existe qu'une fois.
+  return t("common.actScene", { act, scene: sceneLabel(t, scope.sceneIndex) });
 }
 
 // Page Répartition : qui parle, combien, et quand.
@@ -188,8 +190,9 @@ function Stats({ manifest }) {
     // pendant qu'on descend une chronologie de plusieurs écrans, où l'on ne voit
     // souvent QUE la mosaïque, sans un nom à quoi rattacher ses couleurs.
     //
-    // Même géométrie que la coquille de l'Édition (`.editor-shell`), et pour la
-    // même raison : la seule autre façon d'obtenir une barre collée sous le
+    // C'est la coquille partagée `.page-shell` / `.page-scroll` (theme.css), que
+    // l'Édition emploie aussi, et pour la même raison : la seule autre façon
+    // d'obtenir une barre collée sous le
     // bandeau demande de connaître la hauteur de celui-ci, qui est un inconnu
     // ANIMÉ (titre sur deux lignes, deux paragraphes de doc, repli sur 0,26 s).
     // Il faudrait la mesurer en JS, la remesurer à chaque repli, et le `top` de
@@ -198,10 +201,11 @@ function Stats({ manifest }) {
     // dans un ancêtre qui ne défile pas se comporte comme `relative`, il tient
     // le haut parce qu'il EST en haut.
     //
-    // Un écart avec l'Édition : `dvh` et pas `vh`, parce que cette page-ci
-    // s'ouvre au doigt (elle est dans les cartes des acteurs) et qu'une barre
-    // d'adresse qui se rétracte y change vraiment la hauteur utile.
-    <div className="stats-shell">
+    // Un écart avec l'Édition : la hauteur reste le `100dvh` par défaut du thème
+    // au lieu du `100vh` que l'Édition pose, parce que cette page-ci s'ouvre au
+    // doigt (elle est dans les cartes des acteurs) et qu'une barre d'adresse qui
+    // se rétracte y change vraiment la hauteur utile.
+    <div className="page-shell">
       {/* Sa phrase compacte, ses deux selects, et pas de `hint` : les selects se
           lisent seuls, et la légende de la barre plus la phrase de la
           chronologie disent comment lire les dessins. Le bandeau ne dit QUE le
@@ -281,7 +285,7 @@ function Stats({ manifest }) {
             title={t("stats.columns.tip")}
             onChange={(e) => setColumns(clampColumns(e.target.value))}
           />
-          <span className="stats-scale-value">{columns}</span>
+          <span className="stats-scale-value">{fmt.number(columns)}</span>
         </div>
       </PlayHeader>
 
@@ -325,7 +329,7 @@ function Stats({ manifest }) {
       {/* La zone défilante, et le `.container` reste DEDANS : c'est lui qui
           centre les cartes sur 900 px, alors que le défilement doit se faire au
           bord de la fenêtre, comme sur n'importe quelle page du site. */}
-      <div className="stats-scroll">
+      <div className="page-scroll">
         <div className="container">
           {totalLines === 0 ? (
             // Deux vides à ne pas confondre : une pièce vide s'écrit dans
@@ -471,7 +475,7 @@ function CharacterLegend({ rows, colorOf, nameOf, highlight, pinned, onSelect, o
                   la pastille juste à sa gauche qui porte la couleur, et la même
                   classe rendue tantôt en `--ink` tantôt en couleur de personnage
                   donnait deux traitements du même élément sur un seul écran. */}
-              <span className="stats-legend-name">{nameOf(row)}</span>
+              <span className="stats-legend-name truncate">{nameOf(row)}</span>
               {value && (
                 <>
                   <span className="stats-legend-count">{fmt.number(value(row))}</span>

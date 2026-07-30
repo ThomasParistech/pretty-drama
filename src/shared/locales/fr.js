@@ -95,6 +95,20 @@ export const FR = {
     other: "{count} répliques",
   },
 
+  // Le couple acte + scène, partout où les deux se nomment ensemble : la portée
+  // de la Répartition, la colonne de l'Avancement et l'infobulle de son en-tête.
+  // Une seule entrée pour les trois : le séparateur est un fait de langue, et il
+  // était une virgule d'un côté et un « · » écrit en dur dans le JSX de l'autre,
+  // sur le même écran d'un même site.
+  "common.actScene": "{act}, {scene}",
+
+  // « Nom (3/12) » sur mes cartes de dialogue : mon rang parmi MES répliques de la
+  // scène. Deux pages l'affichent (Répétition et Enregistrement) et écrivaient ce
+  // gabarit chacune de son côté, parenthèses et barre comprises. L'espace initiale
+  // est dans la chaîne, comme pour `rehearsal.sceneLines` : c'est un suffixe collé
+  // à un nom, pas une phrase à part.
+  "common.myLineNumber": " ({n}/{total})",
+
   // Le vide de trois pages qui lisent le manifest : la pièce n'a pas encore de
   // personnage, donc rien à jouer, à enregistrer ni à suivre. Tournure
   // impersonnelle parce que ces pages sont ouvertes à toute la troupe, alors que
@@ -161,12 +175,11 @@ export const FR = {
   "structure.scene": "Scène {n}",
 
   // Le suffixe collé au libellé d'une scène dans les selects de la Répétition et
-  // de l'Enregistrement. Il est DANS le catalogue et pluralisé : collé en
-  // français à côté d'un libellé traduit, il donnait « Scene 1 (3 répliques) ».
-  "rehearsal.sceneLines": {
-    one: " ({count} réplique)",
-    other: " ({count} répliques)",
-  },
+  // de l'Enregistrement. Il est DANS le catalogue : collé en français à côté d'un
+  // libellé traduit, il donnait « Scene 1 (3 répliques) ». Le décompte lui-même
+  // est INTERPOLÉ depuis `common.lineCount` et jamais recopié, donc le pluriel
+  // n'est réglé qu'à un endroit ; cette entrée-ci ne dit plus que la parenthèse.
+  "rehearsal.sceneLines": " ({lines})",
   "recorder.sceneTodo": " ({count} à enregistrer)",
 
   "structure.moveAct": "Déplacer {act}",
@@ -414,6 +427,15 @@ export const FR = {
   "recorder.stop": "Terminer l'enregistrement",
   "recorder.downloadZip": "Télécharger le ZIP des prises",
   "recorder.downloadZipCount": "Télécharger le ZIP des prises ({count})",
+  // Le nombre de prises écrit SUR le bouton, à côté de sa flèche : c'est tout ce
+  // que le bouton dit à l'écran, son verbe vivant dans l'infobulle et
+  // l'`aria-label` juste au-dessus. Les parenthèses sont dans la chaîne, elles
+  // étaient dans le JSX.
+  "recorder.downloadCount": "({count})",
+  // Ma position dans mes répliques de la scène, au coin de la barre basse. Séparée
+  // de `common.myLineNumber` : celle-là se colle à un nom de personnage, celle-ci
+  // est seule dans son coin et ne porte donc pas de parenthèses.
+  "recorder.lineCounter": "{n}/{total}",
   // Le NOM du fichier téléchargé, et il se traduit comme le reste : un acteur
   // anglophone ne reçoit pas « voix-marie.zip ». L'Action ne lit jamais ce nom
   // (le type vient de l'extension, les clips de leur id), donc le contrat du ZIP
@@ -453,6 +475,11 @@ export const FR = {
   "recorder.intro.allDone": "tout est enregistré",
   "recorder.intro.todo": "{count} à enregistrer",
 
+  // Écoulé et total de la prise en cours d'écoute. Les deux durées arrivent déjà
+  // composées en « m:ss » (format universel d'un extrait court, identique dans les
+  // deux langues, et `Intl` n'expose pas de formateur de durée partout) ; ce qui
+  // était en dur dans le JSX et vit maintenant ici, c'est ce qui les JOINT.
+  "recorder.player.time": "{elapsed} / {total}",
   "recorder.player.play": "Écouter",
   "recorder.player.pause": "Pause",
   "recorder.player.delete": "Supprimer cette prise",
@@ -467,7 +494,8 @@ export const FR = {
 
   "stats.scope.all": "toute la pièce",
   "stats.scope.act": "{act}, en entier",
-  "stats.scope.scene": "{act}, {scene}",
+  // La portée « une scène » n'a pas son entrée : c'est `common.actScene`, partagée
+  // avec l'Avancement, qui nomme le couple acte + scène partout sur le site.
 
   // Le seul réglage d'AFFICHAGE de la page.
   "stats.columns": "Mots par ligne",
@@ -543,9 +571,13 @@ export const FR = {
     "Aucun dépôt pour l'instant : chaque fichier déposé apparaîtra ici, avec ce que l'outil en a fait.",
   // Un tableau qui s'arrête sans un mot se lit comme « il n'y a rien de plus »,
   // dans le seul canal de retour du projet.
+  // Le plafond du tableau, et il compte des LIGNES, donc des fichiers : le journal
+  // a une ligne par fichier et pas par dépôt (un dépôt de trois ZIP en fait
+  // trois). Le mot « dépôt » disait autre chose que ce que le nombre mesurait, sur
+  // le seul canal de retour du projet.
   "dashboard.journal.more": {
-    one: "{count} dépôt plus ancien non affiché.",
-    other: "{count} dépôts plus anciens non affichés.",
+    one: "{count} fichier déposé plus ancien non affiché.",
+    other: "{count} fichiers déposés plus anciens non affichés.",
   },
   // Le détail d'une ligne de voix : le nom du fichier (en `<code>`) et son
   // nombre de répliques. Une entrée plutôt que deux morceaux juxtaposés dans le

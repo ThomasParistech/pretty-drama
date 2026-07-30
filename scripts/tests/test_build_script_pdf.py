@@ -242,6 +242,14 @@ class TestRenderTexTolerance(unittest.TestCase):
         self.assertIn("Aucune réplique", tex)
         self.assertIn(r"\end{document}", tex)
 
+    def test_the_empty_notice_follows_the_play_language(self):
+        # Comme le titre de repli et les intertitres : sur le papier, tout ce que
+        # ce module écrit de lui-même est dans la langue de la pièce. Cette phrase
+        # était la seule à rester en français sous un titre « Untitled ».
+        tex = render_tex({"title": "Empty", "language": "en", "acts": []})
+        self.assertIn("No lines in this script.", tex)
+        self.assertNotIn("Aucune réplique", tex)
+
     def test_missing_title_gets_a_placeholder(self):
         # Un \lhead{\textit{}} vide passerait inaperçu jusqu'à l'impression. Le
         # repli suit la langue de la pièce, comme les intertitres.

@@ -351,7 +351,7 @@ function ActItem({
             bouton, juste du texte. Rien ne se perd au clavier : la tabulation
             atteignait ce champ pour le renommer, or il n'y a plus rien à y
             renommer, et les scènes juste dessous ont chacune son bouton. */}
-        <span className="structure-name structure-name-static">{actLabel(t, actIndex)}</span>
+        <span className="structure-name structure-name-static truncate">{actLabel(t, actIndex)}</span>
         <CountBadge count={lineCount} className="structure-count" />
         {deletable && (
           <button
@@ -454,7 +454,7 @@ function SceneItem({
             recherche. */}
         <button
           type="button"
-          className="structure-name structure-scene-name"
+          className="structure-name structure-scene-name truncate"
           aria-current={current ? "true" : undefined}
           title={t("structure.openScene")}
           onClick={() => onGo(actIndex, sceneIndex)}

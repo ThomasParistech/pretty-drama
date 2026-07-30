@@ -158,8 +158,20 @@ PREAMBLE = r"""\documentclass[10pt,a4paper,twocolumn]{article}
 # script rend 0 même en cas d'échec (cf. plus bas), le PDF disparaîtrait sans un
 # mot au respo.
 STRUCTURE = {
-    "fr": {"act": "Acte %s", "scene": "Scène %s", "untitled": "Sans titre", "babel": "french"},
-    "en": {"act": "Act %s", "scene": "Scene %s", "untitled": "Untitled", "babel": "english"},
+    "fr": {
+        "act": "Acte %s",
+        "scene": "Scène %s",
+        "untitled": "Sans titre",
+        "empty": "Aucune réplique dans ce script.",
+        "babel": "french",
+    },
+    "en": {
+        "act": "Act %s",
+        "scene": "Scene %s",
+        "untitled": "Untitled",
+        "empty": "No lines in this script.",
+        "babel": "english",
+    },
 }
 
 # Chiffres romains pour les actes, arabes pour les scènes, comme le script imprimé
@@ -282,7 +294,10 @@ def render_tex(script: dict) -> str:
             out.append("")
 
     if empty:
-        out.append(r"\textit{Aucune réplique dans ce script.}")
+        # Dans la langue de la PIÈCE, comme le titre de repli et les intertitres :
+        # c'est la seule phrase que ce module écrive de son propre chef, et elle
+        # était la seule à rester en français sur le papier d'une pièce anglaise.
+        out.append(r"\textit{" + latex_escape(words["empty"]) + "}")
         out.append("")
 
     out.append(r"\end{document}")

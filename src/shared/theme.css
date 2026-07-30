@@ -22,6 +22,14 @@
      l'Avancement) : le même léger soulèvement partout, il était écrit deux
      fois avec deux valeurs voisines. */
   --shadow-hover: 0 6px 18px rgba(43, 36, 32, 0.16);
+  /* Ombre d'un calque qui FLOTTE au-dessus de la page, et pas d'une carte posée
+     dessus : le modal de confirmation et la pop-up « À vous… » de la Répétition.
+     Elle est plus large et plus dense que `--shadow` parce que ces deux objets
+     n'ont pas de place dans le flux, et c'est l'ombre qui dit qu'ils sont
+     au-dessus. Elle était écrite deux fois avec deux valeurs voisines
+     (0 12px 40px / 0.35 contre 0 10px 40px / 0.25) ; on garde celle du modal, le
+     plus fréquent des deux et le seul partagé par deux pages. */
+  --shadow-float: 0 10px 40px rgba(0, 0, 0, 0.25);
   /* Bague de focus des éléments qui n'en ont pas une par défaut (slider,
      cartes, liens-cartes) : une seule source pour le triple 2px/accent/2px,
      qui était recopié dans trois CSS de page. */
@@ -314,6 +322,41 @@ input[type="checkbox"] {
   width: 16px;
   height: 16px;
   cursor: pointer;
+}
+
+/* L'étiquette qui porte une case : la case et son texte sur une ligne, et TOUTE
+   l'étiquette est la cible du clic. Même raison que la règle au-dessus, et même
+   histoire : les deux rangées du site (les quatre réglages de la Répétition, les
+   deux options de la Recherche) l'écrivaient chacune de son côté et avaient déjà
+   divergé d'un pixel de gouttière (6 contre 7), écart que personne ne nomme mais
+   qu'on remarque en passant d'une page à l'autre. 6 px, la valeur de la Répétition,
+   qui est la rangée que la troupe voit.
+   `user-select: none` avec, et pas seulement pour le confort : sans lui, cliquer
+   deux fois de suite sur l'étiquette pour rebasculer la case surligne son libellé.
+   Ce qui reste local est le corps du texte, la couleur et la gouttière de la
+   RANGÉE, qui n'ont rien à voir d'une page à l'autre, plus la zone tactile de
+   32 px sous 800 px, propre à la Répétition (l'Édition ne s'ouvre pas au doigt). */
+.checks-row label,
+.search-options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+  cursor: pointer;
+}
+
+/* Enveloppe qui porte l'infobulle d'un bouton qui s'ÉTEINT : un contrôle
+   `disabled` ne reçoit aucun événement souris (Chrome, Safari), donc son propre
+   `title` ne s'affiche jamais, et l'explication n'arrive pas au moment où elle
+   sert, c'est-à-dire précisément quand le bouton dort. Le nom accessible reste
+   sur le bouton (son `aria-label`, qui ne dépend pas de son état) ; seule
+   l'infobulle monte ici.
+   Purement structurelle : elle épouse son bouton et ne doit rien changer à la
+   rangée qui la contient. Deux pages l'emploient, l'Édition (annuler, rétablir,
+   télécharger) et l'Enregistrement (les quatre boutons de la barre basse), d'où
+   sa place ici. */
+.btn-tip {
+  display: inline-flex;
 }
 
 /* ---- Collapsible play header (shared between Répétition, Enregistrement et
@@ -889,6 +932,63 @@ input[type="checkbox"] {
   padding: 20px;
 }
 
+/* Coquille de la hauteur de la fenêtre : le bandeau reste dans le flux en haut,
+   et SEUL le contenu au-dessous défile. Deux pages en ont besoin, l'Édition (le
+   rail, donc la liste des correspondances, doit rester sous les yeux pendant
+   qu'on parcourt les répliques) et la Répartition (sa barre de légende doit
+   rester sous le bandeau alors que la mosaïque fait plusieurs écrans), et elle
+   était écrite deux fois, les commentaires des deux fichiers se citant l'un
+   l'autre.
+   Le motif est le même des deux côtés, et c'est ce qui la rend partageable :
+   coller une barre SOUS le bandeau demanderait sinon de connaître la hauteur de
+   celui-ci, qui est un inconnu ANIMÉ (titre sur deux lignes, deux paragraphes de
+   doc, repli sur 0,26 s), donc de la mesurer en JS, de la remesurer à chaque
+   repli, et la barre traînerait un quart de seconde derrière l'animation. Ici
+   rien n'est mesuré et `PlayHeader` n'est pas touché : son `position: sticky`
+   dans un ancêtre qui ne défile pas se comporte comme `relative`, il tient le
+   haut parce qu'il EST en haut.
+   `--shell-height` est le seul écart réel entre les deux consommateurs, et il
+   n'est pas cosmétique : la Répartition prend `100dvh` parce qu'elle est dans les
+   cartes des acteurs, donc au téléphone, où une barre d'adresse qui se rétracte
+   change vraiment la hauteur utile ; l'Édition garde `100vh`, elle ne s'ouvre
+   qu'à la souris (cf. useTouchPointer.js). Le défaut est `100dvh`, le cas du
+   téléphone : une page qui oublierait de le poser vaut mieux trop court que trop
+   long.
+   À poser sur un élément de la page et JAMAIS sur `body` : les écrans pleine
+   page de `PageState` gardent le défilement normal, leur carte pouvant dépasser
+   d'une fenêtre basse. */
+.page-shell {
+  height: var(--shell-height, 100dvh);
+  display: flex;
+  flex-direction: column;
+}
+
+/* La zone défilante de `.page-shell`. `min-height: 0` est la tuyauterie qui la
+   fait marcher : sans lui, le minimum automatique d'un élément flex vaut sa
+   hauteur de contenu, donc la zone pousse la coquille au-delà de la fenêtre au
+   lieu de défiler (même piège que `.play-header-settings-inner` et
+   `.editor-rail-body`). Le défilement horizontal reste interdit : c'est la
+   hauteur qu'on borne, jamais la largeur. */
+.page-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Un nom qui ne doit pas pousser ses voisins hors de leur boîte : il prend la
+   place et se coupe en « … ». Quatre porteurs, tous le même objet (le nom d'un
+   personnage ou d'un objet de la pièce dans une rangée serrée), et le triplet
+   était recopié dans quatre CSS de page, chacun renvoyant en commentaire à celui
+   de l'Avancement. Ce qui reste local est ce qui varie vraiment : la largeur
+   maximale, le `flex`, le remplissage.
+   Toujours doublé d'un `title` chez l'appelant, sinon un nom coupé devient un
+   nom qu'on ne peut plus lire du tout. */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -989,7 +1089,7 @@ input[type="checkbox"] {
   padding: 24px;
   max-width: 440px;
   width: 100%;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-float);
 }
 
 .modal h3 {
@@ -1059,9 +1159,19 @@ input[type="checkbox"] {
   }
 }
 
+/* Sur un téléphone étroit, les 18 px de gouttière du bandeau prennent trop sur la
+   largeur du titre. Les TROIS porteurs de cette gouttière y passent, jamais deux :
+   la rangée du haut, le bloc des réglages sous elle (phrase de doc, selects,
+   `hint`, retour à l'accueil) et le bandeau d'attente, qui pose la sienne d'un
+   seul tenant. Sans `.play-header-settings-inner`, le sceau et le titre se
+   décalaient de 6 px vers la gauche par rapport à tout ce qui les suit sur les
+   cinq pages à bandeau de pièce, et le contenu de l'écran d'attente (aligné, lui)
+   glissait de 6 px à l'arrivée du manifest. C'est le même accord que le
+   commentaire de `.page-header` promet plus haut. */
 @media (max-width: 420px) {
   .page-header,
-  .play-header-row {
+  .play-header-row,
+  .play-header-settings-inner {
     padding-left: 12px;
     padding-right: 12px;
   }

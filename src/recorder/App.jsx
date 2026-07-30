@@ -6,7 +6,7 @@ import PlayHeader from "../shared/PlayHeader.jsx";
 import ProgressBar from "../shared/ProgressBar.jsx";
 import LeaveGuard from "../shared/LeaveGuard.jsx";
 import ConfirmModal from "../shared/ConfirmModal.jsx";
-import { downloadBlob, slugify, myLineNumbers, excerpt } from "../shared/data.js";
+import { downloadBlob, slugify, myLineNumbers, myLineNumber, excerpt } from "../shared/data.js";
 import {
   PlayIcon,
   PauseIcon,
@@ -198,8 +198,10 @@ export default function App() {
 
   // Écran définitif (le navigateur n'enregistrera pas), et pas une attente :
   // il nomme donc la pièce comme le bandeau de la page, ce qu'il peut faire
-  // puisqu'il vient après le chargement du manifest. Seuls les deux états
-  // au-dessus, où il n'y a pas encore de titre, portent le libellé de page.
+  // puisqu'il vient après le chargement du manifest. Les deux états au-dessus, eux,
+  // ne nomment rien du tout : la pièce n'est pas encore connue, et `PageHeader` ne
+  // rend pas de titre sans titre (jamais un libellé de page à la place, il se
+  // ferait recouvrir par le titre une fraction de seconde plus tard).
   if (!supported) {
     return (
       <PageState
@@ -363,7 +365,7 @@ export default function App() {
               <div className="dialogue-meta">
                 <span className="dialogue-character">
                   {line.character}
-                  {mine ? ` (${myNumbers.get(line.id)}/${myNumbers.size})` : ""}
+                  {myLineNumber(t, myNumbers, line.id)}
                 </span>
                 {active && isRecording ? (
                   <span className="rec-status live">
@@ -421,50 +423,68 @@ export default function App() {
             disabled={isRecording}
             onSeek={setMyIndex}
           />
+          {/* Les QUATRE boutons de cette rangée portent leur infobulle sur une
+              enveloppe `.btn-tip` (theme.css) et jamais sur eux-mêmes, pour la
+              raison qui l'a fait naître dans l'Édition : un contrôle `disabled`
+              ne reçoit aucun événement souris (Chrome, Safari), donc son propre
+              `title` ne s'affiche pas, et l'explication n'arrive jamais au moment
+              où elle sert. Ici les quatre s'éteignent (pendant une prise, en bout
+              de course, sans réplique choisie, sans prise à exporter), et le
+              bouton de téléchargement est en icône seule : sans cette enveloppe,
+              un utilisateur souris n'avait aucun moyen d'apprendre ce qu'il fait.
+              Le nom accessible, lui, reste sur le bouton : c'est l'`aria-label`,
+              qui ne dépend pas de son état. */}
           <div className="buttons-row">
             <span className="controls-side">
               {myLines.length > 0 && (
                 <span className="line-counter">
-                  {safeMyIndex + 1}/{myLines.length}
+                  {t("recorder.lineCounter", { n: safeMyIndex + 1, total: myLines.length })}
                 </span>
               )}
             </span>
             {/* Ces flèches ne parcourent QUE mes répliques : même design que
                 les sauts « ma réplique » de la page Répétition (.my-jump). */}
-            <button
-              className="ctrl-btn my-jump"
-              title={t("common.prevMyLine")}
-              disabled={isRecording || safeMyIndex <= 0}
-              onClick={() => setMyIndex(safeMyIndex - 1)}
-            >
-              <SkipPrevIcon />
-            </button>
-            <button
-              className={`ctrl-btn play mic ${isRecording ? "stop" : ""}`}
-              title={isRecording ? t("recorder.stop") : t("recorder.record")}
-              disabled={!currentLine}
-              onClick={toggleRecord}
-            >
-              {isRecording ? <StopIcon /> : <MicIcon />}
-            </button>
-            <button
-              className="ctrl-btn my-jump"
-              title={t("common.nextMyLine")}
-              disabled={isRecording || safeMyIndex >= myLines.length - 1}
-              onClick={() => setMyIndex(safeMyIndex + 1)}
-            >
-              <SkipNextIcon />
-            </button>
-            <span className="controls-side right">
+            <span className="btn-tip" title={t("common.prevMyLine")}>
               <button
-                className="btn primary zip-download-btn"
-                title={t("recorder.downloadZip")}
-                aria-label={t("recorder.downloadZipCount", { count: takenCount })}
-                disabled={takenCount === 0}
-                onClick={downloadZip}
+                className="ctrl-btn my-jump"
+                aria-label={t("common.prevMyLine")}
+                disabled={isRecording || safeMyIndex <= 0}
+                onClick={() => setMyIndex(safeMyIndex - 1)}
               >
-                <DownloadIcon /> ({takenCount})
+                <SkipPrevIcon />
               </button>
+            </span>
+            <span className="btn-tip" title={isRecording ? t("recorder.stop") : t("recorder.record")}>
+              <button
+                className={`ctrl-btn play mic ${isRecording ? "stop" : ""}`}
+                aria-label={isRecording ? t("recorder.stop") : t("recorder.record")}
+                disabled={!currentLine}
+                onClick={toggleRecord}
+              >
+                {isRecording ? <StopIcon /> : <MicIcon />}
+              </button>
+            </span>
+            <span className="btn-tip" title={t("common.nextMyLine")}>
+              <button
+                className="ctrl-btn my-jump"
+                aria-label={t("common.nextMyLine")}
+                disabled={isRecording || safeMyIndex >= myLines.length - 1}
+                onClick={() => setMyIndex(safeMyIndex + 1)}
+              >
+                <SkipNextIcon />
+              </button>
+            </span>
+            <span className="controls-side right">
+              <span className="btn-tip" title={t("recorder.downloadZip")}>
+                <button
+                  className="btn primary zip-download-btn"
+                  aria-label={t("recorder.downloadZipCount", { count: takenCount })}
+                  disabled={takenCount === 0}
+                  onClick={downloadZip}
+                >
+                  <DownloadIcon /> {t("recorder.downloadCount", { count: takenCount })}
+                </button>
+              </span>
             </span>
           </div>
         </div>
@@ -572,10 +592,14 @@ function LiveWaveform({ analyser }) {
     const cssH = canvas.clientHeight || 26;
     canvas.width = Math.round(cssW * dpr);
     canvas.height = Math.round(cssH * dpr);
-    // Repli si --accent ne résout pas (jamais en pratique) : miroir du token
-    // --accent de theme.css, à garder synchrone.
-    const accent =
-      getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#8b2635";
+    // La couleur du tracé vient de la propriété `color` du canvas, que
+    // recorder.css pose à `var(--accent)`. Lue sur l'ÉLÉMENT et pas comme variable
+    // sur `:root` : `color` est une propriété héritée et toujours résolue, donc il
+    // n'y a plus de repli à écrire, là où la lecture de `--accent` en demandait un
+    // et remettait le bordeaux de la marque en dur dans le JS avec un « à garder
+    // synchrone ». Un canvas n'hérite pas d'une couleur de tracé, mais il hérite
+    // bien de `color`.
+    const accent = getComputedStyle(canvas).color;
     const slot = (BAR_W + BAR_GAP) * dpr;
     const barW = BAR_W * dpr;
     const capacity = Math.floor(canvas.width / slot);
@@ -691,6 +715,12 @@ async function decodePeaks(src, count = WAVE_BARS) {
   return peaks.map((p) => (max > 0 ? floor + (100 - floor) * (p / max) : floor));
 }
 
+// « m:ss », le format universel d'un extrait court : il s'écrit pareil dans les
+// deux langues du site, et `Intl` n'expose pas de formateur de durée partout
+// (`Intl.DurationFormat` est trop récent pour les navigateurs d'une troupe). Ce
+// qui est du texte d'interface ici, c'est ce qui JOINT l'écoulé et le total, et
+// c'est passé au catalogue (`recorder.player.time`). Une prise ne dépassant pas
+// quelques minutes, il n'y a pas non plus de séparateur de milliers à grouper.
 function formatTime(seconds) {
   const s = Math.floor(seconds);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -746,8 +776,10 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
       >
         {playing ? <PauseIcon /> : <PlayIcon />}
       </button>
+      {/* Les deux durées arrivent composées en « m:ss » (cf. formatTime) ; ce qui
+          les JOINT vient du catalogue, ça n'a pas à être un « / » écrit ici. */}
       <span className="player-time">
-        {formatTime(time)} / {formatTime(duration)}
+        {t("recorder.player.time", { elapsed: formatTime(time), total: formatTime(duration) })}
       </span>
       <span className="player-wave">
         {bars.map((h, i) => (

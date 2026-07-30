@@ -20,13 +20,11 @@
   font-size: 14px;
 }
 
-.checks-row label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  user-select: none;
-  cursor: pointer;
-}
+/* La géométrie de l'étiquette (case + texte sur une ligne, toute l'étiquette
+   cliquable, pas de sélection de texte au double-clic) vient de la règle partagée
+   `.checks-row label, .search-options label` de theme.css : la Recherche de
+   l'Édition a la même rangée. Ne reste ici que la zone tactile, plus bas, que le
+   pouce justifie et que l'Édition n'a pas. */
 
 /* Ce sont les commandes principales de la page sur téléphone (« Couper ma
    voix », « Cacher mon texte »…) : une case de 16 px sur une ligne de texte fait
@@ -109,7 +107,10 @@
   font-weight: 700;
   padding: 22px 40px;
   border-radius: 16px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  /* L'ombre des calques qui FLOTTENT (theme.css), la même que le modal de
+     confirmation : deux objets sans place dans le flux, et c'est l'ombre qui dit
+     qu'ils sont au-dessus de la page. */
+  box-shadow: var(--shadow-float);
   z-index: 150;
   animation: appear 0.25s ease-out;
 }

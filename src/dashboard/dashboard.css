@@ -291,12 +291,12 @@
 /* Le nom est enveloppé pour pouvoir se couper : la colonne étant figée, elle
    mange la largeur des scènes, et un nom à rallonge ne doit pas laisser un
    filet de grille pour tout le reste. Coupé, il reste lisible en entier dans
-   l'infobulle du `title` porté par la cellule. */
+   l'infobulle du `title` porté par la cellule.
+   La coupe elle-même est la classe partagée `.truncate` (theme.css), posée en JSX :
+   ne reste ici que ce qui est propre à cette colonne, sa largeur maximale. */
 .dash-name-text {
   display: block;
   max-width: 12em;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Même teinte « en retard » / « tout enregistré » que les cases, portée aussi
