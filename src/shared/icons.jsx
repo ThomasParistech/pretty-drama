@@ -354,32 +354,56 @@ export function MicIcon() {
   );
 }
 
-// Répartition : le camembert, c'est-à-dire la part de parole de chacun.
+// Répartition : le camembert de la page, mais ÉCLATÉ, une part détachée du
+// reste.
 //
-// Un cercle plus DEUX rayons, et pas un seul : avec un rayon unique le dessin se
-// lit comme une horloge. Les deux rayons découpent une part franche, celle que
-// les deux camemberts de la page dessinent. Le quart est pris en haut à droite
-// parce qu'un camembert commence à midi (les parts de la page aussi).
+// Le camembert entier ne marche pas au trait : c'est un cercle plus deux rayons,
+// or deux segments partant du centre d'un cercle sont deux aiguilles, et à 12 et
+// 3 heures ce sont exactement celles d'une horloge (c'est ce que ce sceau a été,
+// et c'est ainsi qu'il se lisait, une pendule). Détacher la part règle ça par
+// construction et non par compensation : une aiguille ne quitte pas son cadran,
+// donc la lecture « horloge » n'est plus disponible, et il n'y a pas d'aplat à
+// ouvrir dans une famille au trait (remplir la part a été essayé, ça lève bien
+// l'ambiguïté mais au prix de l'exception).
 //
-// À ne pas confondre avec `BarsIcon`, juste dessous : les barres sont
-// l'Avancement (un remplissage qui progresse), la part est la Répartition (un
-// tout qui se partage). Cercle contre barres, la silhouette suffit à 17 px.
+// Trois mesures, toutes vérifiées au rendu à 17 px (le sceau du journal, le pire
+// cas) et à 36 : la part couvre 120° et pas 90° (un quart détaché se lit comme un
+// petit drapeau collé au cercle), elle s'écarte de 3 unités sur sa bissectrice
+// (à 1,5 la fente se referme au pixel et l'horloge revient), et l'ENSEMBLE des
+// deux formes est centré dans la boîte, d'où des coordonnées qui ne tombent pas
+// rond : centrer le cercle seul poserait le dessin en bas à gauche de sa
+// pastille, la part partant vers le haut à droite.
 export function PieIcon() {
   return (
     <svg {...strokeSvg}>
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="M12 3.5v8.5h8.5" />
+      <path d="M18.51 17.49A9.25 9.25 0 1 1 10.5 3.62L10.5 12.87Z" />
+      <path d="M13.5 11.13L13.5 1.88A9.25 9.25 0 0 1 21.51 15.76Z" />
     </svg>
   );
 }
 
-// Avancement : trois barres montantes.
-export function BarsIcon() {
+// Avancement : une liste cochée, c'est-à-dire ce qui est enregistré.
+//
+// C'était trois barres montantes, et elles sont tombées en même temps que le
+// camembert entier de la Répartition (cf. `PieIcon`, juste au-dessus) : un
+// graphique en barres à côté d'un graphique en parts, ce sont deux fois « une
+// statistique », donc les deux sceaux du responsable se distinguaient par le
+// détail et pas par la silhouette. La page ne montre d'ailleurs aucune barre,
+// elle montre une grille de « 3/5 » qui verdissent ; c'est de l'avancement, pas
+// de la mesure.
+//
+// La coche est le mot que le site emploie déjà pour « fait » (le statut du
+// journal, les étiquettes de l'Enregistrement), donc le sceau n'apprend rien de
+// neuf à lire. Deux lignes et pas trois : à 17 px une troisième rangée empâte le
+// dessin, et une liste toute cochée nomme très bien la page sans avoir à mettre
+// en scène une ligne qui reste à faire.
+export function ChecklistIcon() {
   return (
     <svg {...strokeSvg}>
-      <path d="M6 20v-5" />
-      <path d="M12 20V11" />
-      <path d="M18 20V7" />
+      <path d="M3 6.5l2 2 4-4" />
+      <path d="M3 14.5l2 2 4-4" />
+      <path d="M12.5 7.5h8.5" />
+      <path d="M12.5 15.5h8.5" />
     </svg>
   );
 }

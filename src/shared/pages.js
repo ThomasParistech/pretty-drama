@@ -1,5 +1,5 @@
 import {
-  BarsIcon,
+  ChecklistIcon,
   DialogueIcon,
   MasksIcon,
   MicIcon,
@@ -40,7 +40,7 @@ export const PAGES = {
   },
   dashboard: {
     href: "./dashboard.html",
-    Icon: BarsIcon,
+    Icon: ChecklistIcon,
   },
   editor: {
     href: "./editor.html",
