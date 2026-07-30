@@ -301,7 +301,17 @@ export function scriptReducer(state, action) {
     case "LOAD_SCRIPT":
       return sanitizeScript(action.script);
 
+    // Le garde d'égalité n'est pas défensif, c'est l'invariant « un no-op ne doit
+    // pas fabriquer un nouvel état », et il vaut ici pour la même raison que dans
+    // `SET_LANGUAGE` juste dessous. Un titre reposé à l'identique arrive (Ctrl+A
+    // puis collage du même texte : l'événement part, la valeur est la même), et
+    // sans lui l'étape s'empilait quand même, avec un `present` égal à son `past`,
+    // donc un Ctrl+Z qui s'allume et qui ne change rien à l'écran. Depuis
+    // `asSavedIfUnchanged` (history.js) le cas se lisait de surcroît à deux
+    // endroits contradictoires : l'étiquette « Modifications non téléchargées »
+    // restait éteinte, ce qui est juste, sous un bouton d'annulation allumé.
     case "SET_TITLE":
+      if (action.title === state.title) return state;
       return { ...state, title: action.title };
 
     // The language the PLAY is written in, not the reader's UI locale. It drives

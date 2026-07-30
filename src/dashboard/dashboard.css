@@ -13,14 +13,10 @@
   margin: 0 auto 26px;
 }
 
-/* Les DEUX gestes peuvent manquer en même temps : la carte de dépôt hors
-   github.io, le bouton quand le PDF n'a pas été produit (c'est le cas courant en
-   dev). Sans ceci, le bloc vide gardait ses 26 px de marge basse et ouvrait une
-   gouttière au-dessus du tableau, sans rien pour l'expliquer. `:empty` suffit,
-   React ne laisse aucun nœud de texte entre les deux éléments. */
-.dash-actions:empty {
-  display: none;
-}
+/* Un seul des deux peut manquer, la carte de dépôt hors github.io : le bouton du
+   PDF, lui, est inconditionnel (cf. `ScriptPdfLink`), donc ce bloc n'est jamais
+   vide et n'a plus besoin de la règle `:empty` qui le masquait, du temps où le
+   bouton attendait de savoir si le fichier existait. */
 
 /* Le PDF prend le bouton de téléchargement du site, `.btn.primary` : le même
    que le ZIP des prises (Enregistrement) et que le script (Édition). Un

@@ -203,7 +203,9 @@ export function searchScript(script, query, options = {}) {
           if (group === null) {
             // Les rangs seuls : un acte et une scène n'ont plus de titre, leur
             // libellé se dérive du rang au rendu (structureLabels.js), donc c'est
-            // le panneau qui les met en mots, dans la langue du lecteur.
+            // le panneau qui les met en mots, et dans la langue de la PIÈCE,
+            // comme le reste de l'éditeur. Ce module reste ainsi sans un mot
+            // d'aucune langue, donc pur et testable sans DOM.
             group = { actIndex, sceneIndex, matches: [] };
             groups.push(group);
           }

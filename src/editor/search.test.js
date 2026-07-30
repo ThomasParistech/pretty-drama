@@ -193,7 +193,7 @@ test("les occurrences sortent dans l'ordre de lecture de la pièce", () => {
   assert.deepEqual(ordinals, [...ordinals].sort((a, b) => a - b));
   // Une réplique sans occurrence ne fait pas de groupe, et un groupe porte les
   // RANGS de son acte et de sa scène : c'est le panneau qui en fait un libellé,
-  // dans la langue du lecteur (structureLabels.js).
+  // dans la langue de la pièce (structureLabels.js).
   assert.deepEqual(
     groups.map((g) => [g.actIndex, g.sceneIndex, g.matches.length]),
     [

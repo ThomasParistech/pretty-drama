@@ -5,7 +5,7 @@ import { EMPTY_SCRIPT, allLines, newId, indexAfterMove, indexAfterRemoval } from
 import { historyReducer, initHistory } from "./history.js";
 import PlayHeader from "../shared/PlayHeader.jsx";
 import PageMark from "../shared/PageMark.jsx";
-import { fmt, t } from "../shared/locale.js";
+import { fmt, t, translator } from "../shared/locale.js";
 import T from "../shared/T.jsx";
 import { actLabel } from "../shared/structureLabels.js";
 import { PAGES, pageLabelKey } from "../shared/pages.js";
@@ -50,6 +50,17 @@ export default function App() {
   // loaded script, when nothing was downloaded yet) leaves nothing to save.
   // Identity is enough, the stack stores the very objects it restores.
   const dirty = script !== saved;
+
+  // Les libellés d'acte et de scène de CETTE page se composent dans la langue de
+  // la PIÈCE et pas dans celle du lecteur (cf. structureLabels.js) : ici on
+  // façonne le document, et « Acte II » est l'intertitre que le PDF imprimera.
+  // C'est la seule des cinq pages dans ce cas, les quatre autres ne faisant que
+  // naviguer dans une pièce qu'elles ne touchent pas. Le reste du texte de
+  // l'éditeur, lui, reste dans la langue du lecteur : c'est de l'interface.
+  // La langue descend par PROP (et jamais ce `tPlay`) aux deux composants qui en
+  // ont besoin plus bas : `SceneEditor` est en `React.memo`, et une fonction
+  // fraîche à chaque rendu lui ferait rendre toute la scène à chaque frappe.
+  const tPlay = translator(script.language);
 
   // Page réservée à l'ordinateur (cf. useTouchPointer) : au doigt, elle rend un
   // écran d'explication à la place de l'éditeur.
@@ -459,6 +470,7 @@ export default function App() {
           search={
             <SearchPanel
               characters={script.characters}
+              language={script.language}
               query={search.query}
               setQuery={search.setQuery}
               shownQuery={search.shownQuery}
@@ -493,13 +505,14 @@ export default function App() {
                 naviguer). Il a porté le renommage de l'acte et le ✕ qui le
                 supprimait ; il ne reste rien qui apparaisse, disparaisse ou
                 s'ouvre au-dessus du texte qu'on est en train de saisir. */}
-            {act && <h2 className="act-title">{actLabel(t, safeActIndex)}</h2>}
+            {act && <h2 className="act-title">{actLabel(tPlay, safeActIndex)}</h2>}
 
             {scene && (
               <SceneEditor
                 scene={scene}
                 actIndex={safeActIndex}
                 sceneIndex={safeSceneIndex}
+                language={script.language}
                 characters={script.characters}
                 dispatch={dispatch}
                 addLine={addLine}

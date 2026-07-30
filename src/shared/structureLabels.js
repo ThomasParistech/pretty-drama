@@ -10,10 +10,19 @@
 // SearchPanel.jsx, StructurePanel.jsx, dashboard/App.jsx and the two page
 // selects), never the pure modules themselves: `stats.js` and `search.js` now
 // hand out RANKS precisely so they never need words.
-// Python derives the same labels for the PDF, from the play's own `language`
-// rather than from the reader's locale: on screen an act label is navigation and
-// belongs in the reader's language, on paper it is the document. The number is
-// the same either way, so nobody loses their place.
+//
+// WHICH LANGUAGE, and it depends on the page, which is why `t` is a parameter
+// rather than an import. Four of the five pages that name a scene (Rehearsal,
+// Recording, Progress, Speaking share) hand over the reader's `t`: there a label
+// is NAVIGATION, one picks a scene in a play one does not touch, and navigation
+// is written in the language one reads. The EDITOR hands over a `t` bound to the
+// play's own `language` (`translator` in locale.js), because there one SHAPES the
+// document: what the plan, the column heading and the search results call an act
+// is exactly what the printed script will call it, and a respo proof-reading an
+// English play should not see French headings over English lines.
+// Python composes the same labels for the PDF, from the play's `language` too
+// (see build_script_pdf.py) — the Editor and the paper now agree word for word.
+// The number is the same in every language, so nobody ever loses their place.
 
 // Roman numerals for acts, digits for scenes, which is the convention of the
 // printed script this project reproduces. Beyond 39 it gives up and returns the

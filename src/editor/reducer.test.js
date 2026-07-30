@@ -412,6 +412,29 @@ test("SET_CHARACTER_COLOR refuse une couleur hors palette, sans fabriquer d'éta
   assert.equal(after.characters[0].color, CHARACTER_COLORS[5]);
 });
 
+test("reposer le titre ou la langue à l'identique ne fabrique aucun état", () => {
+  // L'invariant du no-op sur les deux champs SCALAIRES de la pièce. Le cas se
+  // produit pour de vrai (Ctrl+A puis collage du même texte dans le champ de
+  // titre : l'événement part, la valeur ne change pas), et un état neuf y
+  // empilait une étape dont le `present` égalait son `past`, donc un Ctrl+Z
+  // allumé qui ne change rien à l'écran.
+  const before = play();
+  assert.equal(
+    scriptReducer(before, { type: "SET_TITLE", title: before.title }),
+    before,
+    "titre identique : état rendu à l'identique"
+  );
+  assert.equal(
+    scriptReducer(before, { type: "SET_LANGUAGE", language: before.language }),
+    before,
+    "langue identique : état rendu à l'identique"
+  );
+  // Le garde ne doit pas manger une vraie modification, y compris l'effacement
+  // complet du titre (chaîne vide, que rien n'interdit).
+  assert.equal(scriptReducer(before, { type: "SET_TITLE", title: "" }).title, "");
+  assert.notEqual(scriptReducer(before, { type: "SET_TITLE", title: "Autre" }), before);
+});
+
 // ---- Remaniement du plan (section « Structure » du rail) ----
 
 test("MOVE_ACT réordonne les actes et les répliques suivent leur scène", () => {

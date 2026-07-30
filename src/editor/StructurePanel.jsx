@@ -19,7 +19,7 @@ import ConfirmModal from "../shared/ConfirmModal.jsx";
 import CountBadge from "./CountBadge.jsx";
 import { FlagIcon } from "../shared/icons.jsx";
 import { LOCALES } from "../shared/i18n.js";
-import { fmt, t } from "../shared/locale.js";
+import { fmt, t, translator } from "../shared/locale.js";
 import { actLabel, sceneLabel } from "../shared/structureLabels.js";
 
 // Le plan de la pièce : son titre, ses actes, ses scènes. C'est à la fois la
@@ -46,7 +46,10 @@ import { actLabel, sceneLabel } from "../shared/structureLabels.js";
 // printed PDF, to the Progress column headers, to the Speaking share scope. None
 // of those could translate it, and none of them should have had to, because the
 // real play never used the freedom anyway (ten scenes, all of them "Scène N").
-// Deriving the label makes it ordinary UI text, in the reader's language.
+// Deriving the label makes it ordinary text again, and this panel composes it in
+// the language of the PLAY, the one declared two rows above the plan: an act
+// heading here is the document's, not the reader's navigation, and it is word for
+// word what the printed PDF will carry (see structureLabels.js).
 //
 // What that costs, and it is the only thing: an act cannot be called "Prologue".
 // If it ever needs to be, that is an optional field to add back, not a redesign.
@@ -84,6 +87,15 @@ export default function StructurePanel({
   // plusieurs) : il faut donc un id, et `useId` évite d'en écrire un en dur dans
   // un composant que rien n'interdit de monter deux fois.
   const languageLabelId = useId();
+
+  // Le traducteur des libellés du plan, lié à la langue de la PIÈCE et non à celle
+  // du lecteur (cf. structureLabels.js). Il descend en prop dans les rangées :
+  // deux composants ne peuvent pas lire la langue chacun de son côté sans que la
+  // colonne de texte et le plan finissent par se désaccorder.
+  // Il change à la seconde où l'on clique un drapeau juste au-dessus, ce qui est
+  // aussi ce qui rend le réglage lisible : on voit le plan passer d'« Acte I » à
+  // « Act I », donc on voit ce que la langue de la pièce commande.
+  const tPlay = translator(script.language);
 
   // Amener la scène ouverte à l'écran À L'OUVERTURE de la section, et seulement
   // là : le plan d'une pièce à cinq actes dépasse la hauteur du panneau, donc
@@ -152,7 +164,7 @@ export default function StructurePanel({
 
   const askDeleteAct = (ai) => {
     if (actCounts[ai] === 0) onDeleteAct(ai);
-    else setPending({ kind: "act", actIndex: ai, count: actCounts[ai], title: actLabel(t, ai) });
+    else setPending({ kind: "act", actIndex: ai, count: actCounts[ai], title: actLabel(tPlay, ai) });
   };
 
   const askDeleteScene = (ai, si) => {
@@ -164,7 +176,7 @@ export default function StructurePanel({
         actIndex: ai,
         sceneIndex: si,
         count: scene.lines.length,
-        title: sceneLabel(t, si),
+        title: sceneLabel(tPlay, si),
       });
   };
 
@@ -272,6 +284,7 @@ export default function StructurePanel({
                 key={ai}
                 act={act}
                 actIndex={ai}
+                tPlay={tPlay}
                 lineCount={actCounts[ai]}
                 currentScene={ai === actIndex ? sceneIndex : -1}
                 currentRow={currentRow}
@@ -287,8 +300,11 @@ export default function StructurePanel({
       </DndContext>
 
       {/* Sous la liste et hors de son défilement, comme le formulaire d'ajout des
-          personnages : sur une pièce à cinq actes il reste sous les yeux. */}
-      <button className="btn small structure-add-act" onClick={onAddAct}>
+          personnages : sur une pièce à cinq actes il reste sous les yeux.
+          Même classe `structure-add` que le « + Scène » de chaque acte, et plus
+          `.btn` : les deux ajouts du plan sont la même chose à deux niveaux, donc
+          ils se dessinent pareil (cf. editor.css). */}
+      <button className="structure-add structure-add-act" onClick={onAddAct}>
         {t("structure.addAct")}
       </button>
 
@@ -313,6 +329,7 @@ export default function StructurePanel({
 function ActItem({
   act,
   actIndex,
+  tPlay,
   lineCount,
   currentScene,
   currentRow,
@@ -343,7 +360,7 @@ function ActItem({
         <DragHandle
           attributes={attributes}
           listeners={listeners}
-          label={t("structure.moveAct", { act: actLabel(t, actIndex) })}
+          label={t("structure.moveAct", { act: actLabel(tPlay, actIndex) })}
         />
         {/* Un libellé, plus un champ : le nom d'un acte est dérivé de son rang et
             ne se saisit pas. Il ne mène nulle part non plus (l'acte n'est pas une
@@ -351,13 +368,19 @@ function ActItem({
             bouton, juste du texte. Rien ne se perd au clavier : la tabulation
             atteignait ce champ pour le renommer, or il n'y a plus rien à y
             renommer, et les scènes juste dessous ont chacune son bouton. */}
-        <span className="structure-name structure-name-static truncate">{actLabel(t, actIndex)}</span>
+        {/* Le libellé est dans la langue de la pièce, la phrase qui le CITE
+            (l'`aria-label` du ✕) dans celle du lecteur : un paramètre chaîne
+            traverse intact, comme le chiffre romain d'un acte l'a toujours fait
+            (cf. i18n.js). */}
+        <span className="structure-name structure-name-static truncate">
+          {actLabel(tPlay, actIndex)}
+        </span>
         <CountBadge count={lineCount} className="structure-count" />
         {deletable && (
           <button
             className="chip-delete"
             title={t("structure.deleteAct")}
-            aria-label={t("structure.deleteAct.named", { act: actLabel(t, actIndex) })}
+            aria-label={t("structure.deleteAct.named", { act: actLabel(tPlay, actIndex) })}
             onClick={() => onDeleteAct(actIndex)}
           >
             <span aria-hidden="true">✕</span>
@@ -376,6 +399,7 @@ function ActItem({
               scene={scene}
               actIndex={actIndex}
               sceneIndex={si}
+              tPlay={tPlay}
               current={si === currentScene}
               rowRef={si === currentScene ? currentRow : null}
               deletable={act.scenes.length > 1}
@@ -389,7 +413,10 @@ function ActItem({
       {/* Un « + Scène » par acte, et non plus un seul bouton qui ajoutait à
           l'acte courant : dans un plan, l'endroit où la scène atterrit doit se
           désigner du doigt. */}
-      <button className="structure-add-scene" onClick={() => onAddScene(actIndex)}>
+      <button
+        className="structure-add structure-add-scene"
+        onClick={() => onAddScene(actIndex)}
+      >
         {t("structure.addScene")}
       </button>
     </li>
@@ -400,6 +427,7 @@ function SceneItem({
   scene,
   actIndex,
   sceneIndex,
+  tPlay,
   current,
   rowRef,
   deletable,
@@ -438,7 +466,7 @@ function SceneItem({
         <DragHandle
           attributes={attributes}
           listeners={listeners}
-          label={t("structure.moveScene", { scene: sceneLabel(t, sceneIndex) })}
+          label={t("structure.moveScene", { scene: sceneLabel(tPlay, sceneIndex) })}
         />
         {/* Un BOUTON et non plus un champ de saisie : une scène ne se renomme
             plus (son libellé vient de son rang), mais elle reste la seule chose
@@ -459,14 +487,14 @@ function SceneItem({
           title={t("structure.openScene")}
           onClick={() => onGo(actIndex, sceneIndex)}
         >
-          {sceneLabel(t, sceneIndex)}
+          {sceneLabel(tPlay, sceneIndex)}
         </button>
         <CountBadge count={scene.lines.length} className="structure-count" />
         {deletable && (
           <button
             className="chip-delete"
             title={t("structure.deleteScene")}
-            aria-label={t("structure.deleteScene.named", { scene: sceneLabel(t, sceneIndex) })}
+            aria-label={t("structure.deleteScene.named", { scene: sceneLabel(tPlay, sceneIndex) })}
             /* Le ✕ ne traverse pas la rangée : supprimer une scène n'est pas une
                façon d'y aller, et la confirmation s'ouvrirait sur une colonne
                qui vient de changer de scène. */

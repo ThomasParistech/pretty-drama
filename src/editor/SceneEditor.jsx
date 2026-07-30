@@ -15,13 +15,17 @@ import {
 import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
 import LineRow from "./LineRow.jsx";
 import { sceneLabel } from "../shared/structureLabels.js";
-import { fmt, t } from "../shared/locale.js";
+import { fmt, t, translator } from "../shared/locale.js";
 
-// React.memo: only the scene being edited changes identity per keystroke.
+// React.memo: only the scene being edited changes identity per keystroke. D'où la
+// langue de la pièce reçue en CHAÎNE et le traducteur construit ici : un `t` lié,
+// passé en prop, serait une valeur fraîche à chaque rendu du parent et ferait
+// rendre toute la scène à chaque frappe.
 export default React.memo(function SceneEditor({
   scene,
   actIndex,
   sceneIndex,
+  language,
   characters,
   dispatch,
   addLine,
@@ -47,9 +51,13 @@ export default React.memo(function SceneEditor({
       {/* Le titre et le compte, rien de plus : renommer la scène et la supprimer
           sont des gestes du plan de la pièce (section « Structure » du rail),
           pas du texte qu'on écrit. La colonne dit où l'on est, le rail façonne
-          et nomme. */}
+          et nomme.
+          Le titre est dans la langue de la PIÈCE (c'est l'intertitre du
+          document, cf. structureLabels.js), le compte de répliques dans celle du
+          lecteur (c'est de l'interface) : les deux voisinent, et c'est bien deux
+          choses différentes qu'ils disent. */}
       <div className="scene-header">
-        <h3 className="scene-title">{sceneLabel(t, sceneIndex)}</h3>
+        <h3 className="scene-title">{sceneLabel(translator(language), sceneIndex)}</h3>
         <span className="scene-line-count">
           {t("common.lineCount", { count: scene.lines.length })}
         </span>

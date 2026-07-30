@@ -64,9 +64,13 @@ le bloc `prefers-reduced-motion`).
   (re-skinnés par CHAQUE page, via la classe `page-<clé>` que les deux bandeaux
   posent sur leur racine). Le garde porte sur la REDÉFINITION, pas sur la
   lecture : une page a le droit de LIRE un token réservé quand elle doit rendre
-  exactement comme le bandeau, et deux le font, la Répartition dont la barre de
-  légende prend `--header-shadow` (deux bandes empilées portent la même ombre) et
-  l'Édition dont `.btn.primary` prend `--header-accent`. Ce n'est donc pas un
+  exactement comme le bandeau, et trois endroits le font, la Répartition dont la
+  barre de légende prend `--header-shadow` (deux bandes empilées portent la même
+  ombre) et, sur l'Édition, `.btn.primary` puis la tuile d'acte du plan du rail
+  (`--ed-tile-act`, un tint de `--header-accent` à 18 %), qui prennent tous deux le
+  vin. Ce dernier est le seul rouge que le `:root` de l'éditeur ne re-skinne pas,
+  donc le seul qui ne bougera pas sous le plan, et c'est précisément pourquoi la
+  tuile le lit plutôt que d'ajouter un hex. Ce n'est donc pas un
   finding ; en redéfinir un, si. Une seule exemption, `.play-header-home*` : le retour
   à l'accueil dit la marque et non la page, donc il porte lui-même `page-home`,
   classe posée en JSX que ce garde, qui ne lit que du CSS, ne peut pas voir. C'est
@@ -149,7 +153,7 @@ le bloc `prefers-reduced-motion`).
 | Garde de sortie de page (travail non téléchargé) | `src/shared/LeaveGuard.jsx` — clics de liens interceptés en capture + `beforeunload` en filet | Édition, Enregistrement |
 | Sélecteur de langue du SITE (deux drapeaux) | `src/shared/LocaleSwitch.jsx` — deux vrais liens portant `?lang=`, donc clic droit et nouvel onglet, et aucun état : c'est le chargement suivant qui mémorise le choix (`locale.js`). **Monté au pied des deux accueils et par eux SEULS**, et c'est une règle, pas un hasard : une langue est un réglage de SITE, donc elle se choisit en entrant, et le pied du bandeau partagé est une composition finie (le sceau seul et centré, encadré de deux filets courts) qu'un second objet décentrerait. Le nom d'une langue s'y écrit **dans cette langue** (`Français`, `English`), jamais traduit : c'est le seul littéral accentué que le garde CI exempte nommément. Ne pas le confondre avec la langue de la PIÈCE, qui montre les mêmes drapeaux dans le plan du rail mais est un CHAMP éditant `script.json`, avec un nom de langue traduit | les deux accueils |
 | Phrase portant du balisage | `src/shared/T.jsx` — `<T k="…" p={{ … }} />`, le morceau de JSX devenant un PARAMÈTRE de la phrase. Une phrase découpée en fragments dans le composant est un finding, cf. la section Langue | toutes celles qui citent un `<strong>`, un `<code>`, une icône ou un lien au milieu d'une phrase |
-| Libellés d'acte et de scène | `src/shared/structureLabels.js` — DÉRIVÉS du rang (`actLabel(t, i)`, `sceneLabel(t, i)`), les actes et les scènes ne portant aucun titre dans `script.json`. Pur, `t` reçu en argument. Le Python en tient une seconde implémentation pour le papier (`STRUCTURE`, `roman_numeral` dans `build_script_pdf.py`), depuis la langue de la PIÈCE, et `TestStructureLabels` interdit aux deux de diverger | les deux selects de portée, l'Avancement, la Répartition, la Recherche, le plan du rail, le PDF |
+| Libellés d'acte et de scène | `src/shared/structureLabels.js` — DÉRIVÉS du rang (`actLabel(t, i)`, `sceneLabel(t, i)`), les actes et les scènes ne portant aucun titre dans `script.json`. Pur, `t` reçu en argument, et c'est ce qui permet aux deux axes de langue de coexister : les quatre pages qui NAVIGUENT passent le `t` du lecteur, l'Édition un `t` lié à `script.language` (cf. la section Tokens, « Deux axes de langue »). Le Python en tient une seconde implémentation pour le papier (`STRUCTURE`, `roman_numeral` dans `build_script_pdf.py`), depuis la langue de la PIÈCE, donc le plan du rail et le papier disent le même mot, et `TestStructureLabels` interdit aux deux de diverger | les deux selects de portée, l'Avancement, la Répartition, la Recherche, le plan du rail, le PDF |
 | Compte de répliques d'un objet de la pièce | `src/editor/CountBadge.jsx` — chiffre nu à l'écran (la colonne des comptes doit s'aligner), la phrase dans l'`aria-label`, `role="img"` pour le rendre valable sur un `<span>`. Les deux panneaux du rail en avaient chacun leur copie, alors que leur CSS était déjà commun (`.character-count, .structure-count`) | les sections « Structure » et « Personnages » du rail de l'Édition |
 | Montage d'une page | `src/shared/mountPage.jsx` — `applyDocumentLanguage` puis `createRoot(...).render(...)`, et l'import de `theme.css`, dont l'ORDRE compte (avant le CSS de la page, qui le surcharge) : d'où l'import de ce module AVANT `App.jsx` dans chaque point d'entrée. Les sept entrées étaient sept copies du même corps | les sept `main.jsx` / `respo.jsx` |
 | Numérotation « (3/12) » de mes répliques | `src/shared/data.js` — `myLineNumbers` (la Map) et `myLineNumber` (le libellé, `t` reçu en argument : ce module est couvert par `node --test`). Le gabarit était écrit dans deux JSX, parenthèses et barre comprises | Répétition, Enregistrement |
@@ -287,9 +291,21 @@ dans un composant**. Tout passe par les catalogues `src/shared/locales/fr.js` et
   légitimes.
 - **Deux axes de langue, à ne pas confondre** : la locale de l'INTERFACE (choisie
   par le lecteur, `LocaleSwitch`) et la langue de la PIÈCE (`script.language`,
-  choisie dans le plan du rail, qui pilote le PDF et la voix de synthèse). Un
-  libellé d'acte ou de scène suit la première (c'est de la navigation), le texte
-  des répliques la seconde.
+  choisie dans le plan du rail, qui pilote le PDF, la voix de synthèse et les
+  libellés d'acte et de scène de l'Édition). Le texte des répliques suit la
+  seconde. Un libellé d'acte ou de scène, lui, **dépend de la page**, et c'est le
+  seul texte du site dans ce cas : locale du LECTEUR sur les quatre pages qui ne
+  font que NAVIGUER (Répétition, Enregistrement, Avancement, Répartition), où
+  choisir une scène dans une pièce qu'on ne touche pas s'écrit dans la langue
+  qu'on lit ; langue de la PIÈCE sur l'Édition, où l'on façonne le document et où
+  « Acte II » est mot pour mot l'intertitre que le PDF imprimera. C'est ce qui
+  fait de `t` un PARAMÈTRE de `actLabel`/`sceneLabel` et non un import : l'Édition
+  passe un traducteur lié à `script.language` (`translator` dans `locale.js`).
+  Corollaire assumé, à ne pas rapporter comme un défaut : sur une pièce dont la
+  langue n'est pas celle du lecteur, la même scène s'appelle « Scene 3 » sur
+  l'Édition et « Scène 3 » sur l'Avancement, et la phrase qui CITE un libellé
+  reste dans la langue du lecteur (« Déplacer Act I »), un paramètre chaîne
+  traversant intact.
 - **Ce qu'un module pur ne fait jamais** : importer `locale.js`. Il lit l'URL, le
   stockage et le navigateur dès son import, donc il casse `node --test`. Un
   module couvert par les tests reçoit `t` en argument (`stats.js`) ou rend un

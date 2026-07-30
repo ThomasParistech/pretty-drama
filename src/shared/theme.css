@@ -788,6 +788,20 @@ input[type="checkbox"] {
   pointer-events: none;
 }
 
+/* Pendant qu'on TIRE le curseur, plus aucun lissé : le pouce et le remplissage
+   se posent au pointeur, au pixel. Le précédent nommé est la poignée de largeur
+   du rail de l'Édition (classe `resizing`) et la leçon est la même : une
+   transition de 0,15 s pendant un glissement fait poursuivre le curseur avec un
+   retard, ce qui se lit comme une latence de la page. Elle reste pour les sauts
+   discrets, qui sont sa raison d'être (clic sur la piste, flèches de la barre
+   basse, clavier, lecture qui avance). Même cause côté liste, où le recentrage
+   de la carte active échange le `smooth` du navigateur contre un suivi rapide
+   le temps du glissement (`setSeekDragging`, `useScrollToActiveCard.js`). */
+.progress-container.dragging .progress-fill,
+.progress-container.dragging .progress-thumb {
+  transition: none;
+}
+
 .buttons-row {
   display: flex;
   justify-content: center;

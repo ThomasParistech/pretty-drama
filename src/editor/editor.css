@@ -40,6 +40,58 @@
 
   --ed-title: #26261f;
   --ed-rule: #ece5d6;
+  /* La tuile d'un ACTE dans le plan du rail : le VIN de la marque, éclairci à
+     moins d'un cinquième de sa force (#ead8db), franchement plus foncé que le
+     fond du rail (rapport de luminance 1,20 sur le crème `--ed-sidebar`, quand une
+     surface BLANCHE posée sur ce même crème n'en tient que 1,14 : la bande d'acte
+     se détache donc un peu plus du panneau que les cartes blanches qu'elle
+     contient, ce qui est le bon sens de lecture). C'est ce qui fait de la rangée
+     d'acte une bande, et des scènes blanches qui la suivent des cartes posées
+     dedans. Un `--paper-dark` aurait suffi à la tuile technique mais pas à la
+     lecture (1,05 sur ce fond, donc la même crème que le panneau à l'oeil).
+     Deux essais avant celui-ci, dans cet ordre : un sable (`#e7dabc`), qui tenait
+     le même rapport mais était une troisième famille de couleur sur une page qui
+     n'en veut que deux ; puis un tint du violet de la page (`--accent` à 22 %),
+     qui la ramenait à une seule teinte mais posait le plan dans un lilas si
+     proche de l'`--accent-soft` d'une scène ouverte que la bande et la carte
+     qu'elle contient se lisaient comme deux états du même objet.
+     Le vin les sépare pour de bon, et il n'est pas une couleur de plus : c'est
+     celle du bouton de téléchargement juste au-dessus (`--header-accent`, le seul
+     endroit de la page qui la porte en plein) et celle des deux visages du logo,
+     en pied du bandeau. Un TINT et pas un hex, écrit avec l'expression que le
+     `<mark>` de la recherche emploie déjà.
+     On LIT `--header-accent` sans le redéfinir, ce que le contrat autorise
+     (précédent nommé : `--ed-panel-shadow`) : ce vin est le seul rouge que ce
+     `:root` ne re-skinne pas, donc le seul qui ne bougera pas sous le plan.
+     18 % et pas plus : l'accent assombri du plan tient 5,4:1 dessus (le « vous
+     êtes ici » d'un acte) et la poignée en `--ink-soft` 3,7:1 ; à 28 % l'encre
+     tombe à 4,5:1 tout juste et la poignée sous le seuil d'un dessin. */
+  --ed-tile-act: color-mix(in srgb, var(--header-accent) 18%, #fff);
+  /* L'accent, mais assez foncé pour porter du TEXTE sur les deux surfaces pâles
+     du plan : sur la tuile d'acte `--accent` tombe à 3,7:1 (échec AA) et sur le
+     lilas `--accent-soft` à 4,4:1, quand celui-ci tient 5,4:1 et 6,5:1. Même
+     leçon que `characterInk` : on plafonne la clarté, on garde la teinte. Les
+     FILETS et les fonds continuent de prendre `--accent`, un trait n'ayant pas à
+     tenir le contraste d'un texte. */
+  --ed-accent-ink: #5f45a0;
+  /* Un hex mesuré et pas un dérivé calculé de `--accent`, et c'est un choix, pas
+     un oubli : les trois rapports écrits ci-dessus (5,4:1 sur la tuile d'acte,
+     6,5:1 sur le lilas, et l'échec de `--accent` à 3,7:1) sont vrais de CETTE
+     valeur, donc les recalculer à chaque re-skin les rendrait faux sans que rien
+     ne le dise. L'idiome `oklch(from … min(l, 0.5) c h)` de `characterInk` a été
+     considéré : là-bas il est obligatoire (vingt couleurs de palette, on ne peut
+     pas mesurer une à une), ici il y a UNE encre, sur DEUX fonds connus. Et la
+     syntaxe de couleur relative est la moins portée de tout le dépôt, plus
+     récente que le `color-mix` de la tuile juste au-dessus. Corollaire à
+     connaître : re-régler `--accent` demande de re-mesurer cette encre, comme il
+     demanderait de re-mesurer un `color-mix`. */
+
+  /* Le filet de survol des deux surfaces qu'on DÉSIGNE dans le plan, la rangée
+     d'une scène et la vignette d'un drapeau de langue. Un token parce que leurs
+     deux commentaires exigent qu'elles « répondent pareil » : l'expression était
+     écrite deux fois, et deux jumelles se désaccordent au premier réglage. Le
+     fond, lui, est déjà un token partagé (`--accent-soft`). */
+  --ed-tile-hover-border: color-mix(in srgb, var(--accent) 35%, var(--border));
   /* Le fond du rail. Ce token portait déjà ce nom quand il n'était le fond
      d'aucune barre latérale (il servait aux puces de personnage, dans le
      bandeau blanc) : la direction s'appelle « Rail » depuis le début, la page
@@ -74,7 +126,14 @@
 
 /* Même bouton « Télécharger » que la page Enregistrement : accent chaud du
    thème partagé (que le :root local re-skinne en violet), hover compris —
-   la règle hover du thème (var(--accent-dark)) s'applique telle quelle. */
+   la règle hover du thème (var(--accent-dark)) s'applique telle quelle.
+   Un téléchargement se présente pareil sur les trois pages qui en offrent un,
+   et c'est la FORME comme la couleur : l'essai d'un aplat clair, à la teinte de
+   la tuile d'acte du plan, a été fait et retiré. Il demandait de repeindre le
+   dessin (le blanc tombe à 1,4:1 sur une tuile pâle) et surtout il s'éteignait
+   pour de bon : l'`opacity: 0.45` des boutons désactivés laisse un aplat clair
+   à 1,2:1 sur le blanc du bandeau, or ce bouton EST désactivé à l'ouverture de
+   la page, tant que rien n'est modifié. L'aplat de vin, lui, reste franc. */
 .btn.primary {
   background: var(--header-accent);
   border-color: var(--header-accent);
@@ -746,14 +805,16 @@ h3 {
   border-top: 1px solid var(--border);
 }
 
-/* Deux pixels entre les rangées, et pas un seul : une rangée survolée ou ouverte
-   pose son filet, et collée à sa voisine ces deux filets à deux pixels l'un de
-   l'autre se lisent comme un trait double. Il en va de même entre les scènes
-   d'un acte, d'où le flex sur leur liste. */
+/* Trois pixels entre les rangées : chacune est maintenant une tuile pleine, donc
+   il faut voir le crème du panneau entre deux voisines, sinon la pile se lit comme
+   une seule surface découpée. Deux suffisaient du temps où les rangées étaient
+   transparentes (l'écart n'y servait qu'à éviter que le filet d'une rangée
+   survolée ou ouverte ne se lise en trait double avec celui de sa voisine). Il en
+   va de même entre les scènes d'un acte, d'où le flex sur leur liste. */
 .structure-act {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .structure-scenes {
@@ -761,25 +822,40 @@ h3 {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  /* Le retrait des scènes sous leur acte : c'est TOUT ce qui dit la hiérarchie
-     (pas de filet ni de guide vertical, qui dans une colonne de 248 px ajoutent
-     une ligne à lire pour une information que l'alignement donne déjà). Il vaut
-     la poignée plus son écart, donc une scène commence là où commence le nom de
-     son acte. */
+  gap: 3px;
+  /* Le retrait des scènes sous leur acte, qui redit à l'alignement ce que les
+     deux tuiles disent déjà à la couleur (pas de filet ni de guide vertical, qui
+     dans une colonne de 248 px ajoutent une ligne à lire pour une information que
+     l'alignement donne déjà). Il vaut la poignée plus son écart, donc une scène
+     commence là où commence le nom de son acte. */
   padding: 0 0 0 19px;
 }
 
-/* Une rangée de plan : la poignée, le nom, le compte, le ✕. Le filet transparent
-   au repos est ce qui empêche la scène courante de décaler ses voisines quand
-   elle prend le sien (même règle que `.search-hit`). */
+/* Une rangée de plan : la poignée, le nom, le compte, le ✕.
+   **C'est une TUILE, et sa couleur dit son niveau.** Les deux rangées étaient
+   transparentes, donc de la couleur du panneau : le plan n'était qu'une colonne de
+   texte où seule la scène ouverte posait quelque chose, et rien ne distinguait un
+   acte d'une scène que sa serif et son retrait. Un acte prend maintenant le vin
+   très éclairci `--ed-tile-act` et une scène le blanc des surfaces qui portent du contenu
+   (`--card`, comme les puces de personnage juste à côté dans le rail), donc l'acte
+   se lit comme la bande qui contient les cartes de ses scènes, et c'est LUI qui
+   ressort. Un acte est le seul objet du panneau à ne pas être blanc, et c'est
+   voulu : ce n'est pas du contenu, c'est un intertitre.
+   Le remplissage passe de 1 à 3 px en haut et en bas et cesse d'être nul à gauche :
+   une tuile a besoin d'air, et la poignée touchait son bord.
+   Le filet transparent au repos reste ce qui empêche la scène courante de décaler
+   ses voisines quand elle prend le sien (même règle que `.search-hit`). */
 .structure-row {
   display: flex;
   align-items: center;
   gap: 6px;
   border: 1px solid transparent;
   border-radius: 7px;
-  padding: 1px 4px 1px 0;
+  padding: 3px 5px 3px 2px;
+}
+
+.structure-row.act {
+  background: var(--ed-tile-act);
 }
 
 .structure-row.act .structure-name {
@@ -791,16 +867,21 @@ h3 {
 
 /* Une rangée de SCÈNE s'ouvre en entier, pas seulement par son bouton : c'est la
    ligne qui est l'objet, et le survol doit donc allumer la ligne et pas le mot.
-   Il pose le filet que la rangée garde transparent au repos, plus le crème du
-   papier. Le `:not` est nécessaire, à égalité de spécificité avec la règle du
-   dessous. Les rangées d'acte n'en prennent rien : leur nom ne mène nulle part. */
+   Le `:not` est nécessaire, à égalité de spécificité avec la règle du dessous. Les
+   rangées d'acte n'en prennent rien : leur nom ne mène nulle part.
+   La tuile blanche prend son filet dès le repos, comme une puce de personnage : le
+   crème du panneau ne suffit pas à cerner du blanc. Le survol la fait passer au
+   lilas de l'accent, la scène ouverte y ajoute le filet plein : rien ne bouge à
+   l'écran entre les trois états, seule la teinte monte. */
 .structure-row.scene {
   cursor: pointer;
+  background: var(--card);
+  border-color: var(--border);
 }
 
 .structure-row.scene:not(.current):hover {
-  border-color: var(--border);
-  background: var(--paper-dark);
+  border-color: var(--ed-tile-hover-border);
+  background: var(--accent-soft);
 }
 
 /* La scène ouverte, en accent : c'est la rangée qui dit où on est, et elle le dit
@@ -814,19 +895,28 @@ h3 {
    scène : deux rangées encadrées l'une sous l'autre se disputeraient le « vous
    êtes ici », alors que la scène est le seul objet vraiment ouvert. Il sert à
    retrouver où l'on est dans un plan qui dépasse la hauteur du panneau, quand la
-   scène courante a défilé hors de vue. */
+   scène courante a défilé hors de vue.
+   C'est l'accent ASSOMBRI (`--ed-accent-ink`) depuis que la rangée porte une tuile
+   pleine : sur celle-ci `--accent` ne tient que 3,7:1. L'encre est violette sur une
+   bande vinée, donc la teinte ET la clarté l'en détachent, et c'est le même écart
+   de clarté qui distingue les deux libellés d'un acte courant, son nom en accent et
+   son compte en gris. */
 .structure-row.act.current .structure-name {
-  color: var(--accent);
+  color: var(--ed-accent-ink);
 }
 
 /* Même poignée que les répliques (classe `drag-handle` conservée sur le bouton) :
    c'est le même geste sur un autre objet de la pièce. Il n'en reste qu'à
-   resserrer la boîte, taillée là-bas pour une rangée haute de 40 px. */
+   resserrer la boîte, taillée là-bas pour une rangée haute de 40 px.
+   En `--ink-soft` et non plus en `--ed-ghost`, qui est taillé pour du blanc : sur
+   la tuile d'un acte il tombe à 2,4:1, sous le seuil d'un dessin (la tuile a changé
+   de teinte, pas de clarté, donc la mesure tient). C'est du même coup l'encre du ✕
+   qui lui fait face au bout de la rangée. */
 .structure-handle {
   font-size: 13px;
   line-height: 1;
   padding: 3px 1px;
-  color: var(--ed-ghost);
+  color: var(--ink-soft);
 }
 
 /* Le nom prend la place et se coupe en « … » comme celui d'un personnage, par la
@@ -919,10 +1009,13 @@ h3 {
   margin-left: auto;
 }
 
-/* Une vignette de drapeau, dessinée exactement comme une rangée du plan juste en
-   dessous (filet transparent au repos, crème au survol, accent quand elle est
-   choisie) : ce sont les deux seules choses qu'on désigne dans cette section, et
-   elles doivent répondre pareil.
+/* Une vignette de drapeau, qui RÉPOND comme une rangée du plan juste en dessous
+   (lilas de l'accent au survol, filet d'accent plein quand elle est choisie) : ce
+   sont les deux seules choses qu'on désigne dans cette section, et elles doivent
+   répondre pareil.
+   Elle n'en prend pas la TUILE pour autant : un drapeau n'est pas un objet du
+   plan, c'est la valeur d'un champ, et deux vignettes blanches encadrées au-dessus
+   des actes se liraient comme deux rangées de plus.
    `line-height: 0` parce que la boîte d'un `<label>` réserve sinon la place d'une
    ligne de texte sous le drapeau, qui n'en a pas. */
 .structure-language-flag {
@@ -947,8 +1040,8 @@ h3 {
 }
 
 .structure-language-flag:not(.current):hover {
-  border-color: var(--border);
-  background: var(--paper-dark);
+  border-color: var(--ed-tile-hover-border);
+  background: var(--accent-soft);
 }
 
 .structure-language-flag.current {
@@ -964,36 +1057,76 @@ h3 {
   outline-offset: 3px;
 }
 
-/* « + Scène » sous les scènes de SON acte, au retrait des scènes : c'est là qu'il
-   ajoute. Discret, mais LISIBLE au repos, et pas la pastille au survol de
-   « + insérer » : celle-là se cache parce que la zone qui la porte est un
-   entre-deux de répliques, invisible par nature, alors qu'ici il y a un acte sous
-   les yeux et que c'est le geste courant de la page (on ajoute plus de scènes que
-   d'actes, d'où le vrai bouton pour « + Acte » et cette forme-là pour celui-ci). */
-.structure-add-scene {
-  align-self: flex-start;
-  margin-left: 19px;
-  background: none;
-  border: none;
+/* Les deux ajouts du plan, « + Scène » et « + Acte », sont la MÊME chose à deux
+   niveaux, donc ils se dessinent pareil : une tuile fantôme au filet tireté, à la
+   place et à la largeur de l'objet qu'ils créent, avec le lilas de l'accent au
+   survol comme les rangées qu'ils allongent. C'est la forme que la page emploie
+   déjà pour ajouter la première réplique d'une scène (`.add-first-line-btn`).
+   La FORME est reprise, pas la règle : ces deux-là gardent le rayon de 7 px des
+   rangées qu'ils prolongent (là-bas c'est `--radius`, au milieu des cartes de
+   répliques) et le survol de leur panneau, lilas d'accent, quand celui de la
+   colonne prend le crème du rail. Chacun répond comme son voisinage, ce qui est
+   la raison de les garder distincts plutôt que de factoriser quatre déclarations
+   sous une troisième classe que ni l'un ni l'autre ne porterait en entier.
+   Ils ne se ressemblaient pas du tout : « + Scène » était un mot gris sans cadre,
+   « + Acte » un vrai `.btn small` blanc aligné à droite, donc deux gestes voisins
+   et de même nature se lisaient comme un lien et un bouton. Depuis que les rangées
+   du plan sont des tuiles, l'écart se voyait deux fois plus (un mot nu au milieu
+   d'une pile de tuiles n'a plus l'air d'un contrôle du tout).
+   Ce qui les distingue est ce qui distingue leurs objets : le retrait des scènes et
+   le corps du texte. Le filet TIRETÉ n'est pas décoratif, c'est ce qui les sépare
+   des tuiles pleines du plan : ils ne sont pas un acte ni une scène de la pièce,
+   ils en fabriquent un. */
+.structure-add {
+  align-self: stretch;
+  text-align: left;
   font-family: var(--font-ui);
-  font-size: 11.5px;
   color: var(--ink-soft);
-  padding: 2px 4px;
-  border-radius: 6px;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 7px;
   cursor: pointer;
-  transition: color 0.12s, background 0.12s;
+  transition: color 0.12s, background 0.12s, border-color 0.12s;
 }
 
-.structure-add-scene:hover {
-  color: var(--accent);
+/* L'accent assombri pour le texte (cf. `--ed-accent-ink`) : sur le lilas,
+   `--accent` ne tient que 4,4:1, et ces deux libellés sont les plus petits du
+   panneau. Le filet, lui, prend l'accent plein, comme la rangée d'une scène
+   ouverte. */
+.structure-add:hover {
+  color: var(--ed-accent-ink);
+  border-color: var(--accent);
   background: var(--accent-soft);
 }
 
+/* La bague du thème et pas l'anneau du navigateur, et c'est le PANNEAU qui décide :
+   ses deux autres contrôles dessinés la portent déjà (`.structure-scene-name`, la
+   vignette de drapeau), or ces deux ajouts ont maintenant la forme et la place
+   d'une rangée du plan. Sans elle, tabuler dans le panneau alternait deux anneaux
+   sur des objets de même silhouette. Ce n'était pas une régression (en `.btn`
+   comme aujourd'hui ils retombaient sur l'anneau natif), c'est la mise au niveau
+   de leurs voisins. */
+.structure-add:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Sous les scènes de SON acte et à leur retrait : c'est là qu'il ajoute, et il a
+   la largeur de la scène qui va s'y poser. */
+.structure-add-scene {
+  margin-left: 19px;
+  font-size: 11.5px;
+  padding: 3px 8px;
+}
+
 /* Hors du défilement de la liste, comme le formulaire d'ajout des personnages, et
-   aligné à droite comme son bouton. */
+   à la largeur d'un acte. Il ne porte plus `.btn` : un bouton blanc de 13 px aligné
+   à droite ne pouvait pas ressembler à « + Scène » sans que l'un des deux mente sur
+   ce qu'il fait. */
 .structure-add-act {
   flex: none;
-  align-self: flex-end;
+  font-size: 13px;
+  padding: 5px 10px;
 }
 
 /* ---- Recherche (section « Recherche » du rail) ----

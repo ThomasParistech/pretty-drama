@@ -12,6 +12,10 @@ import { _coalesceKeyForTests, historyReducer, initHistory } from "./history.js"
 
 const PLAY = {
   title: "Le Misanthrope",
+  // La langue de la PIÈCE, comme tout script sanitisé en porte une : sans elle,
+  // l'aller-retour des deux tests d'étiquette repartait vers `undefined`, que le
+  // reducer refuse (`isLocale`), donc le retour n'avait pas lieu.
+  language: "fr",
   characters: [{ id: "c-alceste", name: "Alceste", color: "#1f77b4" }],
   acts: [
     {
@@ -174,6 +178,52 @@ test("changer la langue de la pièce est une étape à part entière", () => {
   );
   assert.equal(state.past.length, 3);
   assert.equal(state.present.language, "en");
+});
+
+test("un aller-retour sur la langue éteint « Modifications non téléchargées »", () => {
+  // Deux drapeaux dans le plan : choisir l'anglais puis revenir au français rend
+  // une pièce identique au fichier du dépôt, donc il n'y a plus rien à
+  // télécharger. L'étiquette étant un comparatif d'IDENTITÉ (`present !== saved`,
+  // cf. App.jsx), il ne suffit pas que le contenu soit égal : c'est l'objet
+  // `saved` lui-même qu'il faut reposer.
+  const start = initHistory(PLAY);
+  const away = apply(start, { type: "SET_LANGUAGE", language: "en" });
+  assert.notEqual(away.present, away.saved, "aller : il y a bien quelque chose à télécharger");
+
+  const back = apply(away, { type: "SET_LANGUAGE", language: PLAY.language });
+  assert.equal(back.present, back.saved, "retour : plus rien à télécharger");
+  // L'aller-retour reste deux étapes annulables : on ne réécrit pas l'histoire,
+  // on ne rend que son identité à l'état de départ.
+  assert.equal(back.past.length, 2);
+  assert.equal(historyReducer(back, { type: "UNDO" }).present.language, "en");
+});
+
+test("un aller-retour sur le titre éteint l'étiquette, même en pleine rafale", () => {
+  // Même mécanique sur un champ de saisie, où les frappes fusionnent : la
+  // substitution doit valoir aussi dans la branche de fusion, sinon le geste le
+  // plus courant (taper une lettre, se raviser, l'effacer) laissait l'étiquette.
+  const start = initHistory(PLAY);
+  const state = apply(
+    start,
+    { type: "SET_TITLE", title: "Le Misanthrope!" },
+    { type: "SET_TITLE", title: PLAY.title }
+  );
+  assert.equal(state.present, state.saved);
+  assert.equal(state.past.length, 1, "une seule étape : la rafale a bien fusionné");
+});
+
+test("l'étiquette ne s'éteint QUE sur un état vraiment identique", () => {
+  // Le garde du garde : la substitution compare les champs à l'identité, donc une
+  // pièce dont le titre revient à sa valeur mais dont les répliques ont changé
+  // entre-temps ne doit surtout pas passer pour téléchargée.
+  const start = initHistory(PLAY);
+  const state = apply(
+    start,
+    { type: "SET_TITLE", title: "Autre" },
+    type("Laissez"),
+    { type: "SET_TITLE", title: PLAY.title }
+  );
+  assert.notEqual(state.present, state.saved);
 });
 
 test("annuler puis rétablir revient exactement au même état", () => {

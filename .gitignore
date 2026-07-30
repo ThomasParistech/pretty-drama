@@ -9,3 +9,10 @@ uploads_result.json
 # ligne porte du poids : uploads.yml commite `data` en entier, donc sans elle
 # un binaire de 150 Ko entrerait dans l'historique à chaque dépôt de script.
 data/script.pdf
+# Le fichier temporaire du téléchargement de dev (`ensureScriptPdf` dans
+# vite.config.js écrit `.part` puis renomme, pour qu'une requête concurrente ne
+# tombe pas sur un PDF à moitié écrit). Il ne survit qu'à une écriture
+# interrompue (disque plein, serveur tué entre les deux appels), et c'est
+# justement là qu'il ne faut pas qu'il apparaisse dans `git status` d'un dossier
+# que l'Action commite en entier.
+data/script.pdf.part

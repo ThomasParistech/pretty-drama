@@ -61,7 +61,15 @@ export default function CharacterPanel({ characters, lineCounts, dispatch, onReq
         {/* « + Personnage » et pas « + Ajouter » : les trois boutons d'ajout du
             rail se lisent dans le même meuble (« + Acte », « + Scène »), donc ils
             nomment tous l'objet qu'ils créent, et le champ voisin dit déjà
-            « Nom du personnage ». */}
+            « Nom du personnage ».
+            Il garde en revanche `.btn` là où les deux autres sont devenus des
+            tuiles fantômes (`.structure-add`), et la question a été posée en revue :
+            ce bouton-ci SOUMET un formulaire, il valide la saisie du champ à sa
+            gauche et s'éteint tant qu'elle est vide, alors que « + Acte » et
+            « + Scène » agissent au clic et ne peuvent pas être désactivés. Une
+            tuile fantôme désactivée à côté d'un champ vide ne se lirait plus comme
+            un contrôle du tout ; et les deux formes ne se voient jamais côte à
+            côte, une seule section du rail étant ouverte à la fois. */}
         <button type="submit" className="btn small" disabled={!newName.trim()}>
           {t("characters.add")}
         </button>

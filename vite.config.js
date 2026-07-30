@@ -1,9 +1,94 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve, extname, relative, isAbsolute, sep } from "path";
+import { spawnSync } from "child_process";
 import fs from "fs";
 
 const ROOT = __dirname;
+
+// data/script.pdf est DÉRIVÉ de data/script.json, gitignoré, et construit par
+// build.yml juste avant de déployer : il n'est donc nulle part dans le dépôt, il
+// n'existe que sur le SITE PUBLIÉ. Or le bouton de l'Avancement le propose
+// toujours, il n'est pas optionnel (cf. `ScriptPdfLink`), donc le serveur de dev
+// va le chercher là où il est plutôt que de le recompiler : un téléchargement,
+// une fois, à la première requête, posé dans data/ (où il reste gitignoré) pour
+// que les requêtes et les sessions suivantes le servent depuis le disque.
+//
+// Le dev n'a ainsi besoin d'aucune distribution LaTeX pour voir le bouton
+// marcher. Ce qu'il obtient est le PDF de la pièce PUBLIÉE, donc pas celle du
+// script.json local si on vient de l'éditer ; le fichier présent est servi tel
+// quel et jamais revalidé, et lancer `python3 scripts/build_script_pdf.py` à la
+// main reste la façon de voir ses propres modifications (sa sortie prend
+// simplement la place du téléchargement).
+const SCRIPT_PDF = resolve(ROOT, "data", "script.pdf");
+
+// L'URL du site publié, déduite du remote git : c'est le pendant de
+// `githubUploadUrl()` (src/shared/data.js), qui déduit l'URL de dépôt de l'URL
+// de la page, et il couvre les deux mêmes formes de site Pages, projet
+// (owner.github.io/repo) et racine (le dépôt s'appelle owner.github.io).
+function publishedPdfUrl() {
+  const run = spawnSync("git", ["remote", "get-url", "origin"], {
+    cwd: ROOT,
+    encoding: "utf8",
+  });
+  const remote = run.status === 0 ? run.stdout.trim() : "";
+  // Les deux écritures d'un remote GitHub : SSH (git@github.com:owner/repo.git)
+  // et HTTPS (https://github.com/owner/repo).
+  const m = remote.match(/github\.com[:/]([^/]+)\/(.+?)(?:\.git)?$/);
+  if (!m) return null;
+  const owner = m[1].toLowerCase();
+  const repo = m[2];
+  const host = `https://${owner}.github.io`;
+  return repo.toLowerCase() === `${owner}.github.io`
+    ? `${host}/data/script.pdf`
+    : `${host}/${repo}/data/script.pdf`;
+}
+
+// Un seul téléchargement par session, en vol ou déjà terminé : on garde la
+// promesse. Un échec (Pages pas encore déployé, pas de réseau, fork sans site)
+// n'est donc pas retenté, sinon chaque ouverture de l'Avancement attendrait un
+// timeout ; le message dit la sortie de secours.
+let pdfFetch = null;
+
+function ensureScriptPdf() {
+  if (fs.existsSync(SCRIPT_PDF)) return null;
+  if (!pdfFetch) pdfFetch = fetchScriptPdf();
+  return pdfFetch;
+}
+
+async function fetchScriptPdf() {
+  const url = publishedPdfUrl();
+  // Le message désigne la PAGE et le fichier, jamais le libellé du bouton : celui-ci
+  // vit dans les catalogues (`dashboard.pdf`), donc le recopier ici ferait mentir le
+  // serveur de dev au premier renommage, et il n'est de toute façon écrit qu'en
+  // français alors que la page se lit dans deux langues.
+  const fallback =
+    " Le téléchargement du PDF de l'Avancement rendra un 404 ;" +
+    " `python3 scripts/build_script_pdf.py` écrit le fichier en local.";
+  if (!url) {
+    console.warn(`  data/script.pdf : aucun remote GitHub d'où le télécharger.${fallback}`);
+    return;
+  }
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const body = Buffer.from(await res.arrayBuffer());
+    // La signature et pas le seul code de retour : un site déployé sans PDF
+    // (les deux étapes LaTeX de build.yml sont en `continue-on-error`) répond sa
+    // page 404, et on ne veut pas écrire du HTML dans un fichier .pdf.
+    if (!body.subarray(0, 5).equals(Buffer.from("%PDF-"))) {
+      throw new Error("la réponse n'est pas un PDF");
+    }
+    // Écriture puis rename : une requête concurrente ne peut pas tomber sur un
+    // fichier à moitié écrit (`existsSync` suffirait à la laisser passer).
+    const tmp = `${SCRIPT_PDF}.part`;
+    fs.writeFileSync(tmp, body);
+    fs.renameSync(tmp, SCRIPT_PDF);
+    console.log(`  data/script.pdf téléchargé depuis ${url} (${Math.round(body.length / 1024)} Ko)`);
+  } catch (err) {
+    console.warn(`  data/script.pdf introuvable sur ${url} (${err.message}).${fallback}`);
+  }
+}
 
 // In production, the GitHub Action copies data/ and clips/ into dist/.
 // In dev, this middleware serves them straight from the repo so every page
@@ -15,14 +100,16 @@ function serveRepoData() {
     ".json": "application/json; charset=utf-8",
     ".mp3": "audio/mpeg",
     // data/script.pdf, que le bouton de l'Avancement télécharge : gitignoré,
-    // donc absent tant qu'on n'a pas lancé build_script_pdf.py à la main, mais
-    // servi comme en prod dès qu'il est là.
+    // donc pris au site publié par `ensureScriptPdf` puis servi comme en prod.
     ".pdf": "application/pdf",
   };
   return {
     name: "serve-repo-data",
     configureServer(server) {
-      server.middlewares.use((req, res, next) => {
+      // Asynchrone pour le seul `await` de `ensureScriptPdf` : tout le reste est
+      // synchrone, et cette fonction n'a aucun rejet à propager (le
+      // téléchargement attrape ses propres erreurs et laisse le 404 se produire).
+      server.middlewares.use(async (req, res, next) => {
         const pathname = req.url.split("?")[0];
         const m = pathname.match(/^\/(data|clips)\/(.+)$/);
         if (!m) return next();
@@ -36,6 +123,9 @@ function serveRepoData() {
           res.end("Forbidden");
           return;
         }
+        // Le seul fichier que le dépôt ne porte pas : on le prend au site
+        // publié avant de répondre, cf. `ensureScriptPdf`.
+        if (file === SCRIPT_PDF) await ensureScriptPdf();
         if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
           res.statusCode = 404;
           res.end("Not found");
@@ -43,9 +133,10 @@ function serveRepoData() {
         }
         res.setHeader("Content-Type", types[extname(file)] || "application/octet-stream");
         res.setHeader("Cache-Control", "no-store");
-        // L'Avancement sonde `data/script.pdf` en HEAD avant d'afficher son
-        // bouton de téléchargement : il ne lit que le code de retour, et une
-        // réponse HEAD n'a pas de corps.
+        // Une réponse HEAD n'a pas de corps. Plus rien ne sonde ces URLs ainsi
+        // (le bouton du PDF le faisait), mais un serveur qui répond à GET doit
+        // répondre à HEAD, et sans cette branche la requête retomberait sur le
+        // repli SPA de Vite, qui rend 200 avec index.html.
         if (req.method === "HEAD") {
           res.end();
           return;

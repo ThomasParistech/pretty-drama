@@ -75,6 +75,31 @@ if (asked) writeStored(asked);
 export const t = makeT(LOCALE, CATALOGUES);
 export const fmt = makeFormats(LOCALE);
 
+// A translator bound to an EXPLICIT locale, for the rare text that belongs to the
+// DOCUMENT rather than to the reader: the act and scene labels of the Editor,
+// which are composed in the language of the PLAY (see structureLabels.js). Every
+// other string on the site goes through `t` above.
+//
+// Memoized per locale, and not for elegance: `makeT` builds an Intl.PluralRules
+// and an Intl.NumberFormat, and the Editor calls this on every render, so an
+// unmemoized version would mint two Intl objects per keystroke. There are two
+// locales, so the map holds two entries at most; the current one is seeded with
+// the module's own `t`, so `translator(LOCALE) === t`.
+const TRANSLATORS = new Map([[LOCALE, t]]);
+
+export function translator(locale) {
+  // An absent or unknown language falls back to the reader's locale rather than
+  // to French: the caller is showing text to the reader either way, and a play
+  // whose `language` is missing has said nothing about how to label it.
+  const key = isLocale(locale) ? locale : LOCALE;
+  let bound = TRANSLATORS.get(key);
+  if (!bound) {
+    bound = makeT(key, CATALOGUES);
+    TRANSLATORS.set(key, bound);
+  }
+  return bound;
+}
+
 // The URL that switches to `locale`, used by LocaleSwitch. Returning a real href
 // means the switch is two plain links: no click handler, no state, and the store
 // is written by the normal page-load path above. It also stays right-clickable

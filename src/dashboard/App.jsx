@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import PageMark from "../shared/PageMark.jsx";
 import PlayHeader from "../shared/PlayHeader.jsx";
 import PageState from "../shared/PageState.jsx";
@@ -423,34 +423,26 @@ function UploadLinks() {
 const SCRIPT_PDF_HREF = "data/script.pdf";
 
 function ScriptPdfLink({ title }) {
-  // Le PDF est gitignoré et produit par DEUX étapes `continue-on-error` de
-  // build.yml : il manque dès que l'install LaTeX ou la compilation échoue, sur
-  // une pièce jamais saisie, et en dev tant qu'on n'a pas lancé le script à la
-  // main. On sonde donc avant de proposer le bouton, exactement comme
-  // `githubUploadUrl()` masque la carte de dépôt plutôt que de forger un 404 :
-  // dans le seul canal de retour du respo, un téléchargement qui rend une page
-  // d'erreur renommée « transport-de-femmes.pdf » est bien pire que pas de
-  // bouton du tout, parce qu'il se croit réussi.
+  // Le bouton est INCONDITIONNEL : le script imprimable n'est pas une option de
+  // la page, c'est l'un de ses deux gestes, et il se rend avec elle.
   //
-  // `null` = pas encore su, et on n'affiche rien : le bouton apparaît un instant
-  // après la page, il ne disparaît JAMAIS sous la souris. `HEAD` parce qu'on ne
-  // veut que le code de retour, pas 150 ko de PDF à chaque ouverture.
-  const [ready, setReady] = useState(null);
-  useEffect(() => {
-    let cancelled = false;
-    fetch(SCRIPT_PDF_HREF, { method: "HEAD" })
-      .then((res) => {
-        if (!cancelled) setReady(res.ok);
-      })
-      .catch(() => {
-        if (!cancelled) setReady(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  if (!ready) return null;
-
+  // Il a commencé autrement, et l'essai est instructif : `ScriptPdfLink` sondait
+  // `data/script.pdf` en `HEAD` au montage et ne rendait rien tant que la
+  // réponse n'était pas là, sur le motif de `githubUploadUrl()`, qui masque la
+  // carte de dépôt plutôt que de forger un 404. Ça coûtait deux choses. Sur le
+  // site publié, le seul bouton de téléchargement du respo arrivait APRÈS la
+  // page, donc il poussait le tableau vers le bas sous ses yeux à chaque
+  // ouverture ; en dev, où le PDF est gitignoré, il n'arrivait jamais, et la
+  // page ne montrait pas la moitié de ce qu'elle a à montrer. Le prix payé pour
+  // ça était théorique : un fichier manquant en production suppose que l'install
+  // LaTeX ou la compilation ait échoué (les deux étapes de build.yml sont en
+  // `continue-on-error`), et un 404 nommé « transport-de-femmes.pdf » se
+  // diagnostique, alors qu'un bouton qui n'existe pas ne se cherche même pas.
+  // La production du fichier suit donc le bouton, et pas l'inverse : build.yml
+  // le construit avant de déployer, et en dev le middleware le télécharge depuis
+  // le site publié à la première requête (`ensureScriptPdf` dans
+  // vite.config.js), le PDF n'étant nulle part dans le dépôt.
+  //
   // Le repli du slug est OBLIGATOIRE et se choisit par appelant : « ??? » est un
   // titre non vide dont il ne reste rien après nettoyage, et le repli d'un
   // personnage (l'usage d'origine de slugify) n'a aucun sens sur un PDF de

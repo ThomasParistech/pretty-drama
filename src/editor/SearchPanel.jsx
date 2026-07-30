@@ -3,7 +3,7 @@ import ConfirmModal from "../shared/ConfirmModal.jsx";
 import { ArrowDownIcon, ArrowUpIcon, ChevronIcon } from "../shared/icons.jsx";
 import { characterColor, characterInk } from "../shared/characterColors.js";
 import { matchExcerpt } from "./search.js";
-import { fmt, t } from "../shared/locale.js";
+import { fmt, t, translator } from "../shared/locale.js";
 import { actLabel, sceneLabel } from "../shared/structureLabels.js";
 
 // Les deux décomptes du panneau, composés ensuite dans les phrases : le pluriel
@@ -17,6 +17,7 @@ const sceneCount = (count) => t("search.sceneCount", { count });
 // démonte ce composant, cf. useSearch.js).
 export default function SearchPanel({
   characters,
+  language,
   query,
   setQuery,
   shownQuery,
@@ -238,6 +239,7 @@ export default function SearchPanel({
         <ResultList
           groups={groups}
           characters={characters}
+          language={language}
           currentMatch={currentMatch}
           onSelect={onSelect}
           searching={searching}
@@ -309,8 +311,13 @@ const HEAD_H = 30;
 // De quoi couvrir un coup de molette entre deux rendus.
 const OVERSCAN = 6;
 
-function ResultList({ groups, characters, currentMatch, onSelect, searching }) {
+function ResultList({ groups, characters, language, currentMatch, onSelect, searching }) {
   const boxRef = useRef(null);
+  // Les en-têtes de groupe nomment un acte et une scène du document, donc dans la
+  // langue de la PIÈCE, comme le plan du rail et le titre de la colonne
+  // (cf. structureLabels.js). Le compte de correspondances juste au-dessus reste
+  // dans celle du lecteur : c'est une phrase de l'interface.
+  const tPlay = translator(language);
   const [view, setView] = useState({ top: 0, height: 0 });
 
   // Une seule liste à plat : les en-têtes de scène y sont des éléments comme les
@@ -390,8 +397,10 @@ function ResultList({ groups, characters, currentMatch, onSelect, searching }) {
                   (structureLabels.js), les actes et les scènes n'ayant plus de
                   titre. */}
               <h3 className="search-group-title">
-                <span className="search-group-act">{actLabel(t, item.head.actIndex)}</span>
-                <span className="search-group-scene">{sceneLabel(t, item.head.sceneIndex)}</span>
+                <span className="search-group-act">{actLabel(tPlay, item.head.actIndex)}</span>
+                <span className="search-group-scene">
+                  {sceneLabel(tPlay, item.head.sceneIndex)}
+                </span>
               </h3>
             </li>
           ) : (

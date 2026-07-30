@@ -12,7 +12,7 @@
 // loaded script at first). It lives here because the answer to "is there
 // anything to download?" is a comparison between two states of this stack:
 // undoing back to `saved` means there is nothing left to download.
-import { scriptReducer } from "./reducer.js";
+import { EMPTY_SCRIPT, scriptReducer } from "./reducer.js";
 
 // Bounded stack: an editing session can easily produce thousands of steps and
 // the oldest ones are never reached in practice.
@@ -50,6 +50,35 @@ function coalesceKey(action) {
 // Exportée pour le test qui verrouille l'invariant ci-dessus. Rien d'autre ne la
 // consomme.
 export { coalesceKey as _coalesceKeyForTests };
+
+// Les champs de haut niveau d'un script, DÉRIVÉS de `EMPTY_SCRIPT` et pas
+// recopiés : un cinquième champ ajouté un jour à la pièce entre de lui-même dans
+// la comparaison ci-dessous, là où une liste écrite ici la laisserait muette sur
+// lui (elle rendrait `saved` alors que ce champ-là aurait changé). Tout état de
+// la pile a exactement ces clés, `sanitizeScript` les posant toutes et chaque cas
+// du reducer étalant l'état reçu.
+const SCRIPT_FIELDS = Object.keys(EMPTY_SCRIPT);
+
+// Un état revenu à ce qui est déjà téléchargé rend l'OBJET `saved` lui-même, et
+// pas son sosie : « Modifications non téléchargées » est un comparatif
+// d'identité (`present !== saved`, cf. App.jsx), donc sans ça un aller-retour
+// laissait l'étiquette allumée sur une pièce identique au fichier du dépôt. Le
+// cas qui l'a montré est la langue de la pièce, deux drapeaux dans le plan :
+// choisir l'anglais puis revenir au français est un aller-retour complet, en deux
+// clics, et le respo n'avait plus alors que Ctrl+Z pour éteindre l'étiquette.
+//
+// Une comparaison des quatre champs à l'IDENTITÉ, et jamais en profondeur : le
+// reducer étant immuable et à structure partagée, un aller-retour sur un champ
+// SCALAIRE (le titre, la langue) laisse les trois autres strictement identiques,
+// donc la même égalité qui porte déjà toute la pile suffit. C'est aussi ce qui
+// borne la promesse, et il faut le savoir : retaper une lettre puis l'effacer
+// reconstruit `acts`, donc l'étiquette reste allumée sur un texte pourtant
+// identique. La lever demanderait de comparer la pièce entière à chaque frappe,
+// c'est-à-dire exactement le travail que l'identité d'objet fait gratuitement.
+function asSavedIfUnchanged(present, saved) {
+  if (present === saved) return present;
+  return SCRIPT_FIELDS.every((field) => present[field] === saved[field]) ? saved : present;
+}
 
 export function initHistory(script) {
   return { present: script, past: [], future: [], lastKey: null, saved: script };
@@ -94,12 +123,17 @@ export function historyReducer(state, action) {
     return state.lastKey === null ? state : { ...state, lastKey: null };
   }
 
-  const present = scriptReducer(state.present, action);
+  const next = scriptReducer(state.present, action);
   // Action refused by the reducer (empty name…): nothing to record.
-  if (present === state.present) return state;
+  if (next === state.present) return state;
 
   // Loading the published script IS the starting point, not a step.
-  if (action.type === "LOAD_SCRIPT") return initHistory(present);
+  if (action.type === "LOAD_SCRIPT") return initHistory(next);
+
+  // Revenu à l'état téléchargé : c'est cet objet-là qu'on repose (cf.
+  // `asSavedIfUnchanged`). L'étape s'empile normalement, il n'y a rien
+  // d'anormal à annuler un aller-retour ; seule l'étiquette s'éteint.
+  const present = asSavedIfUnchanged(next, state.saved);
 
   // Continuation of a keystroke run: same step, and the future was already
   // dropped by the keystroke that opened the run.
