@@ -98,10 +98,29 @@ class TestBuildManifest(unittest.TestCase):
         self.assertEqual(manifest["lines"][0]["status"], "ok")
 
     def test_acts_structure_enriched(self):
+        # Des RANGS et pas des libellés : les actes et les scènes n'ont plus de
+        # titre, et c'est le front qui les met en mots, dans la langue du lecteur.
+        # Le manifest ne doit donc plus porter un seul mot de français ici.
         line = self.manifest["acts"][0]["scenes"][0]["lines"][0]
-        self.assertEqual(line["act"], "Acte I")
-        self.assertEqual(line["scene"], "Scène 1")
+        self.assertEqual(line["actIndex"], 0)
+        self.assertEqual(line["sceneIndex"], 0)
         self.assertIn("status", line)
+
+    def test_acts_and_scenes_carry_no_title(self):
+        # Le garde du choix : un titre recopié ici redeviendrait une donnée dans
+        # une langue, et il repartirait vers le PDF et les colonnes de l'Avancement.
+        for act in self.manifest["acts"]:
+            self.assertNotIn("title", act)
+            for scene in act["scenes"]:
+                self.assertNotIn("title", scene)
+
+    def test_the_play_language_reaches_the_manifest(self):
+        # Le PDF et la voix de synthèse de la Répétition en dépendent.
+        self.assertEqual(self.manifest["language"], "fr")
+        self.assertEqual(build_manifest({"language": "en", "acts": []}, {})["language"], "en")
+        # Une langue absente ou inconnue vaut le français, comme côté JS.
+        self.assertEqual(build_manifest({"acts": []}, {})["language"], "fr")
+        self.assertEqual(build_manifest({"language": "kl", "acts": []}, {})["language"], "fr")
 
 
 class TestMalformedScriptTolerance(unittest.TestCase):
@@ -188,7 +207,23 @@ class TestMalformedScriptTolerance(unittest.TestCase):
         self.assertEqual(statuses[L2], "manquant")
 
     def test_sanitize_preserves_valid_script(self):
-        self.assertEqual(sanitize_script(SCRIPT)["acts"], SCRIPT["acts"])
+        # Comparé aux répliques et non aux actes entiers : `sanitize_script`
+        # retire maintenant les titres d'acte et de scène (le libellé est dérivé
+        # du rang), donc les actes ne sont plus rendus tels quels.
+        sane = sanitize_script(SCRIPT)
+        self.assertEqual(
+            [[[l for l in sc["lines"]] for sc in a["scenes"]] for a in sane["acts"]],
+            [[[l for l in sc["lines"]] for sc in a["scenes"]] for a in SCRIPT["acts"]],
+        )
+
+    def test_sanitize_drops_a_leftover_act_or_scene_title(self):
+        # Un script.json d'avant en porte : il est ignoré et non recopié, sinon le
+        # format garderait deux façons de nommer une scène.
+        sane = sanitize_script(
+            {"acts": [{"title": "Prologue", "scenes": [{"title": "Ouverture", "lines": []}]}]}
+        )
+        self.assertNotIn("title", sane["acts"][0])
+        self.assertNotIn("title", sane["acts"][0]["scenes"][0])
 
 
 class TestHistoryPassthrough(unittest.TestCase):

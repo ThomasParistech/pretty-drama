@@ -60,33 +60,38 @@ export const CHARACTER_COLORS = [
   "#9edae5",
 ];
 
-// Nom de chaque couleur, dans l'ordre de `CHARACTER_COLORS`. Sert à NOMMER les
-// pastilles de la palette de l'éditeur : sans lui, les vingt boutons portaient
-// tous « Choisir cette couleur », donc au clavier et au lecteur d'écran la
-// palette était vingt boutons homonymes dont la seule information, la couleur,
-// n'était pas dite. Les dix dernières sont les teintes claires de tab20, d'où le
-// « clair » qui les distingue de leur foncée.
-export const CHARACTER_COLOR_NAMES = [
-  "Bleu",
-  "Orange",
-  "Vert",
-  "Rouge",
-  "Violet",
-  "Brun",
-  "Rose",
-  "Gris",
-  "Olive",
-  "Cyan",
-  "Bleu clair",
-  "Orange clair",
-  "Vert clair",
-  "Rouge clair",
-  "Violet clair",
-  "Brun clair",
-  "Rose clair",
-  "Gris clair",
-  "Olive clair",
-  "Cyan clair",
+// La CLÉ de catalogue de chaque couleur, dans l'ordre de `CHARACTER_COLORS`.
+// Sert à NOMMER les pastilles de la palette de l'éditeur : sans elles, les vingt
+// boutons portaient tous « Choisir cette couleur », donc au clavier et au lecteur
+// d'écran la palette était vingt boutons homonymes dont la seule information, la
+// couleur, n'était pas dite. Les dix dernières sont les teintes claires de tab20,
+// d'où le suffixe `Light` qui les distingue de leur foncée.
+//
+// Des clés et pas les mots : ce module est pur et couvert par `node --test`, donc
+// il n'importe pas `locale.js` (qui lit l'URL et le navigateur dès son import) ;
+// c'est le panneau des personnages qui traduit. L'appariement rang par rang avec
+// les hex, lui, reste vérifié ici, à côté d'eux.
+export const CHARACTER_COLOR_KEYS = [
+  "color.blue",
+  "color.orange",
+  "color.green",
+  "color.red",
+  "color.purple",
+  "color.brown",
+  "color.pink",
+  "color.grey",
+  "color.olive",
+  "color.cyan",
+  "color.blueLight",
+  "color.orangeLight",
+  "color.greenLight",
+  "color.redLight",
+  "color.purpleLight",
+  "color.brownLight",
+  "color.pinkLight",
+  "color.greyLight",
+  "color.oliveLight",
+  "color.cyanLight",
 ];
 
 const PALETTE = new Set(CHARACTER_COLORS);

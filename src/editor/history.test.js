@@ -8,17 +8,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { historyReducer, initHistory } from "./history.js";
+import { _coalesceKeyForTests, historyReducer, initHistory } from "./history.js";
 
 const PLAY = {
   title: "Le Misanthrope",
   characters: [{ id: "c-alceste", name: "Alceste", color: "#1f77b4" }],
   acts: [
     {
-      title: "Acte I",
       scenes: [
         {
-          title: "Scène 1",
           lines: [{ id: "l-1", characterId: "c-alceste", text: "" }],
         },
       ],
@@ -32,10 +30,8 @@ const DUO = {
   ...PLAY,
   acts: [
     {
-      title: "Acte I",
       scenes: [
         {
-          title: "Scène 1",
           lines: [
             { id: "l-1", characterId: "c-alceste", text: "un mot" },
             { id: "l-2", characterId: "c-alceste", text: "un mot aussi" },
@@ -120,51 +116,64 @@ test("les frappes sur DEUX répliques différentes ne fusionnent pas", () => {
   assert.equal(state.past.length, 3);
 });
 
-// ------------------------------------------- noms du plan (titre, actes, scènes)
+// ------------------------------------------------------ le titre de la pièce
 
-test("renommer un acte à la frappe ne fait qu'UNE étape", () => {
-  // Les trois noms du plan sont des champs en clair, donc ils se renomment
-  // lettre par lettre comme le texte d'une réplique : sans fusion, revenir sur
-  // un titre demanderait un Ctrl+Z par caractère.
+test("renommer la pièce à la frappe ne fait qu'UNE étape", () => {
+  // C'est un champ en clair, donc il se renomme lettre par lettre comme le texte
+  // d'une réplique : sans fusion, revenir sur un titre demanderait un Ctrl+Z par
+  // caractère. Le titre de la pièce est le SEUL nom qui reste, les actes et les
+  // scènes tirant leur libellé de leur rang.
   const state = apply(
     initHistory(PLAY),
-    { type: "RENAME_ACT", actIndex: 0, title: "P" },
-    { type: "RENAME_ACT", actIndex: 0, title: "Pr" },
-    { type: "RENAME_ACT", actIndex: 0, title: "Prologue" }
+    { type: "SET_TITLE", title: "L" },
+    { type: "SET_TITLE", title: "Le M" },
+    { type: "SET_TITLE", title: "Le Misanthrope" }
   );
-  assert.equal(state.present.acts[0].title, "Prologue");
+  assert.equal(state.present.title, "Le Misanthrope");
   assert.equal(state.past.length, 1);
-  assert.equal(historyReducer(state, { type: "UNDO" }).present.acts[0].title, "Acte I");
+  assert.equal(historyReducer(state, { type: "UNDO" }).present.title, PLAY.title);
 });
 
-test("deux noms différents ne fusionnent jamais entre eux", () => {
-  // La clé de fusion d'un acte ou d'une scène est son RANG (ils n'ont pas
-  // d'id) : deux rangs, deux étapes, et le titre de la pièce en est une
-  // troisième.
-  const twoActs = { ...PLAY, acts: [PLAY.acts[0], { title: "Acte II", scenes: [] }] };
-  const state = apply(
-    initHistory(twoActs),
-    { type: "RENAME_ACT", actIndex: 0, title: "Prologue" },
-    { type: "RENAME_ACT", actIndex: 1, title: "Épilogue" },
-    { type: "RENAME_SCENE", actIndex: 0, sceneIndex: 0, title: "Ouverture" },
-    { type: "SET_TITLE", title: "Autre" }
-  );
-  assert.equal(state.past.length, 4);
-});
-
-test("un déplacement d'acte ferme la rafale de renommage", () => {
-  // Ce qui rend le rang utilisable comme clé : tout ce qui décale les rangs a
-  // une clé nulle, donc ferme l'étape en cours. Sans ça, renommer l'acte 1,
-  // le déplacer, puis renommer celui qui a pris sa place fusionnerait deux
-  // objets différents dans la même étape.
-  const twoActs = { ...PLAY, acts: [PLAY.acts[0], { title: "Acte II", scenes: [] }] };
-  const state = apply(
-    initHistory(twoActs),
-    { type: "RENAME_ACT", actIndex: 0, title: "Prologue" },
+test("aucune clé de fusion ne désigne son objet par un RANG", () => {
+  // L'invariant qui remplace une vieille précaution. Les renommages d'acte et de
+  // scène se cléaient sur un rang, faute d'id, et ça ne tenait que parce que tout
+  // ce qui déplace un rang ferme la rafale. Ils n'existent plus, donc plus une
+  // seule clé n'est un rang, et ça doit rester vrai : une action rank-cléée
+  // ajoutée sans cette précaution ferait fusionner deux objets différents dans la
+  // même étape d'annulation.
+  const suspects = [
+    { type: "EDIT_TEXT", actIndex: 3, sceneIndex: 2, lineId: "l-1", text: "x" },
+    { type: "SET_TITLE", title: "x" },
+    { type: "SET_LANGUAGE", language: "en" },
     { type: "MOVE_ACT", from: 0, to: 1 },
-    { type: "RENAME_ACT", actIndex: 0, title: "Épilogue" }
+    { type: "MOVE_SCENE", actIndex: 0, from: 0, to: 1 },
+    { type: "ADD_ACT" },
+    { type: "DELETE_ACT", actIndex: 0 },
+  ];
+  for (const action of suspects) {
+    const key = _coalesceKeyForTests(action);
+    if (key === null) continue;
+    for (const field of ["actIndex", "sceneIndex", "from", "to"]) {
+      if (action[field] === undefined) continue;
+      assert.ok(
+        !key.includes(String(action[field])),
+        `${action.type} : la clé « ${key} » contient le rang ${field}=${action[field]}`
+      );
+    }
+  }
+});
+
+test("changer la langue de la pièce est une étape à part entière", () => {
+  // C'est un select, pas une frappe : rien à fusionner, et il ne doit surtout pas
+  // se fondre dans la rafale du titre juste au-dessus de lui dans le panneau.
+  const state = apply(
+    initHistory(PLAY),
+    { type: "SET_TITLE", title: "Autre" },
+    { type: "SET_LANGUAGE", language: "en" },
+    { type: "SET_TITLE", title: "Encore" }
   );
   assert.equal(state.past.length, 3);
+  assert.equal(state.present.language, "en");
 });
 
 test("annuler puis rétablir revient exactement au même état", () => {

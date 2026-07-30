@@ -52,23 +52,26 @@ test("l'URL de dépôt vise le dossier uploads/, seule adresse à connaître", (
 // ------------------------------------------------------------------ slugify
 
 test("slugify rend un nom de fichier sûr et lisible", () => {
-  assert.equal(slugify("Serge"), "serge");
-  assert.equal(slugify("Éléonore d'Aquitaine"), "eleonore-d-aquitaine");
-  assert.equal(slugify("  Jean-Baptiste  "), "jean-baptiste");
+  assert.equal(slugify("Serge", "x"), "serge");
+  assert.equal(slugify("Éléonore d'Aquitaine", "x"), "eleonore-d-aquitaine");
+  assert.equal(slugify("  Jean-Baptiste  ", "x"), "jean-baptiste");
 });
 
 test("slugify ne rend jamais une chaîne vide ni de caractère hasardeux", () => {
   for (const name of ["", "   ", "!!!", "日本語", "../.."]) {
-    const slug = slugify(name);
+    const slug = slugify(name, "repli");
     assert.match(slug, /^[a-z0-9-]+$/, `nom : ${JSON.stringify(name)}`);
   }
-  assert.equal(slugify("!!!"), "personnage");
+  assert.equal(slugify("!!!", "repli"), "repli");
 });
 
 test("le repli de slugify se choisit par appelant, et sur le résultat", () => {
-  // Le PDF de la pièce ne peut pas s'appeler « personnage.pdf ». Le piège est
-  // qu'un titre peut être non vide ET ne rien laisser au slug (« ??? » passe un
-  // test sur l'entrée), donc c'est bien le résultat qui décide du repli.
+  // Il n'a PAS de valeur par défaut, et c'est ce qui l'a fait disparaître : le
+  // repli finit dans le nom du fichier, donc c'est du texte d'interface, qui vit
+  // dans les catalogues et suit la locale du lecteur. Le PDF de la pièce ne peut
+  // pas s'appeler « personnage.pdf » non plus. Le piège est qu'un titre peut être
+  // non vide ET ne rien laisser au slug (« ??? » passe un test sur l'entrée),
+  // donc c'est bien le résultat qui décide du repli.
   assert.equal(slugify("Transport de Femmes", "script"), "transport-de-femmes");
   assert.equal(slugify("", "script"), "script");
   assert.equal(slugify("???", "script"), "script");

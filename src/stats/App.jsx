@@ -17,11 +17,25 @@ import {
   centerFontSize,
   clampColumns,
   formatShare,
-  scopeLabel,
+  scopeOf,
   scopeLines,
   speechStats,
 } from "./stats.js";
+import { actLabel, sceneLabel } from "../shared/structureLabels.js";
+import { fmt, t } from "../shared/locale.js";
+import { pageLabelKey } from "../shared/pages.js";
 import "./stats.css";
+
+// La portée mise en mots, pour les `aria-label` des trois dessins. `scopeOf`
+// (stats.js) ne rend que des rangs, ce qui le garde pur ; c'est ici qu'ils
+// deviennent une phrase, dans la langue du LECTEUR (les libellés d'acte et de
+// scène sont de la navigation, cf. structureLabels.js).
+function scopeText(scope) {
+  if (scope.kind === "all") return t("stats.scope.all");
+  const act = actLabel(t, scope.actIndex);
+  if (scope.kind === "act") return t("stats.scope.act", { act });
+  return t("stats.scope.scene", { act, scene: sceneLabel(t, scope.sceneIndex) });
+}
 
 // Page Répartition : qui parle, combien, et quand.
 //
@@ -119,7 +133,7 @@ function Stats({ manifest }) {
     [lines, columns, characters]
   );
 
-  const where = scopeLabel(manifest, actIndex, sceneIndex);
+  const where = scopeText(scopeOf(manifest, actIndex, sceneIndex));
   // Pour distinguer « la pièce est vide » de « cette scène est vide », cf. le
   // vide plus bas. Calculé sur la pièce ENTIÈRE, donc indépendant de la portée.
   const playIsEmpty = useMemo(() => scopeLines(manifest, ALL, ALL).length === 0, [manifest]);
@@ -148,7 +162,9 @@ function Stats({ manifest }) {
   // « Ne montrer que ». Il ne se confond pas avec les orphelines : lui existe,
   // il a sa couleur et ses répliques lui sont bien attribuées.
   const nameOf = (row) =>
-    row.name?.trim() ? row.name : row.id === UNKNOWN ? "Personnage inconnu" : "Personnage sans nom";
+    row.name?.trim()
+      ? row.name
+      : t(row.id === UNKNOWN ? "stats.unknownCharacter" : "stats.unnamedCharacter");
 
   // Changer d'acte ramène au début de sa liste de scènes, comme sur la Répétition
   // et l'Enregistrement, et « le début » est ici la **première scène** et pas
@@ -191,22 +207,22 @@ function Stats({ manifest }) {
           chronologie disent comment lire les dessins. Le bandeau ne dit QUE le
           titre de la pièce, jamais « Répartition » (le sceau le dit, et l'onglet
           le répète). */}
-      <PlayHeader page="stats" title={manifest.title || "Pièce sans titre"}>
+      <PlayHeader page="stats" title={manifest.title || t("common.untitledPlay")}>
         <div className="selects-row">
           {/* « Toute la pièce » est le premier choix de ce select, exactement
               comme « Tout l'acte » est celui du suivant : le niveau au-dessus
               vit en tête de la liste du niveau au-dessous, et la portée entière
               se règle dans les deux mêmes champs que les autres pages. */}
           <select
-            aria-label="Acte"
+            aria-label={t("common.actSelect")}
             value={actIndex}
             disabled={acts.length === 0}
             onChange={(e) => changeAct(Number(e.target.value))}
           >
-            <option value={ALL}>Toute la pièce</option>
-            {acts.map((a, i) => (
+            <option value={ALL}>{t("stats.scopeAllOption")}</option>
+            {acts.map((_, i) => (
               <option key={i} value={i}>
-                {a.title}
+                {actLabel(t, i)}
               </option>
             ))}
           </select>
@@ -227,7 +243,7 @@ function Stats({ manifest }) {
               leçon que les boutons du bandeau de l'Édition, qui ont dû passer par
               une enveloppe `.btn-tip`). */}
           <select
-            aria-label="Scène"
+            aria-label={t("common.sceneSelect")}
             value={sceneIndex}
             disabled={actIndex === ALL}
             onChange={(e) => setSceneIndex(Number(e.target.value))}
@@ -236,10 +252,10 @@ function Stats({ manifest }) {
               <option value={ALL} />
             ) : (
               <>
-                <option value={ALL}>Tout l'acte</option>
-                {(acts[actIndex]?.scenes ?? []).map((s, i) => (
+                <option value={ALL}>{t("stats.scopeActOption")}</option>
+                {(acts[actIndex]?.scenes ?? []).map((_, i) => (
                   <option key={i} value={i}>
-                    {s.title}
+                    {sceneLabel(t, i)}
                   </option>
                 ))}
               </>
@@ -254,7 +270,7 @@ function Stats({ manifest }) {
             l'aveugle. La valeur est écrite à côté, un curseur sans nombre ne se
             règle pas deux fois pareil. */}
         <div className="stats-scale">
-          <label htmlFor="stats-columns">Mots par ligne</label>
+          <label htmlFor="stats-columns">{t("stats.columns")}</label>
           <input
             id="stats-columns"
             type="range"
@@ -262,7 +278,7 @@ function Stats({ manifest }) {
             max={MAX_COLUMNS}
             step={COLUMNS_STEP}
             value={columns}
-            title="Largeur de la chronologie du dialogue : le même nombre de mots par ligne pour toute la pièce, donc des blocs qui se comparent d'une scène à l'autre"
+            title={t("stats.columns.tip")}
             onChange={(e) => setColumns(clampColumns(e.target.value))}
           />
           <span className="stats-scale-value">{columns}</span>
@@ -289,7 +305,7 @@ function Stats({ manifest }) {
         <div
           className="stats-legend-bar"
           role="group"
-          aria-label="Mettre un personnage en évidence"
+          aria-label={t("stats.highlight")}
         >
           <div className="stats-legend-bar-inner">
             <CharacterLegend
@@ -317,24 +333,29 @@ function Stats({ manifest }) {
             // choisissant une autre portée. Renvoyer à l'Édition dans le second
             // cas laissait croire que la pièce n'était pas saisie, alors qu'une
             // scène sans réplique est ordinaire pendant l'écriture.
-            // La portée n'est PAS reprise dans la phrase : `scopeLabel` est
+            // La portée n'est PAS reprise dans la phrase : `scopeText` est
             // écrit pour l'`aria-label` d'un dessin (« Acte I, en entier »), et
             // inséré dans une phrase il donnait « Aucune réplique dans Acte I,
             // en entier », dont la suite proposait de changer de scène alors que
-            // c'est l'acte entier qui est vide. Les deux selects du bandeau
+            // c'est l'acte entier qui est vide. (C'est ce défaut qui a fait
+            // rendre des RANGS à `scopeOf` : la mise en phrase appartient à
+            // l'appelant, qui seul sait dans quelle tournure il l'insère.) Les deux selects du bandeau
             // disent déjà où l'on est ; la phrase dit seulement quoi faire, et
             // les trois sorties possibles, dans l'ordre des contrôles.
             <div className="empty-state">
               {playIsEmpty
-                ? "Aucune réplique dans la pièce : elle doit d'abord être saisie dans la page Édition."
-                : "Aucune réplique dans cette partie de la pièce : choisissez un autre acte, une autre scène, ou « Toute la pièce »."}
+                ? t("stats.emptyPlay", { page: t(pageLabelKey("editor")) })
+                : /* Le premier choix du select de portée est INTERPOLÉ et pas
+                     recopié : les deux libellés se désaccorderaient au premier
+                     remaniement de la rangée. */
+                  t("stats.emptyScope", { all: fmt.quote(t("stats.scopeAllOption")) })}
             </div>
           ) : (
             <>
               <div className="stats-pies">
                 <Donut
-                  title="Distribution du nombre de mots"
-                  unit="mots"
+                  title={t("stats.words.title")}
+                  unit={t("stats.words.unit")}
                   rows={rows}
                   total={totalWords}
                   value={(row) => row.words}
@@ -347,8 +368,8 @@ function Stats({ manifest }) {
                   onHover={setHovered}
                 />
                 <Donut
-                  title="Distribution du nombre de répliques"
-                  unit="répliques"
+                  title={t("stats.lines.title")}
+                  unit={t("stats.lines.unit")}
                   rows={rows}
                   total={totalLines}
                   value={(row) => row.lines}
@@ -435,7 +456,9 @@ function CharacterLegend({ rows, colorOf, nameOf, highlight, pinned, onSelect, o
               type="button"
               className={lit ? "stats-legend-row lit" : "stats-legend-row"}
               aria-pressed={active}
-              title={active ? "Montrer tout le monde" : `Ne montrer que ${nameOf(row)}`}
+              title={
+                active ? t("stats.showEveryone") : t("stats.showOnly", { name: nameOf(row) })
+              }
               onClick={() => onSelect(row.id)}
               {...hoverProps(row.id, onHover)}
             >
@@ -451,8 +474,8 @@ function CharacterLegend({ rows, colorOf, nameOf, highlight, pinned, onSelect, o
               <span className="stats-legend-name">{nameOf(row)}</span>
               {value && (
                 <>
-                  <span className="stats-legend-count">{value(row)}</span>
-                  <span className="stats-legend-share">{formatShare(value(row), total)}</span>
+                  <span className="stats-legend-count">{fmt.number(value(row))}</span>
+                  <span className="stats-legend-share">{formatShare(value(row), total, t, fmt)}</span>
                 </>
               )}
             </button>
@@ -512,6 +535,12 @@ function Donut({
     }
   }
 
+  // Le total tel qu'il s'écrit, une seule fois : il sert à mesurer la taille du
+  // texte du centre et à l'écrire. L'`aria-label` juste en dessous reçoit le
+  // NOMBRE et pas cette chaîne, `makeT` formatant lui-même tout paramètre
+  // numérique (donc le même séparateur des deux côtés, sans le poser deux fois).
+  const writtenTotal = fmt.number(total);
+
   return (
     <section className="card stats-panel">
       <h2 className="stats-panel-title">{title}</h2>
@@ -524,7 +553,7 @@ function Donut({
           className="stats-donut"
           viewBox="0 0 100 100"
           role="img"
-          aria-label={`${title}, ${where} : ${total} ${unit} au total`}
+          aria-label={t("stats.donutLabel", { title, where, total, unit })}
         >
           {/* Le fond de l'anneau : sans lui, une portée d'un seul personnage
               dessine un cercle complet et on ne voit pas qu'il est plein. */}
@@ -569,13 +598,18 @@ function Donut({
               bords. La taille descend en style et pas en CSS parce que c'est
               stats.js qui la calcule ; le même chiffre écrit aux deux endroits se
               désaccorderait au premier réglage. */}
+          {/* La MÊME chaîne mesure et s'écrit : `fmt.number` pose un séparateur
+              de milliers (insécable étroite en français, virgule en anglais),
+              donc mesurer le nombre nu rendrait une taille calculée sur un texte
+              qui n'est pas celui dessiné. `centerFontSize` compte ce séparateur
+              pour ce qu'il est, plus fin qu'un chiffre. */}
           <text
             className="stats-donut-total"
             x="50"
             y="47"
-            style={{ fontSize: `${centerFontSize(total, TOTAL_SIZE)}px` }}
+            style={{ fontSize: `${centerFontSize(writtenTotal, TOTAL_SIZE)}px` }}
           >
-            {total}
+            {writtenTotal}
           </text>
           <text
             className="stats-donut-unit"
@@ -634,7 +668,7 @@ function Timeline({ block, rows, where, colorOf, nameOf, highlight, pinned }) {
 
   return (
     <section className="card stats-panel">
-      <h2 className="stats-panel-title">Chronologie du dialogue</h2>
+      <h2 className="stats-panel-title">{t("stats.timeline.title")}</h2>
 
       {/* Comment lire le dessin se lit AVANT lui, sous le titre du panneau, et
           plus en pied de carte : la mosaïque d'une pièce entière fait plusieurs
@@ -658,13 +692,7 @@ function Timeline({ block, rows, where, colorOf, nameOf, highlight, pinned }) {
           pas du survol : il se trouve tout seul, il n'existe pas au doigt, et une
           phrase qui décrit le pointeur ne sert que ceux qui n'en ont pas
           besoin. */}
-      <p className="stats-caption">
-        Le dialogue se lit ligne par ligne, de haut en bas. Chaque carré est un mot,
-        sa couleur est le personnage qui le prononce, donc la taille d'un bloc est
-        la longueur de sa prise de parole. Appuyez sur un nom de la barre du haut
-        ou sur une part de camembert pour ne garder que ce personnage dans les
-        trois dessins, et de nouveau pour tout remontrer.
-      </p>
+      <p className="stats-caption">{t("stats.timeline.caption")}</p>
 
       <svg
         className="stats-block"
@@ -678,10 +706,11 @@ function Timeline({ block, rows, where, colorOf, nameOf, highlight, pinned }) {
         // se réécrirait au passage du curseur n'est pas une description.
         aria-label={
           pinned === null
-            ? `Chronologie du dialogue, ${where} : chaque carré est un mot, sa couleur est le personnage qui le prononce.`
-            : `Chronologie du dialogue, ${where} : les mots de ${nameOf(
-                rows.find((r) => r.id === pinned) ?? {}
-              )} seuls sont en couleur.`
+            ? t("stats.timeline.label", { where })
+            : t("stats.timeline.labelOnly", {
+                where,
+                name: nameOf(rows.find((r) => r.id === pinned) ?? {}),
+              })
         }
       >
         {rects.map((rect, i) => {
@@ -711,9 +740,7 @@ function Timeline({ block, rows, where, colorOf, nameOf, highlight, pinned }) {
       {rows.some((row) => row.id === UNKNOWN) && (
         <p className="stats-warning">
           <WarnIcon />
-          Des répliques n'ont pas de personnage valide : elles comptent dans les
-          totaux et apparaissent en gris. Le responsable peut leur en assigner un
-          dans la page Édition.
+          {t("stats.orphanWarning", { page: t(pageLabelKey("editor")) })}
         </p>
       )}
     </section>

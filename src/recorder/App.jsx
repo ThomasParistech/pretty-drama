@@ -19,6 +19,10 @@ import {
   WarnIcon,
 } from "../shared/icons.jsx";
 import useManifest from "../shared/useManifest.js";
+import { actLabel, sceneLabel } from "../shared/structureLabels.js";
+import { fmt, t } from "../shared/locale.js";
+import { pageLabelKey } from "../shared/pages.js";
+import T from "../shared/T.jsx";
 import useRecorder, { extensionForMimeType } from "./useRecorder.js";
 import "./recorder.css";
 
@@ -28,13 +32,20 @@ import "./recorder.css";
 // of MY lines only). Takes are kept across character switches, so one
 // session can record several characters and export them in a single ZIP.
 //
-// Each of my lines is in one of three states (label in the card corner):
-//  - "todo"  À enregistrer   : no take and no up-to-date published clip;
-//  - "fresh" À télécharger   : take made THIS session — and it STAYS so
-//                              after the ZIP download: "Déjà enregistrée"
-//                              only becomes true once the respo has merged
-//                              the ZIP and the site was republished;
-//  - "done"  Déjà enregistrée: up-to-date published clip (manifest only).
+// Each of my lines is in one of three states, labelled in the card corner from
+// `recorder.status.*`:
+//  - "todo"  : no take and no up-to-date published clip;
+//  - "fresh" : take made THIS session, and it STAYS so after the ZIP download
+//              ("already recorded" only becomes true once the respo has merged
+//              the ZIP and the site was republished);
+//  - "done"  : up-to-date published clip (manifest only).
+// Les codes d'erreur que `useRecorder` peut rendre, et leur phrase. Le hook est
+// couvert par `node --test`, donc il ne peut pas importer `locale.js` (qui lit
+// l'URL, le stockage et le navigateur dès son import) : il rend un code, la page
+// le met en mots. Le nom en `_KEY` est aussi ce qui fait relever ces clés par le
+// garde de scripts/tests/test_contracts.py.
+const MIC_ERROR_KEY = { mic: "recorder.micError" };
+
 export default function App() {
   const { manifest, error: loadError } = useManifest();
 
@@ -160,10 +171,16 @@ export default function App() {
     // them (readability only, the pipeline works from line ids).
     const characterOfLine = new Map(manifest.lines.map((l) => [l.id, l.characterId]));
     const recordedIds = new Set(Object.keys(takes).map((id) => characterOfLine.get(id)));
-    const names = manifest.characters.filter((c) => recordedIds.has(c.id)).map((c) => slugify(c.name));
-    downloadBlob(blob, `voix-${names.join("-") || "prises"}.zip`);
-    // Line statuses do NOT change: a take stays "À télécharger" until the
-    // respo has merged the ZIP and the site was republished — only the
+    const names = manifest.characters
+      .filter((c) => recordedIds.has(c.id))
+      .map((c) => slugify(c.name, t("recorder.characterSlug")));
+    // Le NOM du fichier suit la locale du lecteur, comme le reste : l'Action ne
+    // le lit jamais (le type vient de l'extension, les clips de leur id), donc
+    // le contrat du ZIP n'en dépend pas.
+    const stem = t("recorder.zipName", { names: names.join("-") || t("recorder.zipFallback") });
+    downloadBlob(blob, `${stem}.zip`);
+    // Line statuses do NOT change: a take stays `recorder.status.fresh` until
+    // the respo has merged the ZIP and the site was republished; only the
     // save-state note reacts here.
     setDownloaded(true);
     // Recording session is over: turn the mic-in-use indicator off.
@@ -187,8 +204,8 @@ export default function App() {
     return (
       <PageState
         page="recorder"
-        title={manifest.title || "Pièce sans titre"}
-        error="Votre navigateur ne permet pas d'enregistrer du son. Essayez avec une version récente de Chrome, Firefox ou Safari."
+        title={manifest.title || t("common.untitledPlay")}
+        error={t("recorder.unsupported")}
       />
     );
   }
@@ -208,16 +225,12 @@ export default function App() {
           doublon). La phrase compacte du bandeau, elle, reste toujours là. */}
       <PlayHeader
         page="recorder"
-        title={manifest.title || "Pièce sans titre"}
-        hint={
-          characterId === ""
-            ? null
-            : "Placez-vous sur une de vos répliques, puis appuyez sur le micro pour l'enregistrer. Quand vous avez fini (toutes vos répliques ou seulement une partie), téléchargez le fichier."
-        }
+        title={manifest.title || t("common.untitledPlay")}
+        hint={characterId === "" ? null : t("recorder.hint")}
       >
         <div className="selects-row">
           <select
-            aria-label="Acte"
+            aria-label={t("common.actSelect")}
             value={actIndex}
             disabled={isRecording}
             onChange={(e) => {
@@ -225,14 +238,14 @@ export default function App() {
               setSceneIndex(0);
             }}
           >
-            {acts.map((a, i) => (
+            {acts.map((_, i) => (
               <option key={i} value={i}>
-                {a.title}
+                {actLabel(t, i)}
               </option>
             ))}
           </select>
           <select
-            aria-label="Scène"
+            aria-label={t("common.sceneSelect")}
             value={sceneIndex}
             disabled={isRecording}
             onChange={(e) => setSceneIndex(Number(e.target.value))}
@@ -244,8 +257,8 @@ export default function App() {
                   : s.lines.filter((l) => l.characterId === characterId && isTodo(l)).length;
               return (
                 <option key={i} value={i}>
-                  {s.title}
-                  {remaining != null ? ` (${remaining} à enregistrer)` : ""}
+                  {sceneLabel(t, i)}
+                  {remaining != null ? t("recorder.sceneTodo", { count: remaining }) : ""}
                 </option>
               );
             })}
@@ -254,12 +267,12 @@ export default function App() {
         <div className="character-row">
           <select
             className={`character-select ${characterId === "" ? "unset" : ""}`}
-            aria-label="Mon personnage"
+            aria-label={t("common.myCharacter")}
             value={characterId}
             disabled={isRecording}
             onChange={(e) => setCharacterId(e.target.value)}
           >
-            <option value="">Qui jouez-vous ?</option>
+            <option value="">{t("common.whoDoYouPlay")}</option>
             {manifest.characters.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -267,34 +280,41 @@ export default function App() {
             ))}
           </select>
         </div>
-        {micError && <p className="mic-error">{micError}</p>}
+        {/* Le hook rend un CODE (cf. useRecorder.js, couvert par `node --test`) :
+            la phrase se compose ici, et elle se compose depuis le code REÇU. Le
+            rendre tel quel plutôt que d'afficher l'unique message d'aujourd'hui
+            est ce qui rend le seam réel : un second code afficherait sinon
+            l'erreur de micro. Repli sur ce même message si le code est inconnu,
+            une page sans phrase valant moins qu'une phrase approximative. */}
+        {micError && (
+          <p className="mic-error">{t(MIC_ERROR_KEY[micError] ?? MIC_ERROR_KEY.mic)}</p>
+        )}
         {hasUnexported && (
           <p className="zip-note warn">
             <WarnIcon />
-            Vos enregistrements ne sont PAS sauvegardés tant que vous n'avez pas téléchargé le
-            fichier.
+            {t("recorder.notSaved")}
           </p>
         )}
         {downloaded && takenCount > 0 && (
-          <p className="zip-note done">✓ Fichier téléchargé. Envoyez-le au responsable.</p>
+          <p className="zip-note done">✓ {t("recorder.downloadedNote")}</p>
         )}
         {/* Ce message vit dans le bandeau (et pas dans la liste) parce que le
             bandeau est sticky : il reste sous les yeux pendant qu'on parcourt
             les répliques des autres personnages. Il prend la place de la
             légende des statuts, les deux étant exclusifs. */}
         {characterId !== "" && myLines.length === 0 && (
-          <p className="no-lines-note">Vous n'avez aucune réplique dans cette scène.</p>
+          <p className="no-lines-note">{t("recorder.noLinesInScene")}</p>
         )}
         {characterId !== "" && myLines.length > 0 && (
           <div className="status-legend">
             <span>
-              <span className="st-dot" /> À enregistrer
+              <span className="st-dot" /> {t("recorder.status.todo")}
             </span>
             <span>
-              <span className="st-pill done">✓</span> Déjà enregistrée
+              <span className="st-pill done">✓</span> {t("recorder.status.done")}
             </span>
             <span>
-              <span className="st-pill fresh">↓</span> À télécharger
+              <span className="st-pill fresh">↓</span> {t("recorder.status.fresh")}
             </span>
           </div>
         )}
@@ -348,7 +368,7 @@ export default function App() {
                 {active && isRecording ? (
                   <span className="rec-status live">
                     <span className="rec-live-dot" />
-                    Enregistrement…
+                    {t("recorder.recording")}
                   </span>
                 ) : (
                   state && (
@@ -358,11 +378,7 @@ export default function App() {
                       ) : (
                         <span className={`st-pill ${state}`}>{state === "fresh" ? "↓" : "✓"}</span>
                       )}
-                      {state === "todo"
-                        ? "À enregistrer"
-                        : state === "fresh"
-                          ? "À télécharger"
-                          : "Déjà enregistrée"}
+                      {t(`recorder.status.${state}`)}
                     </span>
                   )
                 )}
@@ -392,7 +408,7 @@ export default function App() {
           {isRecording && (
             <div className="rec-live-panel" role="status">
               <span className="rec-live-dot" />
-              <span className="rec-live-label">Enregistrement</span>
+              <span className="rec-live-label">{t("recorder.recordingLabel")}</span>
               <LiveWaveform analyser={analyser} />
               {/* aria-hidden : role="status" annonce « Enregistrement » une fois ;
                   le chrono qui tourne ne doit pas être ré-énoncé chaque seconde. */}
@@ -417,7 +433,7 @@ export default function App() {
                 les sauts « ma réplique » de la page Répétition (.my-jump). */}
             <button
               className="ctrl-btn my-jump"
-              title="Ma réplique précédente"
+              title={t("common.prevMyLine")}
               disabled={isRecording || safeMyIndex <= 0}
               onClick={() => setMyIndex(safeMyIndex - 1)}
             >
@@ -425,11 +441,7 @@ export default function App() {
             </button>
             <button
               className={`ctrl-btn play mic ${isRecording ? "stop" : ""}`}
-              title={
-                isRecording
-                  ? "Terminer l'enregistrement"
-                  : "Enregistrer cette réplique (le micro démarre aussitôt)"
-              }
+              title={isRecording ? t("recorder.stop") : t("recorder.record")}
               disabled={!currentLine}
               onClick={toggleRecord}
             >
@@ -437,7 +449,7 @@ export default function App() {
             </button>
             <button
               className="ctrl-btn my-jump"
-              title="Ma réplique suivante"
+              title={t("common.nextMyLine")}
               disabled={isRecording || safeMyIndex >= myLines.length - 1}
               onClick={() => setMyIndex(safeMyIndex + 1)}
             >
@@ -446,8 +458,8 @@ export default function App() {
             <span className="controls-side right">
               <button
                 className="btn primary zip-download-btn"
-                title="Télécharger le ZIP des prises"
-                aria-label={`Télécharger le ZIP des prises (${takenCount})`}
+                title={t("recorder.downloadZip")}
+                aria-label={t("recorder.downloadZipCount", { count: takenCount })}
                 disabled={takenCount === 0}
                 onClick={downloadZip}
               >
@@ -460,16 +472,13 @@ export default function App() {
 
       <LeaveGuard
         active={hasUnexported}
-        title="Vos prises ne sont pas téléchargées"
-        saveLabel="Télécharger le ZIP puis quitter"
+        title={t("recorder.leaveTitle")}
+        saveLabel={t("recorder.leaveSave")}
         onSave={downloadZip}
       >
-        <p>
-          {takenCount > 1
-            ? `Vos ${takenCount} prises ne vivent que dans cet onglet`
-            : "Votre prise ne vit que dans cet onglet"}{" "}
-          : en quittant la page sans télécharger le ZIP, vous devrez tout réenregistrer.
-        </p>
+        {/* Le nombre de prises a quitté la phrase : le pluriel ne règle plus que
+            l'accord (cf. `recorder.leaveBody`). */}
+        <p>{t("recorder.leaveBody", { count: takenCount })}</p>
       </LeaveGuard>
     </div>
   );
@@ -486,26 +495,33 @@ function IntroCard({ characters, lines, isTodo, onPick }) {
   });
   return (
     <div className="intro-card card">
-      <h2 className="intro-title">Qui jouez-vous&nbsp;?</h2>
+      <h2 className="intro-title">{t("common.whoDoYouPlay")}</h2>
+      {/* Le mot en gras est un PARAMÈTRE et pas un fragment de JSX : découper la
+          phrase autour du <strong> y figerait l'ordre des mots français. */}
       <p className="intro-lead">
-        Choisissez votre personnage : la page mettra alors <strong>vos</strong> répliques en avant.
+        <T
+          k="recorder.intro.lead"
+          p={{ your: <strong>{t("recorder.intro.leadEmphasis")}</strong> }}
+        />
       </p>
       <ol className="intro-steps">
-        <li>Placez-vous sur une de vos répliques et appuyez sur le micro : il démarre aussitôt.</li>
-        <li>Réécoutez, refaites la prise si besoin, puis passez à la suivante.</li>
+        <li>{t("recorder.intro.step1")}</li>
+        <li>{t("recorder.intro.step2")}</li>
       </ol>
       <p className="intro-outro">
-        Quand vous avez terminé (un ou plusieurs personnages, ou même seulement une partie de vos
-        répliques), appuyez sur le bouton{" "}
-        <span className="intro-dl">
-          <DownloadIcon />
-        </span>{" "}
-        pour sauvegarder vos prises et les envoyer au responsable.
+        <T
+          k="recorder.intro.outro"
+          p={{
+            icon: (
+              <span className="intro-dl">
+                <DownloadIcon />
+              </span>
+            ),
+          }}
+        />
       </p>
       {stats.length === 0 ? (
-        <p className="intro-empty">
-          Aucun personnage pour l'instant : la pièce doit d'abord être saisie dans la page Édition.
-        </p>
+        <p className="intro-empty">{t("common.noCharacters", { page: t(pageLabelKey("editor")) })}</p>
       ) : (
         <div className="intro-characters">
           {stats.map(({ character, total, todo }) => (
@@ -517,14 +533,14 @@ function IntroCard({ characters, lines, isTodo, onPick }) {
             >
               <span className="intro-character-name">{character.name}</span>
               {total === 0 ? (
-                <span className="intro-character-count">aucune réplique</span>
+                <span className="intro-character-count">{t("recorder.intro.noLines")}</span>
               ) : todo === 0 ? (
                 <span className="intro-character-count done">
-                  <span className="st-pill done">✓</span> tout est enregistré
+                  <span className="st-pill done">✓</span> {t("recorder.intro.allDone")}
                 </span>
               ) : (
                 <span className="intro-character-count todo">
-                  <span className="st-dot" /> {todo} à enregistrer
+                  <span className="st-dot" /> {t("recorder.intro.todo", { count: todo })}
                 </span>
               )}
             </button>
@@ -683,8 +699,8 @@ function formatTime(seconds) {
 // In-card audio player: round play button + elapsed/total + waveform, plus a
 // discreet delete button at the far end when the clip is a take of THIS
 // session (`onDelete`).
-// `fresh` switches the vivid-green palette ("À télécharger") vs the greyed
-// green of already-recorded lines.
+// `fresh` switches the vivid-green palette (`recorder.status.fresh`) vs the
+// greyed green of already-recorded lines.
 function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
@@ -721,7 +737,7 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
     >
       <button
         className="player-play"
-        title={playing ? "Pause" : "Écouter"}
+        title={playing ? t("recorder.player.pause") : t("recorder.player.play")}
         onClick={() => {
           const audio = audioRef.current;
           if (audio.paused) audio.play();
@@ -745,8 +761,8 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
       {onDelete && (
         <button
           className="player-delete"
-          title="Supprimer cette prise"
-          aria-label="Supprimer cette prise"
+          title={t("recorder.player.delete")}
+          aria-label={t("recorder.player.delete")}
           disabled={deleteDisabled}
           onClick={() => setConfirming(true)}
         >
@@ -755,8 +771,8 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
       )}
       {confirming && (
         <ConfirmModal
-          title="Supprimer cette prise ?"
-          confirmLabel="Supprimer"
+          title={t("recorder.player.deleteConfirm")}
+          confirmLabel={t("common.delete")}
           onCancel={() => setConfirming(false)}
           onConfirm={() => {
             setConfirming(false);
@@ -765,7 +781,7 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
         >
           {/* Rien de plus que la citation, comme la suppression de réplique de
               l'éditeur : le titre dit le geste, la citation dit sur quoi. */}
-          <p className="confirm-quote">« {excerpt(lineText)} »</p>
+          <p className="confirm-quote">{fmt.quote(excerpt(lineText))}</p>
         </ConfirmModal>
       )}
       <audio

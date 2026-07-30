@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import PageMark from "./PageMark.jsx";
 import HomeLink from "./HomeLink.jsx";
-import { PAGES } from "./pages.js";
+import { t } from "./locale.js";
+import { pageDescKey } from "./pages.js";
 
 // Collapsible sticky header shared by the rehearsal, recording, stats, editor
 // and dashboard pages: page mark and play title on one row (plus optional action
@@ -61,7 +62,7 @@ export default function PlayHeader({ page, title, actions, hint, children }) {
             une infobulle par contenu se désaccorderait au premier ajout. */}
         <button
           className="play-header-toggle"
-          title="Déplier ou replier le bandeau"
+          title={t("common.headerToggle")}
           aria-expanded={open}
           onClick={() => setOpen((o) => !o)}
         >
@@ -84,7 +85,7 @@ export default function PlayHeader({ page, title, actions, hint, children }) {
               se lit avant qu'on y touche, et elle est ainsi au même endroit sur
               les cinq pages (une doc qui change de place d'une page à l'autre
               se cherche à chaque fois). */}
-          <p className="header-hint">{PAGES[page].desc}</p>
+          <p className="header-hint">{t(pageDescKey(page))}</p>
           {children}
           {/* Les précisions, elles, restent en pied : on les relit une fois,
               elles ne doivent pas éloigner les réglages du titre. Même classe et

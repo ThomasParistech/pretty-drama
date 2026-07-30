@@ -1,29 +1,54 @@
 import { useEffect, useRef, useCallback } from "react";
+import { DEFAULT_LOCALE } from "../shared/i18n.js";
+
+// La voix régionale préférée pour chaque langue de pièce. Aucune voix installée
+// ne porte un tag nu, donc sans cette table la préférence exacte ne servirait
+// jamais et n'importe quelle variante gagnerait.
+const REGIONAL = { fr: "fr-fr", en: "en-gb" };
 
 // Browser TTS fallback (SpeechSynthesis) for lines whose real clip is not
 // (yet) available. v1 used offline TTS; this is new code.
 //
 // Contract: speak(text, onEnd) ALWAYS fires onEnd asynchronously, exactly
 // once. When SpeechSynthesis is unavailable, a reading-paced timer stands in
-// (~80 ms per character) — the caller's advance loop stays timed instead of
+// (~80 ms per character), so the caller's advance loop stays timed instead of
 // recursing synchronously through the whole scene.
-export default function useTts() {
+//
+// `language` is the language of the PLAY, not the reader's UI locale, and the
+// distinction is the whole point: this voice stands in for an actor speaking a
+// line, so it must pronounce the text in the language the text is written in. An
+// English reader of a French play still hears French. Until script.json carried
+// its own `language`, this was pinned to fr-FR and read every play with a French
+// voice, which is unusable for anyone who forks the project.
+export default function useTts(language) {
   const voiceRef = useRef(null);
   const timerRef = useRef(null);
+  // A BCP 47 tag for the synthesiser. Our locales are bare ("fr"), and no installed
+  // voice ever is, so a bare tag alone would make the exact-match branch below
+  // dead code and let any regional voice win: a fr-CA voice could take a French
+  // play where the old code explicitly preferred fr-FR. Hence a regional default
+  // per language, still falling back to the prefix when it is not installed.
+  const lang = REGIONAL[language] ?? REGIONAL[DEFAULT_LOCALE];
+  const prefix = language || DEFAULT_LOCALE;
 
   useEffect(() => {
     if (!("speechSynthesis" in window)) return;
     const pickVoice = () => {
       const voices = window.speechSynthesis.getVoices();
-      // Prefer a French voice; otherwise let the browser use its default.
+      // An exact regional match first (fr-FR, en-GB…), then any voice of the
+      // language, then none at all and the browser uses its default. Matching on
+      // the prefix matters: a machine may only have en-US installed for a play
+      // written in English, and that voice is right.
       voiceRef.current =
-        voices.find((v) => v.lang === "fr-FR") || voices.find((v) => v.lang.startsWith("fr")) || null;
+        voices.find((v) => v.lang.toLowerCase().replace("_", "-") === lang) ||
+        voices.find((v) => v.lang.toLowerCase().startsWith(prefix)) ||
+        null;
     };
     pickVoice();
     // Chrome loads voices asynchronously.
     window.speechSynthesis.addEventListener("voiceschanged", pickVoice);
     return () => window.speechSynthesis.removeEventListener("voiceschanged", pickVoice);
-  }, []);
+  }, [lang, prefix]);
 
   const cancel = useCallback(() => {
     if (timerRef.current) {
@@ -62,7 +87,7 @@ export default function useTts() {
         return;
       }
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "fr-FR";
+      utterance.lang = lang;
       if (voiceRef.current) utterance.voice = voiceRef.current;
       let done = false;
       const finish = () => {
@@ -77,7 +102,7 @@ export default function useTts() {
       utterance.onerror = finish;
       window.speechSynthesis.speak(utterance);
     },
-    [cancel]
+    [cancel, lang]
   );
 
   return { speak, cancel, unlock };

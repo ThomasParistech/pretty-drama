@@ -129,9 +129,11 @@ export default function useRecorder() {
         /* aperçu indisponible : sans conséquence sur la capture */
       }
     } catch (err) {
-      setError(
-        "Impossible d'accéder au micro. Vérifiez que vous avez autorisé le micro pour ce site."
-      );
+      // Un CODE et pas une phrase : ce module est couvert par `node --test`
+      // (useRecorder.test.js tient le contrat de l'extension audio), donc il ne
+      // doit rien importer qui touche au DOM, et `locale.js` lit l'URL, le
+      // stockage et le navigateur dès son import. La page traduit ce code.
+      setError("mic");
       throw err;
     }
   }, []);

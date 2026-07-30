@@ -1,5 +1,6 @@
 import React from "react";
 import PageHeader from "./PageHeader.jsx";
+import { t } from "./locale.js";
 
 // Écran plein-page d'attente ou de blocage (manifest/script pas encore
 // chargé, erreur, navigateur incompatible…), partagé par toutes les pages :
@@ -14,7 +15,9 @@ export default function PageState({
   page,
   title,
   error = null,
-  loading = "Chargement de la pièce…",
+  // A default parameter, so it is evaluated per call and picks up the locale
+  // rather than freezing a string at module load.
+  loading = t("common.loadingPlay"),
   className = "",
 }) {
   return (

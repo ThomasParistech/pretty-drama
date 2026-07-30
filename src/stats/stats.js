@@ -71,19 +71,26 @@ export function scopeLines(manifest, actIndex = ALL, sceneIndex = ALL) {
   return linesOf(scenes[clampIndex(sceneIndex, scenes.length)]);
 }
 
-// Le libellé de la portée, pour l'`aria-label` des dessins et le titre des
-// panneaux. Une seule source : les trois panneaux et les deux camemberts la
-// nomment pareil.
-export function scopeLabel(manifest, actIndex = ALL, sceneIndex = ALL) {
+// La portée choisie, en RANGS et non en mots : les trois panneaux et les deux
+// camemberts la nomment toujours pareil, mais c'est l'appelant qui la met en
+// phrase, avec la locale du lecteur (cf. `scopeText` dans App.jsx et
+// src/shared/structureLabels.js).
+//
+// Deux choses tombent avec ce changement. Les actes et les scènes n'ont plus de
+// titre, donc il n'y a plus rien à recopier ni de repli élidé (« l'acte », « la
+// scène ») à porter ici. Et ce module reste PUR : un libellé traduit demanderait
+// un `t`, alors qu'un rang ne demande rien, ce qui garde `stats.test.js` au
+// `node --test`.
+//
+// `kind` dit à quel niveau on est, et les rangs sont déjà bornés : l'appelant
+// n'a plus à re-vérifier qu'un acte existe.
+export function scopeOf(manifest, actIndex = ALL, sceneIndex = ALL) {
   const acts = Array.isArray(manifest?.acts) ? manifest.acts : [];
-  if (isAll(actIndex) || acts.length === 0) return "toute la pièce";
-  const act = acts[clampIndex(actIndex, acts.length)];
-  const scenes = Array.isArray(act?.scenes) ? act.scenes : [];
-  const actTitle = typeof act?.title === "string" && act.title ? act.title : "l'acte";
-  if (isAll(sceneIndex) || scenes.length === 0) return `${actTitle}, en entier`;
-  const scene = scenes[clampIndex(sceneIndex, scenes.length)];
-  const sceneTitle = typeof scene?.title === "string" && scene.title ? scene.title : "la scène";
-  return `${actTitle}, ${sceneTitle}`;
+  if (isAll(actIndex) || acts.length === 0) return { kind: "all" };
+  const ai = clampIndex(actIndex, acts.length);
+  const scenes = Array.isArray(acts[ai]?.scenes) ? acts[ai].scenes : [];
+  if (isAll(sceneIndex) || scenes.length === 0) return { kind: "act", actIndex: ai };
+  return { kind: "scene", actIndex: ai, sceneIndex: clampIndex(sceneIndex, scenes.length) };
 }
 
 // ------------------------------------------------------------- les décomptes
@@ -168,25 +175,30 @@ export function share(value, total) {
   return (value * 100) / total;
 }
 
-// La part telle qu'elle s'écrit dans une légende : un chiffre après la virgule,
-// comme le `%1.1f%%` de la référence, et la virgule décimale française
-// (« 12,4 % » et jamais « 12.4% »).
+// La part telle qu'elle s'écrit dans une légende : un chiffre après la décimale,
+// comme le `%1.1f%%` de la référence.
 //
 // Ici et pas dans le JSX, comme tout ce qui peut se tromper : le seuil ci-dessous
-// et la virgule sont des règles, pas un dessin, donc `node --test` les rejoue.
+// est une règle, pas un dessin, donc `node --test` le rejoue. `t` et `fmt` sont
+// PASSÉS, comme à `actLabel` : ce module reste pur, donc testable sans DOM.
 //
-// L'espace avant le signe est une espace ORDINAIRE, alors que la typographie
-// française demande une insécable : le projet n'en emploie aucune, et en
-// introduire une mettrait un caractère invisible dans un fichier source pour un
-// problème qui se règle en CSS (`.stats-legend-share` est en `nowrap`).
-export function formatShare(value, total) {
-  const percent = share(value, total);
+// La virgule décimale et l'espace avant le signe ne sont plus écrits à la main :
+// `Intl.NumberFormat` les tient, et il les tient MIEUX. Le code d'avant faisait
+// un `.replace(".", ",")` et posait une espace ORDINAIRE avant le `%`, ce que
+// `.stats-legend-share { white-space: nowrap }` devait rattraper ; Intl produit
+// une vraie insécable U+00A0 en français et rien du tout en anglais (« 12.4% »).
+// Le `nowrap` devient donc une ceinture de plus, gardée et sans effet.
+export function formatShare(value, total, t, fmt) {
+  const ratio = total ? value / total : 0;
   // Une part non nulle n'affiche JAMAIS « 0,0 % » : un mot sur les dix mille de
   // la pièce y tombait, et un zéro en face d'un décompte de 1 se lit comme un
   // bug d'arrondi, ce que le commentaire de `share` veut justement éviter. En
   // dessous du dixième de point, on dit le seuil et pas la valeur.
-  if (percent > 0 && percent < 0.05) return "< 0,1 %";
-  return `${percent.toFixed(1).replace(".", ",")} %`;
+  //
+  // Le seuil lui-même est FORMATÉ et non écrit en dur : « < 0,1 % » en français,
+  // « < 0.1% » en anglais, sans qu'un catalogue ait à connaître le chiffre.
+  if (ratio > 0 && ratio < 0.0005) return t("stats.shareBelow", { value: fmt.percent(0.001) });
+  return fmt.percent(ratio);
 }
 
 // ------------------------------------------------------ le centre de l'anneau
@@ -207,6 +219,18 @@ const CENTER_WIDTH = 54;
 // joue dans le bon sens (on rétrécit un peu trop tôt, jamais trop tard).
 const CHAR_WIDTH = 0.62;
 
+// Le séparateur de milliers ne compte PAS pour un chiffre. Depuis que le total
+// passe par `fmt.number`, la ligne du centre porte une insécable étroite en
+// français (« 10 307 ») et une virgule en anglais (« 10,307 ») : à pleine chasse,
+// ces caractères faisaient tomber le total de la pièce publiée de 17 à 14,5
+// unités, un rétrécissement de 15 % pour une ligne qui ne s'élargit que de 6 %.
+// C'est la seule raison pour laquelle ce calcul regarde ce qu'il y a DANS la
+// chaîne au lieu de compter ses caractères. 0,2 est une borne haute mesurée sur
+// la virgule, le plus large des trois, donc la marge joue toujours dans le bon
+// sens (on rétrécit un peu trop tôt, jamais trop tard).
+const THIN_CHAR = /[\s\u00a0\u202f.,]/;
+const THIN_WIDTH = 0.2;
+
 // Les deux tailles nominales, celles auxquelles les deux lignes sont dessinées
 // quand elles tiennent. Elles vivent ici et pas dans stats.css parce que c'est
 // ce module qui décide de les réduire : le même chiffre écrit aux deux endroits
@@ -218,9 +242,11 @@ export const UNIT_SIZE = 9.5;
 // que sa taille nominale : les nombres et les unités d'aujourd'hui sont donc
 // rendus exactement comme avant, et seul un texte trop long rétrécit.
 export function centerFontSize(text, nominal) {
-  const chars = String(text ?? "").length;
-  if (chars === 0) return nominal;
-  return Math.min(nominal, CENTER_WIDTH / (chars * CHAR_WIDTH));
+  const written = String(text ?? "");
+  if (written.length === 0) return nominal;
+  let width = 0;
+  for (const char of written) width += THIN_CHAR.test(char) ? THIN_WIDTH : CHAR_WIDTH;
+  return Math.min(nominal, CENTER_WIDTH / width);
 }
 
 // ------------------------------------------------------------------- le bloc

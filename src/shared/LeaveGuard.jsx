@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ConfirmModal from "./ConfirmModal.jsx";
 import { setBeforeUnloadGuard } from "./data.js";
+import { t } from "./locale.js";
 
 // Sortie d'une page qui tient du travail vivant seulement dans l'onglet :
 // l'éditeur (script non téléchargé) et l'enregistrement (prises hors ZIP).
@@ -67,7 +68,7 @@ export default function LeaveGuard({ active, title, children, saveLabel, onSave 
         // page dans la même tâche peut l'annuler.
         window.setTimeout(leaveNow, 200);
       }}
-      confirmLabel="Quitter quand même"
+      confirmLabel={t("common.leaveAnyway")}
       onConfirm={leaveNow}
       onCancel={() => setLeaveTo(null)}
     >

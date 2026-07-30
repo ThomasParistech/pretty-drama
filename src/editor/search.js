@@ -157,7 +157,9 @@ function eachMatch(folded, foldedQuery, wholeWord, visit) {
  *
  * Rend `{ matches, total, groups }` :
  *  - `matches` est l'autorité pour précédent/suivant (ordre de lecture) ;
- *  - `groups` est `[{ actIndex, sceneIndex, actTitle, sceneTitle, matches }]`
+ *  - `groups` est `[{ actIndex, sceneIndex, matches }]` (des RANGS : un acte et
+ *    une scène n'ont pas de titre, c'est le panneau qui dérive leur libellé,
+ *    cf. src/shared/structureLabels.js)
  *    et partage LES MÊMES objets : le panneau et la navigation ne peuvent pas
  *    se désaccorder sur ce qu'est l'occurrence courante.
  *
@@ -199,13 +201,10 @@ export function searchScript(script, query, options = {}) {
           };
           matches.push(match);
           if (group === null) {
-            group = {
-              actIndex,
-              sceneIndex,
-              actTitle: act.title,
-              sceneTitle: scene.title,
-              matches: [],
-            };
+            // Les rangs seuls : un acte et une scène n'ont plus de titre, leur
+            // libellé se dérive du rang au rendu (structureLabels.js), donc c'est
+            // le panneau qui les met en mots, dans la langue du lecteur.
+            group = { actIndex, sceneIndex, matches: [] };
             groups.push(group);
           }
           group.matches.push(match);

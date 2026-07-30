@@ -1,5 +1,6 @@
 {
   "title": "Transport de Femmes",
+  "language": "fr",
   "characters": [
     {
       "id": "ecfd3c65-fccb-4c87-9fd2-bd7bf486d6d2",
@@ -44,10 +45,8 @@
   ],
   "acts": [
     {
-      "title": "Acte I",
       "scenes": [
         {
-          "title": "Scène 1",
           "lines": [
             {
               "id": "96f8215d-4e17-46d2-a92c-8149bd042414",
@@ -212,7 +211,6 @@
           ]
         },
         {
-          "title": "Scène 2",
           "lines": [
             {
               "id": "01151601-0d8a-41d3-986c-7d36e099216d",
@@ -357,7 +355,6 @@
           ]
         },
         {
-          "title": "Scène 3",
           "lines": [
             {
               "id": "8d9cc371-614f-4aea-8c82-7f7a01fb3218",
@@ -1697,7 +1694,6 @@
           ]
         },
         {
-          "title": "Scène 4",
           "lines": [
             {
               "id": "0ac3ea46-6f1a-46f3-beb5-e3706793a9f2",
@@ -1867,7 +1863,6 @@
           ]
         },
         {
-          "title": "Scène 5",
           "lines": [
             {
               "id": "20eb395d-a5a0-4603-bd24-9217d230034e",
@@ -3097,7 +3092,6 @@
           ]
         },
         {
-          "title": "Scène 6",
           "lines": [
             {
               "id": "7c82fc75-2a0b-415e-b89c-80344f1df61d",
@@ -3347,7 +3341,6 @@
           ]
         },
         {
-          "title": "Scène 7",
           "lines": [
             {
               "id": "21b6f44c-7bff-418d-860d-b030d6b871a4",
@@ -4537,7 +4530,6 @@
           ]
         },
         {
-          "title": "Scène 8",
           "lines": [
             {
               "id": "ca2defa3-a7f0-461c-ab95-dca8e37d2410",
@@ -5032,7 +5024,6 @@
           ]
         },
         {
-          "title": "Scène 9",
           "lines": [
             {
               "id": "8dd6f713-92ab-46b0-b16b-0506f13dffdf",
@@ -5197,7 +5188,6 @@
           ]
         },
         {
-          "title": "Scène 10",
           "lines": [
             {
               "id": "dfb37e69-e9dc-4726-a5b4-b9c58b7ef4ca",
@@ -5804,10 +5794,8 @@
       ]
     },
     {
-      "title": "Acte II",
       "scenes": [
         {
-          "title": "Scène 1",
           "lines": [
             {
               "id": "tmp-0",
@@ -5827,7 +5815,6 @@
           ]
         },
         {
-          "title": "Scène 2 au titre vraiment très long pour tester",
           "lines": []
         }
       ]

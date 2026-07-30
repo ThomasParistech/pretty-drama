@@ -1,6 +1,6 @@
 ---
 name: diff-review
-description: Revue complète du travail en cours (tout ce qui n'est pas encore publié sur la branche principale) — fond (bugs, régressions, sécurité du workflow), invariants du projet (ids, contrat ZIP, normalisation, uploads hostiles), tests Python + build, et audit front (agent front-reviewer contre le design system) si l'UI est touchée. Corrige ce qui est sûr, liste le reste, un seul rapport, et finit par un titre de PR prêt à coller. À utiliser avant de committer/pousser, après des changements d'UI, ou sur demande (/diff-review).
+description: Revue complète du travail en cours (tout ce qui n'est pas encore publié sur la branche principale) — fond (bugs, régressions, sécurité du workflow), invariants du projet (ids, contrat ZIP, normalisation, uploads hostiles), passe langue du front bilingue (aucun texte en dur hors catalogues, parité fr/en), tests Python + JS + build, et audit front (agent front-reviewer contre le design system) si l'UI est touchée. Corrige ce qui est sûr, liste le reste, un seul rapport, et finit par un titre de PR prêt à coller. À utiliser avant de committer/pousser, après des changements d'UI, ou sur demande (/diff-review).
 ---
 
 # Revue du diff courant
@@ -56,7 +56,9 @@ pas enregistré dans la session, un agent `general-purpose` avec les
 instructions de `.claude/agents/front-reviewer.md`). Il audite en
 arrière-plan pendant que tu fais la revue de fond. Passe-lui la liste des
 fichiers front touchés pour prioriser — il balaie quand même les 5 pages
-(cohérence graphique, factorisation, a11y, responsive, textes français).
+(cohérence graphique, factorisation, a11y, responsive, langue). Son audit ne te
+dispense pas de la passe langue du §3 bis : lui balaie tout le site, toi tu lis
+le diff, et c'est le diff qui vient d'être écrit.
 
 Son contrat est `references/design-system.md` (relatif à ce skill) : c'est
 lui qui définit ce que « cohérent » veut dire, et la revue confronte le code
@@ -103,9 +105,61 @@ finding sur la seule lecture du diff**. Par zone :
   revue et c'est là que le contrat se perd en silence : un `fetch` sauté ou un
   `return` placé avant lui laisse le bandeau sans titre de pièce sans qu'aucun
   CSS ne le montre.
-- **partout** : textes visibles par l'utilisateur en français (UI, README,
-  messages d'erreur de l'Action, qui finissent dans le journal des dépôts) et
-  sans tiret cadratin, pas de secret ni de token dans le diff.
+- **partout** : pas de secret ni de token dans le diff, pas de tiret cadratin
+  dans un texte vu par l'utilisateur, et le français reste la langue du dépôt
+  côté back (README, messages d'erreur de l'Action, qui finissent dans le
+  journal des dépôts). Le FRONT, lui, est bilingue : voir §3 bis, qui est une
+  passe à part entière et pas une ligne de checklist.
+
+## 3 bis. Passe langue (front bilingue)
+
+Le site se lit en français et en anglais, et **aucun texte visible ne vit dans
+un composant** : tout passe par `src/shared/locales/fr.js` et `en.js`. Cette
+passe est obligatoire dès que le diff touche un `.jsx` ou un `.js` de `src/`,
+même « pour un petit changement » : c'est exactement ainsi que cinq pages
+entières sont restées en français après leur traduction.
+
+Elle se fait en deux temps, et **l'ordre compte** : les gardes d'abord, la
+lecture ensuite. Les gardes disent ce qui est certain, la lecture voit ce qu'ils
+ne peuvent pas voir.
+
+1. **Les gardes**, qui tournent déjà dans la suite Python
+   (`scripts/tests/test_contracts.py`, classe `TestCatalogues`) et côté JS
+   (`src/shared/locales/parity.test.js`). Un échec ici est un finding **haute**,
+   jamais un test à assouplir :
+   - toute clé passée à `t()` / `<T>` existe dans les DEUX catalogues (une clé
+     mal tapée s'affiche en clair à l'écran) ;
+   - aucune clé déclarée n'est inutilisée (une clé orpheline signale une chaîne
+     qu'on a cru traduire et qui est restée en dur) ;
+   - aucun littéral accentué, aucun attribut porteur de texte
+     (`title`, `aria-label`, `placeholder`, `alt`, `hint`, `error`, `label`,
+     `unit`, `confirmLabel`, `primaryLabel`, `saveLabel`) et aucun nœud de texte
+     JSX ne portent de littéral dans `src/` ;
+   - les deux catalogues ont les mêmes clés, les mêmes placeholders, les mêmes
+     formes de pluriel, et le français ses insécables.
+2. **La lecture**, parce que les gardes ont un angle mort connu et documenté : un
+   texte adjacent à une accolade sur la même ligne, et un texte anglais non
+   accentué rangé dans une variable. Pour **chaque fichier front du diff**, liste
+   les chaînes que l'utilisateur verra et vérifie, une par une :
+   - elle vient de `t()` / `<T>` (jamais un littéral, jamais un
+     template-literal assemblé à la main) ;
+   - une phrase qui porte du balisage au milieu passe par `<T … p={{ … }} />`,
+     le JSX devenant un paramètre : découpée en fragments, elle fige l'ordre des
+     mots français dans le composant ;
+   - aucun pluriel bricolé (`n > 1 ? "s" : ""`), aucun nombre, pourcentage ou
+     date formaté à la main : `{ one, other }` + `t(clé, { count })`,
+     `fmt.percent`, `fmt.dateTime`, `fmt.quote` ;
+   - un libellé que deux endroits nomment est INTERPOLÉ depuis sa clé, pas
+     recopié ;
+   - la nouvelle entrée anglaise n'est pas un calque du français (ni la
+     typographie : ni insécable, ni guillemets français) ;
+   - aucun module couvert par `node --test` n'importe `locale.js` (il lit l'URL
+     et le navigateur à l'import) : il reçoit `t` en argument, ou rend un code
+     que la page traduit.
+
+   Et **relis la page dans les deux langues** au moins mentalement : un texte qui
+   n'existe qu'en français se voit en anglais, un texte trop long casse une
+   rangée. Le rapport dit laquelle des deux a été vérifiée.
 
 ## 4. Invariants du projet
 
@@ -131,10 +185,13 @@ Checklist explicite, à vérifier dès que le diff touche la zone concernée :
 
 ## 5. Vérifications exécutables
 
-- `python3 -m unittest discover -s scripts/tests`
+- `python3 -m unittest discover -s scripts/tests` (contrats d'i18n compris,
+  cf. §3 bis)
+- `npm test` (`node --test`, sans argument : logique pure du front, dont la
+  parité des deux catalogues)
 - `npm run build`
 
-Lance-les **deux fois** : une fois au début (état des lieux — un échec
+Lance-les **trois**, **deux fois** : une fois au début (état des lieux — un échec
 préexistant n'est pas imputé à tes corrections) et une fois après toutes les
 corrections (celles issues de l'audit front comprises). Un échec final est
 un finding de
@@ -147,8 +204,11 @@ Applique sans demander :
 - bug évident dont le fix est local, sans changement d'API ni de format de
   données, couvert ensuite par un test ;
 - test manquant pour un comportement déjà voulu ;
-- texte anglais résiduel → français, libellés incohérents alignés sur la
-  version majoritaire, message d'erreur absent ou trompeur ;
+- texte visible en dur → clé de catalogue, dans les DEUX langues (c'est le fix
+  le plus courant de cette revue, et il est sûr : la chaîne française existe
+  déjà, il ne reste qu'à la déplacer et à écrire son anglais) ; clé manquante
+  d'un côté ; libellés incohérents alignés sur la version majoritaire ; message
+  d'erreur absent ou trompeur ;
 - côté front, tout ce qui ne change ni le comportement ni la structure JSX :
   hex/ombre/rayon en dur → token existant ; bloc CSS dupliqué entre ≥ 2
   pages → déplacé dans `theme.css`, copies supprimées ; `title`/`aria-label`
@@ -176,12 +236,16 @@ suivis »). Puis findings front + back confondus, chacun au format :
   cassé, bug visible par l'utilisateur), **moyenne** (cas limite, test
   manquant, duplication, a11y), **basse** (polissage).
 - `catégorie` : `bug`, `invariant`, `securite`, `tests`, `donnees`, `ci`,
-  ou celles du front-reviewer (`structure`, `tokens`, `duplication`, `a11y`,
-  `responsive`, `textes`, `contrat`).
+  `i18n`, ou celles du front-reviewer (`structure`, `tokens`, `duplication`,
+  `a11y`, `responsive`, `textes`, `contrat`). `i18n` couvre le texte en dur, la
+  clé manquante, le pluriel bricolé, le calque anglais ; `textes` reste le ton et
+  la cohérence des libellés, langue mise à part.
 
 Trois sections, par sévérité décroissante : **Corrigé**, **À valider**
 (fix proposé, pour décision), **RAS** (une ligne par dimension entièrement
-conforme : invariants, tests, front…). Puis le titre du §8, qui ferme le
+conforme : invariants, tests, front, langue…). La ligne « langue » est
+obligatoire dès que le diff touche `src/` : elle dit combien de fichiers front
+ont été relus chaîne par chaîne, et non pas seulement que les gardes passent. Puis le titre du §8, qui ferme le
 rapport.
 
 ## 8. Titre de PR

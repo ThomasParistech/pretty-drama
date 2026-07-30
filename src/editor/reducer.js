@@ -14,6 +14,10 @@
 // on LOAD_SCRIPT to repair hand-edited files.
 
 import { firstFreeColor, isPaletteColor } from "../shared/characterColors.js";
+// i18n.js is pure (no React, no DOM, no storage), so importing it here keeps
+// this module runnable under `node --test`. locale.js would NOT be safe: it
+// reads `window` at module load.
+import { DEFAULT_LOCALE, isLocale } from "../shared/i18n.js";
 
 export function newId() {
   return crypto.randomUUID();
@@ -22,10 +26,25 @@ export function newId() {
 // Mirror of LINE_ID_PATTERN in scripts/process_uploads.py — keep in sync.
 export const SAFE_ID = /^[0-9a-zA-Z-]{1,64}$/;
 
+// Acts and scenes carry NO title. Their label is derived from their rank at
+// render time ("Acte I", "Scène 3"), which is why nothing here writes words into
+// the play: a title stored in script.json would be data in one language, and it
+// would then have to travel to the manifest, the PDF, the Progress columns and
+// the Speaking share scope, none of which could translate it. Deriving the label
+// makes it ordinary UI text instead.
+//
+// The cost, accepted: an act cannot be called "Prologue". If that comes back, it
+// is an optional field to add, not a redesign.
+//
+// `language` is the language the PLAY is written in, a different axis from the
+// reader's UI locale. It is set in the Structure section of the rail, and it is
+// what lets build_script_pdf.py compose its own headings and set its babel, and
+// useTts.js pick a voice that matches the dialogue.
 export const EMPTY_SCRIPT = {
   title: "",
+  language: DEFAULT_LOCALE,
   characters: [],
-  acts: [{ title: "Acte I", scenes: [{ title: "Scène 1", lines: [] }] }],
+  acts: [{ scenes: [{ lines: [] }] }],
 };
 
 const isId = (value) => typeof value === "string" && SAFE_ID.test(value);
@@ -102,24 +121,28 @@ export function sanitizeScript(raw) {
 
   return {
     title: typeof raw.title === "string" ? raw.title : "",
+    // An unknown or absent language falls back to French, the project's default.
+    // A script.json written before this field existed therefore keeps working.
+    language: isLocale(raw.language) ? raw.language : DEFAULT_LOCALE,
     characters,
     acts:
       Array.isArray(raw.acts) && raw.acts.length > 0
         ? raw.acts
             .filter((act) => act && typeof act === "object")
-            .map((act, ai) => ({
-              title: typeof act.title === "string" ? act.title : `Acte ${ai + 1}`,
+            .map((act) => ({
+              // A `title` left over from an older file is DROPPED, not carried:
+              // labels are derived from the rank now, and keeping a stale one
+              // would put two ways of naming a scene back in the format.
               scenes:
                 Array.isArray(act.scenes) && act.scenes.length > 0
                   ? act.scenes
                       .filter((scene) => scene && typeof scene === "object")
-                      .map((scene, si) => ({
-                        title: typeof scene.title === "string" ? scene.title : `Scène ${si + 1}`,
+                      .map((scene) => ({
                         lines: Array.isArray(scene.lines)
                           ? scene.lines.map(sanitizeLine).filter(Boolean)
                           : [],
                       }))
-                  : [{ title: "Scène 1", lines: [] }],
+                  : [{ lines: [] }],
             }))
         : EMPTY_SCRIPT.acts,
   };
@@ -281,6 +304,13 @@ export function scriptReducer(state, action) {
     case "SET_TITLE":
       return { ...state, title: action.title };
 
+    // The language the PLAY is written in, not the reader's UI locale. It drives
+    // the PDF (headings and babel) and the synthetic voice that stands in for a
+    // line nobody has recorded yet.
+    case "SET_LANGUAGE":
+      if (!isLocale(action.language) || action.language === state.language) return state;
+      return { ...state, language: action.language };
+
     // ---- Characters (side panel referential) ----
 
     case "ADD_CHARACTER": {
@@ -338,19 +368,7 @@ export function scriptReducer(state, action) {
     // ---- Acts & scenes ----
 
     case "ADD_ACT":
-      return {
-        ...state,
-        acts: [
-          ...state.acts,
-          { title: `Acte ${state.acts.length + 1}`, scenes: [{ title: "Scène 1", lines: [] }] },
-        ],
-      };
-
-    case "RENAME_ACT":
-      return {
-        ...state,
-        acts: state.acts.map((a, i) => (i === action.actIndex ? { ...a, title: action.title } : a)),
-      };
+      return { ...state, acts: [...state.acts, { scenes: [{ lines: [] }] }] };
 
     case "DELETE_ACT":
       return { ...state, acts: state.acts.filter((_, i) => i !== action.actIndex) };
@@ -359,17 +377,9 @@ export function scriptReducer(state, action) {
       return {
         ...state,
         acts: state.acts.map((a, i) =>
-          i !== action.actIndex
-            ? a
-            : { ...a, scenes: [...a.scenes, { title: `Scène ${a.scenes.length + 1}`, lines: [] }] }
+          i !== action.actIndex ? a : { ...a, scenes: [...a.scenes, { lines: [] }] }
         ),
       };
-
-    case "RENAME_SCENE":
-      return updateScene(state, action.actIndex, action.sceneIndex, (scene) => ({
-        ...scene,
-        title: action.title,
-      }));
 
     case "DELETE_SCENE":
       return {

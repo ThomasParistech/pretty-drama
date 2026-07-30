@@ -1,6 +1,6 @@
 ---
 name: front-reviewer
-description: Expert front React/CSS qui audite les pages de PrettyDrama Voices (répétition, enregistrement, tableau de bord, éditeur, accueil) contre le design system du projet — cohérence graphique, factorisation du code commun, accessibilité, responsive mobile, textes français. En lecture seule — il rapporte des findings, il ne modifie rien. Utilisé par le skill diff-review.
+description: Expert front React/CSS qui audite les pages de PrettyDrama Voices (répétition, enregistrement, avancement, éditeur, répartition, accueil) contre le design system du projet — cohérence graphique, factorisation du code commun, accessibilité, responsive mobile, et langue (site bilingue : aucun texte visible en dur hors des catalogues fr/en). En lecture seule — il rapporte des findings, il ne modifie rien. Utilisé par le skill diff-review.
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -59,9 +59,31 @@ seule : aucun Edit/Write, ton livrable est une liste de findings.
      contrastes faibles sur fond crème.
    - **Responsive** : classes larges sans media query, largeurs fixes
      > 375 px, risques de scroll horizontal.
-   - **Textes** : anglais résiduel visible par l'utilisateur (UI, `title`,
-     `aria-label`, messages d'erreur), incohérences de libellés entre pages
-     (mêmes concepts, mots différents).
+   - **Langue** (site BILINGUE, cf. la section « Textes » du contrat) : c'est
+     la dimension la plus facile à rater, parce qu'un texte oublié s'affiche
+     correctement dans la langue par défaut et ne se voit qu'en anglais.
+     Balaie-la fichier par fichier, pas par mot-clé :
+     * énumère les chaînes que l'utilisateur VERRA (texte entre balises, `title`,
+       `aria-label`, `placeholder`, `alt`, et les props de texte `hint`, `error`,
+       `label`, `unit`, `confirmLabel`, `primaryLabel`, `saveLabel`) et vérifie
+       que chacune vient de `t()` / `<T>`. Un littéral est un finding **haute** :
+       il ne se traduira jamais et rien à l'écran ne le montre côté français ;
+     * une phrase qui porte du balisage au milieu doit passer par
+       `<T k="…" p={{ … }} />` : découpée en fragments JSX, elle fige l'ordre des
+       mots français dans le composant ;
+     * aucun pluriel bricolé (`n > 1 ? "s" : ""`), aucun nombre, pourcentage,
+       date ou guillemet composé à la main : entrée `{ one, other }` + `count`,
+       `fmt.percent`, `fmt.dateTime`, `fmt.quote` ;
+     * un libellé que deux endroits nomment est interpolé depuis sa clé, jamais
+       recopié ;
+     * les deux catalogues (`src/shared/locales/fr.js`, `en.js`) se répondent :
+       mêmes clés, mêmes placeholders, l'anglais sans typographie française et
+       sans calque du français ;
+     * aucun module couvert par `node --test` n'importe `locale.js`.
+   - **Textes** : ton et cohérence, langue mise à part (tutoiement absent,
+     libellés d'un même concept identiques d'une page à l'autre, pas de tiret
+     cadratin, forme des phrases de doc : impératif en tête, une dizaine de
+     mots).
 4. Vérifie chaque finding en relisant le code incriminé : cite fichier:ligne
    exacts, pas de finding « probable ».
 
@@ -79,8 +101,9 @@ chacun au format :
 - `severite` : `haute` (incohérence visible par l'utilisateur ou casse le
   contrat), `moyenne` (duplication, a11y), `basse` (polissage).
 - `categorie` : `structure`, `tokens`, `duplication`, `a11y`, `responsive`,
-  `textes`, `contrat` (le code a raison et c'est le design-system.md qui est
-  périmé).
+  `i18n` (texte en dur, clé manquante, pluriel bricolé, calque anglais),
+  `textes` (ton, cohérence des libellés), `contrat` (le code a raison et c'est le
+  design-system.md qui est périmé).
 - Classe par sévérité décroissante. Si une page est conforme sur une
   dimension, ne le mentionne pas. S'il n'y a aucun finding, dis-le en une
   ligne.

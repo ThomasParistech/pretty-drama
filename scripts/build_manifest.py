@@ -46,6 +46,13 @@ def _is_id(value) -> bool:
 # Un test de contrat vérifie que la palette JS passe bien cette expression.
 COLOR_PATTERN = re.compile(r"#[0-9a-fA-F]{6}\Z")
 
+# Les langues que l'éditeur sait écrire dans `language`, et le repli. Miroir de
+# LOCALES / DEFAULT_LOCALE dans src/shared/i18n.js : les faire diverger ferait
+# retomber au français une pièce que le front sait pourtant écrire, et un garde de
+# scripts/tests/test_contracts.py compare les deux listes.
+LANGUAGES = ("fr", "en")
+DEFAULT_LANGUAGE = "fr"
+
 
 def _color_of(character: dict):
     value = character.get("color")
@@ -92,12 +99,17 @@ def sanitize_script(raw: dict) -> dict:
                         "text": line["text"] if isinstance(line.get("text"), str) else "",
                     }
                 )
-            scenes.append(
-                {"title": scene["title"] if isinstance(scene.get("title"), str) else "", "lines": lines}
-            )
-        acts.append({"title": act["title"] if isinstance(act.get("title"), str) else "", "scenes": scenes})
+            # Ni acte ni scène ne porte de titre : leur libellé est DÉRIVÉ de
+            # leur rang (miroir de src/shared/structureLabels.js). Un `title`
+            # laissé par un fichier d'avant est donc ignoré, pas recopié.
+            scenes.append({"lines": lines})
+        acts.append({"scenes": scenes})
     return {
         "title": raw.get("title") if isinstance(raw.get("title"), str) else "",
+        # La langue dans laquelle la pièce est ÉCRITE, pas celle de l'interface du
+        # lecteur. Elle sert au PDF (intertitres et césure) et à la voix de
+        # synthèse de la Répétition. Absente ou inconnue, elle vaut le français.
+        "language": raw["language"] if raw.get("language") in LANGUAGES else DEFAULT_LANGUAGE,
         "characters": characters,
         "acts": acts,
     }
@@ -123,7 +135,7 @@ def build_manifest(script: dict, clips: dict, history=None) -> dict:
         history = []
     names = {c["id"]: c["name"] for c in script["characters"]}
 
-    def enrich(line: dict, act_title: str, scene_title: str) -> dict:
+    def enrich(line: dict, act_index: int, scene_index: int) -> dict:
         status = compute_status(line, clips)
         return {
             "id": line["id"],
@@ -132,22 +144,26 @@ def build_manifest(script: dict, clips: dict, history=None) -> dict:
             "text": line["text"],
             "status": status,
             "clip": f"clips/{line['id']}.mp3" if status != "manquant" else None,
-            "act": act_title,
-            "scene": scene_title,
+            # Des RANGS et pas des libellés : c'est le front qui les met en mots,
+            # dans la langue du lecteur (src/shared/structureLabels.js). Le
+            # manifest reste ainsi sans un mot de français.
+            "actIndex": act_index,
+            "sceneIndex": scene_index,
         }
 
     acts = []
     flat_lines = []
-    for act in script["acts"]:
+    for act_index, act in enumerate(script["acts"]):
         scenes = []
-        for scene in act["scenes"]:
-            lines = [enrich(line, act["title"], scene["title"]) for line in scene["lines"]]
+        for scene_index, scene in enumerate(act["scenes"]):
+            lines = [enrich(line, act_index, scene_index) for line in scene["lines"]]
             flat_lines.extend(lines)
-            scenes.append({"title": scene["title"], "lines": lines})
-        acts.append({"title": act["title"], "scenes": scenes})
+            scenes.append({"lines": lines})
+        acts.append({"scenes": scenes})
 
     return {
         "title": script["title"],
+        "language": script["language"],
         # Journal des derniers dépôts, affiché par la page Avancement : sans lui
         # le respo n'a aucun retour sur ce qu'est devenu son fichier. Pas
         # d'horodatage du run ici : un champ réécrit à chaque exécution ferait

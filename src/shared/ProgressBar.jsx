@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { t } from "./locale.js";
 
 // Item-indexed scrubber of the bottom control bar (shared by the rehearsal
 // and recording pages): click or drag seeks to an index in [0, count);
@@ -31,7 +32,7 @@ export default function ProgressBar({ value, count, onSeek, disabled = false }) 
       ref={ref}
       role="slider"
       tabIndex={disabled ? -1 : 0}
-      aria-label="Position dans les répliques"
+      aria-label={t("common.progressPosition")}
       aria-valuemin={1}
       aria-valuemax={Math.max(count, 1)}
       aria-valuenow={Math.min(value + 1, count)}

@@ -11,7 +11,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  CHARACTER_COLOR_NAMES,
+  CHARACTER_COLOR_KEYS,
   CHARACTER_COLORS,
   assignColors,
   characterColor,
@@ -49,14 +49,16 @@ test("la palette fait vingt couleurs distinctes, toutes en hex minuscule", () =>
   for (const c of CHARACTER_COLORS) assert.match(c, /^#[0-9a-f]{6}$/, `couleur : ${c}`);
 });
 
-test("chaque couleur a son nom, sinon une pastille s'annonce « undefined »", () => {
-  // Les noms servent d'`aria-label` aux vingt pastilles de la palette de
-  // l'éditeur, indexés par rang : une liste plus courte y mettrait `undefined`,
-  // et seul un lecteur d'écran s'en apercevrait.
-  assert.equal(CHARACTER_COLOR_NAMES.length, CHARACTER_COLORS.length);
-  assert.equal(new Set(CHARACTER_COLOR_NAMES).size, CHARACTER_COLOR_NAMES.length, "pas d'homonyme");
-  for (const name of CHARACTER_COLOR_NAMES) {
-    assert.match(name, /^[A-ZÀ-Ý][a-zà-ÿ ]+$/, `nom : ${name}`);
+test("chaque couleur a sa clé de nom, sinon une pastille s'annonce « undefined »", () => {
+  // Ces clés servent d'`aria-label` aux vingt pastilles de la palette de
+  // l'éditeur, indexées par rang : une liste plus courte y mettrait `undefined`,
+  // et seul un lecteur d'écran s'en apercevrait. Que la clé EXISTE dans les deux
+  // catalogues est vérifié ailleurs (test_contracts.py, qui relève les `t("…")`
+  // littéraux et les clés construites par motif).
+  assert.equal(CHARACTER_COLOR_KEYS.length, CHARACTER_COLORS.length);
+  assert.equal(new Set(CHARACTER_COLOR_KEYS).size, CHARACTER_COLOR_KEYS.length, "pas d'homonyme");
+  for (const key of CHARACTER_COLOR_KEYS) {
+    assert.match(key, /^color\.[a-zA-Z]+$/, `clé : ${key}`);
   }
 });
 

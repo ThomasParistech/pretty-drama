@@ -22,8 +22,8 @@ c'est `diff-review` qu'il faut, pas ce skill.
   de base : on lit le code tel qu'il est. Ignore `dist/`, `node_modules/`,
   `clips/*.mp3` et les binaires.
 - **Corrige, mais avec discernement (§7).** Applique sans demander les fixes
-  sûrs (bug local sans changement d'API/format, test manquant, texte français,
-  token en dur, duplication à remonter) ; **demande d'abord** dès qu'il y a un
+  sûrs (bug local sans changement d'API/format, test manquant, texte en dur à
+  passer au catalogue, token en dur, duplication à remonter) ; **demande d'abord** dès qu'il y a un
   doute ou un choix (changement de format/contrat, comportement visible,
   extraction de composant, suppression de code cru mort). Ce skill ne fait
   **ni commit, ni stage, ni push** : les fixes restent dans le worktree.
@@ -89,6 +89,18 @@ pars du code, pas de la doc.
   un ZIP cassé n'en bloque jamais d'autres, ZIP supprimé même en cas d'erreur.
 - **Prises d'enregistrement** : en mémoire uniquement, garde `beforeunload`
   tant que non exportées, `URL.revokeObjectURL` à chaque remplacement.
+- **Bilingue** : AUCUN texte visible ne vit dans un composant. Balaie tout
+  `src/` (hors `src/shared/locales/`) à la recherche d'un littéral affiché :
+  texte entre balises, `title`, `aria-label`, `placeholder`, `alt`, et les props
+  de texte (`hint`, `error`, `label`, `unit`, `confirmLabel`, `primaryLabel`,
+  `saveLabel`). C'est l'invariant que la CI garde le mieux (les trois tests de
+  `TestCatalogues` dans `scripts/tests/test_contracts.py`, plus
+  `src/shared/locales/parity.test.js`), donc commence par les lancer ; ce qui
+  reste à faire à la main est ce qu'ils ne voient pas, un texte adjacent à une
+  accolade sur la même ligne et un texte anglais non accentué rangé dans une
+  variable. Vérifie aussi que rien de couvert par `node --test` n'importe
+  `locale.js` (il lit l'URL et le navigateur à l'import) : un module pur reçoit
+  `t` en argument, ou rend un code que la page traduit.
 
 ## 4. Sécurité & robustesse (whole-repo)
 
@@ -146,8 +158,9 @@ Tu corriges, tu ne te contentes pas de rapporter. Le partage est le même que
 - bug évident dont le fix est local, sans changement d'API ni de format de
   données, couvert ensuite par un test ;
 - test manquant pour un comportement déjà voulu ;
-- texte anglais résiduel → français, libellés incohérents alignés sur la
-  version majoritaire, message d'erreur absent ou trompeur ;
+- texte visible en dur → clé de catalogue, dans les DEUX langues ; clé manquante
+  d'un côté ; libellés incohérents alignés sur la version majoritaire ; message
+  d'erreur absent ou trompeur ;
 - côté front, tout ce qui ne change ni le comportement ni la structure JSX :
   hex/ombre/rayon en dur → token existant ; bloc CSS dupliqué entre ≥ 2
   fichiers → remonté dans `theme.css`, copies supprimées ; helper JS dupliqué
@@ -172,7 +185,8 @@ les fixes restent dans le worktree.
 
 ## 8. Vérifications exécutables
 
-- `python3 -m unittest discover -s scripts/tests`
+- `python3 -m unittest discover -s scripts/tests` (contrats d'i18n compris)
+- `npm test` (dont la parité des deux catalogues)
 - `npm run build`
 
 Lance-les **deux fois** : au début (état des lieux — un échec préexistant
@@ -195,8 +209,8 @@ temps. Puis findings front + back confondus, triés par sévérité décroissant
   visible), **moyenne** (cas limite, test manquant, duplication, a11y, code
   mort), **basse** (polissage, doc).
 - `catégorie` : `invariant`, `securite`, `bug`, `tests`, `mort`, `duplication`,
-  `donnees`, `ci`, `doc`, ou celles du front-reviewer (`structure`, `tokens`,
-  `duplication`, `a11y`, `responsive`, `textes`, `contrat`).
+  `donnees`, `ci`, `doc`, `i18n`, ou celles du front-reviewer (`structure`,
+  `tokens`, `duplication`, `a11y`, `responsive`, `textes`, `contrat`).
 
 Trois sections, par sévérité décroissante : **Corrigé**, **À valider** (fix
 proposé, pour décision), **RAS** (une ligne par dimension entièrement conforme :

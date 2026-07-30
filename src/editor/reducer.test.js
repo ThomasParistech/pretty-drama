@@ -27,10 +27,8 @@ const play = (overrides = {}) => ({
   ],
   acts: [
     {
-      title: "Acte I",
       scenes: [
         {
-          title: "Scène 1",
           lines: [
             { id: "l-1", characterId: "c-alceste", text: "Laissez-moi." },
             { id: "l-2", characterId: "c-philinte", text: "Qu'est-ce donc ?" },
@@ -49,10 +47,8 @@ const twoActs = () =>
     acts: [
       play().acts[0],
       {
-        title: "Acte II",
         scenes: [
           {
-            title: "Scène 1",
             lines: [{ id: "l-3", characterId: "c-philinte", text: "Encore vous ?" }],
           },
         ],
@@ -421,22 +417,26 @@ test("SET_CHARACTER_COLOR refuse une couleur hors palette, sans fabriquer d'éta
 test("MOVE_ACT réordonne les actes et les répliques suivent leur scène", () => {
   const before = twoActs();
   const after = scriptReducer(before, { type: "MOVE_ACT", from: 1, to: 0 });
-  assert.deepEqual(
-    after.acts.map((a) => a.title),
-    ["Acte II", "Acte I"]
-  );
+  // À l'identité des objets : les actes n'ont plus de titre par lequel les
+  // reconnaître, et l'identité dit de toute façon davantage (ce sont les mêmes
+  // actes qui se sont croisés, pas deux objets reconstruits).
+  assert.equal(after.acts.length, 2);
+  assert.equal(after.acts[0], before.acts[1], "l'acte déplacé garde son objet");
+  assert.equal(after.acts[1], before.acts[0], "et celui qu'il double aussi");
   // Les ids nomment les mp3 : réordonner ne doit jamais en reminter un.
   assert.deepEqual(lineIds(after).sort(), lineIds(before).sort());
-  assert.equal(after.acts[0], before.acts[1], "l'acte déplacé garde son objet");
 });
 
 test("MOVE_SCENE réordonne dans son acte et laisse les autres intacts", () => {
   const before = scriptReducer(twoActs(), { type: "ADD_SCENE", actIndex: 0 });
   const after = scriptReducer(before, { type: "MOVE_SCENE", actIndex: 0, from: 1, to: 0 });
-  assert.deepEqual(
-    after.acts[0].scenes.map((s) => s.title),
-    ["Scène 2", "Scène 1"]
-  );
+  // Vérifié à l'IDENTITÉ des objets et non par un titre : les scènes n'en ont
+  // plus (leur libellé est dérivé de leur rang), et c'est de toute façon plus
+  // fort, puisque ça prouve que ce sont les mêmes scènes qui ont bougé et pas
+  // deux objets reconstruits de valeur égale.
+  assert.equal(after.acts[0].scenes.length, 2);
+  assert.equal(after.acts[0].scenes[0], before.acts[0].scenes[1], "la seconde est passée devant");
+  assert.equal(after.acts[0].scenes[1], before.acts[0].scenes[0], "et la première derrière");
   assert.equal(after.acts[1], before.acts[1], "l'acte non touché garde son objet");
 });
 

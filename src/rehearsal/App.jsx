@@ -14,6 +14,9 @@ import {
   SparkleIcon,
 } from "../shared/icons.jsx";
 import useManifest from "../shared/useManifest.js";
+import { actLabel, sceneLabel } from "../shared/structureLabels.js";
+import { t } from "../shared/locale.js";
+import { pageLabelKey } from "../shared/pages.js";
 import useTts from "./useTts.js";
 import "./rehearsal.css";
 
@@ -23,12 +26,13 @@ import "./rehearsal.css";
 const TTS_GAP_MS = 80;
 
 // Rehearsal player — React port of the v1 UX:
-//  - act / scene / character selectors, "Muet" / "Cacher mon texte" /
-//    "Bip" / "Avant" toggles ("Muet" and text hiding are two separate
-//    settings in v2, unlike v1 which conflated them)
+//  - act / scene / character selectors, plus the four toggles of `.checks-row`
+//    (mute my voice, hide my text, beep, start one line early); muting and text
+//    hiding are two separate settings in v2, unlike v1 which conflated them
 //  - dialogue cards, current line highlighted and auto-scrolled
 //  - fixed bottom bar: line-indexed progress + prev/play/next + my-line jumps
-//  - the actor's own lines are cued (beep + "À vous…" overlay when Muet)
+//  - the actor's own lines are cued (beep + `rehearsal.yourTurn` overlay when
+//    their voice is muted)
 // v2 twist: real mp3 clips when status is "ok", browser TTS fallback otherwise.
 export default function App() {
   const { manifest, error: loadError } = useManifest();
@@ -44,7 +48,11 @@ export default function App() {
   const [avant, setAvant] = useState(true);
   const [overlay, setOverlay] = useState(false);
 
-  const tts = useTts();
+  // La langue de la PIÈCE et non celle de l'interface : cette voix remplace un
+  // acteur qui dit sa réplique, donc elle doit prononcer le texte dans la langue
+  // où il est écrit. `manifest` peut être nul le temps du chargement, et `useTts`
+  // retombe alors sur le français.
+  const tts = useTts(manifest?.language);
 
   // Imperative playback machinery (kept out of React state to avoid stale
   // closures): generation token invalidates every pending callback on any
@@ -253,8 +261,8 @@ export default function App() {
     return (
       <PageState
         page="rehearsal"
-        title={manifest.title || "Pièce sans titre"}
-        error="La pièce est vide pour l'instant. Le responsable doit d'abord la saisir dans la page Édition."
+        title={manifest.title || t("common.untitledPlay")}
+        error={t("rehearsal.emptyPlay", { page: t(pageLabelKey("editor")) })}
       />
     );
   }
@@ -264,21 +272,21 @@ export default function App() {
       {/* Pas de `hint` ici : les quatre cases à cocher juste en dessous portent
           des libellés explicites, une phrase qui les redirait ne servait qu'à
           repousser les réglages. */}
-      <PlayHeader page="rehearsal" title={manifest.title || "Pièce sans titre"}>
+      <PlayHeader page="rehearsal" title={manifest.title || t("common.untitledPlay")}>
         <div className="selects-row">
           <select
-            aria-label="Acte"
+            aria-label={t("common.actSelect")}
             value={actIndex}
             onChange={(e) => changeAct(Number(e.target.value))}
           >
-            {acts.map((a, i) => (
+            {acts.map((_, i) => (
               <option key={i} value={i}>
-                {a.title}
+                {actLabel(t, i)}
               </option>
             ))}
           </select>
           <select
-            aria-label="Scène"
+            aria-label={t("common.sceneSelect")}
             value={sceneIndex}
             onChange={(e) => changeScene(Number(e.target.value))}
           >
@@ -289,8 +297,8 @@ export default function App() {
                   : s.lines.filter((l) => l.characterId === characterId).length;
               return (
                 <option key={i} value={i}>
-                  {s.title}
-                  {count != null ? ` (${count} réplique${count > 1 ? "s" : ""})` : ""}
+                  {sceneLabel(t, i)}
+                  {count != null ? t("rehearsal.sceneLines", { count }) : ""}
                 </option>
               );
             })}
@@ -299,11 +307,11 @@ export default function App() {
         <div className="character-row">
           <select
             className="character-select"
-            aria-label="Mon personnage"
+            aria-label={t("common.myCharacter")}
             value={characterId}
             onChange={(e) => setCharacterId(e.target.value)}
           >
-            <option value="">Qui jouez-vous ?</option>
+            <option value="">{t("common.whoDoYouPlay")}</option>
             {manifest.characters.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -311,25 +319,25 @@ export default function App() {
             ))}
           </select>
           <div className="checks-row">
-            <label title="Mes répliques ne sont pas jouées : je les dis moi-même">
+            <label title={t("rehearsal.mute.tip")}>
               <input type="checkbox" checked={muet} onChange={(e) => setMuet(e.target.checked)} />
-              Couper ma voix
+              {t("rehearsal.mute")}
             </label>
-            <label title="Flouter le texte de mes répliques">
+            <label title={t("rehearsal.hideText.tip")}>
               <input
                 type="checkbox"
                 checked={hideText}
                 onChange={(e) => setHideText(e.target.checked)}
               />
-              Cacher mon texte
+              {t("rehearsal.hideText")}
             </label>
-            <label title="Un bip sonore annonce chacune de mes répliques">
+            <label title={t("rehearsal.beep.tip")}>
               <input type="checkbox" checked={bip} onChange={(e) => setBip(e.target.checked)} />
-              Bip avant ma réplique
+              {t("rehearsal.beep")}
             </label>
-            <label title="Les flèches « ma réplique » s'arrêtent sur la réplique qui me lance, pas sur la mienne">
+            <label title={t("rehearsal.cueEarly.tip")}>
               <input type="checkbox" checked={avant} onChange={(e) => setAvant(e.target.checked)} />
-              Démarrer une réplique avant la mienne
+              {t("rehearsal.cueEarly")}
             </label>
           </div>
         </div>
@@ -366,8 +374,8 @@ export default function App() {
                   {mine ? ` (${myNumbers.get(line.id)}/${myNumbers.size})` : ""}
                 </span>
                 {line.status !== "ok" && (
-                  <span className="tts-hint" title="Pas encore de vraie voix">
-                    <SparkleIcon /> voix de synthèse
+                  <span className="tts-hint" title={t("rehearsal.tts.tip")}>
+                    <SparkleIcon /> {t("rehearsal.tts")}
                   </span>
                 )}
               </div>
@@ -379,7 +387,7 @@ export default function App() {
 
       {overlay && (
         <div className="wait-indicator" role="status">
-          <span>À vous…</span>
+          <span>{t("rehearsal.yourTurn")}</span>
         </div>
       )}
 
@@ -387,25 +395,33 @@ export default function App() {
         <ProgressBar value={index} count={lines.length} onSeek={goTo} />
         <div className="buttons-row">
           {characterId !== "" && (
-            <button className="ctrl-btn my-jump" title="Ma réplique précédente" onClick={goToPrevMy}>
+            <button className="ctrl-btn my-jump" title={t("common.prevMyLine")} onClick={goToPrevMy}>
               <SkipPrevIcon />
             </button>
           )}
-          <button className="ctrl-btn" title="Réplique précédente" onClick={() => goTo(index - 1)}>
+          <button
+            className="ctrl-btn"
+            title={t("rehearsal.prevLine")}
+            onClick={() => goTo(index - 1)}
+          >
             <PrevIcon />
           </button>
           <button
             className={`ctrl-btn play${isPlaying ? " is-playing" : ""}`}
-            title="Lecture / pause"
+            title={t("rehearsal.playPause")}
             onClick={togglePlay}
           >
             {isPlaying ? <PauseIcon /> : <PlayIcon />}
           </button>
-          <button className="ctrl-btn" title="Réplique suivante" onClick={() => goTo(index + 1)}>
+          <button
+            className="ctrl-btn"
+            title={t("rehearsal.nextLine")}
+            onClick={() => goTo(index + 1)}
+          >
             <NextIcon />
           </button>
           {characterId !== "" && (
-            <button className="ctrl-btn my-jump" title="Ma réplique suivante" onClick={goToNextMy}>
+            <button className="ctrl-btn my-jump" title={t("common.nextMyLine")} onClick={goToNextMy}>
               <SkipNextIcon />
             </button>
           )}

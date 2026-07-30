@@ -35,26 +35,21 @@ const play = () => ({
   ],
   acts: [
     {
-      title: "Acte I",
       scenes: [
         {
-          title: "Scène 1",
           lines: [
             { id: "l-1", characterId: "c-alceste", text: "Cet élève m'écoute." },
             { id: "l-2", characterId: "c-philinte", text: "L’élève ? Quel élève ?" },
           ],
         },
         {
-          title: "Scène 2",
           lines: [{ id: "l-3", characterId: "c-alceste", text: "Rien ici." }],
         },
       ],
     },
     {
-      title: "Acte II",
       scenes: [
         {
-          title: "Scène 1",
           lines: [
             { id: "l-4", characterId: "c-philinte", text: "Un dernier élève." },
             { id: "l-5", characterId: "c-alceste", text: "L'élève écoute." },
@@ -70,7 +65,7 @@ const play = () => ({
 const one = (text) => ({
   title: "Essai",
   characters: [],
-  acts: [{ title: "Acte I", scenes: [{ title: "Scène 1", lines: [{ id: "l", characterId: null, text }] }] }],
+  acts: [{ scenes: [{ lines: [{ id: "l", characterId: null, text }] }] }],
 });
 
 const startsOf = (script, query, options) =>
@@ -197,12 +192,13 @@ test("les occurrences sortent dans l'ordre de lecture de la pièce", () => {
   const ordinals = matches.map((m) => m.lineOrdinal);
   assert.deepEqual(ordinals, [...ordinals].sort((a, b) => a - b));
   // Une réplique sans occurrence ne fait pas de groupe, et un groupe porte les
-  // titres tels que le bandeau les affiche.
+  // RANGS de son acte et de sa scène : c'est le panneau qui en fait un libellé,
+  // dans la langue du lecteur (structureLabels.js).
   assert.deepEqual(
-    groups.map((g) => [g.actTitle, g.sceneTitle, g.matches.length]),
+    groups.map((g) => [g.actIndex, g.sceneIndex, g.matches.length]),
     [
-      ["Acte I", "Scène 1", 3],
-      ["Acte II", "Scène 1", 2],
+      [0, 0, 3],
+      [1, 0, 2],
     ]
   );
   // Les groupes partagent les OBJETS du tableau plat : le panneau et la

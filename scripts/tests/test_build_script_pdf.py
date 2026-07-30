@@ -25,30 +25,33 @@ from build_script_pdf import compile_pdf, latex_escape, render_tex
 
 ANNIE, SERGE = "char-annie", "char-serge"
 
+# Ni acte ni scène ne porte de titre : le libellé est DÉRIVÉ du rang, dans la
+# langue de la pièce (`language`). La fixture n'en écrit donc aucun, exprès :
+# tant qu'elle en portait, les assertions sur « Acte I » et « Scène 1 »
+# passaient par coïncidence (le titre écrit valait le libellé dérivé) et ne
+# vérifiaient plus rien. Vérifié par mutation : remplacer ces titres par
+# n'importe quoi laissait la suite verte.
 SCRIPT = {
     "title": "Transport de Femmes",
+    "language": "fr",
     "characters": [{"id": ANNIE, "name": "Annie"}, {"id": SERGE, "name": "Serge"}],
     "acts": [
         {
-            "title": "Acte I",
             "scenes": [
                 {
-                    "title": "Scène 1",
                     "lines": [
                         {"id": "l1", "characterId": ANNIE, "text": "Mais on va être comme des coqs en pâte!"},
                         {"id": "l2", "characterId": SERGE, "text": "Silence! C'est moi le chef ici."},
                     ],
                 },
                 {
-                    "title": "Scène 2",
                     "lines": [{"id": "l3", "characterId": ANNIE, "text": "On étouffe ici."}],
                 },
             ],
         },
         {
-            "title": "Acte II",
             "scenes": [
-                {"title": "Scène 1", "lines": [{"id": "l4", "characterId": SERGE, "text": "Debout."}]}
+                {"lines": [{"id": "l4", "characterId": SERGE, "text": "Debout."}]}
             ],
         },
     ],
@@ -115,11 +118,69 @@ class TestRenderTex(unittest.TestCase):
         self.assertIn(r"\scshape Transport de Femmes", tex)
 
     def test_act_and_scene_headings(self):
+        # Composés par le module et non lus dans script.json : chiffres romains
+        # pour les actes, arabes pour les scènes, la convention du script imprimé.
         tex = render_tex(SCRIPT)
         self.assertIn(r"\actheading{Acte I}", tex)
         self.assertIn(r"\actheading{Acte II}", tex)
         self.assertIn(r"\sceneheading{Scène 1}", tex)
         self.assertIn(r"\sceneheading{Scène 2}", tex)
+
+    def test_a_leftover_title_in_the_file_is_ignored(self):
+        # Le garde de la coïncidence : un `script.json` d'avant porte des titres,
+        # et le PDF ne doit surtout pas les reprendre, sinon deux façons de nommer
+        # une scène cohabiteraient dans le format. Sans ce test, la fixture
+        # pouvait dire n'importe quoi sans qu'un seul cas ne rougisse.
+        script = {
+            "title": "T",
+            "language": "fr",
+            "characters": [{"id": ANNIE, "name": "Annie"}],
+            "acts": [
+                {
+                    "title": "PROLOGUE",
+                    "scenes": [
+                        {"title": "OUVERTURE", "lines": [
+                            {"id": "l1", "characterId": ANNIE, "text": "Ici."},
+                        ]},
+                    ],
+                },
+                {"scenes": [{"lines": [{"id": "l2", "characterId": ANNIE, "text": "Là."}]}]},
+            ],
+        }
+        tex = render_tex(script)
+        self.assertNotIn("PROLOGUE", tex)
+        self.assertNotIn("OUVERTURE", tex)
+        self.assertIn(r"\actheading{Acte I}", tex)
+        self.assertIn(r"\sceneheading{Scène 1}", tex)
+
+    def test_an_english_play_is_composed_in_english(self):
+        # `language` est la langue de la PIÈCE, pas celle d'un lecteur : sur le
+        # papier un intertitre est le document. Les mots sont tenus en accord avec
+        # les catalogues du front par test_contracts.TestStructureLabels ; ce qui
+        # se vérifie ici, c'est que `render_tex` les emploie bel et bien.
+        tex = render_tex(dict(SCRIPT, language="en"))
+        self.assertIn(r"\actheading{Act I}", tex)
+        self.assertIn(r"\actheading{Act II}", tex)
+        self.assertIn(r"\sceneheading{Scene 1}", tex)
+        self.assertIn(r"\sceneheading{Scene 2}", tex)
+        self.assertNotIn("Acte I", tex)
+        self.assertNotIn("Scène 1", tex)
+
+    def test_babel_follows_the_play_language(self):
+        # La césure et les mots que babel compose lui-même. `english.ldf` vient de
+        # texlive-latex-base, donc rien à ajouter au workflow ; une troisième
+        # langue, elle, demanderait son propre paquet (cf. STRUCTURE).
+        self.assertIn(r"\usepackage[french]{babel}", render_tex(SCRIPT))
+        self.assertIn(r"\usepackage[english]{babel}", render_tex(dict(SCRIPT, language="en")))
+
+    def test_an_unknown_language_falls_back_to_french(self):
+        # Miroir de `sanitize_script` et du front : un fichier d'avant ce champ,
+        # ou une valeur hand-éditée de travers, reste composable.
+        for value in (None, "kl", 42):
+            with self.subTest(language=value):
+                tex = render_tex(dict(SCRIPT, language=value))
+                self.assertIn(r"\usepackage[french]{babel}", tex)
+                self.assertIn(r"\actheading{Acte I}", tex)
 
     def test_rule_separates_scenes_but_never_opens_an_act(self):
         # Le filet sépare deux scènes. En tête d'acte il n'a rien à séparer :
@@ -161,7 +222,7 @@ class TestRenderTexTolerance(unittest.TestCase):
         script = {
             "title": "T",
             "characters": [{"id": ANNIE, "name": "Annie"}],
-            "acts": [{"title": "A", "scenes": [{"title": "S", "lines": [
+            "acts": [{"scenes": [{"lines": [
                 {"id": "l1", "characterId": ANNIE, "text": "   "},
                 {"id": "l2", "characterId": ANNIE, "text": "Vraie réplique."},
             ]}]}],
@@ -182,9 +243,11 @@ class TestRenderTexTolerance(unittest.TestCase):
         self.assertIn(r"\end{document}", tex)
 
     def test_missing_title_gets_a_placeholder(self):
-        # Un \lhead{\textit{}} vide passerait inaperçu jusqu'à l'impression.
+        # Un \lhead{\textit{}} vide passerait inaperçu jusqu'à l'impression. Le
+        # repli suit la langue de la pièce, comme les intertitres.
         tex = render_tex({"title": "", "characters": [], "acts": []})
         self.assertIn("Sans titre", tex)
+        self.assertIn("Untitled", render_tex({"title": "", "language": "en", "acts": []}))
 
 
 class TestCompile(unittest.TestCase):
@@ -217,7 +280,7 @@ class TestCompile(unittest.TestCase):
         script = {
             "title": "100 % & Cie",
             "characters": [{"id": ANNIE, "name": "Annie"}],
-            "acts": [{"title": "Acte I", "scenes": [{"title": "Scène 1", "lines": [
+            "acts": [{"scenes": [{"lines": [
                 {"id": "l1", "characterId": ANNIE, "text": r"50 % de #1 & $3 _ {a} ~ ^ \dangereux"},
             ]}]}],
         }
@@ -236,7 +299,7 @@ class TestCompile(unittest.TestCase):
         script = {
             "title": "Transport\n\nde Femmes",
             "characters": [{"id": ANNIE, "name": "An\n\nnie"}],
-            "acts": [{"title": "Acte I", "scenes": [{"title": "Scène 1", "lines": [
+            "acts": [{"scenes": [{"lines": [
                 {"id": "l1", "characterId": ANNIE, "text": "Premier bout.\n\nSecond bout."},
             ]}]}],
         }

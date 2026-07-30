@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { fetchManifest } from "../shared/data.js";
+import LocaleSwitch from "../shared/LocaleSwitch.jsx";
 import PageMark from "../shared/PageMark.jsx";
-import { ACTOR_CARDS, PAGES } from "../shared/pages.js";
+import T from "../shared/T.jsx";
+import { t } from "../shared/locale.js";
+import { ACTOR_CARDS, PAGES, pageDescKey, pageLabelKey } from "../shared/pages.js";
 import "./home.css";
 
 // Les deux accueils partagent tout sauf leur liste de cartes : `index.html`
@@ -39,18 +42,33 @@ export default function App({ cards = ACTOR_CARDS }) {
             <a key={key} className={`home-card card lift-hover page-${key}`} href={p.href}>
               {/* Décoratif : le libellé de la page suit immédiatement. */}
               <PageMark page={key} className="home-card-mark" label="" />
-              <span className="home-card-title">{p.label}</span>
-              <span className="home-card-desc">{p.desc}</span>
+              <span className="home-card-title">{t(pageLabelKey(key))}</span>
+              <span className="home-card-desc">{t(pageDescKey(key))}</span>
             </a>
           );
         })}
       </main>
 
+      {/* The language switch lives HERE and nowhere else: a language is a site
+          setting, so it is chosen on the way in, and the shared play header has no
+          room for it (cf. LocaleSwitch.jsx). Both home pages carry it, so the two
+          audiences each have it at hand. */}
       <footer className="home-footer">
-        Un outil libre pour les troupes de théâtre,{" "}
-        <a href="https://github.com/ThomasParistech/prettydrama-voices" target="_blank" rel="noreferrer">
-          PrettyDrama
-        </a>
+        <T
+          k="home.footer"
+          p={{
+            link: (
+              <a
+                href="https://github.com/ThomasParistech/prettydrama-voices"
+                target="_blank"
+                rel="noreferrer"
+              >
+                PrettyDrama
+              </a>
+            ),
+          }}
+        />
+        <LocaleSwitch />
       </footer>
     </div>
   );

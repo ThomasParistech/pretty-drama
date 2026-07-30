@@ -1,5 +1,6 @@
 import React from "react";
-import { PAGES } from "./pages.js";
+import { t } from "./locale.js";
+import { PAGES, pageLabelKey } from "./pages.js";
 
 // Le « sceau » d'une page : pastille ronde colorée portant l'icône de la page.
 // Il remplace l'emoji 🎭 en tête des bandeaux partagés, sert de vignette aux
@@ -20,13 +21,13 @@ import { PAGES } from "./pages.js";
 // l'italienne… ». Une image qui redit son voisin n'informe personne, elle
 // double la longueur de l'annonce.
 export default function PageMark({ page, className = "", label }) {
-  const { label: pageLabel, Icon } = PAGES[page];
+  const { Icon } = PAGES[page];
   const decorative = label === "";
   return (
     <span
       className={`page-mark page-${page} ${className}`.trim()}
       role={decorative ? undefined : "img"}
-      aria-label={decorative ? undefined : (label ?? pageLabel)}
+      aria-label={decorative ? undefined : (label ?? t(pageLabelKey(page)))}
       aria-hidden={decorative ? "true" : undefined}
     >
       <Icon />

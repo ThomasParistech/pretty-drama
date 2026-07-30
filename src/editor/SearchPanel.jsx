@@ -3,8 +3,14 @@ import ConfirmModal from "../shared/ConfirmModal.jsx";
 import { ArrowDownIcon, ArrowUpIcon, ChevronIcon } from "../shared/icons.jsx";
 import { characterColor, characterInk } from "../shared/characterColors.js";
 import { matchExcerpt } from "./search.js";
+import { fmt, t } from "../shared/locale.js";
+import { actLabel, sceneLabel } from "../shared/structureLabels.js";
 
-const plural = (n, mot) => `${n} ${mot}${n > 1 ? "s" : ""}`;
+// Les deux décomptes du panneau, composés ensuite dans les phrases : le pluriel
+// vient d'`Intl.PluralRules` et plus d'un `n > 1 ? "s" : ""`, qui n'avait aucune
+// chance en anglais (« 0 matches ») et n'aurait pas passé une troisième langue.
+const matchCount = (count) => t("search.matchCount", { count });
+const sceneCount = (count) => t("search.sceneCount", { count });
 
 // La section « Recherche » du rail. Purement présentationnelle : elle reçoit
 // l'état de recherche et des rappels, elle n'en garde aucun (changer de section
@@ -62,21 +68,21 @@ export default function SearchPanel({
             très bien avant elle, un champ de remplacement à trois blocs de son
             champ de requête ne se lisait pas comme sa suite. */}
         <div className="search-options">
-          <label title="« Marie » ne trouve plus « marie ».">
+          <label title={t("search.caseSensitive.tip")}>
             <input
               type="checkbox"
               checked={caseSensitive}
               onChange={(e) => setCaseSensitive(e.target.checked)}
             />
-            Respecter la casse
+            {t("search.caseSensitive")}
           </label>
-          <label title="« art » ne trouve plus « partie ».">
+          <label title={t("search.wholeWord.tip")}>
             <input
               type="checkbox"
               checked={wholeWord}
               onChange={(e) => setWholeWord(e.target.checked)}
             />
-            Mot entier
+            {t("search.wholeWord")}
           </label>
         </div>
 
@@ -89,12 +95,8 @@ export default function SearchPanel({
               bord d'un champ de saisie se lisait comme une décoration du champ. */}
           <button
             className="search-replace-toggle"
-            aria-label="Remplacer"
-            title={
-              replaceOpen
-                ? "Masquer le champ de remplacement"
-                : "Afficher le champ de remplacement (Ctrl+H)"
-            }
+            aria-label={t("search.replace")}
+            title={t(replaceOpen ? "search.hideReplace" : "search.showReplace")}
             aria-expanded={replaceOpen}
             aria-controls="search-replace"
             onClick={() => setReplaceOpen(!replaceOpen)}
@@ -105,11 +107,11 @@ export default function SearchPanel({
             ref={inputRef}
             type="text"
             className="search-field"
-            placeholder="Rechercher"
+            placeholder={t("search.placeholder")}
             // L'étiquette dit le périmètre, que le placeholder n'a pas la place
             // de dire : la recherche ne voit que les répliques, ni les titres
             // d'acte ou de scène, ni les noms de personnages.
-            aria-label="Rechercher dans les répliques"
+            aria-label={t("search.label")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
@@ -137,8 +139,8 @@ export default function SearchPanel({
             <input
               type="text"
               className="search-field"
-              placeholder="Remplacer par"
-              aria-label="Remplacer par"
+              placeholder={t("search.replacePlaceholder")}
+              aria-label={t("search.replacePlaceholder")}
               value={replacement}
               onChange={(e) => setReplacement(e.target.value)}
             />
@@ -148,24 +150,24 @@ export default function SearchPanel({
             <div className="search-actions">
               <span
                 className="btn-tip"
-                title={
+                title={t(
                   currentMatch
-                    ? "Remplacer la correspondance courante"
+                    ? "search.replaceCurrent.tip"
                     : total > 0
-                      ? "Choisissez d'abord une correspondance"
-                      : "Aucune correspondance à remplacer"
-                }
+                      ? "search.pickFirst"
+                      : "search.noneToReplace"
+                )}
               >
                 <button className="btn small" onClick={replaceCurrent} disabled={!currentMatch}>
-                  Remplacer
+                  {t("search.replace")}
                 </button>
               </span>
               <span
                 className="btn-tip"
                 title={
                   total > 0
-                    ? `Remplacer ${plural(total, "correspondance")} dans toute la pièce`
-                    : "Aucune correspondance à remplacer"
+                    ? t("search.replaceAll.tip", { matches: matchCount(total) })
+                    : t("search.noneToReplace")
                 }
               >
                 <button
@@ -173,7 +175,7 @@ export default function SearchPanel({
                   onClick={() => setConfirmAll(true)}
                   disabled={total === 0}
                 >
-                  Tout remplacer
+                  {t("search.replaceAll")}
                 </button>
               </span>
             </div>
@@ -190,8 +192,11 @@ export default function SearchPanel({
           <p className={`search-count ${searching ? "stale" : ""}`} aria-live="polite">
             {hasQuery
               ? total > 0
-                ? `${plural(total, "correspondance")} dans ${plural(groups.length, "scène")}`
-                : "Aucune correspondance"
+                ? t("search.count", {
+                    matches: matchCount(total),
+                    scenes: sceneCount(groups.length),
+                  })
+                : t("search.none")
               : ""}
           </p>
           {/* Infobulles portées par une enveloppe et jamais par le bouton : un
@@ -201,34 +206,26 @@ export default function SearchPanel({
           <span className="search-nav">
             <span
               className="btn-tip"
-              title={
-                total > 0
-                  ? "Correspondance précédente (Maj+Entrée)"
-                  : "Aucune correspondance à parcourir"
-              }
+              title={t(total > 0 ? "search.prev.tip" : "search.noneToBrowse")}
             >
               <button
                 className="btn icon small"
                 onClick={() => prev(true)}
                 disabled={total === 0}
-                aria-label="Correspondance précédente"
+                aria-label={t("search.prev")}
               >
                 <ArrowUpIcon />
               </button>
             </span>
             <span
               className="btn-tip"
-              title={
-                total > 0
-                  ? "Correspondance suivante (Entrée)"
-                  : "Aucune correspondance à parcourir"
-              }
+              title={t(total > 0 ? "search.next.tip" : "search.noneToBrowse")}
             >
               <button
                 className="btn icon small"
                 onClick={() => next(true)}
                 disabled={total === 0}
-                aria-label="Correspondance suivante"
+                aria-label={t("search.next")}
               >
                 <ArrowDownIcon />
               </button>
@@ -252,31 +249,35 @@ export default function SearchPanel({
         // pour la raison qui fait confirmer une suppression d'acte : ce qu'on
         // touche n'est pas à l'écran, et c'est le nombre qui surprend.
         <ConfirmModal
-          title={`Remplacer ${plural(total, "correspondance")} ?`}
-          confirmLabel="Remplacer"
+          title={t("search.replaceAllTitle", { matches: matchCount(total) })}
+          confirmLabel={t("search.replace")}
           onCancel={() => setConfirmAll(false)}
           onConfirm={() => {
             setConfirmAll(false);
             replaceAll();
           }}
         >
+          {/* `shownQuery` et pas `query` : le titre annonce un nombre issu du
+              rendu différé (cf. useSearch.js), et c'est cette requête-là que
+              `replaceAll` réécrit. Citer la frappe en cours ferait une phrase qui
+              compte une requête et en nomme une autre, le temps que le rendu
+              rattrape.
+              Les guillemets viennent de `fmt.quote` (donc les insécables en
+              français, des guillemets droits en anglais) et plus de `&nbsp;»`
+              écrits à la main. Un champ de remplacement vide est légitime
+              (supprimer un mot partout) : c'est la seconde phrase qui le dit,
+              plutôt que de laisser croire à un remplacement par rien. */}
           <p>
-            {/* `shownQuery` et pas `query` : le titre annonce un nombre issu du
-                rendu différé (cf. useSearch.js), et c'est cette requête-là que
-                `replaceAll` réécrit. Citer la frappe en cours ferait une phrase
-                qui compte une requête et en nomme une autre, le temps que le
-                rendu rattrape. */}
-            Dans {plural(groups.length, "scène")} de la pièce&nbsp;: «&nbsp;{shownQuery}&nbsp;»{" "}
-            {/* Un champ de remplacement vide est légitime (supprimer un mot
-                partout) : c'est ici que ça se dit, plutôt que de laisser croire à
-                un remplacement par rien. */}
-            {replacement ? (
-              <>
-                devient «&nbsp;{replacement}&nbsp;».
-              </>
-            ) : (
-              "sera supprimé."
-            )}
+            {replacement
+              ? t("search.replaceAllInto", {
+                  scenes: sceneCount(groups.length),
+                  query: fmt.quote(shownQuery),
+                  replacement: fmt.quote(replacement),
+                })
+              : t("search.replaceAllDelete", {
+                  scenes: sceneCount(groups.length),
+                  query: fmt.quote(shownQuery),
+                })}
           </p>
         </ConfirmModal>
       )}
@@ -383,13 +384,14 @@ function ResultList({ groups, characters, currentMatch, onSelect, searching }) {
         {items.slice(from, to).map((item) =>
           item.head ? (
             <li className="search-group-head" key={item.key}>
-              {/* Aucun séparateur écrit entre les deux titres : ce sont des textes
-                  de l'utilisateur (« Prologue », « Tableau final »), donc aucune
-                  phrase ne peut se composer autour d'eux, et à deux graisses
-                  différentes il n'y a plus rien à séparer. */}
+              {/* Aucun séparateur écrit entre les deux libellés : à deux graisses
+                  différentes il n'y a rien à séparer, et une ponctuation entre eux
+                  serait à traduire pour rien. Ils sont dérivés du rang du groupe
+                  (structureLabels.js), les actes et les scènes n'ayant plus de
+                  titre. */}
               <h3 className="search-group-title">
-                <span className="search-group-act">{item.head.actTitle}</span>
-                <span className="search-group-scene">{item.head.sceneTitle}</span>
+                <span className="search-group-act">{actLabel(t, item.head.actIndex)}</span>
+                <span className="search-group-scene">{sceneLabel(t, item.head.sceneIndex)}</span>
               </h3>
             </li>
           ) : (

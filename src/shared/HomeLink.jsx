@@ -1,5 +1,6 @@
 import React from "react";
 import PageMark from "./PageMark.jsx";
+import { t } from "./locale.js";
 import { homeHref } from "./pages.js";
 
 // Le retour à l'accueil, seul lien sortant des pages qui ne sont pas l'accueil :
@@ -28,8 +29,8 @@ export default function HomeLink({ page }) {
       <a
         className="play-header-home page-home"
         href={homeHref(page)}
-        aria-label="Accueil PrettyDrama"
-        title="Accueil PrettyDrama"
+        aria-label={t("common.homeLink")}
+        title={t("common.homeLink")}
       >
         <PageMark page="home" className="play-header-home-mark" label="" />
         <span className="play-header-home-word">PrettyDrama</span>

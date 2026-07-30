@@ -109,6 +109,25 @@
   margin-right: 0.35em;
 }
 
+/* Les drapeaux des deux sélecteurs de langue (`FlagIcon`), le pied des accueils
+   et la section « Structure » de l'Édition. Une seule règle pour les deux, comme
+   les cases à cocher et `.confirm-quote` : deux pages qui montrent le même objet
+   doivent le montrer pareil.
+   Ce n'est pas une icône du site, donc rien ici ne suit la font-size ni
+   `currentColor` : un drapeau est une image, à taille fixe et en couleurs
+   propres. 24x16 (le 3:2 de la boîte) est la taille où le tricolore reste trois
+   bandes franches et où l'Union Jack garde ses diagonales.
+   Le filet est un `box-shadow` extérieur et pas une `border` : en `border-box`
+   il rognerait un pixel de dessin sur chaque bord, et un `inset` passerait sous
+   le contenu SVG, qui se peint par-dessus le fond. */
+.flag-icon {
+  display: block;
+  width: 24px;
+  height: 16px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18);
+}
+
 * {
   box-sizing: border-box;
 }

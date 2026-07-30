@@ -136,3 +136,80 @@
 .home-footer a {
   color: var(--accent);
 }
+
+/* Le sélecteur de langue, seul endroit du site où la langue se choisit (cf.
+   LocaleSwitch.jsx). Sous la phrase du pied et non à côté : la phrase dit ce
+   qu'est le site, le sélecteur est une commande, et les mettre sur une ligne
+   faisait lire « PrettyDrama FR | EN » comme une suite de liens.
+   Il reste discret parce qu'on ne s'en sert qu'une fois : c'est la seule
+   commande de l'accueil qui ne soit pas une carte, donc elle ne doit pas
+   concurrencer les six cartes qui sont la raison de la page. */
+.locale-switch {
+  display: flex;
+  justify-content: center;
+  /* `center` et non `baseline` : les deux entrées sont maintenant des drapeaux
+     (cf. LocaleSwitch.jsx), et une image n'a pas de ligne de base à partager. */
+  align-items: center;
+  gap: 4px;
+  margin-top: 14px;
+}
+
+/* Pas de filet entre les deux, contrairement au temps des sigles « FR | EN » :
+   deux mots collés avaient besoin qu'on les sépare, deux vignettes cernées
+   chacune par son propre filet sont déjà deux objets distincts. */
+
+/* Les règles suivantes sont préfixées par `.locale-switch` pour passer devant le
+   `.home-footer a` d'au-dessus, qui est plus spécifique qu'une classe seule (une
+   classe + un type) et repeignait les liens en accent. Compter sur l'ordre du
+   fichier aurait marché et se serait cassé au premier déplacement. */
+.locale-switch .locale-switch-link,
+.locale-switch .locale-switch-current {
+  position: relative;
+  /* Remplissage et non taille du dessin : la cible fait ainsi 44 x 40 px, la
+     mesure du contrat pour un doigt, là où le drapeau seul n'en ferait que
+     24 x 16. L'accueil des acteurs s'ouvre au téléphone, et c'est la seule
+     commande de son pied. */
+  padding: 12px 10px;
+  border-radius: 6px;
+}
+
+/* La langue courante n'est pas un lien : rien à cliquer, donc rien ne s'allume
+   au survol. C'est un filet d'accent sous son drapeau qui dit « vous êtes ici »,
+   et pas une opacité réduite sur l'autre : éteindre un drapeau le fait lire
+   comme une langue indisponible, alors que c'est justement celle qu'on propose.
+   (Même piège qu'au temps des sigles, où l'encre pâle du lien le faisait lire
+   comme désactivé à côté du mot inerte.)
+   Le cadre plein que la MÊME paire de drapeaux prend dans le rail de l'Édition a
+   été essayé ici et écarté : dans un pied de page où rien n'est encadré, il se
+   lit comme un bouton et pèse plus lourd que les six cartes qui sont la raison
+   de la page. Là-bas, au contraire, c'est le vocabulaire du panneau, où la scène
+   ouverte porte exactement ce cadre. */
+.locale-switch .locale-switch-current::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 6px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.locale-switch .locale-switch-link {
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.locale-switch .locale-switch-link:hover {
+  background: var(--accent-soft);
+}
+
+/* Bague partagée, comme les cartes juste au-dessus (`.home-card:focus-visible`)
+   et les deux autres liens-cartes du site : c'est la seule commande de ce pied
+   de page, donc la seule à retomber sinon sur l'anneau par défaut du
+   navigateur, hors palette. La langue COURANTE n'en a pas besoin, ce n'est pas
+   un lien. */
+.locale-switch .locale-switch-link:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}

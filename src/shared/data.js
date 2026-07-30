@@ -31,9 +31,12 @@ export function fetchScript() {
   return fetchJson("data/script.json");
 }
 
-export const MANIFEST_ERROR_MESSAGE =
-  "Impossible de charger la pièce. Le site n'est peut-être pas encore publié : " +
-  "réessayez dans quelques minutes ou contactez le responsable.";
+// The manifest error message used to live here as a constant. It is now the
+// `common.manifestError` catalogue key, read by useManifest.js, and it had to
+// move: this module is imported by data.test.js under `node --test`, whereas
+// locale.js reads `window` and `navigator` at module load. Keeping the split
+// keeps the pure modules testable without a DOM, which is the whole test
+// strategy of this project.
 
 // Numérotation « (n/total) » de mes répliques dans la scène courante,
 // partagée par les pages Répétition et Enregistrement : Map lineId -> n
@@ -111,13 +114,16 @@ export function githubUploadUrl() {
 // qu'ils se relisent dans un dossier de téléchargements. Deux appelants, le ZIP
 // des prises (noms de personnages) et le PDF de la pièce (son titre).
 //
-// `fallback` est un paramètre et pas une constante parce que le repli finit dans
-// le nom du fichier obtenu : « personnage.pdf » pour la pièce serait un mot de
-// travers. Et c'est bien ICI qu'il se choisit, pas chez l'appelant : une chaîne
-// peut être non vide et ne rien laisser au slug (un titre tout en ponctuation,
-// « ??? »), donc tester l'entrée avant d'appeler ne suffit pas. Seul le résultat
-// sait s'il est vide.
-export function slugify(name, fallback = "personnage") {
+// `fallback` est un paramètre OBLIGATOIRE, et il n'a plus de valeur par défaut :
+// le repli finit dans le nom du fichier obtenu, donc c'est un texte d'interface
+// (un acteur anglophone ne reçoit pas « personnage.zip »), et le défaut français
+// qui vivait ici était le dernier mot du site que sa locale ne pouvait pas
+// atteindre. Il est de surcroît propre à l'appelant : « personnage.pdf » pour la
+// pièce serait un mot de travers. Le TEST, lui, reste ici et pas chez
+// l'appelant : une chaîne peut être non vide et ne rien laisser au slug (un
+// titre tout en ponctuation, « ??? »), donc vérifier l'entrée avant d'appeler ne
+// suffit pas. Seul le résultat sait s'il est vide.
+export function slugify(name, fallback) {
   return (
     name
       .toLowerCase()

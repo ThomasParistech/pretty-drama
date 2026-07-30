@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -16,6 +16,11 @@ import {
 import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 import ConfirmModal from "../shared/ConfirmModal.jsx";
+import CountBadge from "./CountBadge.jsx";
+import { FlagIcon } from "../shared/icons.jsx";
+import { LOCALES } from "../shared/i18n.js";
+import { fmt, t } from "../shared/locale.js";
+import { actLabel, sceneLabel } from "../shared/structureLabels.js";
 
 // Le plan de la pièce : son titre, ses actes, ses scènes. C'est à la fois la
 // NAVIGATION de l'éditeur (une scène à la fois, comme avant) et le seul endroit
@@ -31,44 +36,31 @@ import ConfirmModal from "../shared/ConfirmModal.jsx";
 // alors qu'aucun d'eux ne montrait la forme de la pièce : deux listes déroulantes
 // n'affichent qu'une ligne à la fois.
 //
-// **Tout ce qui nomme la pièce est ici**, avec ce qui la façonne : son titre, le
-// titre de ses actes, celui de ses scènes. La colonne de texte ne fait plus que
-// les AFFICHER, en tête de la scène qu'on écrit. Le renommage y a vécu un temps
-// (un titre de la colonne se cliquait pour le changer en champ), et il se lisait
-// mal : le titre de la pièce se modifiait dans le rail, ceux des actes et des
-// scènes dans le texte, donc nommer la pièce demandait de savoir de quel niveau
-// on parlait pour savoir où cliquer. Un seul endroit, et il porte déjà les trois
-// objets, l'un sous l'autre.
+// **Only the PLAY has a name.** Acts and scenes are not renamed at all: their
+// label is derived from their rank ("Acte I", "Scène 3", see structureLabels.js).
+// So this panel holds one text field, the play's title, plus its language.
 //
-// **Les trois noms sont des champs blancs, en clair et en permanence.** Ce qui se
-// modifie doit se reconnaître sans qu'on l'ait appris : le plan est la seule
-// partie de la page dont le contenu ne se lit pas déjà comme un formulaire (une
-// réplique est un textarea, un personnage a son champ), donc ses noms portent le
-// même cadre blanc que les autres champs du rail. Le titre de la pièce l'avait
-// déjà, à ce détail près qu'il était alors le seul.
+// Renaming acts and scenes did exist here, as plain always-visible fields, and
+// dropping it is what dissolved a whole problem rather than solving it. A stored
+// title is DATA in one language, and it travelled: to manifest.json, to the
+// printed PDF, to the Progress column headers, to the Speaking share scope. None
+// of those could translate it, and none of them should have had to, because the
+// real play never used the freedom anyway (ten scenes, all of them "Scène N").
+// Deriving the label makes it ordinary UI text, in the reader's language.
 //
-// Le geste essayé avant, et retiré : un mot qu'on clique pour ouvrir la scène et
-// qu'on reclique, là où on est déjà, pour le changer en champ. Il n'ajoutait
-// aucun mobilier à une rangée qui porte déjà trois contrôles dans 248 px, mais il
-// demandait de connaître une convention (celle des gestionnaires de fichiers)
-// pour découvrir qu'un titre d'acte se renomme, et il rendait le plan
-// dissymétrique : le titre de la pièce était un champ, les deux autres niveaux
-// des mots.
+// What that costs, and it is the only thing: an act cannot be called "Prologue".
+// If it ever needs to be, that is an optional field to add back, not a redesign.
 //
-// **Conséquence : c'est le FOCUS du champ d'une scène qui l'ouvre.** Cliquer son
-// nom l'ouvre et y pose le curseur du même geste, donc on renomme toujours la
-// scène qu'on a sous les yeux dans la colonne. Un nom d'acte, lui, ne mène plus
-// nulle part : ses scènes sont listées juste dessous, et c'est là qu'on choisit.
-// Prix assumé : parcourir le plan à la tabulation promène la colonne de scène en
-// scène. Rien ne s'y perd (aucune saisie n'est en cours) et ça reste la même
-// règle, le champ où l'on est est la scène qu'on regarde.
+// **A scene is still the one thing in the plan you NAVIGATE to, so it is a
+// button.** It used to be a text field, and the keyboard path to opening a scene
+// came along for free: tab reached the field, and focusing it opened the scene.
+// With nothing left to type, a static label would have taken that path away, so
+// the name is a real button instead, reachable by tab and activated by Enter or
+// Space. An act name, by contrast, leads nowhere (its scenes are listed right
+// below, and that is where one chooses), so it is plain text.
 //
-// **Un nom vide ne s'écrit jamais dans la pièce.** Le champ, lui, se laisse vider
-// (sinon on ne pourrait pas retaper un titre par-dessus l'autre) : tant qu'il
-// n'a que des blancs, il garde sa frappe pour lui et la pièce garde le nom
-// d'avant, qui revient à l'écran dès qu'on sort du champ. C'est ce qui évite
-// qu'un aller-retour dans un titre allume « Modifications non téléchargées » et
-// laisse une étape vide à annuler.
+// The row around a scene stays clickable as a mouse convenience, and the ✕ still
+// stops propagation: deleting a scene is not a way of going to it.
 export default function StructurePanel({
   script,
   actIndex,
@@ -86,6 +78,12 @@ export default function StructurePanel({
   // état et un seul modal, la question étant la même à l'objet près. Rien à
   // demander quand l'objet est vide, comme partout ailleurs dans l'éditeur.
   const [pending, setPending] = useState(null);
+
+  // L'étiquette « Langue de la pièce » nomme le groupe de drapeaux, qui n'est pas
+  // un `<label>` (un groupe de boutons radio ne s'associe pas à un champ mais à
+  // plusieurs) : il faut donc un id, et `useId` évite d'en écrire un en dur dans
+  // un composant que rien n'interdit de monter deux fois.
+  const languageLabelId = useId();
 
   // Amener la scène ouverte à l'écran À L'OUVERTURE de la section, et seulement
   // là : le plan d'une pièce à cinq actes dépasse la hauteur du panneau, donc
@@ -146,18 +144,15 @@ export default function StructurePanel({
     });
   };
 
-  // Renommer : une action par niveau, dispatchée d'ici comme le titre de la
-  // pièce, et à la frappe comme lui. La rafale est fusionnée en une seule étape
-  // d'annulation par `history.js` (une par nom, cf. sa clé de fusion) et close
-  // par la sortie du champ, d'où le HISTORY_BREAK que les trois partagent.
-  const renameAct = (ai, title) => dispatch({ type: "RENAME_ACT", actIndex: ai, title });
-  const renameScene = (ai, si, title) =>
-    dispatch({ type: "RENAME_SCENE", actIndex: ai, sceneIndex: si, title });
+  // Le titre de la PIÈCE est le seul nom qui se saisisse encore : un acte et une
+  // scène tirent leur libellé de leur rang (structureLabels.js), donc ils ne se
+  // renomment pas. Le HISTORY_BREAK ferme la rafale de frappes à la sortie du
+  // champ, `history.js` la fusionnant en une seule étape d'annulation.
   const breakHistory = () => dispatch({ type: "HISTORY_BREAK" });
 
   const askDeleteAct = (ai) => {
     if (actCounts[ai] === 0) onDeleteAct(ai);
-    else setPending({ kind: "act", actIndex: ai, count: actCounts[ai], title: script.acts[ai].title });
+    else setPending({ kind: "act", actIndex: ai, count: actCounts[ai], title: actLabel(t, ai) });
   };
 
   const askDeleteScene = (ai, si) => {
@@ -169,7 +164,7 @@ export default function StructurePanel({
         actIndex: ai,
         sceneIndex: si,
         count: scene.lines.length,
-        title: scene.title,
+        title: sceneLabel(t, si),
       });
   };
 
@@ -188,12 +183,75 @@ export default function StructurePanel({
       <input
         type="text"
         className="structure-field play-title-input"
-        aria-label="Titre de la pièce"
-        placeholder="Titre de la pièce"
+        aria-label={t("structure.playTitle")}
+        placeholder={t("structure.playTitle")}
         value={script.title}
         onChange={(e) => dispatch({ type: "SET_TITLE", title: e.target.value })}
         onBlur={breakHistory}
       />
+
+      {/* La langue de la PIÈCE, juste sous son titre : les deux décrivent le
+          document, alors que tout ce qui suit décrit sa forme.
+          Ce n'est PAS la langue de l'interface (celle-là se choisit sur l'accueil
+          et n'appartient pas à la pièce) : c'est celle dans laquelle la troupe a
+          écrit, et elle sert deux choses qu'on ne pouvait pas régler avant. Le
+          PDF compose ses intertitres et sa césure avec elle, et la voix de
+          synthèse qui remplace une réplique pas encore enregistrée parle enfin la
+          langue du texte qu'elle lit, au lieu d'un français imposé à toute pièce.
+          Une étiquette écrite plutôt qu'une simple infobulle : contrairement au
+          titre, un drapeau ne dit pas de lui-même ce qu'il désigne, et deux
+          drapeaux seuls dans une rangée pourraient aussi bien choisir la langue
+          du site (celle-là se choisit sur l'accueil).
+          **Des drapeaux et non plus un `<select>`**, comme au pied des accueils :
+          un `<option>` ne porte pas d'image, donc les deux endroits où l'on
+          choisit une langue ne pouvaient pas se ressembler tant que celui-ci
+          était une liste déroulante. Ce sont de vrais boutons radio, masqués sous
+          leur drapeau : la navigation aux flèches, le groupe et le « coché » sont
+          alors ceux du navigateur, là où des `<button>` et un `role="radio"`
+          posé à la main auraient demandé de réécrire le `tabIndex` mobile d'un
+          groupe radio.
+          Ça reste un CHAMP qui décrit le document, et pas le sélecteur de langue
+          du site : on y déclare une donnée de la pièce, elle part dans
+          `script.json`, et rien ici ne recharge la page (cf. LocaleSwitch.jsx,
+          qui explique pourquoi les deux ne se confondent pas malgré les mêmes
+          drapeaux). */}
+      <div className="structure-language">
+        <span className="structure-language-label" id={languageLabelId}>
+          {t("structure.language")}
+        </span>
+        <div
+          className="structure-language-flags"
+          role="radiogroup"
+          aria-labelledby={languageLabelId}
+        >
+          {LOCALES.map((locale) => {
+            const name = t(`structure.language.${locale}`);
+            const current = script.language === locale;
+            return (
+              <label
+                key={locale}
+                className={`structure-language-flag ${current ? "current" : ""}`}
+                title={name}
+              >
+                {/* Le nom de la langue est porté par le champ (le drapeau est
+                    `aria-hidden`), et il est TRADUIT : « Anglais » dans une
+                    interface française, contrairement aux endonymes du
+                    sélecteur du site. On énonce ici un fait sur un document,
+                    dans la langue où on le lit. */}
+                <input
+                  type="radio"
+                  name="play-language"
+                  value={locale}
+                  checked={current}
+                  aria-label={name}
+                  onChange={() => dispatch({ type: "SET_LANGUAGE", language: locale })}
+                />
+                <FlagIcon locale={locale} />
+              </label>
+            );
+          })}
+        </div>
+      </div>
 
       <DndContext
         sensors={sensors}
@@ -219,9 +277,6 @@ export default function StructurePanel({
                 currentRow={currentRow}
                 deletable={script.acts.length > 1}
                 onGo={onGo}
-                onRename={renameAct}
-                onRenameScene={renameScene}
-                onBreak={breakHistory}
                 onAddScene={onAddScene}
                 onDeleteAct={askDeleteAct}
                 onDeleteScene={askDeleteScene}
@@ -234,13 +289,13 @@ export default function StructurePanel({
       {/* Sous la liste et hors de son défilement, comme le formulaire d'ajout des
           personnages : sur une pièce à cinq actes il reste sous les yeux. */}
       <button className="btn small structure-add-act" onClick={onAddAct}>
-        + Acte
+        {t("structure.addAct")}
       </button>
 
       {pending && (
         <ConfirmModal
-          title={`Supprimer « ${pending.title} » ?`}
-          confirmLabel="Supprimer"
+          title={t("common.deleteConfirm", { name: fmt.quote(pending.title) })}
+          confirmLabel={t("common.delete")}
           onCancel={() => setPending(null)}
           onConfirm={() => {
             setPending(null);
@@ -248,11 +303,7 @@ export default function StructurePanel({
             else onDeleteScene(pending.actIndex, pending.sceneIndex);
           }}
         >
-          <p>
-            {pending.count > 1
-              ? `${pending.count} répliques seront supprimées.`
-              : "1 réplique sera supprimée."}
-          </p>
+          <p>{t("structure.deleteLines", { count: pending.count })}</p>
         </ConfirmModal>
       )}
     </>
@@ -267,9 +318,6 @@ function ActItem({
   currentRow,
   deletable,
   onGo,
-  onRename,
-  onRenameScene,
-  onBreak,
   onAddScene,
   onDeleteAct,
   onDeleteScene,
@@ -292,23 +340,24 @@ function ActItem({
       }}
     >
       <div className={`structure-row act ${current ? "current" : ""}`}>
-        <DragHandle attributes={attributes} listeners={listeners} label={`Déplacer ${act.title}`} />
-        {/* Le nom d'un acte ne mène nulle part, il se renomme : l'acte n'est pas
-            une page de l'éditeur, la scène l'est, et ses scènes sont listées
-            juste dessous. */}
-        <NameField
-          value={act.title}
-          label="Titre de l'acte"
-          tooltip="Renommer cet acte"
-          onRename={(title) => onRename(actIndex, title)}
-          onBreak={onBreak}
+        <DragHandle
+          attributes={attributes}
+          listeners={listeners}
+          label={t("structure.moveAct", { act: actLabel(t, actIndex) })}
         />
-        <CountBadge count={lineCount} />
+        {/* Un libellé, plus un champ : le nom d'un acte est dérivé de son rang et
+            ne se saisit pas. Il ne mène nulle part non plus (l'acte n'est pas une
+            page de l'éditeur, la scène l'est), donc ce n'est ni un champ ni un
+            bouton, juste du texte. Rien ne se perd au clavier : la tabulation
+            atteignait ce champ pour le renommer, or il n'y a plus rien à y
+            renommer, et les scènes juste dessous ont chacune son bouton. */}
+        <span className="structure-name structure-name-static">{actLabel(t, actIndex)}</span>
+        <CountBadge count={lineCount} className="structure-count" />
         {deletable && (
           <button
             className="chip-delete"
-            title="Supprimer cet acte"
-            aria-label={`Supprimer ${act.title}`}
+            title={t("structure.deleteAct")}
+            aria-label={t("structure.deleteAct.named", { act: actLabel(t, actIndex) })}
             onClick={() => onDeleteAct(actIndex)}
           >
             <span aria-hidden="true">✕</span>
@@ -331,8 +380,6 @@ function ActItem({
               rowRef={si === currentScene ? currentRow : null}
               deletable={act.scenes.length > 1}
               onGo={onGo}
-              onRename={onRenameScene}
-              onBreak={onBreak}
               onDelete={onDeleteScene}
             />
           ))}
@@ -343,7 +390,7 @@ function ActItem({
           l'acte courant : dans un plan, l'endroit où la scène atterrit doit se
           désigner du doigt. */}
       <button className="structure-add-scene" onClick={() => onAddScene(actIndex)}>
-        + Scène
+        {t("structure.addScene")}
       </button>
     </li>
   );
@@ -357,8 +404,6 @@ function SceneItem({
   rowRef,
   deletable,
   onGo,
-  onRename,
-  onBreak,
   onDelete,
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -376,17 +421,15 @@ function SceneItem({
     >
       {/* Le ref d'amenée à l'écran est posé sur la rangée et non sur le `<li>`,
           qui porte déjà celui de dnd-kit.
-          **La rangée ENTIÈRE ouvre la scène**, et pas seulement son champ : dans
-          une liste de scènes, la ligne est l'objet, et viser un champ de 130 px
-          pour changer de scène demandait de savoir que le nom était la cible.
-          Le champ garde son focus (donc son curseur) au passage, puisqu'un clic
-          dessus le focalise et que ce focus ouvre déjà la scène : les deux
-          chemins font la même chose, la rangée n'ajoute que la surface.
+          **La rangée ENTIÈRE ouvre la scène**, et pas seulement son nom : dans
+          une liste de scènes, la ligne est l'objet, et viser un mot de 60 px pour
+          changer de scène demandait de savoir que le nom était la cible. C'est
+          aussi pour ça que le nom ne porte plus aucun dessin à lui (ni cadre ni
+          fond, cf. editor.css) : ce qui répond au survol est la rangée.
           Pas de `role="button"` ni de `tabIndex` sur cette `<div>` : elle
-          contient un champ et deux boutons, et le chemin clavier existe déjà (la
-          tabulation atteint le champ, et le focaliser ouvre la scène). Ce
-          gestionnaire n'ajoute donc qu'une commodité à la souris, il n'est le
-          seul accès à rien. */}
+          contient déjà trois boutons, dont celui du nom, et le chemin clavier
+          passe par lui. Ce gestionnaire n'ajoute donc qu'une commodité à la
+          souris, il n'est le seul accès à rien. */}
       <div
         ref={rowRef}
         className={`structure-row scene ${current ? "current" : ""}`}
@@ -395,27 +438,35 @@ function SceneItem({
         <DragHandle
           attributes={attributes}
           listeners={listeners}
-          label={`Déplacer ${scene.title}`}
+          label={t("structure.moveScene", { scene: sceneLabel(t, sceneIndex) })}
         />
-        {/* La scène ouverte n'est pas signalée par la seule couleur : son champ
+        {/* Un BOUTON et non plus un champ de saisie : une scène ne se renomme
+            plus (son libellé vient de son rang), mais elle reste la seule chose
+            du plan où l'on NAVIGUE, donc elle doit rester atteignable au clavier.
+            Le champ portait ce chemin par accident (la tabulation l'atteignait
+            pour renommer, et le focus ouvrait la scène au passage) ; un bouton le
+            porte pour de bon, et Entrée comme Espace l'activent. Un bouton qui
+            ne ressemble PAS à un champ, en revanche : il en avait gardé le cadre
+            blanc, ce qui laissait le plan promettre une saisie qui n'existe plus
+            (cf. editor.css).
+            La scène ouverte n'est pas signalée par la seule couleur : le bouton
             porte `aria-current`, comme la correspondance courante de la
-            recherche. Et c'est le focus de ce champ qui ouvre la scène : un clic
-            l'ouvre et y pose le curseur du même geste. */}
-        <NameField
-          value={scene.title}
-          label="Titre de la scène"
-          tooltip="Ouvrir cette scène, ou la renommer"
+            recherche. */}
+        <button
+          type="button"
+          className="structure-name structure-scene-name"
           aria-current={current ? "true" : undefined}
-          onFocus={() => onGo(actIndex, sceneIndex)}
-          onRename={(title) => onRename(actIndex, sceneIndex, title)}
-          onBreak={onBreak}
-        />
-        <CountBadge count={scene.lines.length} />
+          title={t("structure.openScene")}
+          onClick={() => onGo(actIndex, sceneIndex)}
+        >
+          {sceneLabel(t, sceneIndex)}
+        </button>
+        <CountBadge count={scene.lines.length} className="structure-count" />
         {deletable && (
           <button
             className="chip-delete"
-            title="Supprimer cette scène"
-            aria-label={`Supprimer ${scene.title}`}
+            title={t("structure.deleteScene")}
+            aria-label={t("structure.deleteScene.named", { scene: sceneLabel(t, sceneIndex) })}
             /* Le ✕ ne traverse pas la rangée : supprimer une scène n'est pas une
                façon d'y aller, et la confirmation s'ouvrirait sur une colonne
                qui vient de changer de scène. */
@@ -432,64 +483,6 @@ function SceneItem({
   );
 }
 
-// Le nom d'un acte ou d'une scène : un champ, comme le titre de la pièce
-// au-dessus, qui renomme à la frappe.
-//
-// Il ne garde d'état local que le cas du champ VIDE, et c'est tout son propos :
-// on doit pouvoir effacer un titre pour en taper un autre, mais un acte sans nom
-// n'a plus rien pour se désigner dans le plan. Tant que la saisie n'a que des
-// blancs, elle reste donc ici et la pièce garde son nom d'avant, qui revient à
-// l'écran à la sortie du champ. Rien n'est dispatché, donc rien n'entre dans la
-// pile d'annulation et l'étiquette « Modifications non téléchargées » ne
-// s'allume pas pour un aller-retour.
-//
-// Piste écartée : dispatcher le vide puis restaurer l'ancien nom au blur. Le
-// retour à l'identique ne rendrait pas l'état d'AVANT mais un état neuf de même
-// valeur, et `dirty` (une comparaison d'identité) resterait allumé sur une pièce
-// inchangée.
-function NameField({ value, label, tooltip, onRename, onBreak, onFocus, ...rest }) {
-  const [emptied, setEmptied] = useState(null);
-
-  return (
-    <input
-      type="text"
-      className="structure-field structure-name"
-      aria-label={label}
-      title={tooltip}
-      value={emptied ?? value}
-      onFocus={onFocus}
-      onChange={(e) => {
-        const next = e.target.value;
-        if (next.trim()) {
-          setEmptied(null);
-          onRename(next);
-        } else {
-          setEmptied(next);
-        }
-      }}
-      onBlur={() => {
-        setEmptied(null);
-        onBreak();
-      }}
-      {...rest}
-    />
-  );
-}
-
-// Le compte de répliques d'un acte ou d'une scène. Un nombre nu ne dit pas ce
-// qu'il compte : « Acte I, 12 » à la voix, et rien du tout à la souris. Le
-// `role="img"` plus l'`aria-label` sont le motif du sceau (`PageMark`), le seul
-// qui rende un `aria-label` valable sur un `<span>` ; le chiffre reste seul à
-// l'écran, la colonne des comptes devant s'aligner d'une rangée à l'autre.
-function CountBadge({ count }) {
-  const label = `${count} réplique${count > 1 ? "s" : ""}`;
-  return (
-    <span className="structure-count" role="img" aria-label={label} title={label}>
-      {count}
-    </span>
-  );
-}
-
 // La poignée des répliques, au même caractère et au même verbe : c'est le même
 // geste, sur un autre objet de la pièce, donc elle garde la classe `drag-handle`
 // (avec son curseur et son `touch-action`) et n'ajoute que le resserrement de sa
@@ -498,7 +491,7 @@ function DragHandle({ attributes, listeners, label }) {
   return (
     <button
       className="drag-handle structure-handle"
-      title="Glisser pour déplacer"
+      title={t("common.dragHandle")}
       aria-label={label}
       {...attributes}
       {...listeners}

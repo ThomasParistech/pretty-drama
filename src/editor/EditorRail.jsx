@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from "react";
 import { OutlineIcon, PersonIcon, SearchIcon } from "../shared/icons.jsx";
+import { t } from "../shared/locale.js";
 
 // Le rail latéral de l'Édition : une bande de trois icônes toujours visible et
 // UNE section ouverte à la fois, à gauche de la colonne de texte.
@@ -40,25 +41,14 @@ import { OutlineIcon, PersonIcon, SearchIcon } from "../shared/icons.jsx";
 // remplacé les selects d'acte et de scène du bandeau, qui étaient les premiers
 // réglages de la page et venaient donc avant les puces de personnage). C'est
 // aussi la section ouverte à l'arrivée, cf. App.jsx.
+// Les clés et pas les mots : la section se nomme au rendu, et `rail.<clé>` est
+// aussi le titre du panneau, donc les deux ne peuvent pas diverger. `scene.js`
+// cite `rail.characters` pour renvoyer à cette icône, ce qui ne tient que parce
+// que ce nom vit à un seul endroit.
 const SECTIONS = [
-  {
-    key: "structure",
-    label: "Structure",
-    tip: "Titre, actes et scènes de la pièce",
-    Icon: OutlineIcon,
-  },
-  {
-    key: "characters",
-    label: "Personnages",
-    tip: "Personnages de la pièce",
-    Icon: PersonIcon,
-  },
-  {
-    key: "search",
-    label: "Recherche",
-    tip: "Rechercher dans les répliques (Ctrl+F)",
-    Icon: SearchIcon,
-  },
+  { key: "structure", Icon: OutlineIcon },
+  { key: "characters", Icon: PersonIcon },
+  { key: "search", Icon: SearchIcon },
 ];
 
 // Bornes de la largeur du panneau. En bas, 200 px : en dessous, une puce de
@@ -143,20 +133,21 @@ export default function EditorRail({ section, onSection, structure, characters, 
     // « panneau latéral », qui décrirait un meuble.
     <aside
       className={`editor-rail ${open ? "open" : ""} ${resizing ? "resizing" : ""}`}
-      aria-label="Structure, personnages et recherche"
+      aria-label={t("rail.label")}
       style={{ "--ed-rail-panel": `${panelWidth}px` }}
     >
       <div className="editor-rail-strip">
-        {SECTIONS.map(({ key, label, tip, Icon }) => (
+        {SECTIONS.map(({ key, Icon }) => (
           <button
             key={key}
             ref={(el) => (tabRefs.current[key] = el)}
             className="editor-rail-tab"
             // Le nom accessible ne dépend pas de l'état (c'est `aria-expanded`
-            // qui le porte), donc une seule infobulle par bouton, qui nomme la
-            // section : l'esprit de l'infobulle unique du repli du bandeau.
-            aria-label={label}
-            title={tip}
+            // qui le porte), donc une seule infobulle par bouton, qui dit ce que
+            // la section contient : l'esprit de l'infobulle unique du repli du
+            // bandeau.
+            aria-label={t(`rail.${key}`)}
+            title={t(`rail.${key}.tip`)}
             aria-expanded={section === key}
             aria-controls="editor-rail-panel"
             onClick={() => onSection(section === key ? null : key)}
@@ -196,7 +187,7 @@ export default function EditorRail({ section, onSection, structure, characters, 
               rail est ainsi un plan de titres parcourable, ce qui remplace un
               aria-label sur chaque bloc. */}
           <div className="editor-rail-head">
-            <h2 className="editor-rail-title">{current.label}</h2>
+            <h2 className="editor-rail-title">{t(`rail.${current.key}`)}</h2>
           </div>
 
           <div className="editor-rail-body">
@@ -216,7 +207,7 @@ export default function EditorRail({ section, onSection, structure, characters, 
           className="editor-rail-edge"
           role="separator"
           aria-orientation="vertical"
-          aria-label="Largeur du panneau"
+          aria-label={t("rail.width")}
           aria-valuenow={panelWidth}
           aria-valuemin={MIN_PANEL}
           aria-valuemax={MAX_PANEL}

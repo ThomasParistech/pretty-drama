@@ -9,6 +9,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { makeFormats, makeT } from "../shared/i18n.js";
+
 import {
   ALL,
   COLUMNS_STEP,
@@ -23,11 +25,19 @@ import {
   clampColumns,
   countWords,
   formatShare,
-  scopeLabel,
+  scopeOf,
   scopeLines,
   share,
   speechStats,
 } from "./stats.js";
+
+// Le seul message dont `formatShare` a besoin. Un catalogue local plutôt que le
+// vrai : ces tests portent sur l'arithmétique du seuil et sur la typographie
+// d'Intl, pas sur la formulation, qui peut être reprise sans les casser.
+const SHARE_CATALOGUES = {
+  fr: { "stats.shareBelow": "< {value}" },
+  en: { "stats.shareBelow": "< {value}" },
+};
 
 const line = (characterId, text) => ({ id: `l-${characterId}-${text.length}`, characterId, text });
 
@@ -108,18 +118,29 @@ test("scopeLines encaisse un manifest absent ou difforme", () => {
   assert.deepEqual(scopeLines({ acts: [{ scenes: [{ lines: null }] }] }, 0, 0), []);
 });
 
-// ----------------------------------------------------------------- scopeLabel
+// -------------------------------------------------------------------- scopeOf
 
-test("scopeLabel nomme la portée pour les aria-label des dessins", () => {
-  assert.equal(scopeLabel(MANIFEST, ALL, ALL), "toute la pièce");
-  assert.equal(scopeLabel(MANIFEST, 0, ALL), "Acte I, en entier");
-  assert.equal(scopeLabel(MANIFEST, 0, 1), "Acte I, Scène 2");
+test("scopeOf rend le NIVEAU et les rangs, pas une phrase", () => {
+  // C'est l'appelant qui met la portée en mots, avec la locale du lecteur : ici
+  // on ne rend que des rangs, ce qui garde ce module pur et testable tel quel.
+  assert.deepEqual(scopeOf(MANIFEST, ALL, ALL), { kind: "all" });
+  assert.deepEqual(scopeOf(MANIFEST, 0, ALL), { kind: "act", actIndex: 0 });
+  assert.deepEqual(scopeOf(MANIFEST, 0, 1), { kind: "scene", actIndex: 0, sceneIndex: 1 });
 });
 
-test("scopeLabel a un repli quand un acte ou une scène n'a pas de titre", () => {
-  const untitled = { acts: [{ scenes: [{ lines: [] }] }] };
-  assert.equal(scopeLabel(untitled, 0, 0), "l'acte, la scène");
-  assert.equal(scopeLabel(null, ALL, ALL), "toute la pièce");
+test("scopeOf borne ses rangs, donc l'appelant n'a rien à revérifier", () => {
+  assert.deepEqual(scopeOf(MANIFEST, 99, 99).kind, "scene");
+  const scoped = scopeOf(MANIFEST, 99, 99);
+  assert.ok(scoped.actIndex < MANIFEST.acts.length);
+  assert.ok(scoped.sceneIndex < MANIFEST.acts[scoped.actIndex].scenes.length);
+});
+
+test("scopeOf retombe sur la pièce entière plutôt que sur un acte fantôme", () => {
+  assert.deepEqual(scopeOf(null, ALL, ALL), { kind: "all" });
+  assert.deepEqual(scopeOf({ acts: [] }, 0, 0), { kind: "all" });
+  // Un acte sans scène : on reste au niveau de l'acte au lieu de désigner une
+  // scène qui n'existe pas.
+  assert.deepEqual(scopeOf({ acts: [{ scenes: [] }] }, 0, 0), { kind: "act", actIndex: 0 });
 });
 
 // ---------------------------------------------------------------- speechStats
@@ -194,23 +215,46 @@ test("share ne divise jamais par zéro", () => {
   assert.equal(share(5, 0), 0);
 });
 
-test("formatShare écrit la part à la française, un chiffre après la virgule", () => {
-  assert.equal(formatShare(3, 12), "25,0 %");
-  assert.equal(formatShare(1, 3), "33,3 %");
-  assert.equal(formatShare(12, 12), "100,0 %");
+// `formatShare` prend `t` et `fmt` en argument, comme `actLabel` : le module reste
+// pur, et les tests fournissent de vrais formateurs plutôt que des doublures, ce
+// qui vérifie du même coup que la typographie sort bien d'Intl.
+const FR = { t: makeT("fr", SHARE_CATALOGUES), fmt: makeFormats("fr") };
+const EN = { t: makeT("en", SHARE_CATALOGUES), fmt: makeFormats("en") };
+// U+00A0 nommée : Intl la produit avant le `%` en français, et elle est
+// indistinguable d'une espace ordinaire dans un littéral.
+const NBSP = "\u00a0";
+const shareFr = (v, total) => formatShare(v, total, FR.t, FR.fmt);
+const shareEn = (v, total) => formatShare(v, total, EN.t, EN.fmt);
+
+test("formatShare écrit la part avec un chiffre après la décimale", () => {
+  assert.equal(shareFr(3, 12), `25,0${NBSP}%`);
+  assert.equal(shareFr(1, 3), `33,3${NBSP}%`);
+  assert.equal(shareFr(12, 12), `100,0${NBSP}%`);
   // Une part nulle est un vrai zéro : c'est la légende d'un personnage qui a des
   // répliques et pas un mot (une réplique vide), et là « 0,0 % » est exact.
-  assert.equal(formatShare(0, 12), "0,0 %");
-  assert.equal(formatShare(0, 0), "0,0 %", "portée vide : jamais NaN à l'écran");
+  assert.equal(shareFr(0, 12), `0,0${NBSP}%`);
+  assert.equal(shareFr(0, 0), `0,0${NBSP}%`, "portée vide : jamais NaN à l'écran");
+});
+
+test("la typographie de la part suit la langue, et vient d'Intl", () => {
+  // Le code d'avant faisait un `.replace(".", ",")` et une espace ordinaire avant
+  // le `%`. Intl rend la virgule ET une vraie insécable en français, et ni l'une
+  // ni l'autre en anglais.
+  assert.equal(shareEn(1, 3), "33.3%");
+  assert.equal(shareEn(12, 12), "100.0%");
+  assert.ok(shareFr(1, 3).includes(`${NBSP}%`), "insécable U+00A0 avant le signe");
+  assert.ok(!/\s/.test(shareEn(1, 3)), "aucune espace en anglais");
 });
 
 test("une part non nulle n'affiche jamais « 0,0 % »", () => {
   // Un mot sur les dix mille de la pièce : l'arrondi le montrerait à zéro en face
   // d'un décompte de 1, ce qui se lit comme un bug. En dessous du dixième de
   // point, on dit le seuil et pas la valeur.
-  assert.equal(formatShare(1, 10307), "< 0,1 %");
-  assert.equal(formatShare(1, 2001), "< 0,1 %", "juste sous le seuil d'arrondi");
-  assert.equal(formatShare(1, 2000), "0,1 %", "au seuil, l'arrondi suffit");
+  assert.equal(shareFr(1, 10307), `< 0,1${NBSP}%`);
+  assert.equal(shareFr(1, 2001), `< 0,1${NBSP}%`, "juste sous le seuil d'arrondi");
+  assert.equal(shareFr(1, 2000), `0,1${NBSP}%`, "au seuil, l'arrondi suffit");
+  // Le seuil est formaté, pas écrit en dur : l'anglais n'a ni virgule ni espace.
+  assert.equal(shareEn(1, 10307), "< 0.1%");
 });
 
 // -------------------------------------------------------------- centerFontSize
@@ -225,6 +269,27 @@ test("le centre de l'anneau garde sa taille nominale sur les textes d'aujourd'hu
   for (const raw of ["", null, undefined]) {
     assert.equal(centerFontSize(raw, TOTAL_SIZE), TOTAL_SIZE, `rien à faire tenir : ${raw}`);
   }
+});
+
+test("le séparateur de milliers ne compte pas pour un chiffre", () => {
+  // Depuis que le total passe par `fmt.number`, la ligne du centre porte une
+  // insécable étroite en français et une virgule en anglais. Comptés pleine
+  // chasse, ces caractères faisaient tomber le total de la pièce publiée de 17 à
+  // 14,5 unités, soit un rétrécissement de 15 % pour une ligne qui ne s'élargit
+  // que de 6 % : c'est ce garde qui tient l'écart, et sans lui la page phare du
+  // site rapetissait son plus gros chiffre en gagnant sa typographie.
+  const nu = centerFontSize("10307", TOTAL_SIZE);
+  for (const separateur of ["\u202f", "\u00a0", " ", ","]) {
+    const groupe = centerFontSize(`10${separateur}307`, TOTAL_SIZE);
+    assert.ok(groupe < nu, `« 10${separateur}307 » est plus large que « 10307 »`);
+    assert.ok(
+      groupe > nu * 0.95,
+      `un séparateur ne doit pas coûter un chiffre entier (${separateur.codePointAt(0)})`
+    );
+  }
+  // Et il reste plus étroit qu'un chiffre : six chiffres pleins descendent bien
+  // plus bas que cinq chiffres et un séparateur.
+  assert.ok(centerFontSize("103070", TOTAL_SIZE) < centerFontSize("10\u202f307", TOTAL_SIZE));
 });
 
 test("le centre de l'anneau rétrécit un texte trop long et plafonne sa largeur", () => {

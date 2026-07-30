@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { t } from "./locale.js";
 
 // Confirmation for a destructive edit, in place of window.confirm (a raw
 // browser dialog, off-theme and unstyleable). Same look as the character
@@ -52,7 +53,7 @@ export default function ConfirmModal({
         {children}
         <div className="modal-actions">
           <button className="btn" onClick={onCancel}>
-            Annuler
+            {t("common.cancel")}
           </button>
           <button className="btn danger" ref={confirmRef} onClick={onConfirm}>
             {confirmLabel}

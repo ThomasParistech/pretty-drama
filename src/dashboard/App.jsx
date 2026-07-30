@@ -3,6 +3,10 @@ import PageMark from "../shared/PageMark.jsx";
 import PlayHeader from "../shared/PlayHeader.jsx";
 import PageState from "../shared/PageState.jsx";
 import useManifest from "../shared/useManifest.js";
+import { actLabel, sceneLabel } from "../shared/structureLabels.js";
+import { fmt, t } from "../shared/locale.js";
+import { pageLabelKey } from "../shared/pages.js";
+import T from "../shared/T.jsx";
 import { CheckIcon, CrossIcon, DownloadIcon, WarnIcon } from "../shared/icons.jsx";
 import { githubUploadUrl, slugify } from "../shared/data.js";
 import "./dashboard.css";
@@ -26,11 +30,14 @@ export default function App() {
 const JOURNAL_ROWS = 60;
 
 // Libellé du type, hors du tableau : le sceau le porte à l'écran, le mot ne sert
-// plus qu'à l'infobulle et aux lecteurs d'écran.
-const KINDS = {
-  voix: { label: "Voix" },
-  script: { label: "Script" },
-  inconnu: { label: "Autre" },
+// plus qu'à l'infobulle et aux lecteurs d'écran. Les trois clés sont celles que
+// `kind_of` (process_uploads.py) écrit dans le journal, donc elles restent en
+// français : c'est de la DONNÉE, pas du texte d'interface, et le mot affiché vit
+// dans les catalogues.
+const KIND_LABEL_KEY = {
+  voix: "dashboard.kind.voix",
+  script: "dashboard.kind.script",
+  inconnu: "dashboard.kind.inconnu",
 };
 
 // Les fichiers d'un dépôt, normalisés : le manifest peut venir d'une version
@@ -54,35 +61,39 @@ function filesOf(run) {
 function detailOf(row) {
   if (row.error) {
     return (
-      <>
-        <code>{row.file}</code> {row.error}
-      </>
+      <T
+        k="dashboard.journal.detailError"
+        p={{ file: <code>{row.file}</code>, reason: row.error }}
+      />
     );
   }
   if (row.kind === "script") return null;
+  // Le nom du fichier est un PARAMÈTRE et pas un fragment posé avant le
+  // décompte : juxtaposés dans le JSX, leur ordre et l'espace qui les sépare
+  // étaient figés dans le composant.
   return (
-    <>
-      <code>{row.file}</code> {row.clips} réplique{row.clips > 1 ? "s" : ""}
-    </>
+    <T
+      k="dashboard.journal.detailVoices"
+      p={{
+        file: <code>{row.file}</code>,
+        count: t("common.lineCount", { count: row.clips }),
+      }}
+    />
   );
 }
 
-// « 27/07/2026 à 18:12 » : date d'une ligne du journal, année comprise (un
-// journal se relit des mois plus tard, et deux saisons de répétitions passent
-// par les mêmes jours). Rend null sur un horodatage illisible, plutôt que
-// d'afficher « Invalid Date ».
+// La date d'une ligne du journal, année comprise (un journal se relit des mois
+// plus tard, et deux saisons de répétitions passent par les mêmes jours). Rend
+// null sur un horodatage illisible, plutôt que d'afficher « Invalid Date ».
+//
+// `fmt.dateTime` remplace deux `toLocale*` figés sur « fr-FR » et le mot de
+// liaison « à » qui les joignait : le format d'une locale porte son propre
+// séparateur (une virgule en anglais), donc il n'y avait rien à traduire, juste
+// à cesser de l'écrire à la main.
 function formatWhen(iso) {
   const then = new Date(iso);
   if (Number.isNaN(then.getTime())) return null;
-  const date = then.toLocaleDateString("fr-FR");
-  const time = then.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-  return `${date} à ${time}`;
-}
-
-// "Scène 3" -> "3" (compact column header); falls back to position.
-function sceneNumber(title, index) {
-  const match = /(\d+)\s*$/.exec(title || "");
-  return match ? match[1] : String(index + 1);
+  return fmt.dateTime(then);
 }
 
 function okCount(lines) {
@@ -100,9 +111,13 @@ function Dashboard({ manifest }) {
   const scenes = manifest.acts.flatMap((act, actIndex) =>
     act.scenes.map((scene, sceneIndex) => ({
       key: `${actIndex}-${sceneIndex}`,
-      act: act.title,
-      label: sceneNumber(scene.title, sceneIndex),
-      title: scene.title,
+      // Le libellé complet pour l'infobulle, et le seul NUMÉRO dans l'en-tête de
+      // colonne, qui est étroit. Plus de regex pour extraire ce numéro d'un
+      // titre : le rang le donne directement (`sceneNumber` a disparu avec les
+      // titres stockés).
+      act: actLabel(t, actIndex),
+      label: String(sceneIndex + 1),
+      title: sceneLabel(t, sceneIndex),
       lines: scene.lines,
       total: scene.lines.length,
       ok: okCount(scene.lines),
@@ -115,7 +130,7 @@ function Dashboard({ manifest }) {
       const lines = act.scenes.flatMap((scene) => scene.lines);
       return {
         key: i,
-        title: act.title,
+        title: actLabel(t, i),
         span: act.scenes.length,
         total: lines.length,
         ok: okCount(lines),
@@ -155,7 +170,7 @@ function Dashboard({ manifest }) {
           vide. Elle dit à quoi sert la page, jamais comment lire la grille (ça,
           c'est le rôle de `.dash-legend`, sous le tableau) ni comment déposer
           (la carte de dépôt est juste en dessous, elle se lit seule). */}
-      <PlayHeader page="dashboard" title={manifest.title || "Pièce sans titre"} />
+      <PlayHeader page="dashboard" title={manifest.title || t("common.untitledPlay")} />
       <div className="container">
         <div className="dash-actions">
           <UploadLinks />
@@ -165,14 +180,24 @@ function Dashboard({ manifest }) {
         {orphanLines.length > 0 && (
           <div className="dash-orphans card">
             <WarnIcon />
-            <strong>{orphanLines.length} réplique{orphanLines.length > 1 ? "s" : ""} sans
-            personnage valide</strong> : personne ne peut les enregistrer. Ouvrez la page Édition et
-            assignez-leur un personnage.
+            {/* Le décompte en gras est un PARAMÈTRE : découper la phrase autour du
+                <strong> figerait l'ordre des mots français dans le composant. */}
+            <T
+              k="dashboard.orphans"
+              p={{
+                count: (
+                  <strong>
+                    {t("dashboard.orphans.count", { count: orphanLines.length })}
+                  </strong>
+                ),
+                page: t(pageLabelKey("editor")),
+              }}
+            />
             <ul>
               {orphanLines.map((l) => (
                 <li key={l.id}>
                   <span className="dash-pending-loc">
-                    {l.act} · {l.scene}
+                    {actLabel(t, l.actIndex)} · {sceneLabel(t, l.sceneIndex)}
                   </span>{" "}
                   <span className="dash-pending-text">{l.text}</span>
                 </li>
@@ -182,17 +207,12 @@ function Dashboard({ manifest }) {
         )}
 
         {rows.length === 0 || scenes.length === 0 ? (
-          <div className="empty-state">
-            Aucun personnage pour l'instant : la pièce doit d'abord être saisie dans la page Édition.
-          </div>
+          <div className="empty-state">{t("common.noCharacters", { page: t(pageLabelKey("editor")) })}</div>
         ) : (
           <ProgressTable acts={actCols} scenes={scenes} rows={rows} />
         )}
 
-        <p className="dash-legend">
-          Chaque cellule indique le nombre de répliques enregistrées sur le total
-          des répliques du personnage dans la scène.
-        </p>
+        <p className="dash-legend">{t("dashboard.legend")}</p>
 
         <Journal runs={runs} />
       </div>
@@ -223,7 +243,7 @@ function Journal({ runs }) {
   const hidden = all.length - rows.length;
   return (
     <section className="dash-journal">
-      <h2>Derniers dépôts de fichiers</h2>
+      <h2>{t("dashboard.journal.title")}</h2>
       {/* Le conteneur défile, jamais la page : le journal garde une trentaine de
           dépôts, il ne doit pas allonger l'Avancement sans fin. Comme la grille
           au-dessus, c'est donc une région nommée et focalisable : il défile sur
@@ -233,29 +253,28 @@ function Journal({ runs }) {
         className="dash-journal-wrap"
         tabIndex={0}
         role="region"
-        aria-label="Journal des dépôts"
+        aria-label={t("dashboard.journal.region")}
       >
         <table className="dash-journal-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Statut</th>
-              <th>Type</th>
-              <th>Détail</th>
+              <th>{t("dashboard.journal.date")}</th>
+              <th>{t("dashboard.journal.status")}</th>
+              <th>{t("dashboard.journal.type")}</th>
+              <th>{t("dashboard.journal.detail")}</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
               <tr>
                 <td className="dash-journal-empty" colSpan={4}>
-                  Aucun dépôt pour l'instant : chaque fichier déposé apparaîtra ici, avec ce que
-                  l'outil en a fait.
+                  {t("dashboard.journal.empty")}
                 </td>
               </tr>
             )}
             {rows.map((row, i) => (
               <tr key={`${row.at}-${row.file}-${i}`}>
-                <td className="dash-journal-when">{formatWhen(row.at) || "date inconnue"}</td>
+                <td className="dash-journal-when">{formatWhen(row.at) || t("dashboard.journal.unknownDate")}</td>
                 <td>
                   <Status failed={Boolean(row.error)} />
                 </td>
@@ -269,10 +288,7 @@ function Journal({ runs }) {
         </table>
       </div>
       {hidden > 0 && (
-        <p className="dash-journal-more">
-          {hidden} dépôt{hidden > 1 ? "s" : ""} plus ancien{hidden > 1 ? "s" : ""} non affiché
-          {hidden > 1 ? "s" : ""}.
-        </p>
+        <p className="dash-journal-more">{t("dashboard.journal.more", { count: hidden })}</p>
       )}
     </section>
   );
@@ -285,7 +301,7 @@ function Journal({ runs }) {
 // trop étroite pour lui, mais un lecteur d'écran ne doit pas se retrouver devant
 // une cellule muette.
 function Status({ failed }) {
-  const label = failed ? "échoué" : "réussi";
+  const label = t(failed ? "dashboard.journal.failed" : "dashboard.journal.ok");
   return (
     <span
       className={`page-mark dash-journal-mark ${failed ? "ko" : "ok"}`}
@@ -304,9 +320,10 @@ function Status({ failed }) {
 // l'association se lit sans légende. Un fichier ni ZIP ni script n'est
 // revendiqué par aucune page : pastille neutre, sans couleur de page.
 function KindMark({ kind }) {
+  const label = t(KIND_LABEL_KEY[kind] ?? KIND_LABEL_KEY.inconnu);
   if (kind === "inconnu") {
     return (
-      <span className="page-mark dash-journal-mark unknown" role="img" aria-label="Autre" title="Autre">
+      <span className="page-mark dash-journal-mark unknown" role="img" aria-label={label} title={label}>
         ?
       </span>
     );
@@ -315,8 +332,8 @@ function KindMark({ kind }) {
   // `label` explicite : dans cette colonne le sceau dit le TYPE de fichier, pas
   // la page dont il porte les couleurs.
   return (
-    <span title={KINDS[kind].label}>
-      <PageMark page={page} className="dash-journal-mark" label={KINDS[kind].label} />
+    <span title={label}>
+      <PageMark page={page} className="dash-journal-mark" label={label} />
     </span>
   );
 }
@@ -342,15 +359,27 @@ function UploadLinks() {
   return (
     <a className="dash-upload card lift-hover" href={url} target="_blank" rel="noreferrer">
       <PageMark page="recorder" className="dash-upload-mark" />
+      {/* Les deux mots colorés sont des PARAMÈTRES : chacun porte la couleur de sa
+          page, et la phrase garde l'ordre des mots de sa langue. L'ancien JSX était
+          six fragments dans quatre spans imbriqués, où l'ordre comptait. */}
       <span className="dash-upload-text">
-        Déposer des{" "}
-        <span className="dash-upload-word page-recorder">
-          voix <span className="dash-upload-format">(ZIP)</span>
-        </span>{" "}
-        ou le{" "}
-        <span className="dash-upload-word page-editor">
-          script de la pièce <span className="dash-upload-format">(JSON)</span>
-        </span>
+        <T
+          k="dashboard.upload"
+          p={{
+            voices: (
+              <span className="dash-upload-word page-recorder">
+                {t("dashboard.upload.voices")}{" "}
+                <span className="dash-upload-format">(ZIP)</span>
+              </span>
+            ),
+            script: (
+              <span className="dash-upload-word page-editor">
+                {t("dashboard.upload.script")}{" "}
+                <span className="dash-upload-format">(JSON)</span>
+              </span>
+            ),
+          }}
+        />
       </span>
       <PageMark page="editor" className="dash-upload-mark" />
     </a>
@@ -415,10 +444,11 @@ function ScriptPdfLink({ title }) {
   }, []);
   if (!ready) return null;
 
-  // Le repli du slug est passé en paramètre : « ??? » est un titre non vide dont
-  // il ne reste rien après nettoyage, et le défaut de slugify (« personnage »,
-  // son usage d'origine) n'a aucun sens sur un PDF de pièce.
-  const name = slugify(title, "script");
+  // Le repli du slug est OBLIGATOIRE et se choisit par appelant : « ??? » est un
+  // titre non vide dont il ne reste rien après nettoyage, et le repli d'un
+  // personnage (l'usage d'origine de slugify) n'a aucun sens sur un PDF de
+  // pièce. Il vient du catalogue, comme tout nom de fichier téléchargé.
+  const name = slugify(title, t("dashboard.pdfSlug"));
   return (
     // `download` renomme au passage : le respo reçoit « transport-de-femmes.pdf »
     // et pas « script.pdf », qui ne dit rien une fois dans le dossier des
@@ -430,8 +460,10 @@ function ScriptPdfLink({ title }) {
     >
       <DownloadIcon />
       <span>
-        Télécharger la pièce à imprimer{" "}
-        <span className="dash-script-format">(PDF)</span>
+        <T
+          k="dashboard.pdf"
+          p={{ format: <span className="dash-script-format">(PDF)</span> }}
+        />
       </span>
     </a>
   );
@@ -452,7 +484,7 @@ function ProgressTable({ acts, scenes, rows }) {
       className="dash-table-wrap"
       tabIndex={0}
       role="region"
-      aria-label="Avancement par personnage et par scène"
+      aria-label={t("dashboard.table")}
     >
       <table className="dash-table">
         <thead>

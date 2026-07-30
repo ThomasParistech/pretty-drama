@@ -14,6 +14,8 @@ import {
 } from "@dnd-kit/sortable";
 import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
 import LineRow from "./LineRow.jsx";
+import { sceneLabel } from "../shared/structureLabels.js";
+import { fmt, t } from "../shared/locale.js";
 
 // React.memo: only the scene being edited changes identity per keystroke.
 export default React.memo(function SceneEditor({
@@ -47,9 +49,9 @@ export default React.memo(function SceneEditor({
           pas du texte qu'on écrit. La colonne dit où l'on est, le rail façonne
           et nomme. */}
       <div className="scene-header">
-        <h3 className="scene-title">{scene.title}</h3>
+        <h3 className="scene-title">{sceneLabel(t, sceneIndex)}</h3>
         <span className="scene-line-count">
-          {scene.lines.length} réplique{scene.lines.length > 1 ? "s" : ""}
+          {t("common.lineCount", { count: scene.lines.length })}
         </span>
       </div>
 
@@ -70,7 +72,7 @@ export default React.memo(function SceneEditor({
                       type="button"
                       onClick={() => addLine(actIndex, sceneIndex, scene.lines[i - 1].id)}
                     >
-                      <span className="insert-pill">+ insérer</span>
+                      <span className="insert-pill">{t("scene.insert")}</span>
                     </button>
                   </div>
                 )}
@@ -94,7 +96,7 @@ export default React.memo(function SceneEditor({
             {scene.lines.length > 0 && canAddLines && (
               <div className="insert-zone end">
                 <button type="button" onClick={() => addLine(actIndex, sceneIndex, null)}>
-                  <span className="insert-pill">+ insérer</span>
+                  <span className="insert-pill">{t("scene.insert")}</span>
                 </button>
               </div>
             )}
@@ -107,13 +109,14 @@ export default React.memo(function SceneEditor({
           to create that first line. */}
       {scene.lines.length === 0 && canAddLines && (
         <button className="add-first-line-btn" onClick={() => addLine(actIndex, sceneIndex, null)}>
-          Écrire la première réplique : les suivantes se créent avec la touche Entrée.
+          {t("scene.firstLine")}
         </button>
       )}
+      {/* Le nom de la section du rail est INTERPOLÉ depuis sa propre clé : le
+          recopier ici le ferait dériver au premier renommage. */}
       {!canAddLines && (
         <p className="scene-empty-hint">
-          Ajoutez d'abord un personnage (icône « Personnages » du rail, à gauche) pour pouvoir
-          saisir des répliques.
+          {t("scene.needCharacter", { section: fmt.quote(t("rail.characters")) })}
         </p>
       )}
     </div>

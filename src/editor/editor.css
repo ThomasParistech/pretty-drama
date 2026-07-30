@@ -674,18 +674,11 @@ h3 {
    L'ordre des blocs raconte la pièce du général au particulier : son titre, ses
    actes, ses scènes ; et « + Acte » est en pied, hors du défilement. */
 
-/* Les trois noms de la pièce sont des CHAMPS, au même cadre blanc : la pièce, ses
-   actes, ses scènes. Ce qui se modifie doit se reconnaître sans qu'on l'ait
-   appris, et le plan est la seule partie de la page dont le contenu ne se lisait
-   pas déjà comme une saisie (une réplique est un textarea, un personnage a son
-   champ). Les noms d'acte et de scène ont été des mots qu'on cliquait, le titre
-   de la pièce était alors le seul champ des trois, et rien ne disait que les
-   deux autres niveaux se renommaient.
+/* Le titre de la pièce est le SEUL champ du plan : un acte et une scène tirent
+   leur libellé de leur rang et ne se renomment pas (cf. StructurePanel.jsx).
    Le cadre vient de `theme.css` (`input[type="text"]`, plus spécifique qu'une
-   classe seule) ; il ne reste ici qu'à dire le survol, qui manquait au titre de
-   la pièce : le filet prend l'accent, le fond ne bouge pas. C'est le geste le
-   plus discret qui distingue un champ d'un titre affiché, et il faut qu'il le
-   soit : cette colonne en aligne une quinzaine. */
+   classe seule) ; il ne reste ici qu'à dire le survol : le filet prend l'accent,
+   le fond ne bouge pas. */
 .structure-field:hover {
   border-color: var(--accent);
 }
@@ -734,10 +727,10 @@ h3 {
   border-top: 1px solid var(--border);
 }
 
-/* Deux pixels entre les rangées, et pas un seul : depuis que chaque nom porte le
-   cadre d'un champ, deux rangées collées mettent deux filets à deux pixels l'un
-   de l'autre, ce qui se lit comme un trait double. Il en va de même entre les
-   scènes d'un acte, d'où le flex sur leur liste. */
+/* Deux pixels entre les rangées, et pas un seul : une rangée survolée ou ouverte
+   pose son filet, et collée à sa voisine ces deux filets à deux pixels l'un de
+   l'autre se lisent comme un trait double. Il en va de même entre les scènes
+   d'un acte, d'où le flex sur leur liste. */
 .structure-act {
   display: flex;
   flex-direction: column;
@@ -777,13 +770,11 @@ h3 {
   color: var(--ed-title);
 }
 
-/* Une rangée de SCÈNE s'ouvre en entier, pas seulement par son champ : c'est la
+/* Une rangée de SCÈNE s'ouvre en entier, pas seulement par son bouton : c'est la
    ligne qui est l'objet, et le survol doit donc allumer la ligne et pas le mot.
    Il pose le filet que la rangée garde transparent au repos, plus le crème du
-   papier : le champ blanc ressort alors de sa rangée, ce qui dit du même coup
-   les deux gestes qu'elle porte (ouvrir la scène, écrire son nom). Le `:not` est
-   nécessaire, à égalité de spécificité avec la règle du dessous. Les rangées
-   d'acte n'en prennent rien : leur nom ne mène nulle part. */
+   papier. Le `:not` est nécessaire, à égalité de spécificité avec la règle du
+   dessous. Les rangées d'acte n'en prennent rien : leur nom ne mène nulle part. */
 .structure-row.scene {
   cursor: pointer;
 }
@@ -820,20 +811,140 @@ h3 {
 }
 
 /* Le nom prend la place et se coupe en « … », comme celui d'un personnage : un
-   titre à rallonge ne doit pas pousser le compte et le ✕ hors du panneau (sur un
-   champ, la coupure ne se voit qu'au repos, le navigateur faisant défiler son
-   contenu dès qu'on y écrit). Le remplissage du thème (8px 10px) est repris pour
-   une rangée de 13.5 px, et le rayon suit celui de la rangée qui l'entoure. */
+   libellé à rallonge ne doit pas pousser le compte et le ✕ hors du panneau. Le
+   remplissage du thème (8px 10px) est repris pour une rangée de 13.5 px. */
 .structure-name {
   flex: 1;
   min-width: 0;
   font-size: 13.5px;
   color: var(--ink);
   padding: 2px 6px;
-  border-radius: 6px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Le nom d'un acte : du texte, rien de plus. Il reprend la géométrie de
+   `.structure-name` (donc la rangée ne change pas de hauteur) et rien d'autre :
+   ni cadre, ni fond, ni curseur, parce qu'il n'y a rien à faire dessus. */
+.structure-name-static {
+  cursor: default;
+}
+
+/* Le nom d'une scène : un BOUTON, seul objet du plan où l'on navigue.
+   **Aucun cadre, aucun fond**, exactement comme le nom d'un acte juste au-dessus.
+   Il en portait, hérités du champ de saisie qu'il remplace, et c'était le dernier
+   endroit du plan à mentir : une case blanche encadrée dans une colonne d'édition
+   se lit comme un texte à taper, or plus rien ne se renomme ici (le libellé vient
+   du rang, cf. structureLabels.js). Ce qui répond au survol et dit où l'on est,
+   c'est la RANGÉE, et c'est aussi la surface qu'on vise pour ouvrir la scène ;
+   allumer le mot par-dessus la rangée doublait le signal, sur deux géométries qui
+   ne se superposent pas. Le seul dessin qui reste propre au bouton est sa bague
+   de focus, qui appartient à ce qui a le clavier.
+   Bénéfice de bord : les rangées d'acte et de scène font enfin la même hauteur
+   (le filet du bouton en donnait deux de plus aux secondes).
+   `text-align: left` et la police héritée sont là parce qu'un `<button>` centre
+   son texte et prend la police du système : sans elles, le plan se lisait en
+   Arial centré au milieu d'une colonne en IBM Plex alignée à gauche. */
+.structure-scene-name {
+  /* Les trois propriétés qu'un `<button>` doit désapprendre, et PAS le raccourci
+     `font: inherit` : celui-ci réinitialise aussi `font-size`, donc il écrasait
+     les 13,5 px que `.structure-name` pose juste au-dessus (même spécificité,
+     règle plus bas), et le nom d'une scène sortait à 16 px, plus gros que le nom
+     de son acte et plus haut que sa rangée. Sans `font-size` ici, le bouton et le
+     `<span>` de l'acte rendent exactement pareil. */
+  font-family: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: none;
+  border: none;
+  /* Rien à arrondir tant que rien n'est peint : ce rayon est celui de la bague
+     de focus, qui suivrait sinon les angles vifs de la boîte au milieu d'un
+     panneau dont tout le reste est arrondi. */
+  border-radius: 6px;
+}
+
+/* La bague de focus du THÈME, et pas celle du navigateur : ce bouton est le seul
+   chemin clavier vers l'ouverture d'une scène, et l'`input` qu'il remplace la
+   prenait gratuitement par `input:focus` (theme.css). Sans cette règle, il
+   retombait sur l'anneau par défaut, hors palette. */
+.structure-scene-name:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* La langue de la pièce, sous son titre. L'étiquette est en encre douce et petite
+   : c'est un réglage qu'on pose une fois, il ne doit pas concurrencer le titre
+   juste au-dessus ni les actes juste en dessous. */
+.structure-language {
+  display: flex;
+  align-items: center;
+  /* `wrap` parce que le rail se resserre jusqu'à 200 px : les drapeaux passent
+     sous leur étiquette au lieu de la pousser hors du panneau. */
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 8px;
+}
+
+.structure-language-label {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* Les deux drapeaux, à la place du `<select>` d'avant (cf. StructurePanel.jsx).
+   Ils sont poussés à droite du panneau : l'étiquette ouvre la rangée, la valeur
+   la ferme, comme un champ le faisait. */
+.structure-language-flags {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+/* Une vignette de drapeau, dessinée exactement comme une rangée du plan juste en
+   dessous (filet transparent au repos, crème au survol, accent quand elle est
+   choisie) : ce sont les deux seules choses qu'on désigne dans cette section, et
+   elles doivent répondre pareil.
+   `line-height: 0` parce que la boîte d'un `<label>` réserve sinon la place d'une
+   ligne de texte sous le drapeau, qui n'en a pas. */
+.structure-language-flag {
+  display: block;
+  padding: 4px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  line-height: 0;
+  cursor: pointer;
+}
+
+/* Le bouton radio est le vrai contrôle : masqué à l'œil, jamais à la
+   tabulation, donc `opacity: 0` et pas `display: none`, qui le sortirait du
+   parcours clavier et priverait le groupe de sa navigation aux flèches. */
+.structure-language-flag input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.structure-language-flag:not(.current):hover {
+  border-color: var(--border);
+  background: var(--paper-dark);
+}
+
+.structure-language-flag.current {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* La bague de focus se pose sur le drapeau et non sur l'étiquette qui l'entoure :
+   c'est le dessin qu'on voit, et le `+` évite d'avoir à faire confiance à `:has`
+   pour un chemin clavier. */
+.structure-language-flag input:focus-visible + .flag-icon {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
 }
 
 /* « + Scène » sous les scènes de SON acte, au retrait des scènes : c'est là qu'il

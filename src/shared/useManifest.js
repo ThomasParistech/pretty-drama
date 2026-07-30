@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { fetchManifest, MANIFEST_ERROR_MESSAGE } from "./data.js";
+import { fetchManifest } from "./data.js";
+import { t } from "./locale.js";
 
-// Le seul chargeur de manifest, partagé par l'Enregistrement, la Répétition,
-// la Répartition et l'Avancement, pour que le comportement de chargement et
-// d'erreur (et sa formulation française) ne puisse pas dériver d'une page à
-// l'autre.
+// The only manifest loader, shared by the Recording, Rehearsal, Speaking share
+// and Progress pages, so that neither the loading behaviour nor the wording of
+// the error can drift from one page to another.
+//
+// The message is read here rather than in data.js because that module is covered
+// by `node --test` and must not import locale.js, which touches `window`.
 export default function useManifest() {
   const [manifest, setManifest] = useState(null);
   const [error, setError] = useState(null);
@@ -13,7 +16,7 @@ export default function useManifest() {
     let cancelled = false;
     fetchManifest()
       .then((m) => !cancelled && setManifest(m))
-      .catch(() => !cancelled && setError(MANIFEST_ERROR_MESSAGE));
+      .catch(() => !cancelled && setError(t("common.manifestError")));
     return () => {
       cancelled = true;
     };

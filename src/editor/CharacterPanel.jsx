@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { CHARACTER_COLOR_NAMES, CHARACTER_COLORS } from "../shared/characterColors.js";
+import { CHARACTER_COLOR_KEYS, CHARACTER_COLORS } from "../shared/characterColors.js";
+import { t } from "../shared/locale.js";
+import CountBadge from "./CountBadge.jsx";
 import { newId } from "./reducer.js";
 
 // La gestion des personnages : une puce par personnage (pastille de couleur,
@@ -27,7 +29,7 @@ export default function CharacterPanel({ characters, lineCounts, dispatch, onReq
   return (
     <>
       {characters.length === 0 ? (
-        <p className="character-empty">Aucun personnage pour l'instant :</p>
+        <p className="character-empty">{t("characters.empty")}</p>
       ) : (
         <ul className="character-list">
           {characters.map((c) => (
@@ -52,7 +54,7 @@ export default function CharacterPanel({ characters, lineCounts, dispatch, onReq
       >
         <input
           type="text"
-          placeholder="Nom du personnage"
+          placeholder={t("characters.namePlaceholder")}
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
         />
@@ -61,7 +63,7 @@ export default function CharacterPanel({ characters, lineCounts, dispatch, onReq
             nomment tous l'objet qu'ils créent, et le champ voisin dit déjà
             « Nom du personnage ». */}
         <button type="submit" className="btn small" disabled={!newName.trim()}>
-          + Personnage
+          {t("characters.add")}
         </button>
       </form>
     </>
@@ -84,8 +86,8 @@ function CharacterItem({ character, lineCount, onRename, onSetColor, onDelete })
       <span className="character-chip">
         <button
           className="character-swatch"
-          title="Changer la couleur"
-          aria-label={`Changer la couleur de ${character.name}`}
+          title={t("characters.changeColor")}
+          aria-label={t("characters.changeColorOf", { name: character.name })}
           style={{ background: character.color }}
           onClick={() => setPickerOpen((o) => !o)}
         />
@@ -107,27 +109,19 @@ function CharacterItem({ character, lineCount, onRename, onSetColor, onDelete })
             }}
           />
         ) : (
-          <button className="character-name" title="Renommer" onClick={() => setEditing(true)}>
+          <button
+            className="character-name"
+            title={t("characters.rename")}
+            onClick={() => setEditing(true)}
+          >
             {character.name}
           </button>
         )}
-        {/* Un nombre nu ne dit pas ce qu'il compte : « Marie, 12 » à la voix, et
-            rien du tout à la souris. Le `role="img"` plus l'`aria-label` sont le
-            motif du sceau (`PageMark`), le seul qui rende un `aria-label` valable
-            sur un `<span>`. Le chiffre reste seul à l'écran, la colonne des
-            comptes devant s'aligner. */}
-        <span
-          className="character-count"
-          role="img"
-          aria-label={`${lineCount} réplique${lineCount > 1 ? "s" : ""}`}
-          title={`${lineCount} réplique${lineCount > 1 ? "s" : ""}`}
-        >
-          {lineCount}
-        </span>
+        <CountBadge count={lineCount} className="character-count" />
         <button
           className="chip-delete"
-          title="Supprimer ce personnage"
-          aria-label={`Supprimer ${character.name}`}
+          title={t("characters.delete")}
+          aria-label={t("characters.deleteNamed", { name: character.name })}
           onClick={onDelete}
         >
           <span aria-hidden="true">✕</span>
@@ -160,13 +154,15 @@ function CharacterItem({ character, lineCount, onRename, onSetColor, onDelete })
                    un (« la couleur orange », mais « la pastille orange »). */
                 aria-label={
                   color === character.color
-                    ? `${CHARACTER_COLOR_NAMES[i]}, couleur actuelle`
-                    : `Choisir la couleur ${CHARACTER_COLOR_NAMES[i].toLowerCase()}`
+                    ? t("characters.colorCurrent", { color: t(CHARACTER_COLOR_KEYS[i]) })
+                    : t("characters.colorChoose", {
+                        color: t(CHARACTER_COLOR_KEYS[i]).toLowerCase(),
+                      })
                 }
                 title={
                   color === character.color
-                    ? `${CHARACTER_COLOR_NAMES[i]}, couleur actuelle`
-                    : CHARACTER_COLOR_NAMES[i]
+                    ? t("characters.colorCurrent", { color: t(CHARACTER_COLOR_KEYS[i]) })
+                    : t(CHARACTER_COLOR_KEYS[i])
                 }
                 style={{ background: color }}
                 onClick={() => {

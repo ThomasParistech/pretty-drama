@@ -23,29 +23,33 @@ const HISTORY_LIMIT = 100;
 // closed by any other action, by an undo/redo, or by HISTORY_BREAK (field
 // blurred). Everything else (add/delete/move) is one step per action.
 //
-// Les trois noms du plan de la pièce (titre, actes, scènes) sont dans le lot
-// depuis qu'ils sont des champs en clair et non plus des boutons qui se
-// changeaient en champ pour un aller-retour : ils se renomment maintenant à la
-// frappe, comme le texte d'une réplique.
+// Le titre de la pièce est dans le lot avec le texte des répliques : c'est un
+// champ en clair, donc il se renomme à la frappe et une rafale ne doit faire
+// qu'une étape.
 //
-// Les actes et les scènes n'ont pas d'id, la clé est donc leur RANG, et ça tient
-// pour la seule raison qui compte : tout ce qui déplace un rang (MOVE_ACT,
-// MOVE_SCENE, une suppression) a une clé nulle, donc ferme la rafale au passage.
-// Deux objets différents ne peuvent pas se retrouver dans la même étape.
+// **Toute clé identifie son objet par une valeur STABLE**, un id de réplique ou
+// rien du tout, et plus jamais par un rang. Les renommages d'acte et de scène
+// étaient les seuls à se cléer sur un rang (les actes et les scènes n'ont pas
+// d'id), ce qui tenait uniquement parce que tout ce qui déplace un rang a une clé
+// nulle et fermait donc la rafale au passage. Ils n'existent plus : un acte et
+// une scène ne se renomment pas, leur libellé est dérivé de leur rang
+// (structureLabels.js). Cette précaution n'a donc plus d'objet, et il ne faut pas
+// la faire revenir sans elle : deux objets différents ne peuvent pas se retrouver
+// dans la même étape d'annulation, et c'est testé.
 function coalesceKey(action) {
   switch (action.type) {
     case "EDIT_TEXT":
       return `EDIT_TEXT:${action.lineId}`;
     case "SET_TITLE":
       return "SET_TITLE";
-    case "RENAME_ACT":
-      return `RENAME_ACT:${action.actIndex}`;
-    case "RENAME_SCENE":
-      return `RENAME_SCENE:${action.actIndex}:${action.sceneIndex}`;
     default:
       return null;
   }
 }
+
+// Exportée pour le test qui verrouille l'invariant ci-dessus. Rien d'autre ne la
+// consomme.
+export { coalesceKey as _coalesceKeyForTests };
 
 export function initHistory(script) {
   return { present: script, past: [], future: [], lastKey: null, saved: script };

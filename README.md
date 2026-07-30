@@ -14,7 +14,7 @@ seule, et vous dites vos répliques au bon moment.
 | Page | Pour qui | Ce qu'on y fait |
 |------|----------|-----------------|
 | **Répétition** | Toute la troupe | Choisir sa scène et son personnage, masquer ses répliques, avancer réplique par réplique. Les répliques pas encore enregistrées sont lues par une voix de synthèse en attendant. |
-| **Enregistrement** | Les acteurs | Choisir son personnage, enregistrer ses répliques, télécharger un fichier `voix-xxx.zip` et l'envoyer au responsable (mail, WhatsApp, clé USB, comme vous voulez). |
+| **Enregistrement** | Les acteurs | Choisir son personnage, enregistrer ses répliques, télécharger un fichier `voix-xxx.zip` (`voices-xxx.zip` en anglais) et l'envoyer au responsable (mail, WhatsApp, clé USB, comme vous voulez). |
 | **Répartition** | Toute la troupe | Voir comment la parole se partage : la part des mots et des répliques de chaque personnage, et une chronologie du dialogue où chaque carré est un mot, coloré par celui qui le prononce. |
 | **Édition** | Le responsable | Saisir et corriger la pièce : personnages, actes, scènes, répliques. |
 | **Avancement** | Le responsable | Voir qui a enregistré quoi, déposer les voix reçues, mettre à jour le script, et lire le journal des derniers dépôts. |
@@ -43,7 +43,7 @@ un compte GitHub gratuit.
    | Adresse | Pour qui |
    |---------|----------|
    | `…github.io/les-troubadours/` | la troupe : Répétition et Enregistrement. C'est ce lien que vous partagez. |
-   | `…github.io/les-troubadours/respo` | vous : les quatre pages. **Mettez-le en favori**, rien n'y mène depuis l'autre accueil. |
+   | `…github.io/les-troubadours/respo.html` | vous : les cinq pages. **Mettez-le en favori**, rien n'y mène depuis l'autre accueil. |
 
 C'est fini : le site est en ligne, avec une pièce d'exemple que vous allez
 remplacer par la vôtre.
@@ -52,7 +52,7 @@ remplacer par la vôtre.
 
 ## Au quotidien
 
-Tout se passe sur **votre accueil** (`…/respo`) : vous n'avez plus jamais
+Tout se passe sur **votre accueil** (`…/respo.html`) : vous n'avez plus jamais
 besoin de revenir sur cette page GitHub.
 
 Tout se dépose au même endroit : le bouton **« Déposer des voix ou le script de
@@ -69,7 +69,7 @@ chaque fichier tout seul.
 3. Déposez-le avec le bouton ci-dessus.
 
 **Publier les voix reçues** (page Avancement) : déposez le ou les fichiers
-`voix-xxx.zip` reçus, avec le même bouton.
+`voix-xxx.zip` reçus, avec le même bouton (seule l'extension compte, pas le nom).
 
 Dans les deux cas le site se met à jour tout seul en quelques minutes : il
 nettoie le son, met les voix en ligne, prend en compte le nouveau texte et

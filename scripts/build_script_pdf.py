@@ -96,7 +96,7 @@ PREAMBLE = r"""\documentclass[10pt,a4paper,twocolumn]{article}
 %% simple avertissement dans le journal. Latin Modern est vectoriel, donc
 %% n'importe quelle taille passe (et le PDF n'embarque plus de bitmaps).
 \usepackage{lmodern}
-\usepackage[french]{babel}
+\usepackage[%(babel)s]{babel}
 \usepackage{geometry}
 \usepackage{setspace}
 \usepackage{fancyhdr}
@@ -137,14 +137,54 @@ PREAMBLE = r"""\documentclass[10pt,a4paper,twocolumn]{article}
 """
 
 
+# Les libellés d'acte et de scène, DÉRIVÉS de leur rang, et la langue de babel.
+#
+# Miroir de src/shared/structureLabels.js et des catalogues : un acte et une scène
+# n'ont pas de titre dans script.json, donc le PDF compose les siens. Il les
+# compose dans la langue de la PIÈCE (`language`) et non dans celle d'un lecteur :
+# à l'écran un libellé d'acte est de la navigation, sur le papier c'est le
+# document. Le chiffre est le même des deux côtés, donc personne ne perd sa place.
+#
+# Un garde de scripts/tests/test_contracts.py compare ces mots à ceux des
+# catalogues JS : les faire diverger ferait imprimer « Acte II » sous un écran qui
+# annonce « Act II ».
+#
+# `babel` : AUCUN paquet apt à ajouter pour l'anglais, et c'est vérifié plutôt que
+# supposé. `english.ldf` vient de `texlive-latex-base`, dont
+# `texlive-latex-recommended` (déjà installé par build.yml) dépend ; seul le
+# français demande son propre paquet, `texlive-lang-french`. Une pièce anglaise se
+# compose donc sans toucher au workflow. Si une troisième langue s'ajoute un jour,
+# c'est le premier endroit à vérifier : sans son `.ldf`, LaTeX échoue, et comme ce
+# script rend 0 même en cas d'échec (cf. plus bas), le PDF disparaîtrait sans un
+# mot au respo.
+STRUCTURE = {
+    "fr": {"act": "Acte %s", "scene": "Scène %s", "untitled": "Sans titre", "babel": "french"},
+    "en": {"act": "Act %s", "scene": "Scene %s", "untitled": "Untitled", "babel": "english"},
+}
+
+# Chiffres romains pour les actes, arabes pour les scènes, comme le script imprimé
+# que ce module reproduit. Miroir de `romanNumeral` (structureLabels.js), y compris
+# son abandon au-delà de 39 : aucune pièce n'a quarante actes, et un chiffre romain
+# faux se lirait plus mal qu'un nombre.
+_TENS = ("", "X", "XX", "XXX")
+_UNITS = ("", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX")
+
+
+def roman_numeral(n: int) -> str:
+    if not isinstance(n, int) or isinstance(n, bool) or n < 1 or n > 39:
+        return str(n)
+    return _TENS[n // 10] + _UNITS[n % 10]
+
+
 def render_tex(script: dict) -> str:
     """script.json -> source LaTeX complet. Fonction pure : c'est elle que les
     tests lisent, il n'y a pas à ouvrir un PDF pour vérifier la mise en page."""
     script = sanitize_script(script)
-    title = script["title"].strip() or "Sans titre"
+    words = STRUCTURE.get(script["language"], STRUCTURE["fr"])
+    title = script["title"].strip() or words["untitled"]
     names = {c["id"]: c["name"] for c in script["characters"]}
 
-    out = [PREAMBLE % {"running_title": latex_escape(title)}]
+    out = [PREAMBLE % {"running_title": latex_escape(title), "babel": words["babel"]}]
 
     # Page de titre : le titre seul, centré. Pas de distribution ni de lieu ni
     # de date, script.json n'en porte pas (et une page de garde inventée
@@ -212,7 +252,7 @@ def render_tex(script: dict) -> str:
     # mise en page qui le tait.
     show_acts = len(script["acts"]) > 1
     for act_index, act in enumerate(script["acts"]):
-        act_title = act["title"].strip()
+        act_title = words["act"] % roman_numeral(act_index + 1)
         # Chaque acte sauf le premier ouvre une page : \clearpage et non
         # \newpage, qui ne ferait que passer à la colonne suivante.
         if act_index > 0:
@@ -221,7 +261,7 @@ def render_tex(script: dict) -> str:
             out.append(r"\actheading{" + latex_escape(act_title) + "}")
 
         for scene_index, scene in enumerate(act["scenes"]):
-            scene_title = scene["title"].strip()
+            scene_title = words["scene"] % (scene_index + 1)
             # Le filet sépare deux scènes : il n'a rien à séparer avant la
             # première, où le titre d'acte vient juste de passer.
             if scene_index > 0:

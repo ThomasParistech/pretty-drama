@@ -14,6 +14,7 @@ chaque push de code comme après chaque dépôt.
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 import unittest
@@ -21,7 +22,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from build_manifest import COLOR_PATTERN
+from build_manifest import COLOR_PATTERN, DEFAULT_LANGUAGE, LANGUAGES
+from build_script_pdf import STRUCTURE, _TENS, _UNITS, roman_numeral
 from common import REPO_ROOT
 from process_uploads import LINE_ID_PATTERN
 
@@ -62,6 +64,49 @@ def css(path: Path) -> str:
     """CSS sans ses commentaires : ce fichier est très commenté, et un
     commentaire qui cite un token ou une classe n'est pas une déclaration."""
     return re.sub(r"/\*.*?\*/", "", read(path), flags=re.DOTALL)
+
+
+def js_without_comments(source: str) -> str:
+    """JS sans ses commentaires, en sautant les chaînes.
+
+    Un `re.sub` suffisait pour le CSS, pas ici : ce dépôt commente énormément, et
+    ses commentaires CITENT du code (T.jsx documente `<T k="key" …>`, ce qui
+    faisait relever une clé « key » qui n'existe pas). À l'inverse, découper
+    naïvement sur `//` couperait au milieu d'une URL dans une chaîne.
+
+    Limite connue et acceptée : une expression régulière contenant un guillemet
+    serait prise pour le début d'une chaîne. Aucune source du dépôt n'en a, et le
+    seul effet serait un relevé partiel, jamais un faux positif.
+    """
+    out: list[str] = []
+    i, n = 0, len(source)
+    while i < n:
+        char = source[i]
+        if char in "\"'`":
+            out.append(char)
+            i += 1
+            while i < n:
+                if source[i] == "\\":
+                    out.append(source[i : i + 2])
+                    i += 2
+                    continue
+                out.append(source[i])
+                i += 1
+                if source[i - 1] == char:
+                    break
+            continue
+        if char == "/" and i + 1 < n:
+            if source[i + 1] == "/":
+                while i < n and source[i] != "\n":
+                    i += 1
+                continue
+            if source[i + 1] == "*":
+                end = source.find("*/", i + 2)
+                i = n if end == -1 else end + 2
+                continue
+        out.append(char)
+        i += 1
+    return "".join(out)
 
 
 class TestLineIdPattern(unittest.TestCase):
@@ -353,6 +398,472 @@ class TestPageEntries(unittest.TestCase):
             "une entrée sans fichier casse le build, un fichier sans entrée n'est "
             "jamais construit ni déployé.",
         )
+
+
+class TestCatalogues(unittest.TestCase):
+    """Les gardes de l'i18n, et c'est ici que se joue la sûreté du bilingue.
+
+    Le projet n'a AUCUN test de composant, par choix (cf. CLAUDE.md), donc rien
+    ne rend les pages pour vérifier leurs textes. Or une refonte de plusieurs
+    centaines de chaînes casse toujours de deux façons : une clé mal tapée, qui
+    s'affiche en clair à l'écran, et une chaîne oubliée, qui reste en français
+    dans l'UI anglaise. Les deux premiers tests forment une pince autour de la
+    première, les trois gardes de texte autour de la seconde, en lecture
+    statique, sans rendu et sans dépendance.
+
+    La parité entre les deux catalogues, elle, est vérifiée côté JS
+    (src/shared/locales/parity.test.js) : elle demande Intl.PluralRules, que
+    Python n'a pas.
+    """
+
+    LOCALES_DIR = SRC / "shared" / "locales"
+
+    def catalogue_keys(self, locale: str) -> set[str]:
+        """Les clés déclarées dans un catalogue, lues à plat.
+
+        On lit la source plutôt que d'exécuter le JS : la CI Python n'a pas de
+        moteur JS, et les clés sont des littéraux `"a.b.c":` en début de ligne.
+        """
+        source = read(self.LOCALES_DIR / f"{locale}.js")
+        return set(re.findall(r'^  "([a-zA-Z0-9_.]+)":', source, re.MULTILINE))
+
+    def test_catalogues_are_found_and_not_empty(self):
+        # Sans ça, tous les tests ci-dessous passeraient sur un ensemble vide.
+        for locale in ("fr", "en"):
+            self.assertGreaterEqual(
+                len(self.catalogue_keys(locale)), 10, f"catalogue {locale} introuvable ou vide"
+            )
+
+    def scanned_files(self):
+        """Les sources du front, hors tests et hors catalogues."""
+        for path in sorted(SRC.rglob("*.js*")):
+            if path.name.endswith(".test.js") or path.parent == self.LOCALES_DIR:
+                continue
+            yield path
+
+    def used_keys(self) -> dict[str, set[str]]:
+        """{clé utilisée: {fichiers}} pour toute clé écrite en clair dans le code.
+
+        Une clé de catalogue voyage par exactement deux chemins, et c'est une
+        convention que ce relevé rend exécutoire :
+
+        1. elle est passée à `t(…)` ou à `<T k="…">`, y compris au milieu d'une
+           expression (`t(canUndo ? "editor.undo.tip" : "editor.undo.none")`) :
+           d'où le balayage de l'appel ENTIER à parenthèses équilibrées, là où un
+           `t\\(\\s*"…"` ne voyait que le premier cas ;
+        2. elle vit dans une table dont le NOM dit qu'elle en contient
+           (`CHARACTER_COLOR_KEYS`, `KIND_LABEL_KEY`), parce que l'appariement
+           rang par rang avec des couleurs ou des types de fichier se vérifie là
+           où ces valeurs vivent, pas dans le JSX.
+
+        Reste invisible ici, et c'est assumé : une clé COMPOSÉE à l'exécution
+        (`page.${page}.label`, `rail.${key}.tip`). Elles sont couvertes par motif
+        dans `test_no_catalogue_key_is_declared_and_never_used`, et par
+        `test_every_page_key_has_its_label_and_desc` pour les pages.
+        """
+        used: dict[str, set[str]] = {}
+        for path in self.scanned_files():
+            # Sans les commentaires : T.jsx documente son propre usage avec un
+            # `<T k="key" …>` d'exemple, qui se relevait comme une vraie clé.
+            source = js_without_comments(read(path))
+            found = [
+                key
+                for call in self.t_calls(source)
+                # Au moins un point : toute clé de catalogue est dotée, et ce
+                # balayage voit aussi les littéraux qui ne sont pas des clés
+                # (`t(pageLabelKey("dashboard"))`).
+                for key in re.findall(r'"([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)+)"', call)
+            ]
+            found += re.findall(r'<T\s[^>]*?\bk="([a-zA-Z0-9_.]+)"', source)
+            for table in re.findall(r"\b[A-Z][A-Z0-9_]*KEYS?\b\s*=\s*[\[{](.*?)[\]}];", source, re.S):
+                found += re.findall(r'"([a-zA-Z0-9_.]+)"', table)
+            for key in found:
+                used.setdefault(key, set()).add(path.relative_to(REPO_ROOT).as_posix())
+        return used
+
+    @staticmethod
+    def t_calls(source: str) -> list[str]:
+        """Le contenu de chaque `t(…)`, parenthèses équilibrées."""
+        calls = []
+        for match in re.finditer(r"\bt\(", source):
+            depth, i = 1, match.end()
+            while i < len(source) and depth > 0:
+                if source[i] == "(":
+                    depth += 1
+                elif source[i] == ")":
+                    depth -= 1
+                i += 1
+            calls.append(source[match.end() : i - 1])
+        return calls
+
+    def test_every_key_used_in_the_code_exists_in_both_catalogues(self):
+        # LE garde qui remplace le mieux les tests de composant absents : une clé
+        # mal tapée s'affiche telle quelle à l'écran, et seul un passage sur la
+        # page concernée le montrerait.
+        used = self.used_keys()
+        self.assertGreaterEqual(len(used), 5, "aucun appel à t() trouvé : le relevé a-t-il cassé ?")
+        missing = []
+        for locale in ("fr", "en"):
+            declared = self.catalogue_keys(locale)
+            for key, files in sorted(used.items()):
+                if key not in declared:
+                    missing.append(f"{key} ({locale}) utilisée dans {', '.join(sorted(files))}")
+        self.assertEqual(
+            missing,
+            [],
+            "Une clé utilisée dans le code n'est dans aucun catalogue : elle "
+            "s'affichera en clair à l'écran. " + " ; ".join(missing),
+        )
+
+    def test_no_catalogue_key_is_declared_and_never_used(self):
+        """Le garde symétrique du précédent, et il s'est prouvé tout seul : une clé
+        écrite dans les deux catalogues mais jamais appelée signale une chaîne
+        qu'on a cru traduire et qui est restée en dur dans le JSX (c'est
+        exactement ce qui était arrivé à `common.loadingScript`, l'éditeur gardant
+        son « Chargement du script… » littéral).
+
+        Le garde « toute clé utilisée existe » ne peut pas voir ce cas : il ne
+        regarde que dans un sens."""
+        used = set(self.used_keys())
+        # Les clés COMPOSÉES à l'exécution sont invisibles au relevé littéral : on
+        # les couvre par motif, ce qui vaut acte. Chacune est bâtie à un seul
+        # endroit, nommé ici :
+        #   page.<x>.label|desc      pageLabelKey / pageDescKey (pages.js)
+        #   structure.language.<xx>  la liste LOCALES (StructurePanel.jsx)
+        #   rail.<x>[.tip]           la bande d'icônes (EditorRail.jsx)
+        #   recorder.status.<x>      l'étiquette d'une réplique (recorder/App.jsx)
+        # `test_every_page_key_has_its_label_and_desc` vérifie les premières par
+        # ailleurs.
+        built_by_helper = re.compile(
+            r"^(page\.[a-z]+\.(label|desc)"
+            r"|structure\.language\.[a-z]{2}"
+            r"|rail\.[a-z]+(\.tip)?"
+            r"|recorder\.status\.[a-z]+)$"
+        )
+        orphans = sorted(
+            key
+            for key in self.catalogue_keys("fr")
+            if key not in used and not built_by_helper.match(key)
+        )
+        self.assertEqual(
+            orphans,
+            [],
+            "Clé déclarée dans les catalogues et jamais appelée : la chaîne "
+            "correspondante est probablement restée en dur dans le JSX. "
+            + ", ".join(orphans),
+        )
+
+    # ------------------------------------------------------------------------
+    # Les trois gardes « plus une chaîne oubliée ». Ils surveillent TOUT `src/`,
+    # sans liste de fichiers à tenir : une page neuve est donc couverte d'office.
+    # C'était l'inverse pendant la traduction (un ensemble MIGRATED qui grandissait
+    # phase par phase, pour ne pas garder une CI rouge tout un chantier), et cette
+    # liste est précisément ce qui a laissé passer cinq pages entières : les
+    # fichiers qu'on n'y avait pas inscrits n'étaient surveillés par rien.
+    #
+    # Trois angles complémentaires, parce qu'aucun ne suffit :
+    #   1. un littéral ACCENTUÉ (le français de ce site l'est presque partout) ;
+    #   2. un littéral dans un attribut ou une prop QUI PORTE DU TEXTE ;
+    #   3. un NŒUD DE TEXTE JSX.
+    # Le premier seul ne voyait ni « + Acte », ni « Personnages », ni « Date » ; les
+    # deux autres seuls ne voient pas un texte rangé dans une variable. Ensemble ils
+    # attrapent tout ce que la traduction avait oublié (vérifié en rejouant les
+    # trois sur l'arbre d'avant : 160 relevés, zéro après).
+
+    # Littéraux accentués légitimes, avec leur motif. Toute addition ici est un
+    # acte : elle dit « ce texte ne se traduit pas ».
+    ACCENT_ALLOWED = {
+        # Le nom d'une langue s'écrit DANS cette langue et ne se traduit jamais :
+        # « Français » reste « Français » dans l'UI anglaise, parce qu'on cherche
+        # sa langue avec son propre mot pour elle (LocaleSwitch.jsx).
+        "Français",
+        # Les guillemets par locale de `makeFormats` : c'est de la donnée de
+        # locale, pas du texte d'interface, et i18n.js est justement l'endroit qui
+        # porte celle des deux langues (Intl n'expose pas celles de CLDR).
+        "«\u00a0",
+        "\u00a0»",
+    }
+
+    # Les attributs HTML et les props de composant qui PORTENT DU TEXTE sur ce
+    # site. Un littéral y est forcément un texte d'interface : il n'y a rien
+    # d'autre à écrire dans un `title`. La liste est celle du dépôt, donc une prop
+    # de texte ajoutée à un composant partagé s'inscrit ici.
+    TEXT_ATTRS = (
+        "title",
+        "aria-label",
+        "aria-valuetext",
+        "placeholder",
+        "alt",
+        "label",
+        "hint",
+        "error",
+        "unit",
+        "confirmLabel",
+        "primaryLabel",
+        "saveLabel",
+    )
+
+    # Deux littéraux qui ne sont pas du texte d'interface : un nom de fichier et
+    # la marque. Ni l'un ni l'autre ne se traduit.
+    NOT_TEXT = {"script.json", "PrettyDrama"}
+
+    # Les mots-clés JS en tête de ligne : un `return` ou un `else` tombé entre un
+    # `>` et un `<` de comparaison n'est pas un nœud de texte.
+    JS_KEYWORDS = {
+        "return", "else", "if", "const", "let", "var", "for", "while", "break",
+        "continue", "try", "catch", "finally", "default", "case", "throw", "new",
+        "await", "async", "function", "export", "import", "delete", "typeof",
+        "in", "of", "do", "switch", "class", "extends", "yield", "void",
+    }
+
+    ACCENTED = re.compile(r"[àâäçéèêëîïôöùûüÀÂÄÇÉÈÊËÎÏÔÖÙÛÜœæ«»]")
+    # Deux minuscules d'affilée : ce qui distingue un mot d'un acronyme technique
+    # (« (ZIP) », « (PDF) ») ou d'un symbole (« ✕ », « ⠿ »), qui restent en clair.
+    HAS_WORD = re.compile(r"[a-zà-ÿ]{2,}")
+    # Le contenu d'une interpolation n'est pas du littéral : `${scene.act}` est
+    # déjà un libellé traduit, il ne doit pas faire relever son propre nom.
+    INTERPOLATION = re.compile(r"\$\{[^}]*\}")
+    # Les caractères qui trahissent du code dans un nœud de texte candidat.
+    CODE_CHARS = set("={}()[];\"'`&|$#\\/*<>@,")
+
+    def test_no_accented_literal_survives_outside_the_catalogues(self):
+        # Grossier mais efficace, et c'est le seul des trois qui voie un texte
+        # rangé dans une variable ou un tableau.
+        offenders = []
+        for path in self.scanned_files():
+            relative = path.relative_to(REPO_ROOT).as_posix()
+            # Sans les commentaires : il en reste beaucoup en français, et un
+            # commentaire n'est pas un texte affiché.
+            source = js_without_comments(read(path))
+            for quoted in re.findall(r'"([^"\n]*)"|\'([^\'\n]*)\'', source):
+                text = quoted[0] or quoted[1]
+                if text in self.ACCENT_ALLOWED:
+                    continue
+                if self.ACCENTED.search(text):
+                    offenders.append(f"{relative} : {text[:60]}")
+        self.assertEqual(
+            offenders,
+            [],
+            "Un littéral français vit hors des catalogues : il ne se traduira "
+            "jamais. Déplacer dans src/shared/locales/, ou l'inscrire dans "
+            "ACCENT_ALLOWED avec son motif. " + " ; ".join(offenders),
+        )
+
+    def test_no_text_bearing_attribute_carries_a_literal(self):
+        # Le garde qui voit le français SANS accent, celui que le précédent ne
+        # pouvait pas voir : « Renommer », « Pause », « Mot entier ».
+        pattern = re.compile(
+            r"\b(" + "|".join(self.TEXT_ATTRS) + r')=\{?\s*(["\'`])(.*?)(?<!\\)\2', re.S
+        )
+        offenders = []
+        for path in self.scanned_files():
+            relative = path.relative_to(REPO_ROOT).as_posix()
+            source = js_without_comments(read(path))
+            for match in pattern.finditer(source):
+                text = self.INTERPOLATION.sub("", match.group(3)).strip()
+                if not text or text in self.NOT_TEXT:
+                    continue
+                if self.HAS_WORD.search(text):
+                    offenders.append(f"{relative} : {match.group(1)}=« {text[:50]} »")
+        self.assertEqual(
+            offenders,
+            [],
+            "Un attribut qui porte du texte reçoit un littéral : il ne se "
+            "traduira jamais. Passer par t(). " + " ; ".join(offenders),
+        )
+
+    def test_no_jsx_text_node_carries_a_literal(self):
+        """L'autre moitié du garde sans accent : le texte écrit entre deux balises.
+
+        Heuristique, et bornée exprès aux lignes qui ressemblent à de la prose (au
+        moins deux mots, ou une capitale initiale, ou un accent) et qui ne portent
+        aucun caractère de code. Elle ne voit donc pas un texte adjacent à une
+        accolade sur la même ligne, ce que seul un vrai analyseur JSX saurait
+        découper ; c'est le premier garde qui rattrape ce cas dès que le texte est
+        français. Ce qu'elle attrape, en revanche, elle l'attrape sans bruit.
+        """
+        offenders = []
+        for path in self.scanned_files():
+            relative = path.relative_to(REPO_ROOT).as_posix()
+            source = js_without_comments(read(path))
+            for match in re.finditer(r">([^<>]*?)<", source, re.S):
+                for line in match.group(1).split("\n"):
+                    text = line.strip()
+                    if not text or text in self.NOT_TEXT:
+                        continue
+                    if self.CODE_CHARS & set(text):
+                        continue
+                    if self.HAS_WORD.search(text) and self.looks_like_prose(text):
+                        offenders.append(f"{relative} : « {text[:50]} »")
+        self.assertEqual(
+            offenders,
+            [],
+            "Un nœud de texte JSX est écrit en clair : il ne se traduira jamais. "
+            "Passer par t() ou par <T>. " + " ; ".join(offenders),
+        )
+
+    @classmethod
+    def looks_like_prose(cls, text: str) -> bool:
+        if text.split()[0] in cls.JS_KEYWORDS:
+            return False
+        # Plusieurs mots, une capitale initiale ou un accent : de quoi séparer
+        # « + Acte », « Personnages » et « insérer » d'un identifiant tombé là
+        # (`m.lineOrdinal`, `shiftEnter:`).
+        return " " in text or text[0].isupper() or bool(re.search(r"[à-ÿÀ-Ý]", text))
+
+    def test_every_page_key_has_its_label_and_desc(self):
+        # `PAGES` ne porte plus les mots, donc rien dans le code ne relie une page
+        # à ses deux textes : une page ajoutée sans eux afficherait sa clé.
+        # Même esprit que TestPageSeals, qui fait ce lien pour les couleurs.
+        page_keys = TestPageSeals.page_keys(self)
+        missing = []
+        for locale in ("fr", "en"):
+            declared = self.catalogue_keys(locale)
+            for page in sorted(page_keys):
+                if f"page.{page}.label" not in declared:
+                    missing.append(f"page.{page}.label ({locale})")
+                # `home` est la seule page sans phrase de doc : elle n'a ni carte
+                # d'accueil ni bandeau de pièce, donc rien qui la rendrait.
+                if page != "home" and f"page.{page}.desc" not in declared:
+                    missing.append(f"page.{page}.desc ({locale})")
+        self.assertEqual(missing, [], "Textes de page manquants : " + ", ".join(missing))
+
+    def test_no_entry_names_a_page_instead_of_interpolating_its_label(self):
+        """Un libellé de page ne se recopie pas dans une phrase, il s'INTERPOLE.
+
+        Six entrées de chaque catalogue nommaient la page Édition (« la pièce doit
+        d'abord être saisie dans la page Édition ») : recopié, ce mot demandait
+        douze retouches au moindre renommage, et les deux catalogues pouvaient
+        dériver l'un de l'autre en silence. Ils passent maintenant par `{page}`,
+        alimenté depuis `page.editor.label`.
+
+        Le garde est volontairement BORNÉ au motif « page X » / « mode X », et pas
+        à toute apparition du libellé : en français les noms de page sont des noms
+        communs, donc « Enregistrement… » (la prise en cours), « Enregistrement »
+        (l'étiquette du panneau) et « Avancement par personnage et par scène » sont
+        trois emplois parfaitement légitimes qu'une recherche large relevait. Un
+        garde qui demande une liste d'exemptions grandissant à chaque phrase n'aide
+        personne ; celui-ci ne voit que la tournure qui DÉSIGNE une page, qui est
+        exactement celle qu'on recopiait.
+        """
+        # « (dans la|de la|sur la) page Édition », « le mode Édition », « the
+        # Editing page », « the Editing screen ».
+        for locale, patterns in (
+            ("fr", (r"\b(?:page|mode)\s+{label}\b",)),
+            ("en", (r"\b{label}\s+(?:page|screen|mode)\b", r"\b(?:page|screen|mode)\s+{label}\b")),
+        ):
+            source = read(self.LOCALES_DIR / f"{locale}.js")
+            labels = dict(re.findall(r'"page\.([a-z]+)\.label":\s*"([^"]+)"', source))
+            self.assertTrue(labels, f"aucun libellé de page lu dans {locale}.js")
+            offenders = []
+            for key, text in re.findall(r'^  "([a-zA-Z0-9_.]+)":\s*(.*)$', source, re.MULTILINE):
+                for page, label in labels.items():
+                    if key == f"page.{page}.label":
+                        continue
+                    for pattern in patterns:
+                        if re.search(pattern.format(label=re.escape(label)), text):
+                            offenders.append(f"{locale} : {key} désigne la page « {label} »")
+            self.assertEqual(
+                offenders,
+                [],
+                "Une entrée désigne une page par son nom recopié au lieu de "
+                "l'interpoler : passer par un paramètre alimenté par "
+                "`t(pageLabelKey(...))`. " + " ; ".join(offenders),
+            )
+
+    def test_the_static_html_title_matches_the_french_catalogue(self):
+        """Le `<title>` des .html est le repli AVANT exécution du JS (locale.js
+        le repose ensuite). C'est donc du français en dur, qui doit rester en
+        accord avec le catalogue : sinon un lecteur francophone voit le titre
+        changer au chargement, ce que ce repli existe précisément pour éviter."""
+        source = read(self.LOCALES_DIR / "fr.js")
+        template = re.search(r'"common\.docTitle":\s*"([^"]+)"', source)
+        self.assertIsNotNone(template, "common.docTitle introuvable dans fr.js")
+        labels = dict(re.findall(r'"page\.([a-z]+)\.label":\s*"([^"]+)"', source))
+
+        # {fichier .html: clé de libellé}. `respo.html` est le seul à ne pas
+        # porter le nom de sa clé de page : c'est le second accueil.
+        expected_key = {"index.html": "home", "respo.html": "respo"}
+        mismatches = []
+        for path in sorted(REPO_ROOT.glob("*.html")):
+            key = expected_key.get(path.name, path.stem)
+            self.assertIn(key, labels, f"{path.name} : page.{key}.label absente de fr.js")
+            want = template.group(1).replace("{page}", labels[key])
+            found = re.search(r"<title>([^<]*)</title>", read(path))
+            self.assertIsNotNone(found, f"{path.name} : pas de <title>")
+            if found.group(1) != want:
+                mismatches.append(f"{path.name} : « {found.group(1)} » au lieu de « {want} »")
+        self.assertEqual(
+            mismatches,
+            [],
+            "Le <title> statique a dérivé du catalogue français : le titre "
+            "changerait au chargement. " + " ; ".join(mismatches),
+        )
+
+
+class TestStructureLabels(unittest.TestCase):
+    """Les libellés d'acte et de scène sont DÉRIVÉS de leur rang, et deux
+    implémentations les dérivent : `structureLabels.js` pour l'écran, `STRUCTURE`
+    de build_script_pdf.py pour le papier.
+
+    Les faire diverger imprimerait « Acte II » sous un écran qui annonce
+    « Act II », ou pire, décalerait la numérotation entre la page et le script
+    qu'un acteur a en main. C'est le même genre de contrat que SAFE_ID et
+    LINE_ID_PATTERN, et il se vérifie de la même façon : en lisant les deux
+    sources.
+    """
+
+    LOCALES_DIR = SRC / "shared" / "locales"
+
+    def js_template(self, locale: str, key: str) -> str:
+        source = read(self.LOCALES_DIR / f"{locale}.js")
+        found = re.search(rf'"{re.escape(key)}":\s*"([^"]+)"', source)
+        self.assertIsNotNone(found, f"{key} introuvable dans {locale}.js")
+        return found.group(1)
+
+    def test_the_pdf_words_match_the_catalogues(self):
+        # `{n}` côté JS, `%s` côté Python : c'est la seule différence permise.
+        for locale, words in STRUCTURE.items():
+            for kind, key in (("act", "structure.act"), ("scene", "structure.scene")):
+                self.assertEqual(
+                    words[kind].replace("%s", "{n}"),
+                    self.js_template(locale, key),
+                    f"{locale}/{kind} : le PDF et l'écran ne nommeraient pas pareil",
+                )
+
+    def test_both_sides_know_the_same_languages(self):
+        js = set(re.findall(r'"([a-z]{2})"', re.search(
+            r"export const LOCALES = \[(.*?)\];", read(SRC / "shared" / "i18n.js"), re.DOTALL
+        ).group(1)))
+        self.assertEqual(set(LANGUAGES), js, "LANGUAGES (Python) et LOCALES (JS) ont divergé")
+        self.assertEqual(set(STRUCTURE), js, "STRUCTURE du PDF ne couvre pas toutes les langues")
+        self.assertIn(DEFAULT_LANGUAGE, LANGUAGES)
+
+    def test_the_roman_numerals_agree(self):
+        """Les deux implémentations sont indépendantes, donc comparées valeur par
+        valeur, y compris leur abandon au-delà de 39."""
+        js = read(SRC / "shared" / "structureLabels.js")
+        tens = re.search(r'const TENS = \[(.*?)\];', js, re.DOTALL).group(1)
+        units = re.search(r'const UNITS = \[(.*?)\];', js, re.DOTALL).group(1)
+        js_tens = re.findall(r'"([A-Z]*)"', tens)
+        js_units = re.findall(r'"([A-Z]*)"', units)
+        self.assertEqual(js_tens, list(_TENS), "les dizaines romaines ont divergé")
+        self.assertEqual(js_units, list(_UNITS), "les unités romaines ont divergé")
+        # Et le comportement, sur toute la plage utile plus ses bords.
+        expected = {1: "I", 4: "IV", 9: "IX", 10: "X", 14: "XIV", 39: "XXXIX", 40: "40", 0: "0"}
+        for n, want in expected.items():
+            self.assertEqual(roman_numeral(n), want, f"roman_numeral({n})")
+
+    def test_no_act_or_scene_title_is_written_back_into_the_play(self):
+        """Le script publié ne doit plus porter de titre d'acte ni de scène : ce
+        serait une donnée dans une langue, et elle repartirait vers le PDF, les
+        colonnes de l'Avancement et la portée de la Répartition."""
+        script = json.loads(read(REPO_ROOT / "data" / "script.json"))
+        self.assertIn(script.get("language"), LANGUAGES, "la pièce publiée doit dire sa langue")
+        for ai, act in enumerate(script.get("acts", [])):
+            self.assertNotIn("title", act, f"acte {ai}")
+            for si, scene in enumerate(act.get("scenes", [])):
+                self.assertNotIn("title", scene, f"acte {ai}, scène {si}")
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { characterColor, characterInk } from "../shared/characterColors.js";
 import ConfirmModal from "../shared/ConfirmModal.jsx";
 import { excerpt } from "../shared/data.js";
+import { fmt, t } from "../shared/locale.js";
 
 // One dialogue line: drag handle + character <select> + text + delete.
 // Enter inside the textarea inserts a new line right after (like typing in a
@@ -90,8 +91,8 @@ export default React.memo(function LineRow({
     <div ref={setNodeRef} style={style} className="line-row">
       <button
         className="drag-handle"
-        title="Glisser pour déplacer"
-        aria-label="Glisser pour déplacer"
+        title={t("common.dragHandle")}
+        aria-label={t("common.dragHandle")}
         style={{ color: ink ?? "var(--ed-ghost)" }}
         {...attributes}
         {...listeners}
@@ -101,7 +102,7 @@ export default React.memo(function LineRow({
 
       <select
         className="line-character"
-        aria-label="Personnage de la réplique"
+        aria-label={t("line.character")}
         style={{ color: ink ?? "var(--ink-soft)" }}
         value={known ? line.characterId : ""}
         onChange={(e) =>
@@ -114,7 +115,7 @@ export default React.memo(function LineRow({
           })
         }
       >
-        {!known && <option value="">Personnage ?</option>}
+        {!known && <option value="">{t("line.characterUnset")}</option>}
         {characters.map((c) => (
           <option key={c.id} value={c.id}>
             {c.name}
@@ -128,7 +129,7 @@ export default React.memo(function LineRow({
         ref={textareaRef}
         className="line-text"
         rows={1}
-        placeholder="Texte de la réplique…"
+        placeholder={t("line.placeholder")}
         value={line.text}
         onChange={(e) =>
           dispatch({ type: "EDIT_TEXT", actIndex, sceneIndex, lineId: line.id, text: e.target.value })
@@ -145,8 +146,8 @@ export default React.memo(function LineRow({
 
       <button
         className="btn icon small line-delete"
-        title="Supprimer cette réplique"
-        aria-label="Supprimer cette réplique"
+        title={t("line.delete")}
+        aria-label={t("line.delete")}
         onClick={() => {
           if (line.text.trim() === "") {
             dispatch({ type: "DELETE_LINE", actIndex, sceneIndex, lineId: line.id });
@@ -160,15 +161,15 @@ export default React.memo(function LineRow({
 
       {confirming && (
         <ConfirmModal
-          title="Supprimer cette réplique ?"
-          confirmLabel="Supprimer"
+          title={t("line.deleteConfirm")}
+          confirmLabel={t("common.delete")}
           onCancel={() => setConfirming(false)}
           onConfirm={() => {
             setConfirming(false);
             dispatch({ type: "DELETE_LINE", actIndex, sceneIndex, lineId: line.id });
           }}
         >
-          <p className="confirm-quote">« {excerpt(line.text)} »</p>
+          <p className="confirm-quote">{fmt.quote(excerpt(line.text))}</p>
         </ConfirmModal>
       )}
     </div>

@@ -5,7 +5,10 @@ import { EMPTY_SCRIPT, allLines, newId, indexAfterMove, indexAfterRemoval } from
 import { historyReducer, initHistory } from "./history.js";
 import PlayHeader from "../shared/PlayHeader.jsx";
 import PageMark from "../shared/PageMark.jsx";
-import { PAGES } from "../shared/pages.js";
+import { fmt, t } from "../shared/locale.js";
+import T from "../shared/T.jsx";
+import { actLabel } from "../shared/structureLabels.js";
+import { PAGES, pageLabelKey } from "../shared/pages.js";
 import { DownloadIcon, UndoIcon, RedoIcon, WarnIcon } from "../shared/icons.jsx";
 import CharacterPanel from "./CharacterPanel.jsx";
 import EditorRail from "./EditorRail.jsx";
@@ -97,15 +100,9 @@ export default function App() {
         if (cancelled) return;
         if (err instanceof HttpError && err.status === 404) {
           // Genuinely no published script yet: legitimate empty start.
-          setLoadInfo("Aucun script publié trouvé : vous partez d'une pièce vide.");
+          setLoadInfo(t("editor.noPublishedScript"));
         } else {
-          setLoadError(
-            "Le script publié existe mais n'a pas pu être lu (fichier abîmé ou problème réseau). " +
-              "Pour ne pas risquer d'écraser votre pièce, l'éditeur est désactivé. " +
-              "Rechargez la page pour réessayer ; si l'erreur persiste, le fichier data/script.json " +
-              "du dépôt est probablement abîmé ; sur GitHub, ouvrez l'historique du fichier, choisissez une " +
-              "version antérieure et affichez-la en version brute, puis redéposez-la avant de continuer."
-          );
+          setLoadError(t("editor.readError"));
         }
       })
       .finally(() => !cancelled && setLoading(false));
@@ -253,7 +250,7 @@ export default function App() {
   );
 
   if (loading) {
-    return <PageState page="editor" loading="Chargement du script…" />;
+    return <PageState page="editor" loading={t("common.loadingScript")} />;
   }
 
   // Avant le reste des états chargés : sur un écran tactile la page ne montre
@@ -267,12 +264,11 @@ export default function App() {
     return (
       <PageState
         page="editor"
-        title={script.title || "Pièce sans titre"}
+        title={script.title || t("common.untitledPlay")}
         error={
           <>
             <WarnIcon />
-            Pour des raisons de praticité, le mode Édition n'est disponible que depuis un
-            ordinateur.
+            {t("editor.touchOnly", { page: t(pageLabelKey("editor")) })}
           </>
         }
       />
@@ -309,7 +305,7 @@ export default function App() {
           autres. */}
       <PlayHeader
         page="editor"
-        title={script.title || "Pièce sans titre"}
+        title={script.title || t("common.untitledPlay")}
         hint={
           <>
             {/* Les deux phrases sont dans l'ordre où on les vit : ce qui sert
@@ -321,8 +317,13 @@ export default function App() {
                 arrive une phrase plus tard. Et pas d'« appuyez sur le
                 bouton » : c'est le verbe du doigt, et c'est la seule page
                 qu'il n'ouvre pas (cf. useTouchPointer.js). */}
-            Dans une réplique, <strong>Entrée</strong> crée la suivante,{" "}
-            <strong>Maj + Entrée</strong> un retour à la ligne.
+            <T
+              k="editor.hintTyping"
+              p={{
+                enter: <strong>{t("common.keyEnter")}</strong>,
+                shiftEnter: <strong>{t("common.keyShiftEnter")}</strong>,
+              }}
+            />
             {/* Un `<br />` et surtout pas un troisième paragraphe : le bandeau
                 n'en porte que deux (cf. PlayHeader.jsx), et les deux phrases
                 sont bien la même voix, à un moment du travail près. La ligne
@@ -330,24 +331,30 @@ export default function App() {
                 la saisie puis une fois qu'elle est finie, plutôt qu'à la
                 largeur de la fenêtre. */}
             <br />
-            Une fois vos modifications terminées, téléchargez le script avec le bouton en haut de la
-            page, puis déposez le fichier obtenu sur la page{" "}
             {/* Le sceau vert de l'Avancement plutôt qu'un mot souligné : la
                 destination est une page du site, que la troupe reconnaît à sa
-                pastille (accueil, bandeaux, journal des dépôts), et un
-                hyperlien classique au milieu d'une phrase de doc y faisait la
-                seule chose soulignée de tout le bandeau. Le mot reste dans le
-                lien : c'est lui qui nomme la page, le sceau est décoratif. */}
-            <a className="hint-page-link page-dashboard" href={PAGES.dashboard.href}>
-              <PageMark page="dashboard" className="hint-page-mark" label="" />
-              {PAGES.dashboard.label}
-            </a>{" "}
-            comme pour les voix des acteurs.
+                pastille (accueil, bandeaux, journal des dépôts), et un hyperlien
+                classique au milieu d'une phrase de doc y faisait la seule chose
+                soulignée de tout le bandeau. Le mot reste dans le lien : c'est lui
+                qui nomme la page, le sceau est décoratif.
+                Le lien est un PARAMÈTRE de la phrase : découpée autour de lui, la
+                phrase figeait l'ordre des mots français dans le composant. */}
+            <T
+              k="editor.hintDownload"
+              p={{
+                page: (
+                  <a className="hint-page-link page-dashboard" href={PAGES.dashboard.href}>
+                    <PageMark page="dashboard" className="hint-page-mark" label="" />
+                    {t(pageLabelKey("dashboard"))}
+                  </a>
+                ),
+              }}
+            />
           </>
         }
         actions={
           <>
-            {dirty && <span className="dirty-hint">Modifications non téléchargées</span>}
+            {dirty && <span className="dirty-hint">{t("editor.dirty")}</span>}
             {/* Les trois boutons de cette rangée s'éteignent, et chacun explique
                 pourquoi dans son infobulle. Elle est donc portée par une enveloppe
                 et jamais par le bouton : un contrôle `disabled` ne reçoit aucun
@@ -360,34 +367,26 @@ export default function App() {
             <span className="history-group">
               <span
                 className="btn-tip"
-                title={
-                  canUndo
-                    ? "Annuler la dernière modification (Ctrl+Z)"
-                    : "Rien à annuler pour l'instant"
-                }
+                title={t(canUndo ? "editor.undo.tip" : "editor.undo.none")}
               >
                 <button
                   className="btn icon"
                   onClick={undo}
                   disabled={!canUndo}
-                  aria-label="Annuler"
+                  aria-label={t("editor.undo")}
                 >
                   <UndoIcon />
                 </button>
               </span>
               <span
                 className="btn-tip"
-                title={
-                  canRedo
-                    ? "Rétablir la modification annulée (Ctrl+Y)"
-                    : "Rien à rétablir pour l'instant"
-                }
+                title={t(canRedo ? "editor.redo.tip" : "editor.redo.none")}
               >
                 <button
                   className="btn icon"
                   onClick={redo}
                   disabled={!canRedo}
-                  aria-label="Rétablir"
+                  aria-label={t("editor.redo")}
                 >
                   <RedoIcon />
                 </button>
@@ -407,15 +406,13 @@ export default function App() {
                 l'enveloppe, comme les deux autres, pour la même raison. */}
             <span
               className="btn-tip"
-              title={
-                dirty ? "Télécharger le script" : "Aucune modification à télécharger pour l'instant"
-              }
+              title={t(dirty ? "editor.download" : "editor.download.none")}
             >
               <button
                 className="btn primary icon script-download-btn"
                 onClick={download}
                 disabled={!dirty}
-                aria-label="Télécharger le script"
+                aria-label={t("editor.download")}
               >
                 <DownloadIcon />
               </button>
@@ -492,7 +489,7 @@ export default function App() {
                 naviguer). Il a porté le renommage de l'acte et le ✕ qui le
                 supprimait ; il ne reste rien qui apparaisse, disparaisse ou
                 s'ouvre au-dessus du texte qu'on est en train de saisir. */}
-            {act && <h2 className="act-title">{act.title}</h2>}
+            {act && <h2 className="act-title">{actLabel(t, safeActIndex)}</h2>}
 
             {scene && (
               <SceneEditor
@@ -512,13 +509,12 @@ export default function App() {
 
       <LeaveGuard
         active={dirty}
-        title="Vous n'avez pas téléchargé le script"
-        saveLabel="Télécharger puis quitter"
+        title={t("editor.leaveTitle")}
+        saveLabel={t("editor.leaveSave")}
         onSave={download}
       >
         <p>
-          Vos modifications ne vivent que dans cet onglet : en quittant la page sans télécharger le
-          fichier <code>script.json</code>, vous les perdez.
+          <T k="editor.leaveBody" p={{ file: <code>script.json</code> }} />
         </p>
       </LeaveGuard>
 
@@ -552,20 +548,22 @@ function DeleteCharacterModal({ request, characters, onCancel, onConfirm }) {
 
   return (
     <ConfirmModal
-      title={`Supprimer « ${request.character.name} » ?`}
-      confirmLabel="Supprimer ses répliques"
+      title={t("common.deleteConfirm", { name: fmt.quote(request.character.name) })}
+      confirmLabel={t("editor.deleteCharacterLines")}
       onConfirm={() => onConfirm("deleteLines")}
-      primaryLabel={others.length > 0 ? "Réassigner" : undefined}
+      primaryLabel={others.length > 0 ? t("editor.reassign") : undefined}
       onPrimary={() => onConfirm("reassign", reassignTo)}
       onCancel={onCancel}
     >
       <p>
-        Ce personnage a encore <strong>{request.count} réplique{request.count > 1 ? "s" : ""}</strong>.
-        Que faut-il en faire ?
+        <T
+          k="editor.deleteCharacterBody"
+          p={{ count: <strong>{t("common.lineCount", { count: request.count })}</strong> }}
+        />
       </p>
       {others.length > 0 && (
         <label className="reassign-row">
-          Réassigner à&nbsp;:
+          {t("editor.reassignTo")}
           <select value={reassignTo ?? ""} onChange={(e) => setReassignTo(e.target.value)}>
             {others.map((c) => (
               <option key={c.id} value={c.id}>

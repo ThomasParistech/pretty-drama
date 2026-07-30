@@ -394,3 +394,79 @@ export function QuillIcon() {
     </svg>
   );
 }
+
+// Les drapeaux des deux endroits où l'on choisit une langue : le sélecteur du
+// pied des accueils (la langue du SITE) et celui de la section « Structure » de
+// l'Édition (la langue de la PIÈCE).
+//
+// **Dessinés, jamais l'emoji drapeau.** 🇫🇷 est une paire d'indicatifs
+// régionaux : Windows n'en rend aucun et affiche les deux lettres « FR » à la
+// place, ce qui ferait du sélecteur une paire de sigles sur la moitié des
+// postes de la troupe. La règle « aucun emoji dans l'UI » (cf. la ligne
+// « Icônes » de CLAUDE.md) s'applique donc ici aussi, et les couleurs sont
+// codées en dur parce qu'un drapeau ne suit pas la palette du site : c'est la
+// seule image du dépôt qui ne soit pas en `currentColor`.
+//
+// **Deux drapeaux, une seule boîte, 3:2.** L'Union Jack fait 2:1 dans la
+// réalité : il est étiré à la verticale (`scale(1 4/3)`, appliqué à sa
+// géométrie canonique en 60x30 plutôt que redessiné à la main). Deux vignettes
+// de largeurs différentes côte à côte dans un sélecteur se lisent comme un
+// défaut d'alignement, alors qu'un drapeau un tiers plus haut que nature reste
+// reconnu de tous.
+//
+// Le drapeau britannique pour l'anglais, et pas celui d'un autre pays
+// anglophone : c'est celui que porte la quasi-totalité des sélecteurs de langue
+// de ce côté-ci de l'Atlantique. Un drapeau nomme un pays et pas une langue, ce
+// qui reste vrai et assumé : le nom de la langue voyage avec, en `title` et en
+// nom accessible, jamais remplacé par l'image.
+//
+// La taille, le coin arrondi et le filet vivent dans `.flag-icon` (theme.css) :
+// sans filet, la bande blanche du tricolore et le fond blanc de l'Union Jack se
+// fondent dans le papier crème et le drapeau perd un bord.
+export function FlagIcon({ locale }) {
+  // Les `clipPath` de l'Union Jack sont référencés par id, donc deux drapeaux
+  // sur la même page en dupliqueraient un. `useId` les rend uniques ; les
+  // deux-points qu'il produit sont retirés, un id en contient légalement mais
+  // les analyseurs d'URL des vieux moteurs s'y perdent.
+  const uid = React.useId().replace(/:/g, "");
+  const box = { viewBox: "0 0 60 40", className: "flag-icon", "aria-hidden": true, focusable: false };
+
+  if (locale === "en") {
+    return (
+      <svg {...box}>
+        <g transform="scale(1 1.3333)">
+          <clipPath id={`${uid}-flag`}>
+            <path d="M0,0 v30 h60 v-30 z" />
+          </clipPath>
+          {/* Les quatre quartiers où la diagonale rouge est décalée (le
+              contre-changement de l'Union Jack : sans lui, les deux croix de
+              Saint-Patrick et de Saint-André se superposent au lieu de
+              s'entrelacer). */}
+          <clipPath id={`${uid}-counter`}>
+            <path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z" />
+          </clipPath>
+          <g clipPath={`url(#${uid}-flag)`}>
+            <path d="M0,0 v30 h60 v-30 z" fill="#012169" />
+            <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" strokeWidth="6" />
+            <path
+              d="M0,0 L60,30 M60,0 L0,30"
+              clipPath={`url(#${uid}-counter)`}
+              stroke="#c8102e"
+              strokeWidth="4"
+            />
+            <path d="M30,0 v30 M0,15 h60" stroke="#fff" strokeWidth="10" />
+            <path d="M30,0 v30 M0,15 h60" stroke="#c8102e" strokeWidth="6" />
+          </g>
+        </g>
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...box}>
+      <path d="M0 0h20v40H0z" fill="#002395" />
+      <path d="M20 0h20v40H20z" fill="#fff" />
+      <path d="M40 0h20v40H40z" fill="#ed2939" />
+    </svg>
+  );
+}

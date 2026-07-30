@@ -73,7 +73,15 @@ le bloc `prefers-reduced-motion`).
   taille) passe par un token re-skinnable, c'est un finding haute ; les
   neutres re-skinnés « assortis » (`--card`, `--border`, `--ink-soft`) sont
   tolérés dans les composants partagés tant qu'ils restent perceptuellement
-  équivalents. Une exception nommée, à ne pas rapporter : `.confirm-quote`
+  équivalents. Première exception nommée, à ne pas rapporter : **`.flag-icon`**
+  (`theme.css`), les drapeaux des deux sélecteurs de langue. C'est la seule
+  image du dépôt qui ne soit ni en `currentColor` ni dimensionnée sur la
+  font-size : un drapeau a ses couleurs propres et une taille fixe (24x16).
+  Une seule règle pour ses deux consommateurs (le pied des accueils et le plan
+  du rail), le même motif que ci-dessous. Son filet est un `box-shadow`
+  extérieur et pas une `border` : sans lui la bande blanche du tricolore et le
+  fond blanc de l'Union Jack se fondent dans le papier crème.
+  Seconde exception nommée, à ne pas rapporter : `.confirm-quote`
   (theme.css) consomme `--font-serif` **exprès**, comme son filet suit
   `--border`. La citation d'une réplique doit se lire dans la serif des
   répliques de SA page (Cormorant sur l'Enregistrement, Spectral sur
@@ -118,6 +126,10 @@ le bloc `prefers-reduced-motion`).
 | Doc du bandeau `.header-hint` (une seule classe, les deux paragraphes ont le même style : c'est leur place qui les distingue) | `theme.css` pour le style, mais **rendue par `PlayHeader` lui-même**, jamais par les pages : le premier paragraphe est `PAGES[page].desc` (le même que la carte de l'accueil, un seul endroit pour les deux emplois), le second la prop `hint`, facultative. Les deux encadrent les réglages (`desc` en tête du bandeau déplié, `hint` en pied) | les cinq : `desc` partout, `hint` seulement sur Enregistrement et Édition |
 | Confirmation d'action destructive | `src/shared/ConfirmModal.jsx` — rendu en portail, Escape annule, focus initial sur le bouton à proposer. **Jamais de `window.confirm`** (dialogue natif hors thème). Citation de la réplique visée : `.confirm-quote` (`theme.css`) + `excerpt` (`data.js`) | Édition (réplique, scène, acte), Enregistrement (jeter une prise), et via `LeaveGuard` |
 | Garde de sortie de page (travail non téléchargé) | `src/shared/LeaveGuard.jsx` — clics de liens interceptés en capture + `beforeunload` en filet | Édition, Enregistrement |
+| Sélecteur de langue du SITE (deux drapeaux) | `src/shared/LocaleSwitch.jsx` — deux vrais liens portant `?lang=`, donc clic droit et nouvel onglet, et aucun état : c'est le chargement suivant qui mémorise le choix (`locale.js`). **Monté au pied des deux accueils et par eux SEULS**, et c'est une règle, pas un hasard : une langue est un réglage de SITE, donc elle se choisit en entrant, et le pied du bandeau partagé est une composition finie (le sceau seul et centré, encadré de deux filets courts) qu'un second objet décentrerait. Le nom d'une langue s'y écrit **dans cette langue** (`Français`, `English`), jamais traduit : c'est le seul littéral accentué que le garde CI exempte nommément. Ne pas le confondre avec la langue de la PIÈCE, qui montre les mêmes drapeaux dans le plan du rail mais est un CHAMP éditant `script.json`, avec un nom de langue traduit | les deux accueils |
+| Phrase portant du balisage | `src/shared/T.jsx` — `<T k="…" p={{ … }} />`, le morceau de JSX devenant un PARAMÈTRE de la phrase. Une phrase découpée en fragments dans le composant est un finding, cf. la section Langue | toutes celles qui citent un `<strong>`, un `<code>`, une icône ou un lien au milieu d'une phrase |
+| Libellés d'acte et de scène | `src/shared/structureLabels.js` — DÉRIVÉS du rang (`actLabel(t, i)`, `sceneLabel(t, i)`), les actes et les scènes ne portant aucun titre dans `script.json`. Pur, `t` reçu en argument. Le Python en tient une seconde implémentation pour le papier (`STRUCTURE`, `roman_numeral` dans `build_script_pdf.py`), depuis la langue de la PIÈCE, et `TestStructureLabels` interdit aux deux de diverger | les deux selects de portée, l'Avancement, la Répartition, la Recherche, le plan du rail, le PDF |
+| Compte de répliques d'un objet de la pièce | `src/editor/CountBadge.jsx` — chiffre nu à l'écran (la colonne des comptes doit s'aligner), la phrase dans l'`aria-label`, `role="img"` pour le rendre valable sur un `<span>`. Les deux panneaux du rail en avaient chacun leur copie, alors que leur CSS était déjà commun (`.character-count, .structure-count`) | les sections « Structure » et « Personnages » du rail de l'Édition |
 | Fetch manifest | `src/shared/useManifest.js` | Répétition, Enregistrement, Répartition, Avancement (l'accueil appelle `fetchManifest` directement : il n'a ni écran de chargement ni écran d'erreur, un manifest absent laisse juste le titre vide) |
 | Écran chargement/erreur plein-page | `src/shared/PageState.jsx` : les DEUX états prennent la carte partagée `.page-notice` (l'attente comme le message : c'est le même écran à deux moments, et le second succède presque toujours au premier) | toutes sauf accueil |
 
@@ -174,7 +186,9 @@ Règles associées :
 
 - Focus visible sur tout élément interactif (le `:focus` global de
   `theme.css` ou un équivalent par page).
-- Tout bouton-icône porte un `title` ou `aria-label` en français.
+- Tout bouton-icône porte un `title` ou `aria-label`, et il vient du catalogue
+  (cf. « Textes ») : c'est le premier endroit où un texte oublié se cache, parce
+  qu'il ne se lit qu'au survol ou au lecteur d'écran.
 - Zones tactiles ≥ 40 px dans les barres de contrôle (usage mobile). Trois
   exceptions assumées, à ne pas rouvrir : les étiquettes de case à cocher de la
   Répétition restent à 32 px sous 800 px (`rehearsal.css`), parce que cette
@@ -199,6 +213,59 @@ Règles associées :
 
 ## Textes
 
-- Tout texte visible (UI, `title`, `aria-label`, messages d'erreur, hints)
-  est en français, sans anglais résiduel, ton cohérent (tutoiement absent,
-  infinitif ou impératif de politesse).
+Le site est **bilingue** (français par défaut, anglais), et c'est une contrainte
+de structure avant d'être une contrainte de style : **aucun texte visible ne vit
+dans un composant**. Tout passe par les catalogues `src/shared/locales/fr.js` et
+`en.js`, lus par `t()` / `<T>` (moteur `src/shared/i18n.js`, locale résolue par
+`src/shared/locale.js`).
+
+- **Zéro littéral visible dans `src/`**, hors catalogues : ni texte entre deux
+  balises, ni `title`, `aria-label`, `placeholder`, `alt`, ni prop qui porte du
+  texte (`hint`, `error`, `label`, `unit`, `confirmLabel`, `primaryLabel`,
+  `saveLabel`). Un `title="Renommer"` est un finding **haute**, pas un détail :
+  il ne se traduira jamais et rien à l'écran ne le montrera côté français.
+- **Une phrase reste une phrase.** Un texte qui porte du balisage au milieu
+  (`<strong>`, `<code>`, une icône, un lien, un `<span>` coloré) passe par
+  `<T k="…" p={{ … }} />`, le morceau de JSX devenant un PARAMÈTRE. Découper la
+  phrase en fragments JSX fige l'ordre des mots français dans le composant, et
+  c'est irréparable en traduction.
+- **Aucun pluriel bricolé.** Pas de `n > 1 ? "s" : ""` : une entrée de catalogue
+  `{ one, other }` et `t(clé, { count })`, le choix venant d'`Intl.PluralRules`
+  (« 0 réplique » en français, « 0 lines » en anglais, ce qu'un ternaire ne sait
+  pas faire). Même règle pour les pourcentages et les dates : `fmt.percent` /
+  `fmt.dateTime`, jamais un `.replace(".", ",")` ni un `"fr-FR"` en dur.
+- **Un nombre est groupé par sa locale**, « 10 307 » et « 10,307 ». Dans une
+  phrase, c'est le MOTEUR qui le fait : tout paramètre numérique de `t()` passe
+  par `Intl.NumberFormat`, donc il n'y a rien à écrire au point d'appel et rien
+  à oublier. `fmt.number` ne sert qu'aux nombres écrits SEULS, hors de toute
+  phrase (le total au centre de l'anneau de la Répartition, les décomptes de sa
+  légende) ; un nombre nu rendu directement en JSX est un finding.
+- **Les guillemets viennent de `fmt.quote`**, jamais des `«&nbsp;…&nbsp;»`
+  écrits à la main : le français veut ses insécables, l'anglais des guillemets
+  courbes.
+- **La typographie française vit DANS les chaînes** (insécable avant `?`, `!`,
+  `:`, guillemets), jamais dans le JSX : c'est un fait de langue, donc l'affaire
+  du traducteur, et l'anglais ne le porte pas.
+- **Un libellé partagé n'existe qu'une fois.** Quand deux endroits nomment la
+  même chose, le second INTERPOLE la clé du premier (le vide de la Répartition
+  cite `stats.scopeAllOption`, l'aide d'une scène vide cite `rail.characters`)
+  au lieu de recopier le mot. Cas le plus lourd, et le seul tenu par la CI : le
+  **nom d'une page citée dans une phrase** passe par un `{page}` alimenté par
+  `t(pageLabelKey(...))`, jamais par le mot écrit en clair. Le garde de
+  `test_contracts.py` ne voit que la tournure « page X » / « mode X », et c'est
+  volontaire : en français les noms de page sont des noms communs, donc
+  « Enregistrement… » et « Avancement par personnage et par scène » sont
+  légitimes.
+- **Deux axes de langue, à ne pas confondre** : la locale de l'INTERFACE (choisie
+  par le lecteur, `LocaleSwitch`) et la langue de la PIÈCE (`script.language`,
+  choisie dans le plan du rail, qui pilote le PDF et la voix de synthèse). Un
+  libellé d'acte ou de scène suit la première (c'est de la navigation), le texte
+  des répliques la seconde.
+- **Ce qu'un module pur ne fait jamais** : importer `locale.js`. Il lit l'URL, le
+  stockage et le navigateur dès son import, donc il casse `node --test`. Un
+  module couvert par les tests reçoit `t` en argument (`stats.js`) ou rend un
+  CODE que la page traduit (`useRecorder.js` et son `"mic"`).
+- Style, dans les deux langues : ton cohérent (tutoiement absent, infinitif ou
+  impératif de politesse), pas de tiret cadratin, et l'anglais ne traduit pas mot
+  à mot ce qui n'existe qu'en français (« répéter à l'italienne » → « run your
+  lines », « le responsable » → « the coordinator », jamais « your coordinator »).
