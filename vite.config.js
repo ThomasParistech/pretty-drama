@@ -98,6 +98,7 @@ export default defineConfig({
         editor: resolve(ROOT, "editor.html"),
         recorder: resolve(ROOT, "recorder.html"),
         rehearsal: resolve(ROOT, "rehearsal.html"),
+        stats: resolve(ROOT, "stats.html"),
         dashboard: resolve(ROOT, "dashboard.html"),
       },
     },

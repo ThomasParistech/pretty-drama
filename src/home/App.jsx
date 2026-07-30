@@ -5,7 +5,8 @@ import { ACTOR_CARDS, PAGES } from "../shared/pages.js";
 import "./home.css";
 
 // Les deux accueils partagent tout sauf leur liste de cartes : `index.html`
-// (acteurs) et `respo.html` (les quatre pages), cf. src/shared/pages.js.
+// (les trois pages de la troupe) et `respo.html` (les cinq), cf.
+// src/shared/pages.js.
 export default function App({ cards = ACTOR_CARDS }) {
   const [title, setTitle] = useState(null);
 
@@ -26,8 +27,11 @@ export default function App({ cards = ACTOR_CARDS }) {
         {title && <h1 className="home-play-title">{title}</h1>}
       </header>
 
-      {/* Les sceaux colorés en carré : l'accueil sert aussi de légende, on y
-          apprend quelle couleur va avec quelle page. */}
+      {/* Les sceaux en rangées : l'accueil sert aussi de légende, on y apprend
+          quel dessin va avec quelle page. Les trois pages de la troupe partagent
+          le même sceau (le bordeaux sur sable de la marque), donc c'est l'icône
+          qui les distingue, et seuls les deux modes du responsable ont leur
+          couleur propre. */}
       <main className="home-grid">
         {cards.map((key) => {
           const p = PAGES[key];

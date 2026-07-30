@@ -21,6 +21,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from build_manifest import COLOR_PATTERN
 from common import REPO_ROOT
 from process_uploads import LINE_ID_PATTERN
 
@@ -28,6 +29,7 @@ SRC = REPO_ROOT / "src"
 THEME_CSS = SRC / "shared" / "theme.css"
 PAGES_JS = SRC / "shared" / "pages.js"
 REDUCER_JS = SRC / "editor" / "reducer.js"
+CHARACTER_COLORS_JS = SRC / "shared" / "characterColors.js"
 
 # Tokens qu'une règle de bandeau partagé ne doit pas consommer : chacun est
 # re-skinné quelque part, donc le bandeau ne rendrait plus pareil d'une page à
@@ -87,6 +89,47 @@ class TestLineIdPattern(unittest.TestCase):
         self.assertTrue(pattern.startswith("^"))
         self.assertTrue(pattern.endswith("$"))
         self.assertIn("{1,", pattern)
+
+
+class TestCharacterPalette(unittest.TestCase):
+    """La couleur d'un personnage est écrite par l'éditeur (palette JS) et
+    recopiée par l'Action jusqu'au manifest (COLOR_PATTERN). La palette n'a
+    qu'une implémentation, en JS, et le Python n'en valide que la FORME : ce
+    garde vérifie que la forme acceptée couvre bien toute la palette.
+
+    Sans lui, ajouter une couleur écrite autrement (« #FFF », un nom CSS, un
+    `oklch()`) la ferait silencieusement tomber du manifest, et la page
+    Répartition colorerait ce personnage comme un personnage sans couleur."""
+
+    def palette(self) -> list[str]:
+        body = re.search(
+            r"export const CHARACTER_COLORS = \[(.*?)^\];",
+            read(CHARACTER_COLORS_JS),
+            re.DOTALL | re.MULTILINE,
+        )
+        self.assertIsNotNone(body, "CHARACTER_COLORS introuvable dans characterColors.js")
+        return re.findall(r'"(#[0-9a-fA-F]+)"', body.group(1))
+
+    def test_the_palette_is_found_and_has_its_twenty_colours(self):
+        # Un garde qui passerait sur une liste vide ne garde rien. Vingt, parce
+        # que c'est Tableau 10 puis les dix teintes claires de tab20.
+        palette = self.palette()
+        self.assertEqual(len(palette), 20, f"palette lue : {palette}")
+        self.assertEqual(len(set(palette)), 20, "deux personnages ne peuvent pas être de la même couleur")
+
+    def test_every_palette_colour_survives_the_python_validation(self):
+        for color in self.palette():
+            self.assertIsNotNone(
+                COLOR_PATTERN.match(color),
+                f"{color} (src/shared/characterColors.js) est refusée par "
+                f"COLOR_PATTERN (scripts/build_manifest.py), donc elle ne "
+                f"traverserait pas le manifest.",
+            )
+
+    def test_the_python_validation_stays_anchored(self):
+        # Sans ancre de fin, « #1f77b4; background: url(...) » passerait, et la
+        # valeur part dans un attribut `style`.
+        self.assertTrue(COLOR_PATTERN.pattern.endswith(r"\Z"))
 
 
 class TestReservedHeaderTokens(unittest.TestCase):
@@ -212,6 +255,80 @@ class TestPageSeals(unittest.TestCase):
             "theme.css colore une page absente de PAGES (page supprimée ?) : "
             + ", ".join(orphans),
         )
+
+    def seal_values(self) -> dict[str, dict[str, str]]:
+        """{clé de page: {variable: hex}}, en lisant theme.css comme ci-dessus."""
+        values: dict[str, dict[str, str]] = {}
+        for selectors, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css(THEME_CSS)):
+            found_vars = dict(re.findall(r"(--page-mark(?:-soft)?)\s*:\s*(#[0-9a-fA-F]{6})", body))
+            if not found_vars:
+                continue
+            for selector in selectors.split(","):
+                found = re.fullmatch(r"\.page-([a-z]+)", selector.strip())
+                if found:
+                    values.setdefault(found.group(1), {}).update(found_vars)
+        return values
+
+    def test_each_html_favicon_and_theme_colour_match_its_seal(self):
+        """Le favicon d'une page EST sa pastille de sceau : tuile en
+        `--page-mark-soft`, glyphe en `--page-mark`, et `theme-color` en
+        `--page-mark` plein. Les hex y sont forcément recopiés (une balise
+        `<link>` ne lit pas une variable CSS), donc rien n'empêchait le favicon de
+        garder la couleur de la page dont on l'a copié : c'est exactement ce qui
+        arrive quand on ajoute une page en dupliquant le `.html` d'une autre, et
+        ça ne se voit que dans l'onglet, ou pire, dans la vignette du lien que la
+        troupe se partage.
+
+        La correspondance page <-> fichier passe par `PAGES[clé].href`, seule
+        source de vérité du lien entre les deux."""
+        pages_js = read(PAGES_JS)
+        # {clé: fichier html}, lu dans PAGES et pas deviné depuis le nom.
+        hrefs = dict(
+            re.findall(r"^  ([a-zA-Z]+): \{\s*\n\s*href: \"\./([a-z]+\.html)\"", pages_js, re.MULTILINE)
+        )
+        self.assertGreaterEqual(len(hrefs), 5, f"hrefs lus : {hrefs}")
+        values = self.seal_values()
+        problems = []
+        for key, filename in sorted(hrefs.items()):
+            seal = values.get(key)
+            if not seal:
+                continue  # déjà couvert par test_every_page_has_its_two_seal_colours
+            html = read(REPO_ROOT / filename)
+            # Les deux accueils partagent le favicon des masques, dont les aplats
+            # d'intérieur reprennent aussi la teinte douce : on ne vérifie que la
+            # PRÉSENCE des deux hex, pas leur nombre d'occurrences.
+            icon = re.search(r'rel="icon" href="([^"]*)"', html)
+            self.assertIsNotNone(icon, f"{filename} n'a pas de favicon")
+            icon_href = icon.group(1).lower()
+            for variable in ("--page-mark", "--page-mark-soft"):
+                expected = seal[variable].lower().lstrip("#")
+                if f"%23{expected}" not in icon_href:
+                    problems.append(f"{filename} : le favicon n'emploie pas {variable} (#{expected})")
+            theme = re.search(r'name="theme-color" content="(#[0-9a-fA-F]{6})"', html)
+            self.assertIsNotNone(theme, f"{filename} n'a pas de theme-color")
+            if theme.group(1).lower() != seal["--page-mark"].lower():
+                problems.append(
+                    f"{filename} : theme-color {theme.group(1)} au lieu de "
+                    f"{seal['--page-mark']} (--page-mark de .page-{key})"
+                )
+        self.assertEqual(problems, [], "Favicon ou theme-color désaccordé du sceau. " + " ; ".join(problems))
+
+    def test_every_page_has_its_apple_touch_icon(self):
+        """iOS ne lit ni les favicons SVG ni les `data:` URI : chaque page a son
+        PNG, et un `href` qui pointe vers un fichier absent laisse iOS inventer
+        une vignette (une capture de la page, illisible en petit)."""
+        pages_js = read(PAGES_JS)
+        hrefs = dict(
+            re.findall(r"^  ([a-zA-Z]+): \{\s*\n\s*href: \"\./([a-z]+\.html)\"", pages_js, re.MULTILINE)
+        )
+        missing = []
+        for key, filename in sorted(hrefs.items()):
+            found = re.search(r'rel="apple-touch-icon"[^>]*href="/([^"]+)"', read(REPO_ROOT / filename))
+            if not found:
+                missing.append(f"{filename} : pas d'apple-touch-icon")
+            elif not (REPO_ROOT / "public" / found.group(1)).is_file():
+                missing.append(f"{filename} : public/{found.group(1)} absent")
+        self.assertEqual(missing, [], " ; ".join(missing))
 
 
 class TestPageEntries(unittest.TestCase):

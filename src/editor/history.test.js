@@ -12,7 +12,7 @@ import { historyReducer, initHistory } from "./history.js";
 
 const PLAY = {
   title: "Le Misanthrope",
-  characters: [{ id: "c-alceste", name: "Alceste", hue: 255 }],
+  characters: [{ id: "c-alceste", name: "Alceste", color: "#1f77b4" }],
   acts: [
     {
       title: "Acte I",

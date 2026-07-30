@@ -11,7 +11,7 @@ la source de vérité. Il arrive dans `uploads/`, est **validé** ici, et n'est
 promu qu'ensuite (cf. `validate_script`). Un fichier illisible ou qui n'est pas
 un script devient donc une ligne de journal, plus un workflow en échec avec la
 pièce écrasée. Les octets sont écrits **verbatim** : passer par
-`sanitize_script` perdrait ce qu'il ignore (les teintes des personnages).
+`sanitize_script` perdrait ce qu'il ignore (les couleurs des personnages).
 
 For each ZIP:
  - read its manifest.json (bare {line id: raw text} mapping) — the text is
@@ -295,7 +295,8 @@ def process_script(path: Path) -> None:
     raw = path.read_bytes()
     validate_script(raw, current)
     # Octets verbatim : c'est le fichier produit par l'éditeur, et lui seul
-    # porte tout (teintes des personnages comprises, que sanitize_script ignore).
+    # porte tout (couleurs des personnages comprises : sanitize_script en recopie
+    # bien la forme valide, mais il ignore tout ce qu'il ne connaît pas).
     SCRIPT_JSON.parent.mkdir(parents=True, exist_ok=True)
     SCRIPT_JSON.write_bytes(raw)
 

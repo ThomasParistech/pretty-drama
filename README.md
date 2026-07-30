@@ -9,12 +9,13 @@ seule, et vous dites vos répliques au bon moment.
 
 ---
 
-## Les quatre pages du site
+## Les cinq pages du site
 
 | Page | Pour qui | Ce qu'on y fait |
 |------|----------|-----------------|
 | **Répétition** | Toute la troupe | Choisir sa scène et son personnage, masquer ses répliques, avancer réplique par réplique. Les répliques pas encore enregistrées sont lues par une voix de synthèse en attendant. |
 | **Enregistrement** | Les acteurs | Choisir son personnage, enregistrer ses répliques, télécharger un fichier `voix-xxx.zip` et l'envoyer au responsable (mail, WhatsApp, clé USB, comme vous voulez). |
+| **Répartition** | Toute la troupe | Voir comment la parole se partage : la part des mots et des répliques de chaque personnage, et une chronologie du dialogue où chaque carré est un mot, coloré par celui qui le prononce. |
 | **Édition** | Le responsable | Saisir et corriger la pièce : personnages, actes, scènes, répliques. |
 | **Avancement** | Le responsable | Voir qui a enregistré quoi, déposer les voix reçues, mettre à jour le script, et lire le journal des derniers dépôts. |
 

@@ -440,8 +440,8 @@ h3 {
 /* ---- Puces de personnage (section « Personnages » du rail) ----
 
    Elles vivaient dans le bandeau, où les autres pages ont leur select de
-   personnage. Le bandeau est partagé par quatre pages et n'a de place que pour
-   ce que les quatre ont en commun ; les puces y étaient le seul bloc propre à
+   personnage. Le bandeau est partagé par cinq pages et n'a de place que pour
+   ce que les cinq ont en commun ; les puces y étaient le seul bloc propre à
    une page de cette taille, elles poussaient les deux paragraphes de doc et le
    retour à l'accueil vers le bas, et elles grandissaient avec la distribution,
    donc la barre d'une pièce à quinze personnages n'avait plus de rapport avec
@@ -533,20 +533,29 @@ h3 {
    sous le personnage, et pousse les suivants. Trois raisons, dont deux nouvelles.
    (1) Le panneau du rail défile, donc il rogne tout enfant absolu : accrochée à
    la puce, la palette serait coupée par le bord du panneau.
-   (2) Elle mesure environ 161 px et le panneau en offre 248 : il n'y a plus rien
-   à faire déborder, ce qui était TOUTE la raison de la barre basse en fenêtre
-   étroite (règle supprimée, avec l'agrandissement des pastilles qui allait avec).
+   (2) Elle prend la largeur du panneau et ses pastilles la taille de leur case :
+   il n'y a plus rien à faire déborder, ce qui était TOUTE la raison de la barre
+   basse en fenêtre étroite (règle supprimée, avec l'agrandissement des pastilles
+   qui allait avec).
    (3) Dans une colonne, un tiroir qui pousse la liste se lit mieux qu'une boîte
    qui recouvre le personnage voisin.
    Il ne reste que `position: relative` + `z-index`, et pour le seul empilement :
    le fond plein écran qui ferme la palette est à 19, elle doit passer au-dessus.
    C'est aussi pour ça que le rail ne prend ni `position` ni `z-index`. */
+/* Dix colonnes, donc deux rangées : Tableau 10 en haut, ses dix teintes claires
+   en bas. C'est la structure de tab20, d'où la palette est tirée, et ça rend le
+   choix lisible (une couleur et sa version pâle sont l'une sous l'autre) là où
+   six colonnes coupaient la série au milieu.
+   La gouttière descend de 7 à 4 px pour la même raison qu'il y a dix colonnes :
+   le panneau du rail fait 233 px de contenu par défaut, et dix pastilles de
+   18 px plus neuf gouttières de 7 px en demandent 243, donc la dernière colonne
+   sortait du panneau, qui la rognait (`overflow: clip`). */
 .swatch-popover {
   position: relative;
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 7px;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 4px;
   background: #fff;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -554,11 +563,19 @@ h3 {
   box-shadow: 0 8px 24px rgba(43, 43, 40, 0.12);
 }
 
+/* La pastille prend la taille de SA CASE, elle ne l'impose pas : la largeur du
+   rail se règle à la souris (200 à 560 px), donc une taille fixe déborderait en
+   bas de course et laisserait dix pastilles perdues dans un panneau large en
+   haut de course. `aspect-ratio` la garde ronde, et le plafond l'empêche de
+   devenir un gros bouton quand le panneau est étiré. */
 .swatch-popover .swatch {
-  width: 18px;
-  height: 18px;
+  width: 100%;
+  max-width: 20px;
+  aspect-ratio: 1;
+  justify-self: center;
   border-radius: 50%;
   border: none;
+  padding: 0;
   cursor: pointer;
 }
 

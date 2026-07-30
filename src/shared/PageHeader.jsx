@@ -10,7 +10,7 @@ import HomeLink from "./HomeLink.jsx";
 // l'attente de ces mêmes pages, donc sceau et titre dans la rangée du haut, le
 // retour à l'accueil (`HomeLink`, marque comprise) en pied. La marque vivait ici
 // en haut à gauche pendant que `PlayHeader` la posait en bas, si bien qu'à
-// chaque ouverture d'une des quatre pages le nom du site s'affichait en haut
+// chaque ouverture d'une des cinq pages le nom du site s'affichait en haut
 // puis sautait en pied quand le manifest arrivait.
 //
 // `page` est la clé de src/shared/pages.js : elle choisit le sceau, via la

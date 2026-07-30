@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { characterColorById } from "./CharacterPanel.jsx";
+import { characterColor, characterInk } from "../shared/characterColors.js";
 import ConfirmModal from "../shared/ConfirmModal.jsx";
 import { excerpt } from "../shared/data.js";
 
@@ -71,7 +71,13 @@ export default React.memo(function LineRow({
 
   // "Rail" design: white background everywhere, the character's color is
   // only an accent — it paints the drag handle and the character select.
-  const color = characterColorById(characters, line.characterId);
+  //
+  // Les deux sont du TEXTE (le glyphe ⠿ et le nom dans le select, tous deux en
+  // 15 px), donc c'est l'encre et pas l'aplat : la palette est faite pour des
+  // surfaces, et son olive est à 1.87:1 sur le blanc. Seules les pastilles
+  // pleines gardent la couleur telle quelle. Cf. `characterInk`.
+  const color = characterColor(characters, line.characterId);
+  const ink = color === null ? null : characterInk(color);
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -86,7 +92,7 @@ export default React.memo(function LineRow({
         className="drag-handle"
         title="Glisser pour déplacer"
         aria-label="Glisser pour déplacer"
-        style={{ color: color ?? "var(--ed-ghost)" }}
+        style={{ color: ink ?? "var(--ed-ghost)" }}
         {...attributes}
         {...listeners}
       >
@@ -96,7 +102,7 @@ export default React.memo(function LineRow({
       <select
         className="line-character"
         aria-label="Personnage de la réplique"
-        style={{ color: color ?? "var(--ink-soft)" }}
+        style={{ color: ink ?? "var(--ink-soft)" }}
         value={known ? line.characterId : ""}
         onChange={(e) =>
           dispatch({

@@ -354,6 +354,25 @@ export function MicIcon() {
   );
 }
 
+// Répartition : le camembert, c'est-à-dire la part de parole de chacun.
+//
+// Un cercle plus DEUX rayons, et pas un seul : avec un rayon unique le dessin se
+// lit comme une horloge. Les deux rayons découpent une part franche, celle que
+// les deux camemberts de la page dessinent. Le quart est pris en haut à droite
+// parce qu'un camembert commence à midi (les parts de la page aussi).
+//
+// À ne pas confondre avec `BarsIcon`, juste dessous : les barres sont
+// l'Avancement (un remplissage qui progresse), la part est la Répartition (un
+// tout qui se partage). Cercle contre barres, la silhouette suffit à 17 px.
+export function PieIcon() {
+  return (
+    <svg {...strokeSvg}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 3.5v8.5h8.5" />
+    </svg>
+  );
+}
+
 // Avancement : trois barres montantes.
 export function BarsIcon() {
   return (

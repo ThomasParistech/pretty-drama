@@ -189,8 +189,8 @@ export function searchScript(script, query, options = {}) {
             lineOrdinal: ordinal,
             lineId: line.id,
             // L'id et pas le nom : le panneau le résout comme les rangées de
-            // réplique (characterColorById), et un nom recopié ici se
-            // désaccorderait d'un renommage.
+            // réplique (`characterColor`, src/shared/characterColors.js), et un
+            // nom recopié ici se désaccorderait d'un renommage.
             characterId: line.characterId,
             // Référence au texte existant, zéro copie.
             text: line.text,

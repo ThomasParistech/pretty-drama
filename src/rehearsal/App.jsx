@@ -247,7 +247,7 @@ export default function App() {
   }
   // Écran définitif, le troisième du site : on y reste jusqu'à ce que le respo
   // saisisse la pièce, rien ne se chargera de plus sur cet appareil. Il vient
-  // après le manifest, donc il connaît le titre et le dit, comme les quatre
+  // après le manifest, donc il connaît le titre et le dit, comme les cinq
   // bandeaux. Seul l'état au-dessus (`!manifest`) garde le libellé de page.
   if (lines.length === 0 && acts.every((a) => a.scenes.every((s) => s.lines.length === 0))) {
     return (

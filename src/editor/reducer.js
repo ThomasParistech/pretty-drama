@@ -13,6 +13,8 @@
 // replay them). Exception: sanitizeScript may remint ids, but it only runs
 // on LOAD_SCRIPT to repair hand-edited files.
 
+import { firstFreeColor, isPaletteColor } from "../shared/characterColors.js";
+
 export function newId() {
   return crypto.randomUUID();
 }
@@ -25,25 +27,6 @@ export const EMPTY_SCRIPT = {
   characters: [],
   acts: [{ title: "Acte I", scenes: [{ title: "Scène 1", lines: [] }] }],
 };
-
-// The 12 character hues of the "Rail" design — rendered in oklch with
-// homogeneous lightness. A character's hue is STORED on the character
-// (script.json), picked automatically at creation and changeable via the
-// swatch popover. This spectral order is the POPOVER display order.
-export const CHARACTER_HUES = [255, 220, 190, 160, 130, 95, 60, 35, 20, 350, 320, 285];
-
-// Auto-assignment order: greedy max-distance interleaving of the same 12
-// hues, so the first characters get hues far apart on the wheel (assigning
-// in spectral order gave near-identical neighbours).
-const HUE_ASSIGN_ORDER = [255, 60, 160, 350, 95, 220, 20, 190, 320, 130, 285, 35];
-
-function firstFreeHue(characters) {
-  const used = new Set(characters.map((c) => c.hue));
-  return (
-    HUE_ASSIGN_ORDER.find((h) => !used.has(h)) ??
-    HUE_ASSIGN_ORDER[characters.length % HUE_ASSIGN_ORDER.length]
-  );
-}
 
 const isId = (value) => typeof value === "string" && SAFE_ID.test(value);
 
@@ -68,7 +51,10 @@ export function sanitizeScript(raw) {
   // déplace rien.
   const characterRemap = new Map();
 
-  const usedHues = new Set();
+  const usedColors = new Set();
+  // Compte des personnages déjà servis, distinct de `usedColors.size`, qui cesse
+  // de grandir dès la palette épuisée : cf. `firstFreeColor`.
+  let assignedColors = 0;
   const characters = (Array.isArray(raw.characters) ? raw.characters : [])
     .filter((c) => c && typeof c === "object" && typeof c.name === "string" && c.name.trim())
     .map((c) => {
@@ -82,13 +68,17 @@ export function sanitizeScript(raw) {
         id = fresh;
       }
       seenIds.add(id);
-      // Heal a missing/foreign hue with the first free one (deterministic).
-      let hue = CHARACTER_HUES.includes(c.hue)
-        ? c.hue
-        : HUE_ASSIGN_ORDER.find((h) => !usedHues.has(h)) ??
-          HUE_ASSIGN_ORDER[usedHues.size % HUE_ASSIGN_ORDER.length];
-      usedHues.add(hue);
-      return { id, name: c.name, hue };
+      // Comble une couleur absente, étrangère ou déjà prise par la première
+      // libre (déterministe). Même comblement qu'`assignColors` du module
+      // partagé, que les pages qui lisent le manifest appliquent de leur côté :
+      // les deux doivent tomber d'accord sur un script sans couleurs.
+      const color =
+        isPaletteColor(c.color) && !usedColors.has(c.color.toLowerCase())
+          ? c.color.toLowerCase()
+          : firstFreeColor(usedColors, assignedColors);
+      usedColors.add(color);
+      assignedColors += 1;
+      return { id, name: c.name, color };
     });
   const characterIds = new Set(characters.map((c) => c.id));
 
@@ -294,19 +284,27 @@ export function scriptReducer(state, action) {
     // ---- Characters (side panel referential) ----
 
     case "ADD_CHARACTER": {
-      // action.id: UUID minted by the caller. Hue: first free (pure, from state).
+      // action.id: UUID minted by the caller. Couleur : la première libre (pure,
+      // lue dans l'état).
       const name = action.name.trim();
       if (!name) return state;
+      const color = firstFreeColor(
+        new Set(state.characters.map((c) => c.color)),
+        state.characters.length
+      );
       return {
         ...state,
-        characters: [...state.characters, { id: action.id, name, hue: firstFreeHue(state.characters) }],
+        characters: [...state.characters, { id: action.id, name, color }],
       };
     }
 
-    case "SET_CHARACTER_HUE":
+    case "SET_CHARACTER_COLOR":
+      if (!isPaletteColor(action.color)) return state;
       return {
         ...state,
-        characters: state.characters.map((c) => (c.id === action.id ? { ...c, hue: action.hue } : c)),
+        characters: state.characters.map((c) =>
+          c.id === action.id ? { ...c, color: action.color } : c
+        ),
       };
 
     case "RENAME_CHARACTER": {

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import ConfirmModal from "../shared/ConfirmModal.jsx";
 import { ArrowDownIcon, ArrowUpIcon, ChevronIcon } from "../shared/icons.jsx";
-import { characterColorById } from "./CharacterPanel.jsx";
+import { characterColor, characterInk } from "../shared/characterColors.js";
 import { matchExcerpt } from "./search.js";
 
 const plural = (n, mot) => `${n} ${mot}${n > 1 ? "s" : ""}`;
@@ -433,6 +433,8 @@ function indexAt(offsets, y, count) {
 function Hit({ match, characters, isCurrent, onSelect }) {
   const { before, hit, after } = matchExcerpt(match);
   const character = characters.find((c) => c.id === match.characterId) ?? null;
+  const color = characterColor(characters, match.characterId);
+  const ink = color === null ? null : characterInk(color);
 
   return (
     <button
@@ -445,10 +447,9 @@ function Hit({ match, characters, isCurrent, onSelect }) {
       onClick={() => onSelect(match, true)}
     >
       {character && (
-        <span
-          className="search-hit-who"
-          style={{ color: characterColorById(characters, match.characterId) }}
-        >
+        // Le nom est du texte en 11 px : c'est l'encre et pas l'aplat de la
+        // palette, qui est faite pour des surfaces (cf. `characterInk`).
+        <span className="search-hit-who" style={{ color: ink ?? undefined }}>
           {character.name}
         </span>
       )}

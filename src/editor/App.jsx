@@ -82,7 +82,7 @@ export default function App() {
 
   // "Reprise" mode: load the published script.json to continue editing it.
   // Chargé même quand la page est murée (écran tactile), et pas pour rien : le
-  // bandeau de cet écran nomme la pièce comme les quatre autres bandeaux du
+  // bandeau de cet écran nomme la pièce comme les cinq autres bandeaux du
   // site. Sauter le fetch était une économie de rien du tout (un JSON, sur une
   // page qui n'affiche ensuite qu'une phrase) payée par la seule rangée du haut
   // du site à écrire « Édition » au lieu du titre de la pièce.
@@ -258,7 +258,7 @@ export default function App() {
 
   // Avant le reste des états chargés : sur un écran tactile la page ne montre
   // jamais l'éditeur, seulement pourquoi et où l'ouvrir. Elle nomme quand même
-  // la pièce, comme les quatre bandeaux du site : c'est un écran définitif et
+  // la pièce, comme les cinq bandeaux du site : c'est un écran définitif et
   // pas une attente. Il passe donc APRÈS le chargement (le titre n'arrive qu'avec
   // le script, et le bandeau ne dit rien tant qu'il ne le connaît pas) mais AVANT
   // l'erreur de lecture : un script illisible n'apprend rien à qui ne peut pas
@@ -304,7 +304,7 @@ export default function App() {
       {/* Un bandeau SANS réglages, comme celui de l'Avancement : le titre de la
           pièce et le choix de la scène sont partis dans la section « Structure »
           du rail (cf. StructurePanel.jsx), donc il ne reste ici que ce que les
-          quatre pages du site ont en commun, le titre de la pièce en serif, la
+          cinq pages du site ont en commun, le titre de la pièce en serif, la
           doc et le retour à l'accueil. Il se replie quand même, comme les quatre
           autres. */}
       <PlayHeader

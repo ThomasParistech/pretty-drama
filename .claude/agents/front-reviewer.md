@@ -15,7 +15,8 @@ seule : aucun Edit/Write, ton livrable est une liste de findings.
 ## Méthode
 
 1. Lis le contrat, puis `src/shared/theme.css` et les composants partagés.
-2. Pour chaque page (`home`, `rehearsal`, `recorder`, `dashboard`, `editor`) :
+2. Pour chaque page (`home`, `rehearsal`, `recorder`, `stats`, `dashboard`,
+   `editor`) :
    lis son `App.jsx` (et sous-composants) et son CSS en entier.
 3. Croise systématiquement — ne te contente pas d'un grep par mot-clé :
    - **Structure** : la page importe bien les composants partagés prévus

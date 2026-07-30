@@ -331,9 +331,10 @@ class TestMain(unittest.TestCase):
 
     PLAY = {
         "title": "Pièce",
-        # La teinte est ce que sanitize_script ignore : elle prouve que la
-        # promotion écrit bien les octets déposés, et pas une version relue.
-        "characters": [{"id": "c1", "name": "Serge", "hue": 210}],
+        # La couleur mal formée est ce que sanitize_script laisse tomber (il ne
+        # recopie que la forme `#rrggbb`) : elle prouve que la promotion écrit
+        # bien les octets déposés, et pas une version relue.
+        "characters": [{"id": "c1", "name": "Serge", "color": "bleu de Prusse"}],
         "acts": [
             {
                 "title": "Acte I",
@@ -377,7 +378,7 @@ class TestMain(unittest.TestCase):
         results = {entry["file"]: entry for entry in self.run_main()}
 
         self.assertEqual(set(results), {"script.json", "voix-lea.zip", "notes.txt"})
-        # Le script est promu, verbatim (la teinte 210 a survécu).
+        # Le script est promu, verbatim (la couleur mal formée a survécu).
         self.assertEqual(results["script.json"], {"file": "script.json", "kind": "script"})
         self.assertEqual(self.script.read_bytes(), raw)
         # Chaque fichier porte SON propre échec, avec son propre motif.

@@ -121,6 +121,29 @@ class TestMalformedScriptTolerance(unittest.TestCase):
         manifest = build_manifest(script, {})
         self.assertEqual([c["name"] for c in manifest["characters"]], ["Napo"])
 
+    def test_character_color_reaches_the_manifest(self):
+        """Sans elle, la page Répartition n'a rien pour colorer ses camemberts.
+
+        Recopiée verbatim (en minuscules), jamais réparée : le comblement d'une
+        couleur absente n'a qu'une implémentation, en JS.
+        """
+        script = {
+            "characters": [{"id": SERGE, "name": "Serge", "color": "#1F77B4"}],
+            "acts": [],
+        }
+        manifest = build_manifest(script, {})
+        self.assertEqual(manifest["characters"][0]["color"], "#1f77b4")
+
+    def test_malformed_color_is_omitted_and_the_character_stays(self):
+        """Un script hand-édité ne doit ni planter le workflow ni faire partir une
+        valeur inattendue dans un attribut `style` du navigateur. Le champ est
+        omis, donc le front la comble comme il comble une couleur absente."""
+        for bad in ("bleu", "#12345", "#1234567", 255, None, "", "oklch(0.58 0.14 255)", []):
+            script = {"characters": [{"id": SERGE, "name": "Serge", "color": bad}], "acts": []}
+            character = build_manifest(script, {})["characters"][0]
+            self.assertEqual(character["name"], "Serge", f"couleur : {bad!r}")
+            self.assertNotIn("color", character, f"couleur : {bad!r}")
+
     def test_line_missing_id_is_dropped_others_kept(self):
         script = {
             "characters": [{"id": SERGE, "name": "Serge"}],

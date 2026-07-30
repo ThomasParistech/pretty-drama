@@ -8,8 +8,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { CHARACTER_COLORS, assignColors, isPaletteColor } from "../shared/characterColors.js";
 import {
-  CHARACTER_HUES,
   EMPTY_SCRIPT,
   SAFE_ID,
   allLines,
@@ -22,8 +22,8 @@ import {
 const play = (overrides = {}) => ({
   title: "Le Misanthrope",
   characters: [
-    { id: "c-alceste", name: "Alceste", hue: CHARACTER_HUES[0] },
-    { id: "c-philinte", name: "Philinte", hue: CHARACTER_HUES[1] },
+    { id: "c-alceste", name: "Alceste", color: CHARACTER_COLORS[0] },
+    { id: "c-philinte", name: "Philinte", color: CHARACTER_COLORS[1] },
   ],
   acts: [
     {
@@ -200,18 +200,56 @@ test("les entrées malformées sont abandonnées, jamais un crash", () => {
   assert.equal(allLines(sane)[0].text, "seule valide");
 });
 
-test("une teinte absente ou étrangère est réparée avec une teinte de la palette", () => {
+test("une couleur absente ou étrangère est réparée avec une couleur de la palette", () => {
   const sane = sanitizeScript({
     characters: [
       { id: "c1", name: "A" },
-      { id: "c2", name: "B", hue: 999 },
-      { id: "c3", name: "C", hue: "bleu" },
+      { id: "c2", name: "B", color: 999 },
+      { id: "c3", name: "C", color: "bleu" },
+      // Un doublon repart aussi avec une couleur neuve : deux personnages de la
+      // même couleur seraient indiscernables dans les camemberts de la
+      // Répartition.
+      { id: "c4", name: "D", color: CHARACTER_COLORS[0] },
     ],
     acts: [],
   });
-  for (const c of sane.characters) assert.ok(CHARACTER_HUES.includes(c.hue));
+  for (const c of sane.characters) assert.ok(isPaletteColor(c.color), `couleur : ${c.color}`);
   // Déterministe et sans doublon tant que la palette n'est pas épuisée.
-  assert.equal(new Set(sane.characters.map((c) => c.hue)).size, 3);
+  assert.equal(new Set(sane.characters.map((c) => c.color)).size, 4);
+});
+
+test("l'Édition et la Répartition comblent les couleurs à l'identique", () => {
+  // LE contrat de l'extraction dans src/shared/characterColors.js : le script
+  // publié n'a AUCUNE couleur (le fichier de la troupe est antérieur), donc les
+  // deux pages les comblent chacune de son côté, l'éditeur par `sanitizeScript`
+  // et la Répartition par `assignColors` sur le manifest. Deux comblements qui
+  // dérivent montreraient deux distributions différentes de la même pièce.
+  const characters = [
+    { id: "c-alceste", name: "Alceste" },
+    { id: "c-philinte", name: "Philinte" },
+    { id: "c-oronte", name: "Oronte" },
+    // Une couleur déjà posée doit être respectée des deux côtés, y compris
+    // quand elle n'est pas celle que le comblement aurait donnée.
+    { id: "c-celimene", name: "Célimène", color: CHARACTER_COLORS[7] },
+  ];
+  const edition = sanitizeScript({ characters, acts: [] }).characters;
+  const repartition = assignColors(characters);
+  assert.deepEqual(
+    edition.map((c) => [c.id, c.color]),
+    [...repartition],
+    "même id, même couleur, dans le même ordre"
+  );
+
+  // Et une fois la palette épuisée, là où les deux comptent les personnages
+  // servis chacun à sa façon (un compteur ici, la taille de la Map là) : c'est
+  // le seul endroit où ce décompte décide de la couleur, donc le seul où les
+  // deux peuvent se décaler sans que rien ne le dise.
+  const troupe = Array.from({ length: 23 }, (_, i) => ({ id: `c${i}`, name: `Personnage ${i}` }));
+  assert.deepEqual(
+    sanitizeScript({ characters: troupe, acts: [] }).characters.map((c) => c.color),
+    [...assignColors(troupe).values()],
+    "la palette boucle du même pas des deux côtés"
+  );
 });
 
 test("un texte absent devient une chaîne vide, jamais undefined", () => {
@@ -353,11 +391,29 @@ test("SET_LINE_TEXTS garde l'identité de ce qu'il ne touche pas", () => {
   );
 });
 
-test("un nouveau personnage reçoit une teinte libre de la palette", () => {
+test("un nouveau personnage reçoit une couleur libre de la palette", () => {
   const after = scriptReducer(play(), { type: "ADD_CHARACTER", id: "c-oronte", name: "Oronte" });
   const oronte = after.characters.find((c) => c.id === "c-oronte");
-  assert.ok(CHARACTER_HUES.includes(oronte.hue));
-  assert.equal(new Set(after.characters.map((c) => c.hue)).size, 3);
+  assert.ok(isPaletteColor(oronte.color));
+  assert.equal(new Set(after.characters.map((c) => c.color)).size, 3);
+});
+
+test("SET_CHARACTER_COLOR refuse une couleur hors palette, sans fabriquer d'état", () => {
+  // Une action refusée ne doit rien empiler dans l'historique : le reducer rend
+  // l'état REÇU, pas une copie (cf. l'invariant du no-op).
+  const before = play();
+  const same = scriptReducer(before, {
+    type: "SET_CHARACTER_COLOR",
+    id: "c-alceste",
+    color: "chartreuse",
+  });
+  assert.equal(same, before, "état rendu à l'identique");
+  const after = scriptReducer(before, {
+    type: "SET_CHARACTER_COLOR",
+    id: "c-alceste",
+    color: CHARACTER_COLORS[5],
+  });
+  assert.equal(after.characters[0].color, CHARACTER_COLORS[5]);
 });
 
 // ---- Remaniement du plan (section « Structure » du rail) ----

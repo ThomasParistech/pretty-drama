@@ -3,8 +3,8 @@ import PageMark from "./PageMark.jsx";
 import HomeLink from "./HomeLink.jsx";
 import { PAGES } from "./pages.js";
 
-// Collapsible sticky header shared by the rehearsal, recording, editor and
-// dashboard pages: page mark and play title on one row (plus optional action
+// Collapsible sticky header shared by the rehearsal, recording, stats, editor
+// and dashboard pages: page mark and play title on one row (plus optional action
 // buttons on the right); a folded/unfolded area below, holding the link back
 // home and, on the pages that have some, their settings (children).
 // Toujours pas de libellé de page en toutes lettres (il encombrait la barre
@@ -29,7 +29,7 @@ import { PAGES } from "./pages.js";
 // brouillerait le nom accessible du bouton) : il n'a jamais rien fait au clic,
 // c'est la seule zone de la rangée qui reste inerte.
 //
-// Le bandeau se replie sur les QUATRE pages, y compris l'Avancement, qui n'a
+// Le bandeau se replie sur les CINQ pages, y compris l'Avancement, qui n'a
 // aucun réglage : le repli n'ouvre plus sur du vide puisqu'il porte désormais
 // le lien de retour, et une page où il ne se replierait pas serait la seule
 // à garder son bandeau ouvert sous le pouce.
@@ -46,7 +46,7 @@ import { PAGES } from "./pages.js";
 // et un minuteur de 340 ms pour lever ce rognage dès que le bandeau était ouvert
 // et immobile, et cela n'avait qu'une raison : le popover de couleur d'une puce
 // de personnage devait pouvoir dépasser du bandeau de l'éditeur. Les puces
-// vivent maintenant dans le rail de l'Édition, donc plus aucune des quatre pages
+// vivent maintenant dans le rail de l'Édition, donc plus aucune des cinq pages
 // n'a de contenu qui dépasse de ses réglages, et aucune ne fait plus tourner de
 // minuteur à chaque repli.
 export default function PlayHeader({ page, title, actions, hint, children }) {
@@ -82,7 +82,7 @@ export default function PlayHeader({ page, title, actions, hint, children }) {
           {/* La phrase compacte ouvre TOUJOURS le bandeau déplié, juste sous le
               titre de la pièce et au-dessus des réglages : à quoi sert la page
               se lit avant qu'on y touche, et elle est ainsi au même endroit sur
-              les quatre pages (une doc qui change de place d'une page à l'autre
+              les cinq pages (une doc qui change de place d'une page à l'autre
               se cherche à chaque fois). */}
           <p className="header-hint">{PAGES[page].desc}</p>
           {children}

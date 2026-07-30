@@ -59,18 +59,21 @@
    Hex littéraux et non var(--accent) & co. : sinon le re-skin « Rail » de
    l'éditeur déplacerait la couleur du sceau. Chaque teinte fait ≥ 4.5:1 sur
    blanc comme sur son fond clair. */
-/* Les trois pages de la troupe (la marque, Répétition, Enregistrement) portent
-   EXACTEMENT le même sceau : même encre, même pastille. Elles avaient chacune sa
-   nuance, un bordeaux ici, un bordeaux légèrement autre là, une terre à côté :
-   assez proches pour qu'on n'y lise pas une distinction, assez différentes pour
-   qu'on les croie ratées. Ce sont les icônes (les masques, les bulles, le micro)
-   qui disent où on est. Vin sur sable est l'accord du fichier de design d'origine
-   (design/drama-token.svg), c'est donc lui qu'on étend aux trois.
+/* Les pages de la troupe (la marque, Répétition, Enregistrement, Répartition)
+   portent EXACTEMENT le même sceau : même encre, même pastille. Elles avaient
+   chacune sa nuance, un bordeaux ici, un bordeaux légèrement autre là, une terre
+   à côté : assez proches pour qu'on n'y lise pas une distinction, assez
+   différentes pour qu'on les croie ratées. Ce sont les icônes (les masques, les
+   bulles, le micro, le camembert) qui disent où on est. Vin sur sable est
+   l'accord du fichier de design d'origine (design/drama-token.svg), c'est donc
+   lui qu'on étend à toutes.
    Seuls les deux modes du responsable gardent leur couleur propre : elles ne
-   séparent plus deux pages voisines, elles marquent un autre territoire. */
+   séparent plus deux pages voisines, elles marquent un autre territoire. La
+   Répartition n'en est pas un, elle s'ouvre à toute la troupe. */
 .page-home,
 .page-rehearsal,
-.page-recorder {
+.page-recorder,
+.page-stats {
   --page-mark: #8b2635;
   --page-mark-soft: #f5eeda;
 }
@@ -150,7 +153,7 @@ select {
 
 /* Même géométrie que `.play-header` : une rangée du haut, puis le pied qui porte
    la marque et le retour à l'accueil (cf. HomeLink.jsx). Ces écrans sont
-   l'attente des quatre pages à bandeau de pièce, la marque ne peut pas être à un
+   l'attente des cinq pages à bandeau de pièce, la marque ne peut pas être à un
    endroit ici et à un autre là : elle sauterait à l'arrivée du manifest. D'où
    aussi le passage en colonne et les mêmes valeurs de rembourrage que
    `.play-header-row` + `.play-header-settings-inner`. */
@@ -246,6 +249,28 @@ textarea {
   border-radius: var(--radius);
   padding: 8px 10px;
   background: #fff;
+}
+
+/* Un champ éteint. **Le fond blanc de la règle au-dessus défait le grisé du
+   navigateur**, donc sans cette règle un select désactivé se lit exactement comme
+   un select actif : c'est le cas de celui des scènes sur la Répartition, éteint
+   quand la portée est la pièce entière, et il n'avait l'air que de proposer un
+   choix qui ne s'ouvrait jamais.
+   Le traitement n'est PAS l'`opacity: 0.45` de `.btn:disabled`, et l'écart est
+   voulu : un bouton porte son libellé, donc l'estomper suffit à l'éteindre, alors
+   que ce champ-là est VIDE quand il est désactivé (cf. stats/App.jsx). Il ne
+   reste qu'un cadre et une flèche : à 45 % d'opacité, un filet de 1 px sur du
+   crème disparaît presque, et la rangée n'a plus l'air d'avoir un troisième champ
+   éteint mais d'en avoir perdu un. Un aplat, lui, garde la boîte visible et dit
+   « pas de choix ici » sans un mot. L'encre douce va avec, pour les champs
+   désactivés qui, eux, gardent un libellé.
+   Sélecteur d'élément et vécu ici plutôt que dans la page, comme les cases à
+   cocher juste en dessous : l'aspect d'un champ partagé par cinq bandeaux ne
+   s'écrit pas dans le CSS de la seule page qui s'en sert aujourd'hui. */
+select:disabled {
+  background: var(--paper-dark);
+  color: var(--ink-soft);
+  cursor: not-allowed;
 }
 
 /* Dérivé de --accent (et non un rgba en dur) : une page re-skinnée emporte sa
@@ -403,7 +428,7 @@ input[type="checkbox"] {
      le popover de couleur d'une puce de personnage, qui devait pouvoir dépasser
      du bandeau de l'éditeur. Les puces vivent maintenant dans le rail de
      l'Édition et leur palette se pose dans son flux, donc plus aucune des
-     quatre pages n'a de contenu qui dépasse de ses réglages, et quatre pages
+     cinq pages n'a de contenu qui dépasse de ses réglages, et cinq pages
      n'ont plus à faire tourner un minuteur à chaque repli pour personne. La
      doctrine qui allait avec n'a plus d'objet, mais elle se note au cas où un
      futur contenu débordant ferait revenir la question : c'était un minuteur et
@@ -531,7 +556,7 @@ input[type="checkbox"] {
    visible là où la pente est la plus raide.
    Plein crème au centre, là où le vin devait rester sous les 20 % : le sable est
    assez proche du blanc du bandeau pour le supporter. Ce lien est la seule sortie
-   de page des quatre bandeaux et n'a aucun mot d'action pour se signaler, donc la
+   de page des cinq bandeaux et n'a aucun mot d'action pour se signaler, donc la
    nappe doit se voir ; c'est sa largeur et sa pente douce, pas sa pâleur, qui
    l'empêchent de se montrer. Elle apparaît en 0.26 s, plus lentement que le pas
    d'un pixel de l'ovale (0.18 s) : le fond monte au lieu de s'allumer d'un coup.
@@ -612,7 +637,7 @@ input[type="checkbox"] {
   min-width: 160px;
 }
 
-/* La doc du bandeau, sur les quatre pages : rendue par PlayHeader, jamais par
+/* La doc du bandeau, sur les cinq pages : rendue par PlayHeader, jamais par
    les pages. Deux paragraphes qui encadrent les réglages : le `desc` compact de
    pages.js (le même que la carte de l'accueil) en tête du bandeau déplié, les
    précisions propres au bandeau en pied. Une seule classe pour les deux, donc un

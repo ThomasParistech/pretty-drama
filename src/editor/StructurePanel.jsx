@@ -25,7 +25,7 @@ import ConfirmModal from "../shared/ConfirmModal.jsx";
 // « + Scène » / « + Acte », et c'est le déménagement des puces de personnage qui
 // se rejoue ici, pour le même motif : sur la Répétition et l'Enregistrement on
 // CHOISIT une scène dans un contenu figé, dans l'Édition on la FAÇONNE, et le
-// bandeau est partagé par quatre pages. La structure était de surcroît éparpillée
+// bandeau est partagé par cinq pages. La structure était de surcroît éparpillée
 // sur trois endroits (les selects et les deux boutons dans le bandeau, la
 // suppression de l'acte dans la colonne, celle de la scène dans SceneEditor),
 // alors qu'aucun d'eux ne montrait la forme de la pièce : deux listes déroulantes
@@ -182,7 +182,7 @@ export default function StructurePanel({
           écho.
           C'est le seul des trois qui accepte de rester vide, et il l'a toujours
           fait : une pièce en cours d'écriture peut n'avoir pas encore de titre,
-          et les quatre bandeaux du site savent l'écrire (« Pièce sans titre »).
+          et les cinq bandeaux du site savent l'écrire (« Pièce sans titre »).
           Un acte ou une scène sans nom, lui, ne serait qu'une case blanche dans
           le plan, sans rien pour le désigner. */}
       <input

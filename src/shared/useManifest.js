@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { fetchManifest, MANIFEST_ERROR_MESSAGE } from "./data.js";
 
-// Single manifest-loading hook shared by recorder, rehearsal and dashboard,
-// so the loading/error behavior (and its French wording) cannot drift
-// between pages.
+// Le seul chargeur de manifest, partagé par l'Enregistrement, la Répétition,
+// la Répartition et l'Avancement, pour que le comportement de chargement et
+// d'erreur (et sa formulation française) ne puisse pas dériver d'une page à
+// l'autre.
 export default function useManifest() {
   const [manifest, setManifest] = useState(null);
   const [error, setError] = useState(null);

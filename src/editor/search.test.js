@@ -30,8 +30,8 @@ import {
 const play = () => ({
   title: "Le Misanthrope",
   characters: [
-    { id: "c-alceste", name: "Alceste", hue: 255 },
-    { id: "c-philinte", name: "Philinte", hue: 220 },
+    { id: "c-alceste", name: "Alceste", color: "#1f77b4" },
+    { id: "c-philinte", name: "Philinte", color: "#ff7f0e" },
   ],
   acts: [
     {

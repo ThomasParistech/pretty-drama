@@ -38,34 +38,52 @@
   margin-bottom: 8px;
 }
 
-/* Bloc carré plutôt qu'une rangée : deux colonnes, donc 2x2 sur l'accueil du
-   responsable (la troupe en haut, le responsable en bas, Avancement en bas à
-   droite) et une seule rangée sur l'accueil des acteurs.
-   `grid-auto-rows: 1fr` égalise les deux rangées malgré des descriptions de
-   longueurs différentes, sinon le carré se déforme. */
+/* Trois cartes par rangée : les trois pages ouvertes à toute la troupe (répéter,
+   enregistrer, comparer) tiennent une rangée, et sur l'accueil du responsable les
+   deux modes qui n'appartiennent qu'à lui (écrire, suivre) viennent au-dessous,
+   centrés. La RANGÉE dit alors à qui la page s'adresse. C'était un carré 2x2 du
+   temps où il y avait deux pages de chaque côté ; la Répartition en fait trois
+   d'un côté, et un 2x2 plus une carte esseulée ne disait plus rien de la
+   séparation.
+
+   Cette lecture par rangée est un BONUS de la fenêtre large, pas un contrat :
+   sous environ 1060 px (3 x 330 + 2 x 16 + 40), les cinq cartes se replient en
+   2 + 2 + 1 et la Répartition se retrouve à côté de l'Édition. On l'assume plutôt
+   que de forcer la coupure après la troisième carte, ce qui demanderait un
+   séparateur dans le DOM ou un `:nth-child` par accueil : la séparation qui
+   compte est celle des ADRESSES (`index.html` ne montre pas les deux modes du
+   responsable, quelle que soit la largeur), la rangée n'en est que le rappel
+   visuel quand la place le permet.
+
+   Flex et non grille, et c'est ce qui rend le reste inutile : `justify-content:
+   center` centre CHAQUE rangée, donc la rangée incomplète du responsable est
+   centrée sans un seul `:nth-child`, et `flex-wrap` choisit le nombre de colonnes
+   tout seul (trois, puis deux, puis une, à mesure que la fenêtre se resserre),
+   donc la page n'a plus besoin d'une seule requête de média pour sa grille. Les
+   deux qu'il y avait ici ont disparu avec.
+
+   `flex: 0 1 330px` : la base fixe est ce qui tient les cartes à la MÊME largeur
+   d'une rangée à l'autre. Avec `flex-grow: 1`, les deux cartes de la rangée du
+   bas s'étiraient à la largeur de trois, et l'accueil du responsable montrait
+   deux cartes larges sous trois étroites. Elles gardent le droit de rétrécir,
+   pour la fenêtre où une seule tient. */
 .home-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-auto-rows: 1fr;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 16px;
-  max-width: 760px;
+  max-width: 1080px;
   width: 100%;
   margin: 20px auto;
   padding: 0 20px;
-}
-
-/* Deux colonnes de 240 px minimum ne tiennent plus : on empile. */
-@media (max-width: 560px) {
-  .home-grid {
-    grid-template-columns: 1fr;
-    grid-auto-rows: auto;
-  }
 }
 
 /* Le survol est le `.lift-hover` partagé (theme.css). Il ne reste ici que le pas,
    plus grand qu'ailleurs : ces cartes sont les plus hautes surfaces cliquables du
    site, et un pas d'un pixel s'y perdait. */
 .home-card {
+  /* Base fixe, pas de croissance : cf. le commentaire de `.home-grid`. */
+  flex: 0 1 330px;
   padding: 26px 22px;
   text-decoration: none;
   color: var(--ink);
@@ -78,7 +96,7 @@
 
 /* Bague partagée, comme sur les deux autres liens-cartes du site (le bouton de
    dépôt de l'Avancement, les personnages de l'encart d'enregistrement) : sans
-   elle, les six cartes des deux accueils retombaient sur l'anneau par défaut du
+   elle, les cartes des deux accueils retombaient sur l'anneau par défaut du
    navigateur, hors palette. */
 .home-card:focus-visible {
   outline: var(--focus-ring);

@@ -1,17 +1,6 @@
 import React, { useState } from "react";
-import { newId, CHARACTER_HUES } from "./reducer.js";
-
-// "Rail" palette: desaturated, homogeneous lightness — the hue is stored on
-// the character (see CHARACTER_HUES in reducer.js).
-export function hueColor(hue) {
-  return `oklch(0.58 0.14 ${hue})`;
-}
-
-// CSS color of a character, or null when the id is unknown.
-export function characterColorById(characters, id) {
-  const character = characters.find((c) => c.id === id);
-  return character ? hueColor(character.hue) : null;
-}
+import { CHARACTER_COLOR_NAMES, CHARACTER_COLORS } from "../shared/characterColors.js";
+import { newId } from "./reducer.js";
 
 // La gestion des personnages : une puce par personnage (pastille de couleur,
 // renommage en place, compte de répliques, suppression) et le formulaire
@@ -20,8 +9,8 @@ export function characterColorById(characters, id) {
 //
 // Elle vit dans la section « Personnages » du rail (cf. EditorRail.jsx), et
 // plus dans le bandeau, où les autres pages ont leur select de personnage : le
-// bandeau est partagé par quatre pages et n'a de place que pour ce que les
-// quatre ont en commun, alors que cette liste grandit avec la distribution.
+// bandeau est partagé par cinq pages et n'a de place que pour ce que les cinq
+// ont en commun, alors que cette liste grandit avec la distribution.
 //
 // Une vraie `<ul>` : un lecteur d'écran annonce « liste de 7 éléments », donc la
 // distribution de la pièce devient un objet et pas une suite de boutons.
@@ -47,7 +36,7 @@ export default function CharacterPanel({ characters, lineCounts, dispatch, onReq
               character={c}
               lineCount={lineCounts.get(c.id) ?? 0}
               onRename={(name) => dispatch({ type: "RENAME_CHARACTER", id: c.id, name })}
-              onSetHue={(hue) => dispatch({ type: "SET_CHARACTER_HUE", id: c.id, hue })}
+              onSetColor={(color) => dispatch({ type: "SET_CHARACTER_COLOR", id: c.id, color })}
               onDelete={() => onRequestDelete(c)}
             />
           ))}
@@ -79,7 +68,7 @@ export default function CharacterPanel({ characters, lineCounts, dispatch, onReq
   );
 }
 
-function CharacterItem({ character, lineCount, onRename, onSetHue, onDelete }) {
+function CharacterItem({ character, lineCount, onRename, onSetColor, onDelete }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(character.name);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -97,7 +86,7 @@ function CharacterItem({ character, lineCount, onRename, onSetHue, onDelete }) {
           className="character-swatch"
           title="Changer la couleur"
           aria-label={`Changer la couleur de ${character.name}`}
-          style={{ background: hueColor(character.hue) }}
+          style={{ background: character.color }}
           onClick={() => setPickerOpen((o) => !o)}
         />
 
@@ -153,16 +142,35 @@ function CharacterItem({ character, lineCount, onRename, onSetHue, onDelete }) {
       {pickerOpen && (
         <>
           <div className="swatch-backdrop" onClick={() => setPickerOpen(false)} />
+          {/* Vingt pastilles en deux rangées de dix (cf. `.swatch-popover`) : la
+              rangée du haut est Tableau 10, celle du bas ses dix teintes claires,
+              soit la structure même de tab20 dont la palette est tirée. */}
           <div className="swatch-popover">
-            {CHARACTER_HUES.map((h) => (
+            {CHARACTER_COLORS.map((color, i) => (
               <button
-                key={h}
-                className={`swatch ${h === character.hue ? "current" : ""}`}
-                aria-label={h === character.hue ? "Couleur actuelle" : "Choisir cette couleur"}
-                title={h === character.hue ? "Couleur actuelle" : "Choisir cette couleur"}
-                style={{ background: hueColor(h) }}
+                key={color}
+                className={`swatch ${color === character.color ? "current" : ""}`}
+                /* Chaque pastille se NOMME : vingt boutons « Choisir cette
+                   couleur » étaient vingt homonymes, et la couleur, leur seule
+                   information, ne se disait pas à la voix.
+                   « la couleur X » et pas « le X » : sur vingt noms, quatre
+                   commencent par une voyelle (orange, olive, et leurs teintes
+                   claires) et l'article ne s'y élide pas. Un nom de couleur
+                   apposé se passe d'accord, alors qu'un adjectif en demanderait
+                   un (« la couleur orange », mais « la pastille orange »). */
+                aria-label={
+                  color === character.color
+                    ? `${CHARACTER_COLOR_NAMES[i]}, couleur actuelle`
+                    : `Choisir la couleur ${CHARACTER_COLOR_NAMES[i].toLowerCase()}`
+                }
+                title={
+                  color === character.color
+                    ? `${CHARACTER_COLOR_NAMES[i]}, couleur actuelle`
+                    : CHARACTER_COLOR_NAMES[i]
+                }
+                style={{ background: color }}
                 onClick={() => {
-                  onSetHue(h);
+                  onSetColor(color);
                   setPickerOpen(false);
                 }}
               />

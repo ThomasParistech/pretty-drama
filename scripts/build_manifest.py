@@ -20,6 +20,7 @@ tolerates — a missing key must never crash the whole workflow run.
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -36,16 +37,42 @@ def _is_id(value) -> bool:
     return isinstance(value, str) and len(value) > 0
 
 
+# Couleur de personnage telle que l'éditeur l'écrit : un hex de la palette
+# partagée (src/shared/characterColors.js). On valide la FORME et pas
+# l'appartenance à la palette : la liste des vingt couleurs n'a qu'une
+# implémentation, en JS, et la recopier ici en ferait une seconde à tenir
+# synchrone. Ce garde-fou suffit à ce qu'aucune valeur inattendue ne parte dans
+# un attribut `style` du navigateur ; le front comble de son côté ce qui manque.
+# Un test de contrat vérifie que la palette JS passe bien cette expression.
+COLOR_PATTERN = re.compile(r"#[0-9a-fA-F]{6}\Z")
+
+
+def _color_of(character: dict):
+    value = character.get("color")
+    return value.lower() if isinstance(value, str) and COLOR_PATTERN.match(value) else None
+
+
 def sanitize_script(raw: dict) -> dict:
     """Lenient mirror of the editor's sanitizeScript: drop malformed entries
     instead of crashing on them (the two consumers must agree on tolerance)."""
     if not isinstance(raw, dict):
         raw = {}
-    characters = [
-        {"id": c["id"], "name": c["name"]}
-        for c in (raw.get("characters") or [])
-        if isinstance(c, dict) and _is_id(c.get("id")) and isinstance(c.get("name"), str)
-    ]
+    # La couleur voyage jusqu'au manifest, sinon la page Répartition n'a rien
+    # pour colorer ses camemberts. Elle est RECOPIÉE et jamais réparée : le
+    # comblement d'une couleur absente n'a qu'une implémentation, en JS
+    # (`assignColors`), et deux comblements indépendants finiraient par ne plus
+    # tomber d'accord sur les mêmes couleurs, donc l'Édition et la Répartition
+    # montreraient deux distributions différentes. Le champ est simplement omis
+    # quand il manque ou qu'il est mal formé.
+    characters = []
+    for c in raw.get("characters") or []:
+        if not (isinstance(c, dict) and _is_id(c.get("id")) and isinstance(c.get("name"), str)):
+            continue
+        character = {"id": c["id"], "name": c["name"]}
+        color = _color_of(c)
+        if color is not None:
+            character["color"] = color
+        characters.append(character)
     acts = []
     for act in raw.get("acts") or []:
         if not isinstance(act, dict):
