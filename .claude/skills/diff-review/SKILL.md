@@ -9,7 +9,8 @@ Revue de **tout ce qui n'est pas encore publié** : commits non poussés,
 modifications indexées ou non, fichiers non suivis. L'audit front en fait
 partie (agent `front-reviewer`, revue statique contre le design system :
 la cohérence visuelle est garantie *par construction* — composants partagés,
-tokens — pas en comparant des rendus). Un seul rapport final, qui se termine par
+tokens — pas en comparant des rendus). Un seul rapport final, **court** (§7 : ce qui
+est corrigé s'inventorie en une ligne, il ne se démontre pas), qui se termine par
 un titre de PR prêt à coller (§8).
 
 ## 1. Base et périmètre
@@ -264,34 +265,65 @@ ni push** — les fixes restent dans le worktree.
 
 ## 7. Rapport
 
-Un seul rapport terminal (pas de fichier, pas d'artifact). En tête : la base
-utilisée et le périmètre (« N fichiers vs origin/master, dont X non
-suivis »). Puis findings front + back confondus, chacun au format :
+Un seul rapport terminal (pas de fichier, pas d'artifact), et **court**.
+
+Ce qui est corrigé est corrigé : le rapport en tient l'INVENTAIRE, pas la
+démonstration. Le pourquoi de chaque fix vit déjà dans le commentaire du code, que
+ce dépôt exige de toute façon, et dans le diff que le lecteur a sous la main : le
+répéter ici lui fait lire deux fois la même chose, en moins précis. Un rapport de
+revue n'est pas le journal de la revue.
+
+**Budget : une trentaine de lignes en tout.** S'il déborde, ce n'est pas que le
+diff était gros, c'est que le rapport explique au lieu de lister.
+
+En tête, UNE ligne : base, périmètre (« N fichiers vs origin/master, dont X non
+suivis »), et l'état des trois vérifications.
+
+### Corrigé
+
+Une LIGNE par correction, dans l'ordre de sévérité décroissante :
 
 ```
-- [sévérité] [catégorie] fichier:ligne — constat en une phrase.
-  Fix : appliqué | proposé : …
+- [sévérité] fichier:ligne — le défaut, en une demi-phrase.
 ```
 
-- `sévérité` : **haute** (perte de données, crash du workflow, invariant
-  cassé, bug visible par l'utilisateur), **moyenne** (cas limite, test
-  manquant, duplication, a11y), **basse** (polissage).
-- `catégorie` : `bug`, `invariant`, `securite`, `tests`, `donnees`, `ci`,
-  `i18n`, ou celles du front-reviewer (`structure`, `tokens`, `duplication`,
-  `a11y`, `responsive`, `textes`, `contrat`). `i18n` couvre le texte en dur, la
-  clé manquante, le pluriel bricolé, le calque anglais ; `textes` reste le ton et
-  la cohérence des libellés, langue mise à part.
+- Pas de « Fix : appliqué » (tout ce qui est dans cette section l'est), pas de
+  catégorie (la sévérité et le fichier suffisent à trier), pas de justification.
+- On nomme le DÉFAUT, jamais sa cause en trois temps ni la solution retenue : « le
+  test des ZIP ne descend pas dans les zones de dépôt, donc ffmpeg n'est jamais
+  installé » et rien de plus.
+- `sévérité` : **haute** (perte de données, crash du workflow, invariant cassé, bug
+  visible par l'utilisateur), **moyenne** (cas limite, test manquant, duplication,
+  a11y), **basse** (polissage).
+- Les corrections **basses** ne prennent pas une ligne chacune : UNE ligne les compte
+  et les nomme en quelques mots (« 5 polissages : règles CSS mortes, repli de date,
+  deux libellés »).
+- Au-delà de six lignes hautes et moyennes, garde les six plus graves et compte le
+  reste sur une ligne.
 
-Trois sections, par sévérité décroissante : **Corrigé**, **À valider** — et
-celle-ci ne contient QUE des questions de produit, d'UX ou d'UI (§6) : une entrée
-technique qui y atterrit est une correction que tu n'as pas faite, pas un choix à
-soumettre. Elle est souvent vide, et c'est le bon signe. Chaque entrée y pose la
-question en une phrase, dit ce que tu ferais et pourquoi, et ce que ça change à
-l'écran —, **RAS** (une ligne par dimension entièrement
-conforme : invariants, tests, front, langue…). La ligne « langue » est
-obligatoire dès que le diff touche `src/` : elle dit combien de fichiers front
-ont été relus chaîne par chaîne, et non pas seulement que les gardes passent. Puis le titre du §8, qui ferme le
-rapport.
+### À valider
+
+Ce qui attend le responsable, et rien d'autre (produit, UX, UI : cf. §6). Une entrée
+technique qui atterrit ici est une correction que tu n'as pas faite, pas un choix à
+soumettre. Deux lignes par entrée au maximum : la question, puis ce que tu ferais et
+ce que ça change à l'écran. Souvent vide, et c'est le bon signe ; vide, elle s'écrit
+« Rien ».
+
+### RAS
+
+**Une seule ligne**, pas une par dimension : les dimensions entièrement conformes
+s'énumèrent d'affilée (« invariants, contrat ZIP, sécurité CI, tests 166 + 205,
+langue : 9 fichiers front relus dans les deux langues »). Le décompte de fichiers
+relus reste obligatoire dès que le diff touche `src/`, c'est la seule promesse que
+les gardes ne tiennent pas seuls.
+
+Puis le titre du §8, qui ferme le rapport.
+
+**Ce qui n'a pas sa place dedans** : une section « Réfuté » (un finding réfuté se
+règle dans un commentaire du code, cf. les garde-fous, et ne coûte au rapport
+qu'une ligne quand il a demandé une mesure) ; la sortie des tests quand ils passent
+(« verts » suffit ; un échec, lui, se cite) ; ce que le diff FAIT, qui est le rôle du
+titre ; les captures, les tableaux, et l'annonce de ce que tu vas faire ensuite.
 
 ## 8. Titre de PR
 
@@ -313,8 +345,9 @@ dès qu'elle porte du contenu.
   Jamais de titre-valise (« divers », « MAJ UI + PDF + CI »).
 - Il ne mentionne ni la doc (`CLAUDE.md`, `.claude/`) ni les tests ajoutés :
   ils suivent le sujet, ils ne sont pas le sujet.
-- Un corps en 3 à 5 puces (une par sujet, dans l'ordre de risque du §1) ne
-  s'ajoute que si le diff porte plus d'un sujet. Sinon le titre se suffit.
+- Un corps de 3 puces au maximum (une par sujet, dans l'ordre de risque du §1) ne
+  s'ajoute que si le diff porte plus d'un sujet. Sinon le titre se suffit, et c'est
+  le cas courant.
 - Comme le reste de cette revue, c'est une **proposition** : ni commit, ni
   stage, ni push, même si le titre est validé dans la réponse suivante (il faut
   une demande explicite).
@@ -333,8 +366,9 @@ dès qu'elle porte du contenu.
   le produit, l'UX et l'UI.
 - Un finding proposé par l'agent front n'est pas une décision prise : `Sûr: oui`
   se relit et peut être RÉFUTÉ (mesure, précédent, contrainte que l'agent ne
-  voyait pas). Un refus argumenté est un résultat de revue, à écrire dans le
-  rapport et dans un commentaire du code, pas un finding qu'on laisse traîner.
+  voyait pas). Un refus argumenté est un résultat de revue, mais il s'écrit **dans
+  un commentaire du code**, là où il empêchera la question de se rouvrir, et pas
+  dans le rapport, qui n'en garde au mieux une ligne (§7).
 - L'éditeur a un re-skin volontaire (« Rail ») : ses différences de tokens
   listées dans le contrat ne sont pas des findings.
 - Si le code a raison contre la doc (catégorie `contrat` du front-reviewer,

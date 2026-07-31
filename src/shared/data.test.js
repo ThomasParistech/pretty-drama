@@ -7,7 +7,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { EXCERPT_MAX, excerpt, githubUploadUrl, myLineNumbers, slugify } from "./data.js";
+import {
+  EXCERPT_MAX,
+  excerpt,
+  githubPlayFolderUrl,
+  githubUploadUrl,
+  myLineNumbers,
+  slugify,
+} from "./data.js";
 
 // Le module ne touche à `window` que dans le corps des fonctions : il suffit
 // donc de le poser avant l'appel. Les cas hors github.io s'appuient sur
@@ -20,16 +27,16 @@ const atUrl = (href) => {
 };
 
 test("site de projet : le dépôt est le premier segment du chemin", () => {
-  atUrl("https://les-troubadours.github.io/ma-piece/dashboard.html");
+  atUrl("https://les-troubadours.github.io/mon-depot/plays/ma-piece/dashboard.html");
   assert.equal(
-    githubUploadUrl(),
-    "https://github.com/les-troubadours/ma-piece/upload/master/uploads"
+    githubUploadUrl("ma-piece"),
+    "https://github.com/les-troubadours/mon-depot/upload/master/uploads/ma-piece"
   );
 });
 
 test("site racine : le dépôt porte le nom du domaine, pas le nom de fichier", () => {
   // Sans ce cas, le bouton pointait vers github.com/<owner>/dashboard.html.
-  atUrl("https://les-troubadours.github.io/dashboard.html");
+  atUrl("https://les-troubadours.github.io/respo.html");
   assert.equal(
     githubUploadUrl(),
     "https://github.com/les-troubadours/les-troubadours.github.io/upload/master/uploads"
@@ -44,9 +51,34 @@ test("site racine à la racine même : pas de segment à confondre avec un dép�
   );
 });
 
-test("l'URL de dépôt vise le dossier uploads/, seule adresse à connaître", () => {
-  atUrl("https://troupe.github.io/piece/dashboard.html");
+test("site racine, page d'une pièce : « plays » n'est pas un nom de dépôt", () => {
+  // Le seul cas qui ne se voit pas à l'œil : deux niveaux plus bas, le premier
+  // segment ressemble à un nom de dépôt, et le bouton visait github.com/<owner>/plays.
+  atUrl("https://les-troubadours.github.io/plays/ma-piece/dashboard.html");
+  assert.equal(
+    githubUploadUrl("ma-piece"),
+    "https://github.com/les-troubadours/les-troubadours.github.io/upload/master/uploads/ma-piece"
+  );
+});
+
+test("l'URL de dépôt vise la zone de la PIÈCE, celle que son bouton désigne", () => {
+  // C'est le DOSSIER qui route le fichier vers sa pièce, jamais son contenu : un ZIP
+  // abîmé doit quand même atterrir dans le journal de sa pièce.
+  atUrl("https://troupe.github.io/depot/plays/piece/dashboard.html");
+  assert.match(githubUploadUrl("piece"), /\/upload\/master\/uploads\/piece$/);
+});
+
+test("sans pièce nommée, l'URL de dépôt vise la racine, le canal de création", () => {
+  atUrl("https://troupe.github.io/depot/respo.html");
   assert.match(githubUploadUrl(), /\/upload\/master\/uploads$/);
+});
+
+test("le dossier d'une pièce sur GitHub, pour le seul geste que le site ne porte pas", () => {
+  atUrl("https://troupe.github.io/depot/respo.html");
+  assert.equal(
+    githubPlayFolderUrl("ma-piece"),
+    "https://github.com/troupe/depot/tree/master/plays/ma-piece"
+  );
 });
 
 // ------------------------------------------------------------------ slugify

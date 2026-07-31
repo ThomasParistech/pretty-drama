@@ -5,14 +5,20 @@ __pycache__/
 .mypy_cache/
 .DS_Store
 uploads_result.json
-# Dérivé de data/script.json à chaque déploiement, jamais une donnée. Cette
-# ligne porte du poids : uploads.yml commite `data` en entier, donc sans elle
+# Dérivé du script de la pièce à chaque déploiement, jamais une donnée. Cette
+# ligne porte du poids : uploads.yml commite `plays` en entier, donc sans elle
 # un binaire de 150 Ko entrerait dans l'historique à chaque dépôt de script.
-data/script.pdf
+plays/*/data/script.pdf
 # Le fichier temporaire du téléchargement de dev (`ensureScriptPdf` dans
 # vite.config.js écrit `.part` puis renomme, pour qu'une requête concurrente ne
 # tombe pas sur un PDF à moitié écrit). Il ne survit qu'à une écriture
 # interrompue (disque plein, serveur tué entre les deux appels), et c'est
 # justement là qu'il ne faut pas qu'il apparaisse dans `git status` d'un dossier
 # que l'Action commite en entier.
-data/script.pdf.part
+plays/*/data/script.pdf.part
+# Les pages d'une pièce sont GÉNÉRÉES depuis les gabarits de `pages/` (une par
+# pièce et par page), en dev comme au build : cf. vite.config.js. Elles sont
+# dérivées comme le PDF, et pour la même raison elles n'entrent pas dans
+# l'historique, que chaque nouvelle pièce viendrait sinon remplir de sept
+# fichiers identiques à ceux de la pièce voisine.
+plays/*/*.html

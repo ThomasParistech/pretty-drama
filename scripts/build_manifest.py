@@ -1,10 +1,15 @@
-"""Build data/manifest.json — the single file the app pages read.
+"""Build plays/<id>/data/manifest.json — the single file the app pages read.
 
-Stateless join of data/script.json (source of truth, produced by the editor)
-and data/clips.json (state of processed clips, maintained by process_uploads).
-Y est recopié le journal des derniers dépôts (data/history.json, tenu par
-update_history.py) : les pages ne lisent que ce fichier, donc c'est ici que
-tout ce qu'elles affichent est assemblé.
+Un manifest PAR PIÈCE, dans le dossier de la pièce : les pages d'une pièce vivent
+elles aussi dans ce dossier, donc elles lisent `data/manifest.json` en chemin
+relatif, exactement comme du temps où le site n'en connaissait qu'une. C'est ce qui
+fait qu'aucune page n'a besoin de savoir dans quelle pièce elle tourne.
+
+Stateless join of the play's data/script.json (source of truth, produced by the
+editor) and data/clips.json (state of processed clips, maintained by
+process_uploads). Y est recopié le journal des derniers dépôts de CETTE pièce
+(data/history.json, tenu par update_history.py) : les pages ne lisent que ce
+fichier, donc c'est ici que tout ce qu'elles affichent est assemblé.
 
 Status per line (spec §6):
  - clip exists and normalized text matches  -> "ok"
@@ -24,13 +29,8 @@ import re
 import sys
 from pathlib import Path
 
-from common import REPO_ROOT, write_json
+from common import is_play_id, load_json, play_data_dir, play_ids, write_json
 from normalize import normalize_text
-
-SCRIPT_PATH = REPO_ROOT / "data" / "script.json"
-CLIPS_PATH = REPO_ROOT / "data" / "clips.json"
-HISTORY_PATH = REPO_ROOT / "data" / "history.json"
-MANIFEST_PATH = REPO_ROOT / "data" / "manifest.json"
 
 
 def _is_id(value) -> bool:
@@ -119,6 +119,13 @@ def sanitize_script(raw: dict) -> dict:
             scenes.append({"lines": lines})
         acts.append({"scenes": scenes})
     return {
+        # L'identifiant de la pièce, celui qui nomme son dossier (`plays/<id>/`) et
+        # sa zone de dépôt. Validé ici comme il l'est côté navigateur, et c'est une
+        # exception assumée à la tolérance de ce lecteur : tout le reste de cette
+        # fonction accepte ce qu'elle peut lire, alors que cette valeur-là devient
+        # un CHEMIN. Absent ou mal formé, il vaut la chaîne vide, et c'est
+        # `process_uploads` qui refusera alors le dépôt plutôt que de deviner.
+        "id": raw["id"] if is_play_id(raw.get("id")) else "",
         "title": raw.get("title") if isinstance(raw.get("title"), str) else "",
         # La langue dans laquelle la pièce est ÉCRITE, pas celle de l'interface du
         # lecteur. Elle sert au PDF (intertitres et césure) et à la voix de
@@ -176,6 +183,11 @@ def build_manifest(script: dict, clips: dict, history=None) -> dict:
         acts.append({"scenes": scenes})
 
     return {
+        # Recopié pour que les pages sachent DANS quelle pièce elles tournent sans
+        # avoir à lire leur propre URL : la page Enregistrement l'écrit dans le ZIP
+        # qu'elle produit, ce qui est ce qui permet à l'Action de refuser un ZIP
+        # déposé dans la zone d'une autre pièce.
+        "id": script["id"],
         "title": script["title"],
         "language": script["language"],
         # Journal des derniers dépôts, affiché par la page Avancement : sans lui
@@ -190,39 +202,67 @@ def build_manifest(script: dict, clips: dict, history=None) -> dict:
     }
 
 
-def main() -> None:
+def build_one(play_id: str) -> bool:
+    """Écrit le manifest d'UNE pièce. Rend False quand elle a été sautée.
+
+    Une pièce sautée est une pièce dont le `script.json` ne se lit pas, et son
+    manifest est alors laissé TEL QUEL : le reconstruire vide effacerait la pièce de
+    tout le site (grille, répétition, PDF) sur une erreur de syntaxe, alors que le
+    fichier de la veille est encore là et reste juste. Le run finit en échec, ce qui
+    est le seul signal dont la CI dispose, et les autres pièces sont construites
+    quand même : le silo vaut aussi pour les pannes.
+    """
+    data = play_data_dir(play_id)
     try:
-        script = json.loads(SCRIPT_PATH.read_text(encoding="utf-8"))
+        script = json.loads((data / "script.json").read_text(encoding="utf-8"))
     except FileNotFoundError:
-        print("data/script.json introuvable", file=sys.stderr)
-        sys.exit(1)
+        # Un dossier de pièce SANS script : c'est ce que laisse un dépôt de création
+        # refusé (le fichier est parti, le journal a été écrit). On publie un
+        # manifest vide plutôt que rien, pour que l'Avancement de cette pièce
+        # s'ouvre et montre le journal qui dit pourquoi elle est vide.
+        script = {}
     except json.JSONDecodeError as exc:
         print(
-            f"data/script.json n'est pas un JSON valide ({exc}) : restaurez sa version "
-            "précédente depuis l'historique GitHub ou re-téléchargez-le depuis la page Édition.",
+            f"plays/{play_id}/data/script.json n'est pas un JSON valide ({exc}) : "
+            "restaurez sa version précédente depuis l'historique GitHub ou "
+            "re-téléchargez-le depuis la page Édition. Le manifest de cette pièce "
+            "est laissé tel quel.",
             file=sys.stderr,
         )
-        sys.exit(1)
-    try:
-        clips = json.loads(CLIPS_PATH.read_text(encoding="utf-8")) if CLIPS_PATH.exists() else {}
-    except json.JSONDecodeError:
-        # clips.json is machine-written; if somehow corrupted, rebuild from
-        # scratch rather than blocking the site (statuses degrade to
-        # "manquant" until ZIPs are re-merged).
-        print("data/clips.json illisible — ignoré (statuts recalculés sans lui)", file=sys.stderr)
-        clips = {}
-    try:
-        history = json.loads(HISTORY_PATH.read_text(encoding="utf-8")) if HISTORY_PATH.exists() else {}
-    except json.JSONDecodeError:
-        # Le journal n'est qu'un confort d'affichage : jamais un motif d'échec.
-        print("data/history.json illisible — journal ignoré", file=sys.stderr)
-        history = {}
+        return False
+    # clips.json est écrit par la machine ; abîmé, on repart de zéro plutôt que de
+    # bloquer le site (les statuts retombent à « manquant » jusqu'au prochain dépôt).
+    clips = load_json(
+        data / "clips.json",
+        {},
+        f"plays/{play_id}/data/clips.json illisible — ignoré (statuts recalculés sans lui)",
+    )
+    # Le journal n'est qu'un confort d'affichage : jamais un motif d'échec.
+    history = load_json(
+        data / "history.json", {}, f"plays/{play_id}/data/history.json illisible — journal ignoré"
+    )
     runs = history.get("runs") if isinstance(history, dict) else None
     manifest = build_manifest(script, clips, runs)
-    write_json(MANIFEST_PATH, manifest)
+    write_json(data / "manifest.json", manifest)
     total = len(manifest["lines"])
     ok = sum(1 for l in manifest["lines"] if l["status"] == "ok")
-    print(f"manifest.json written: {total} lines, {ok} recorded")
+    print(f"plays/{play_id}/data/manifest.json : {total} répliques, {ok} enregistrées")
+    return True
+
+
+def main() -> None:
+    ids = play_ids()
+    if not ids:
+        # Pas une erreur : un dépôt fraîchement forké n'a pas encore de pièce, et le
+        # site doit se construire quand même pour offrir la page qui en crée une.
+        print("aucune pièce dans plays/ : rien à construire")
+        return
+    # La LISTE est délibérée, et ce n'est pas un oubli à « simplifier » en
+    # générateur : `all()` s'arrête au premier faux, donc une pièce au script
+    # illisible empêcherait la construction de toutes celles qui la suivent dans
+    # l'alphabet. On les construit toutes, puis on échoue s'il en manque une.
+    if not all([build_one(play_id) for play_id in ids]):
+        sys.exit(1)
 
 
 if __name__ == "__main__":

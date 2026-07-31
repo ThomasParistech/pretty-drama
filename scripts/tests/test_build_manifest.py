@@ -114,6 +114,20 @@ class TestBuildManifest(unittest.TestCase):
             for scene in act["scenes"]:
                 self.assertNotIn("title", scene)
 
+    def test_the_play_id_reaches_the_manifest(self):
+        # C'est ce qui permet à la page Enregistrement d'inscrire sa pièce dans le
+        # ZIP qu'elle produit, donc à l'Action de refuser un ZIP déposé dans la zone
+        # d'une autre pièce.
+        self.assertEqual(build_manifest({"id": "le-malade", "acts": []}, {})["id"], "le-malade")
+
+    def test_a_malformed_play_id_becomes_empty_rather_than_a_path(self):
+        # Exception assumée à la tolérance de ce lecteur : cette valeur devient un
+        # CHEMIN (`plays/<id>/`), donc elle est validée ici comme elle l'est côté
+        # navigateur. Vide, elle ne dit rien et ne route rien.
+        for bad in ("../evil", "Le-Malade", "le malade", "-malade", "x" * 65, 42, None):
+            self.assertEqual(build_manifest({"id": bad, "acts": []}, {})["id"], "")
+        self.assertEqual(build_manifest({"acts": []}, {})["id"], "")
+
     def test_the_play_language_reaches_the_manifest(self):
         # Le PDF et la voix de synthèse de la Répétition en dépendent.
         self.assertEqual(self.manifest["language"], "fr")

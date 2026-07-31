@@ -1,9 +1,14 @@
-"""Build data/script.pdf — le script de la pièce, mis en page pour l'impression.
+"""Build plays/<id>/data/script.pdf — le script d'une pièce, mis en page pour
+l'impression.
 
-Dérivé de data/script.json, comme manifest.json : rien n'est stocké ici, tout
+Un PDF par pièce, dans le dossier de la pièce, comme son manifest : le bouton de
+téléchargement de son Avancement le désigne en chemin relatif, sans savoir dans
+quelle pièce il tourne.
+
+Dérivé de son script.json, comme manifest.json : rien n'est stocké ici, tout
 se recalcule. Généré par build.yml SEUL (uploads.yml est le seul écrivain du
 dépôt, et ce PDF n'est pas une donnée : il est gitignoré, construit à chaque
-déploiement et recopié dans dist/ avec le reste de data/).
+déploiement et recopié dans dist/ avec le reste de la pièce).
 
 La mise en page reprend celle du script LaTeX de la troupe (article deux
 colonnes, babel français, nom en capitales grasses suivi de deux-points) : le
@@ -22,7 +27,8 @@ Deux règles à ne pas défaire :
    saisi dans l'éditeur par un humain, donc un « 50 % » ou un « R&D » finira
    par arriver, et ces caractères sont du code pour LaTeX.
 
-Usage : python scripts/build_script_pdf.py [chemin/de/sortie.pdf]
+Usage : python scripts/build_script_pdf.py [identifiant de pièce ...]
+        (sans argument : toutes les pièces du dépôt)
 """
 
 import json
@@ -33,10 +39,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-from common import REPO_ROOT
-from build_manifest import SCRIPT_PATH, sanitize_script
-
-PDF_PATH = REPO_ROOT / "data" / "script.pdf"
+from common import is_play_id, play_data_dir, play_ids
+from build_manifest import sanitize_script
 
 # pdflatex d'abord : c'est le moteur de la CI (paquets TeX de la distribution,
 # cf. build.yml) et celui du script LaTeX d'origine de la troupe, donc le PDF
@@ -373,22 +377,40 @@ def compile_pdf(tex: str, out_path: Path) -> bool:
         return True
 
 
-def main() -> None:
-    out_path = Path(sys.argv[1]) if len(sys.argv) > 1 else PDF_PATH
+def build_one(play_id: str) -> None:
+    """Le PDF d'UNE pièce, dans son dossier. Ne lève ni ne sort jamais : cf.
+    l'en-tête du module, ce fichier est un confort et pas une condition de
+    déploiement, et une pièce dont le script est illisible ne doit pas emporter le
+    PDF des autres."""
+    data = play_data_dir(play_id)
+    out_path = data / "script.pdf"
     try:
-        raw = SCRIPT_PATH.read_text(encoding="utf-8")
+        raw = (data / "script.json").read_text(encoding="utf-8")
     except FileNotFoundError:
-        print("data/script.json introuvable : PDF non généré", file=sys.stderr)
+        print(f"plays/{play_id}/data/script.json introuvable : PDF non généré", file=sys.stderr)
         return
     try:
         script = json.loads(raw)
     except ValueError as exc:
-        print(f"data/script.json illisible ({exc}) : PDF non généré", file=sys.stderr)
+        print(f"plays/{play_id}/data/script.json illisible ({exc}) : PDF non généré", file=sys.stderr)
         return
 
     tex = render_tex(script)
     if compile_pdf(tex, out_path):
-        print(f"{out_path.name} written: {out_path.stat().st_size // 1024} KB")
+        print(f"plays/{play_id}/data/script.pdf : {out_path.stat().st_size // 1024} Ko")
+
+
+def main() -> None:
+    # Sans argument, toutes les pièces ; avec, celles qu'on nomme. L'ancien
+    # argument était un chemin de SORTIE, qui n'a plus de sens : la destination est
+    # dérivée de la pièce, et ce qu'on veut choisir en développant est la pièce
+    # qu'on recompile pendant qu'on la relit.
+    wanted = sys.argv[1:] or play_ids()
+    for play_id in wanted:
+        if not is_play_id(play_id):
+            print(f"« {play_id} » n'est pas un identifiant de pièce : ignoré", file=sys.stderr)
+            continue
+        build_one(play_id)
     # Pas de sys.exit(1) : ce PDF est un confort, pas une condition de
     # déploiement. Voir l'en-tête du module.
 

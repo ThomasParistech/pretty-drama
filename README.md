@@ -9,7 +9,10 @@ seule, et vous dites vos répliques au bon moment.
 
 ---
 
-## Les cinq pages du site
+## Les cinq pages d'une pièce
+
+Le site peut héberger plusieurs pièces : on en choisit une en arrivant, puis on
+travaille dedans avec ces cinq pages.
 
 | Page | Pour qui | Ce qu'on y fait |
 |------|----------|-----------------|
@@ -42,11 +45,30 @@ un compte GitHub gratuit.
 
    | Adresse | Pour qui |
    |---------|----------|
-   | `…github.io/les-troubadours/` | la troupe : Répétition et Enregistrement. C'est ce lien que vous partagez. |
-   | `…github.io/les-troubadours/respo.html` | vous : les cinq pages. **Mettez-le en favori**, rien n'y mène depuis l'autre accueil. |
+   | `…github.io/les-troubadours/` | la troupe : elle y choisit une pièce, puis Répétition, Enregistrement ou Répartition. C'est ce lien que vous partagez. |
+   | `…github.io/les-troubadours/respo.html` | vous : la **gestion des pièces**, et les cinq pages de chacune. **Mettez-le en favori**, rien n'y mène depuis l'autre adresse. |
 
 C'est fini : le site est en ligne, avec une pièce d'exemple que vous allez
 remplacer par la vôtre.
+
+### Plusieurs pièces
+
+Le site en héberge autant que vous voulez, et **chaque pièce est indépendante** :
+ses pages, ses voix, ses dépôts et son journal lui appartiennent. On choisit la
+pièce en entrant, et une fois dedans le reste n'existe plus.
+
+Pour en créer une : sur votre page de gestion, bloc **« Nouvelle pièce »**, donnez
+le titre, téléchargez le script de départ, déposez-le avec le lien proposé. La
+pièce apparaît quelques minutes plus tard, prête à être écrite dans l'Édition.
+
+Pour en supprimer une, c'est le seul geste qui demande de passer par GitHub :
+le lien **« Ouvrir le dossier sur GitHub »** de sa carte vous y amène
+directement, et vous supprimez le dossier depuis là.
+
+Si votre site tournait déjà avec une seule pièce avant cette version, lancez une
+fois `python3 scripts/migrate_to_plays.py <nom-de-la-piece>` (par exemple
+`transport-de-femmes`) et commitez le résultat : votre pièce descend dans son
+propre dossier, sans rien perdre.
 
 ---
 
@@ -55,10 +77,14 @@ remplacer par la vôtre.
 Tout se passe sur **votre accueil** (`…/respo.html`) : vous n'avez plus jamais
 besoin de revenir sur cette page GitHub.
 
-Tout se dépose au même endroit : le bouton **« Déposer des voix ou le script de
-la pièce »**, en haut de la page **Avancement**. Glissez vos fichiers dans la
-zone, cliquez sur **« Commit changes »**, et c'est fini. Le site reconnaît
-chaque fichier tout seul.
+Tout se dépose au même endroit, **pièce par pièce** : le bouton **« Déposer des
+voix ou le script de la pièce »**, en haut de la page **Avancement** de la pièce
+concernée. Glissez vos fichiers dans la zone, cliquez sur **« Commit changes »**,
+et c'est fini. Le site reconnaît chaque fichier tout seul.
+
+C'est le bouton de la pièce qui décide à quelle pièce le dépôt appartient : un
+fichier déposé depuis la mauvaise pièce est refusé et vous le dit, plutôt que
+d'écrire les voix d'une pièce par-dessus une autre.
 
 **Écrire ou corriger la pièce** (page Édition)
 1. Ajoutez vos personnages, tapez les répliques (la touche **Entrée** crée la
@@ -69,7 +95,8 @@ chaque fichier tout seul.
 3. Déposez-le avec le bouton ci-dessus.
 
 **Publier les voix reçues** (page Avancement) : déposez le ou les fichiers
-`voix-xxx.zip` reçus, avec le même bouton (seule l'extension compte, pas le nom).
+`voix-xxx.zip` reçus, avec le même bouton (seule l'extension compte, pas le nom),
+depuis la page de la pièce qu'ils concernent.
 
 Dans les deux cas le site se met à jour tout seul en quelques minutes : il
 nettoie le son, met les voix en ligne, prend en compte le nouveau texte et
@@ -101,5 +128,5 @@ mention de copyright et le texte de la licence.
 
 Copyright (c) 2026 Thomas Rouch.
 
-Les fichiers de votre troupe (`data/script.json`, `clips/`, les voix
+Les fichiers de votre troupe (tout ce qui vit sous `plays/`, scripts et voix
 enregistrées) vous appartiennent : la licence ne couvre que le code de l'outil.

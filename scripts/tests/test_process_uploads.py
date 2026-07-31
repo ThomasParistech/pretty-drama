@@ -1,7 +1,8 @@
-"""Tests du dépôt : le contrat ZIP (manifest nu `{lineId: texte brut}` + un
-membre audio `{id}.{ext}` par réplique), le classement des fichiers déposés dans
-`uploads/`, et la validation d'un script AVANT qu'il ne devienne la source de
-vérité. Une entrée hostile lève UploadError, jamais autre chose."""
+"""Tests du dépôt : le contrat ZIP (`{play, clips: {lineId: texte brut}}` + un membre
+audio `{id}.{ext}` par réplique), le ROUTAGE des fichiers déposés (une zone de dépôt
+par pièce, `uploads/<id>/`, plus la racine comme canal de création), et la validation
+d'un script AVANT qu'il ne devienne la source de vérité. Une entrée hostile lève
+UploadError, jamais autre chose."""
 
 import io
 import json
@@ -15,6 +16,7 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import common
 import process_uploads
 from process_uploads import (
     MAX_CLIPS_PER_ZIP,
@@ -46,18 +48,58 @@ def make_archive(members: dict, manifest=None):
 
 
 class TestParseManifest(unittest.TestCase):
-    def test_valid_zip_returns_id_member_text_triples(self):
+    def test_valid_zip_returns_the_play_and_id_member_text_triples(self):
         archive = make_archive(
             {"aaaa-1111.webm": b"x", "bbbb-2222.mp4": b"x"},
-            manifest={"aaaa-1111": "Silence !", "bbbb-2222": "J'suis malade."},
+            manifest={
+                "play": "le-malade",
+                "clips": {"aaaa-1111": "Silence !", "bbbb-2222": "J'suis malade."},
+            },
         )
+        play, entries = parse_manifest(archive)
+        self.assertEqual(play, "le-malade")
         self.assertEqual(
-            sorted(parse_manifest(archive)),
+            sorted(entries),
             [
                 ("aaaa-1111", "aaaa-1111.webm", "Silence !"),
                 ("bbbb-2222", "bbbb-2222.mp4", "J'suis malade."),
             ],
         )
+
+    def test_the_bare_legacy_manifest_is_still_accepted(self):
+        # Le ZIP d'avant les pièces multiples : le manifest EST le mapping. Un
+        # acteur peut avoir le sien dans ses téléchargements depuis des semaines,
+        # et le refuser ne protégerait de rien (il ne nomme aucune pièce, donc il
+        # ne peut pas en contredire une).
+        archive = make_archive(
+            {"aaaa-1111.webm": b"x"}, manifest={"aaaa-1111": "Silence !"}
+        )
+        self.assertEqual(
+            parse_manifest(archive), ("", [("aaaa-1111", "aaaa-1111.webm", "Silence !")])
+        )
+
+    def test_an_empty_play_id_declares_nothing(self):
+        # Ce que la page Enregistrement écrit sur une pièce dont le script n'a pas
+        # encore d'identifiant : accepté, et sans vérification.
+        archive = make_archive(
+            {"aaaa-1111.webm": b"x"}, manifest={"play": "", "clips": {"aaaa-1111": "t"}}
+        )
+        self.assertEqual(parse_manifest(archive)[0], "")
+
+    def test_an_invalid_play_id_is_rejected(self):
+        # Cet identifiant devient un chemin (`plays/<id>/`) : il est validé comme
+        # un id de réplique l'est, et pour la même raison.
+        for bad in ("../evil", "Le-Malade", "le malade", "-malade", "x" * 65, 42):
+            archive = make_archive(
+                {"aaaa-1111.webm": b"x"}, manifest={"play": bad, "clips": {"aaaa-1111": "t"}}
+            )
+            with self.assertRaises(UploadError):
+                parse_manifest(archive)
+
+    def test_a_named_manifest_without_its_clips_mapping_is_rejected(self):
+        archive = make_archive({"aaaa-1111.webm": b"x"}, manifest={"play": "le-malade"})
+        with self.assertRaises(UploadError):
+            parse_manifest(archive)
 
     def test_missing_manifest_is_rejected(self):
         archive = make_archive({"aaaa-1111.webm": b"x"})
@@ -126,7 +168,7 @@ class TestParseManifest(unittest.TestCase):
             {"aaaa-1111.webm": b"x", "__MACOSX/junk": b"x", "notes.txt": b"x"},
             manifest={"aaaa-1111": "texte"},
         )
-        self.assertEqual(parse_manifest(archive), [("aaaa-1111", "aaaa-1111.webm", "texte")])
+        self.assertEqual(parse_manifest(archive), ("", [("aaaa-1111", "aaaa-1111.webm", "texte")]))
 
     def test_too_many_clips_is_rejected(self):
         manifest = {f"id-{i}": "t" for i in range(MAX_CLIPS_PER_ZIP + 1)}
@@ -238,7 +280,7 @@ class TestKindOf(unittest.TestCase):
 
 
 class TestValidateScript(unittest.TestCase):
-    """Garde-fou AVANT d'écraser data/script.json : plus strict que
+    """Garde-fou AVANT d'écraser le script.json d'une pièce : plus strict que
     sanitize_script, qui n'est qu'un lecteur tolérant."""
 
     PLAY = {
@@ -274,6 +316,23 @@ class TestValidateScript(unittest.TestCase):
         empty = {"title": "Pièce", "characters": [], "acts": []}
         validate_script(self.raw(empty), {})
 
+    def test_a_script_naming_another_play_is_rejected(self):
+        # Le fichier nomme sa pièce, le dossier de dépôt la nomme aussi : les faire
+        # se contredire écraserait le script d'une pièce par celui d'une autre.
+        other = {**self.PLAY, "id": "le-malade"}
+        with self.assertRaises(UploadError):
+            validate_script(self.raw(other), self.PLAY, expected_play="transport-de-femmes")
+
+    def test_a_script_naming_its_own_play_passes(self):
+        same = {**self.PLAY, "id": "le-malade"}
+        validate_script(self.raw(same), self.PLAY, expected_play="le-malade")
+
+    def test_a_script_without_an_id_is_accepted_where_it_is_dropped(self):
+        # Script téléchargé avant que ce champ existe : il ne dit rien, donc il ne
+        # contredit rien, et c'est le dossier qui décide (même tolérance que pour un
+        # ZIP de l'ancienne forme).
+        validate_script(self.raw(self.PLAY), self.PLAY, expected_play="le-malade")
+
     def test_oversized_file_is_rejected(self):
         with self.assertRaises(UploadError):
             validate_script(b"x" * (MAX_SCRIPT_BYTES + 1), self.PLAY)
@@ -300,7 +359,15 @@ class TestProcessZip(unittest.TestCase):
         self.clips.mkdir()
         self.zip_path = Path(self.tmp.name) / "voix-lea.zip"
         with zipfile.ZipFile(self.zip_path, "w") as zf:
-            zf.writestr("manifest.json", json.dumps({"aaaa-1111": "Silence !", "bbbb-2222": "J'arrive."}))
+            zf.writestr(
+                "manifest.json",
+                json.dumps(
+                    {
+                        "play": "le-malade",
+                        "clips": {"aaaa-1111": "Silence !", "bbbb-2222": "J'arrive."},
+                    }
+                ),
+            )
             zf.writestr("aaaa-1111.webm", b"x")
             zf.writestr("bbbb-2222.webm", b"x")
 
@@ -312,8 +379,8 @@ class TestProcessZip(unittest.TestCase):
             dest.write_bytes(b"mp3")
 
         clips_index = {"vieux-id": "déjà là"}
-        with mock.patch.multiple(process_uploads, CLIPS_DIR=self.clips, transcode=fake_transcode):
-            self.assertEqual(process_uploads.process_zip(self.zip_path, clips_index), 2)
+        with mock.patch.object(process_uploads, "transcode", fake_transcode):
+            self.assertEqual(process_uploads.process_zip(self.zip_path, clips_index, self.clips), 2)
         self.assertEqual(self.published(), ["aaaa-1111.mp3", "bbbb-2222.mp3"])
         # Texte BRUT au moment de l'enregistrement (la normalisation n'a lieu
         # que dans build_manifest), et les clips déjà là sont conservés.
@@ -332,24 +399,53 @@ class TestProcessZip(unittest.TestCase):
             raise UploadError("la conversion audio a échoué")
 
         clips_index = {"vieux-id": "déjà là"}
-        with mock.patch.multiple(process_uploads, CLIPS_DIR=self.clips, transcode=failing_transcode):
+        with mock.patch.object(process_uploads, "transcode", failing_transcode):
             with self.assertRaises(UploadError):
-                process_uploads.process_zip(self.zip_path, clips_index)
+                process_uploads.process_zip(self.zip_path, clips_index, self.clips)
         # Ni la prise convertie avant l'échec ni la suivante : rien n'est publié,
         # et l'index n'a pas bougé.
         self.assertEqual(self.published(), [])
         self.assertEqual(clips_index, {"vieux-id": "déjà là"})
 
+    def test_a_zip_naming_another_play_publishes_nothing(self):
+        # Les mp3 sont nommés par id de RÉPLIQUE : fusionner ici écrirait les voix
+        # d'une pièce sous les répliques d'une autre, et personne ne s'en
+        # apercevrait avant la répétition. Le refus tombe avant toute conversion,
+        # d'où le `transcode` qui lèverait s'il était appelé.
+        def never(source, dest):
+            raise AssertionError("aucune conversion ne doit être tentée")
+
+        with mock.patch.object(process_uploads, "transcode", never):
+            with self.assertRaises(UploadError):
+                process_uploads.process_zip(
+                    self.zip_path, {}, self.clips, expected_play="transport-de-femmes"
+                )
+        self.assertEqual(self.published(), [])
+
+    def test_a_zip_naming_its_own_play_is_merged(self):
+        def fake_transcode(source, dest):
+            dest.write_bytes(b"mp3")
+
+        with mock.patch.object(process_uploads, "transcode", fake_transcode):
+            self.assertEqual(
+                process_uploads.process_zip(self.zip_path, {}, self.clips, expected_play="le-malade"),
+                2,
+            )
+
     def test_a_corrupted_archive_is_an_upload_error(self):
         broken = Path(self.tmp.name) / "abime.zip"
         broken.write_bytes(b"pas un zip du tout")
-        with mock.patch.object(process_uploads, "CLIPS_DIR", self.clips):
-            with self.assertRaises(UploadError):
-                process_uploads.process_zip(broken, {})
+        with self.assertRaises(UploadError):
+            process_uploads.process_zip(broken, {}, self.clips)
 
 
 class TestMain(unittest.TestCase):
-    """Le script tel que le workflow l'appelle, sur un vrai dossier `uploads/`.
+    """Le script tel que le workflow l'appelle, sur de vraies zones de dépôt.
+
+    C'est ici que se joue le ROUTAGE, qui est le cœur du dépôt multi-pièces : c'est
+    le DOSSIER qui décide de quelle pièce un fichier est, jamais son contenu, sans
+    quoi un ZIP abîmé (donc illisible, donc muet sur sa pièce) n'aurait aucun journal
+    où se dire. L'identifiant que porte le fichier ne sert qu'à vérifier.
 
     Aucun ZIP valide ici : les transcoder demanderait ffmpeg, que la CI n'installe
     que dans uploads.yml quand il y a des voix à traiter. Un ZIP illisible échoue
@@ -357,6 +453,7 @@ class TestMain(unittest.TestCase):
     (sans lui, la garde « ffmpeg introuvable » sortirait en erreur)."""
 
     PLAY = {
+        "id": "le-malade",
         "title": "Pièce",
         # La couleur mal formée est ce que sanitize_script laisse tomber (il ne
         # recopie que la forme `#rrggbb`) : elle prouve que la promotion écrit
@@ -377,37 +474,56 @@ class TestMain(unittest.TestCase):
         root = Path(self.tmp.name)
         self.uploads = root / "uploads"
         self.uploads.mkdir()
-        self.clips = root / "clips"
+        self.plays = root / "plays"
         self.result = root / "uploads_result.json"
-        self.script = root / "data" / "script.json"
         self.addCleanup(self.tmp.cleanup)
 
+    def zone(self, play_id):
+        """Une zone de dépôt, comme le bouton de dépôt de la pièce la désigne."""
+        folder = self.uploads / play_id
+        folder.mkdir(parents=True, exist_ok=True)
+        return folder
+
+    def data(self, play_id):
+        return self.plays / play_id / "data"
+
+    def existing_play(self, play_id="le-malade", play=None):
+        """Une pièce déjà là, avec son script promu et sa zone de dépôt."""
+        raw = json.dumps(play if play is not None else self.PLAY, ensure_ascii=False).encode("utf-8")
+        self.data(play_id).mkdir(parents=True, exist_ok=True)
+        (self.data(play_id) / "script.json").write_bytes(raw)
+        self.zone(play_id)
+        return raw
+
     def run_main(self):
+        # `PLAYS_DIR` et `UPLOADS_DIR` sont patchés dans common, où les helpers de
+        # chemin les relisent à chaque appel ; `UPLOADS_DIR` l'est aussi dans
+        # process_uploads, qui l'a importé par valeur.
         with mock.patch.multiple(
-            process_uploads,
-            UPLOADS_DIR=self.uploads,
-            CLIPS_DIR=self.clips,
-            CLIPS_JSON=Path(self.tmp.name) / "data" / "clips.json",
-            RESULT_PATH=self.result,
-            SCRIPT_JSON=self.script,
+            common, PLAYS_DIR=self.plays, UPLOADS_DIR=self.uploads
+        ), mock.patch.multiple(
+            process_uploads, UPLOADS_DIR=self.uploads, RESULT_PATH=self.result
         ), mock.patch.object(process_uploads.shutil, "which", return_value="/usr/bin/ffmpeg"):
             with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
                 process_uploads.main()
         return json.loads(self.result.read_text(encoding="utf-8"))
 
-    def test_each_file_gets_its_own_kind_and_outcome(self):
-        raw = json.dumps(self.PLAY, ensure_ascii=False).encode("utf-8")
-        (self.uploads / ".gitkeep").write_text("", encoding="utf-8")
-        (self.uploads / "script.json").write_bytes(raw)
-        (self.uploads / "voix-lea.zip").write_bytes(b"pas un zip du tout")
-        (self.uploads / "notes.txt").write_text("penser aux costumes", encoding="utf-8")
+    def entries_of(self, results, play_id):
+        return {entry["file"]: entry for entry in results["plays"].get(play_id, [])}
 
-        results = {entry["file"]: entry for entry in self.run_main()}
+    def test_each_file_gets_its_own_kind_and_outcome(self):
+        raw = self.existing_play()
+        (self.zone("le-malade") / ".gitkeep").write_text("", encoding="utf-8")
+        (self.zone("le-malade") / "script.json").write_bytes(raw)
+        (self.zone("le-malade") / "voix-lea.zip").write_bytes(b"pas un zip du tout")
+        (self.zone("le-malade") / "notes.txt").write_text("penser aux costumes", encoding="utf-8")
+
+        results = self.entries_of(self.run_main(), "le-malade")
 
         self.assertEqual(set(results), {"script.json", "voix-lea.zip", "notes.txt"})
         # Le script est promu, verbatim (la couleur mal formée a survécu).
         self.assertEqual(results["script.json"], {"file": "script.json", "kind": "script"})
-        self.assertEqual(self.script.read_bytes(), raw)
+        self.assertEqual((self.data("le-malade") / "script.json").read_bytes(), raw)
         # Chaque fichier porte SON propre échec, avec son propre motif.
         self.assertEqual(results["voix-lea.zip"]["kind"], "voix")
         self.assertIn("ZIP", results["voix-lea.zip"]["error"])
@@ -415,25 +531,141 @@ class TestMain(unittest.TestCase):
         self.assertIn("inconnu", results["notes.txt"]["error"])
 
     def test_the_drop_zone_is_emptied_except_hidden_files(self):
-        (self.uploads / ".gitkeep").write_text("", encoding="utf-8")
-        (self.uploads / "voix-lea.zip").write_bytes(b"pas un zip du tout")
-        (self.uploads / "notes.txt").write_text("x", encoding="utf-8")
+        self.existing_play()
+        (self.zone("le-malade") / ".gitkeep").write_text("", encoding="utf-8")
+        (self.zone("le-malade") / "voix-lea.zip").write_bytes(b"pas un zip du tout")
+        (self.zone("le-malade") / "notes.txt").write_text("x", encoding="utf-8")
         self.run_main()
         # `.gitkeep` tient le dossier en vie dans git : il n'est pas un dépôt.
-        self.assertEqual([p.name for p in self.uploads.iterdir()], [".gitkeep"])
+        self.assertEqual([p.name for p in self.zone("le-malade").iterdir()], [".gitkeep"])
 
     def test_a_refused_script_leaves_the_play_untouched(self):
-        self.script.parent.mkdir(parents=True, exist_ok=True)
-        before = json.dumps(self.PLAY, ensure_ascii=False).encode("utf-8")
-        self.script.write_bytes(before)
-        (self.uploads / "export.json").write_text("[1, 2, 3]", encoding="utf-8")
-        results = self.run_main()
-        self.assertIn("error", results[0])
-        self.assertEqual(self.script.read_bytes(), before)
+        before = self.existing_play()
+        (self.zone("le-malade") / "export.json").write_text("[1, 2, 3]", encoding="utf-8")
+        results = self.entries_of(self.run_main(), "le-malade")
+        self.assertIn("error", results["export.json"])
+        self.assertEqual((self.data("le-malade") / "script.json").read_bytes(), before)
 
     def test_an_empty_drop_zone_still_writes_a_result(self):
         # Le workflow lit uploads_result.json sans condition à l'étape suivante.
-        self.assertEqual(self.run_main(), [])
+        self.assertEqual(self.run_main(), {"plays": {}, "unrouted": []})
+
+    def test_two_plays_are_processed_independently(self):
+        # Le cloisonnement, vu du dépôt : deux zones, deux journaux, et l'échec de
+        # l'une ne dit rien dans l'autre.
+        self.existing_play("le-malade")
+        self.existing_play("transport", play={**self.PLAY, "id": "transport"})
+        (self.zone("le-malade") / "voix-lea.zip").write_bytes(b"pas un zip du tout")
+        (self.zone("transport") / "notes.txt").write_text("x", encoding="utf-8")
+
+        results = self.run_main()
+
+        self.assertEqual(set(results["plays"]), {"le-malade", "transport"})
+        self.assertEqual(list(self.entries_of(results, "le-malade")), ["voix-lea.zip"])
+        self.assertEqual(list(self.entries_of(results, "transport")), ["notes.txt"])
+        self.assertEqual(results["unrouted"], [])
+
+    def test_a_script_creates_its_play_and_its_deposit_zone(self):
+        # Une pièce naît d'un dépôt de script dans une zone qui ne correspond encore
+        # à aucune pièce. Les deux `.gitkeep` comptent : git ne versionne pas un
+        # dossier vide, et la zone de dépôt doit exister avant que le respo clique le
+        # bouton de dépôt de sa nouvelle pièce.
+        new = {**self.PLAY, "id": "antigone"}
+        (self.zone("antigone") / "script.json").write_text(
+            json.dumps(new, ensure_ascii=False), encoding="utf-8"
+        )
+
+        results = self.run_main()
+
+        self.assertEqual(list(self.entries_of(results, "antigone")), ["script.json"])
+        self.assertNotIn("error", self.entries_of(results, "antigone")["script.json"])
+        self.assertTrue((self.data("antigone") / "script.json").exists())
+        self.assertTrue((self.plays / "antigone" / "clips" / ".gitkeep").exists())
+        self.assertTrue((self.uploads / "antigone" / ".gitkeep").exists())
+
+    def test_the_empty_play_the_site_offers_creates_itself(self):
+        """Le chemin EXACT du geste « Nouvelle pièce » de la page de gestion : la
+        pièce téléchargée est vide (`newPlayScript`, src/shared/plays.js), et le
+        garde-fou de `validate_script` refuse justement un candidat sans réplique.
+        Il ne s'applique que face à une pièce qui en a, mais rien ne le dit dans la
+        signature : sans ce test, la seule façon de créer une pièce depuis le site
+        pouvait devenir un refus au premier resserrage du garde-fou."""
+        fresh = {
+            "id": "antigone",
+            "title": "Antigone",
+            "language": "fr",
+            "characters": [],
+            "acts": [{"scenes": [{"lines": []}]}],
+        }
+        (self.zone("antigone") / "antigone.json").write_text(
+            json.dumps(fresh, ensure_ascii=False), encoding="utf-8"
+        )
+        results = self.entries_of(self.run_main(), "antigone")
+        self.assertNotIn("error", results["antigone.json"])
+        self.assertTrue((self.data("antigone") / "script.json").exists())
+
+    def test_a_failed_creation_leaves_no_phantom_play(self):
+        # Un dossier de pièce fabriqué par un dépôt refusé ferait apparaître une
+        # pièce fantôme dans le sélecteur de la troupe, sans titre et sans réplique.
+        (self.zone("antigone") / "export.json").write_text("[1, 2, 3]", encoding="utf-8")
+        results = self.run_main()
+        self.assertFalse((self.plays / "antigone").exists())
+        # La ligne existe quand même : elle n'a pas de journal de pièce où aller,
+        # donc elle part à la racine, que la page de gestion affiche.
+        self.assertEqual([e["file"] for e in results["unrouted"]], ["export.json"])
+
+    def test_voices_for_a_play_without_a_script_are_refused(self):
+        (self.zone("antigone") / "voix-lea.zip").write_bytes(b"pas un zip du tout")
+        results = self.run_main()
+        self.assertIn("script", results["unrouted"][0]["error"])
+
+    def test_a_script_naming_another_play_than_its_zone_is_refused(self):
+        before = self.existing_play("le-malade")
+        (self.zone("le-malade") / "script.json").write_text(
+            json.dumps({**self.PLAY, "id": "transport"}, ensure_ascii=False), encoding="utf-8"
+        )
+        results = self.entries_of(self.run_main(), "le-malade")
+        self.assertIn("transport", results["script.json"]["error"])
+        self.assertEqual((self.data("le-malade") / "script.json").read_bytes(), before)
+
+    def test_a_root_script_is_routed_by_its_own_id(self):
+        # Le filet : à la racine il n'y a pas de dossier pour router, donc c'est
+        # l'identifiant du fichier qui décide. Il couvre le cas où GitHub refuserait
+        # de servir sa page d'envoi sur un dossier qu'il ne connaît pas encore.
+        new = {**self.PLAY, "id": "antigone"}
+        (self.uploads / "script (1).json").write_text(
+            json.dumps(new, ensure_ascii=False), encoding="utf-8"
+        )
+        results = self.run_main()
+        self.assertEqual(list(self.entries_of(results, "antigone")), ["script (1).json"])
+        self.assertTrue((self.data("antigone") / "script.json").exists())
+
+    def test_a_root_script_without_an_id_is_reported_unrouted(self):
+        (self.uploads / "script.json").write_text(
+            json.dumps({k: v for k, v in self.PLAY.items() if k != "id"}), encoding="utf-8"
+        )
+        results = self.run_main()
+        self.assertEqual(results["plays"], {})
+        self.assertIn("pièce", results["unrouted"][0]["error"])
+
+    def test_a_root_zip_is_reported_unrouted(self):
+        # Des voix concernent toujours une pièce qui existe, et cette pièce porte son
+        # propre bouton de dépôt : la racine n'a aucune raison d'en accepter.
+        (self.uploads / "voix-lea.zip").write_bytes(b"peu importe")
+        results = self.run_main()
+        self.assertEqual(results["plays"], {})
+        self.assertIn("zone de dépôt", results["unrouted"][0]["error"])
+
+    def test_a_zone_whose_name_is_not_a_play_id_is_reported_unrouted(self):
+        folder = self.uploads / "Le Malade"
+        folder.mkdir(parents=True)
+        (folder / "notes.txt").write_text("x", encoding="utf-8")
+        results = self.run_main()
+        self.assertEqual(results["plays"], {})
+        self.assertIn("Le Malade", results["unrouted"][0]["error"])
+        # Consigné ET retiré, comme tout dépôt fautif : le laisser le ferait
+        # re-signaler à chaque run.
+        self.assertEqual(list(folder.iterdir()), [])
 
 
 if __name__ == "__main__":

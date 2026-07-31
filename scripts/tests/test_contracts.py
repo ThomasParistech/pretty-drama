@@ -24,12 +24,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from build_manifest import COLOR_PATTERN, DEFAULT_LANGUAGE, LANGUAGES
 from build_script_pdf import STRUCTURE, _TENS, _UNITS, roman_numeral
-from common import REPO_ROOT
+from common import PLAY_ID_PATTERN, REPO_ROOT, play_data_dir, play_ids
 from process_uploads import LINE_ID_PATTERN
 
 SRC = REPO_ROOT / "src"
 THEME_CSS = SRC / "shared" / "theme.css"
 PAGES_JS = SRC / "shared" / "pages.js"
+# Les gabarits des sept pages d'une pièce, instanciés dans le dossier de chaque
+# pièce au build (cf. vite.config.js).
+PAGES_DIR = REPO_ROOT / "pages"
+PLAYS_JS = SRC / "shared" / "plays.js"
 REDUCER_JS = SRC / "editor" / "reducer.js"
 CHARACTER_COLORS_JS = SRC / "shared" / "characterColors.js"
 
@@ -58,6 +62,19 @@ EXEMPT_TOKENS = ("--page-mark", "--page-mark-soft")
 
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def published_scripts():
+    """(identifiant, script) de chaque pièce du dépôt qui porte un script lisible.
+
+    Les gardes qui s'en servent inspectent l'ARBRE réel et pas du code : ils valent
+    donc pour toutes les pièces d'un coup, sans liste à tenir, et une pièce ajoutée
+    demain y entre d'elle-même. Une pièce sans script est sautée : le dossier peut
+    naître d'un dépôt refusé, et c'est son journal qui le raconte."""
+    for play_id in play_ids():
+        path = play_data_dir(play_id) / "script.json"
+        if path.exists():
+            yield play_id, json.loads(read(path))
 
 
 def css(path: Path) -> str:
@@ -134,6 +151,42 @@ class TestLineIdPattern(unittest.TestCase):
         self.assertTrue(pattern.startswith("^"))
         self.assertTrue(pattern.endswith("$"))
         self.assertIn("{1,", pattern)
+
+
+class TestPlayIdPattern(unittest.TestCase):
+    """L'identifiant d'une pièce nomme un DOSSIER du dépôt (`plays/<id>/`,
+    `uploads/<id>/`) et un segment d'URL du site publié. Le navigateur le mint et
+    le valide (SAFE_PLAY_ID), l'Action le revalide avant d'en faire un chemin
+    (PLAY_ID_PATTERN). Même contrat que les ids de répliques, à un détail près qui
+    compte : là où un id de réplique nomme un fichier, celui-ci nomme un dossier
+    qu'un fichier déposé désigne, donc les faire diverger ferait refuser un dépôt
+    pour un identifiant que le site vient lui-même d'écrire."""
+
+    def test_safe_play_id_and_play_id_pattern_are_the_same_expression(self):
+        match = re.search(r"export const SAFE_PLAY_ID = /(.+?)/;", read(PLAYS_JS))
+        self.assertIsNotNone(match, "SAFE_PLAY_ID introuvable dans src/shared/plays.js")
+        self.assertEqual(
+            match.group(1),
+            PLAY_ID_PATTERN.pattern,
+            "SAFE_PLAY_ID (src/shared/plays.js) et PLAY_ID_PATTERN "
+            "(scripts/common.py) ont divergé : ils nomment les mêmes dossiers et "
+            "doivent rester identiques au caractère près.",
+        )
+
+    def test_the_pattern_stays_anchored_and_bounded(self):
+        pattern = PLAY_ID_PATTERN.pattern
+        self.assertTrue(pattern.startswith("^"))
+        self.assertTrue(pattern.endswith("$"))
+        self.assertIn("{0,", pattern)
+
+    def test_the_pattern_accepts_what_slugify_produces(self):
+        # `slugify` (src/shared/data.js) est ce qui mint l'identifiant : minuscules,
+        # chiffres et tirets, sans tiret aux extrémités. Ce garde vaut acte que le
+        # motif ne refuse pas la sortie de la seule fonction qui l'alimente.
+        for good in ("transport-de-femmes", "le-malade-imaginaire", "piece2", "a"):
+            self.assertIsNotNone(PLAY_ID_PATTERN.fullmatch(good), good)
+        for bad in ("-tiret-en-tete", "Majuscule", "avec espace", "accentué", "a" * 65, ""):
+            self.assertIsNone(PLAY_ID_PATTERN.fullmatch(bad), bad)
 
 
 class TestCharacterPalette(unittest.TestCase):
@@ -338,7 +391,7 @@ class TestPageSeals(unittest.TestCase):
             seal = values.get(key)
             if not seal:
                 continue  # déjà couvert par test_every_page_has_its_two_seal_colours
-            html = read(REPO_ROOT / filename)
+            html = read(PAGES_DIR / filename)
             # Les deux accueils partagent le favicon des masques, dont les aplats
             # d'intérieur reprennent aussi la teinte douce : on ne vérifie que la
             # PRÉSENCE des deux hex, pas leur nombre d'occurrences.
@@ -368,7 +421,7 @@ class TestPageSeals(unittest.TestCase):
         )
         missing = []
         for key, filename in sorted(hrefs.items()):
-            found = re.search(r'rel="apple-touch-icon"[^>]*href="/([^"]+)"', read(REPO_ROOT / filename))
+            found = re.search(r'rel="apple-touch-icon"[^>]*href="/([^"]+)"', read(PAGES_DIR / filename))
             if not found:
                 missing.append(f"{filename} : pas d'apple-touch-icon")
             elif not (REPO_ROOT / "public" / found.group(1)).is_file():
@@ -378,26 +431,56 @@ class TestPageSeals(unittest.TestCase):
 
 class TestPageEntries(unittest.TestCase):
     """Chaque page déclarée doit être une page qui existe : un `href` de PAGES
-    sans .html à la racine est un lien mort dans l'accueil ou un bandeau, et
+    sans gabarit dans `pages/` est un lien mort dans l'accueil ou un bandeau, et
     une entrée de vite.config.js sans .html casse le build."""
 
     def test_every_pages_href_points_to_a_real_html_file(self):
         hrefs = re.findall(r'href: "\./([a-z]+\.html)"', read(PAGES_JS))
         self.assertGreaterEqual(len(hrefs), 5)
         for href in hrefs:
-            self.assertTrue((REPO_ROOT / href).is_file(), f"{href} déclaré dans PAGES mais absent")
+            self.assertTrue((PAGES_DIR / href).is_file(), f"{href} déclaré dans PAGES mais absent")
 
-    def test_every_vite_entry_exists_and_every_html_is_an_entry(self):
+    def test_every_root_html_is_a_vite_entry(self):
+        """Les deux `.html` de la racine sont les seules entrées écrites en clair :
+        le sélecteur de pièce et la gestion des pièces. Une de plus sans entrée ne
+        serait jamais construite ni déployée."""
         config = read(REPO_ROOT / "vite.config.js")
         entries = set(re.findall(r'resolve\(ROOT, "([a-z]+\.html)"\)', config))
         on_disk = {p.name for p in REPO_ROOT.glob("*.html")}
         self.assertEqual(
             entries,
             on_disk,
-            "Les entrées de vite.config.js et les .html de la racine ont divergé : "
-            "une entrée sans fichier casse le build, un fichier sans entrée n'est "
-            "jamais construit ni déployé.",
+            "Les entrées racine de vite.config.js et les .html de la racine ont "
+            "divergé : une entrée sans fichier casse le build, un fichier sans "
+            "entrée n'est jamais construit ni déployé.",
         )
+
+    def test_every_play_page_template_is_instantiated_by_the_build(self):
+        """Les sept pages d'une pièce sont des GABARITS (`pages/*.html`), instanciés
+        dans le dossier de chaque pièce par vite.config.js. La liste du config et les
+        gabarits sur le disque doivent coïncider exactement : un gabarit absent de la
+        liste ne serait jamais écrit, donc la page rendrait un 404 chez la troupe, et
+        un nom de la liste sans gabarit ferait échouer le build de toutes les pièces."""
+        config = read(REPO_ROOT / "vite.config.js")
+        declared = re.search(r"const PLAY_PAGES = \[([^\]]*)\]", config)
+        self.assertIsNotNone(declared, "PLAY_PAGES introuvable dans vite.config.js")
+        listed = set(re.findall(r'"([a-z]+)"', declared.group(1)))
+        on_disk = {p.stem for p in PAGES_DIR.glob("*.html")}
+        self.assertEqual(
+            listed,
+            on_disk,
+            "PLAY_PAGES (vite.config.js) et les gabarits de pages/ ont divergé.",
+        )
+
+    def test_the_play_pages_cover_every_page_of_the_site(self):
+        """Et ces gabarits sont exactement les pages que PAGES déclare, plus le second
+        accueil : sans ce garde, une page ajoutée à PAGES pourrait n'avoir de gabarit
+        pour personne, et ses cartes d'accueil mèneraient à un 404."""
+        keys = set(re.findall(r"^  ([a-zA-Z]+): \{", read(PAGES_JS), re.MULTILINE))
+        # `home` est l'accueil d'une pièce (`index.html`), `respo` son jumeau du
+        # responsable, qui n'est pas une entrée de PAGES.
+        expected = (keys - {"home"}) | {"index", "respo"}
+        self.assertEqual(expected, {p.stem for p in PAGES_DIR.glob("*.html")})
 
 
 class TestCatalogues(unittest.TestCase):
@@ -454,7 +537,13 @@ class TestCatalogues(unittest.TestCase):
         2. elle vit dans une table dont le NOM dit qu'elle en contient
            (`CHARACTER_COLOR_KEYS`, `KIND_LABEL_KEY`), parce que l'appariement
            rang par rang avec des couleurs ou des types de fichier se vérifie là
-           où ces valeurs vivent, pas dans le JSX.
+           où ces valeurs vivent, pas dans le JSX ;
+        3. elle est le libellé de page passé à `mountPage(…)`, qui le rend au
+           `<title>` du document (`applyDocumentLanguage`). Les sept pages d'une
+           pièce y passent une clé `page.<x>.label`, que le motif des clés composées
+           couvrait déjà par accident ; les deux pages RACINE, elles, n'ont pas de
+           clé `page.*` (elles ne sont pas des pages de pièce), et sans ce troisième
+           chemin leurs libellés se lisaient comme des clés orphelines.
 
         Reste invisible ici, et c'est assumé : une clé COMPOSÉE à l'exécution
         (`page.${page}.label`, `rail.${key}.tip`). Elles sont couvertes par motif
@@ -468,7 +557,8 @@ class TestCatalogues(unittest.TestCase):
             source = js_without_comments(read(path))
             found = [
                 key
-                for call in self.t_calls(source)
+                for callee in ("t", "mountPage")
+                for call in self.balanced_calls(source, callee)
                 # Au moins un point : toute clé de catalogue est dotée, et ce
                 # balayage voit aussi les littéraux qui ne sont pas des clés
                 # (`t(pageLabelKey("dashboard"))`).
@@ -482,10 +572,12 @@ class TestCatalogues(unittest.TestCase):
         return used
 
     @staticmethod
-    def t_calls(source: str) -> list[str]:
-        """Le contenu de chaque `t(…)`, parenthèses équilibrées."""
+    def balanced_calls(source: str, callee: str) -> list[str]:
+        """Le contenu de chaque `<callee>(…)`, parenthèses équilibrées : sans ça, un
+        argument qui contient lui-même un appel (`t(pageLabelKey("editor"))`) ou une
+        condition (`t(canUndo ? "a" : "b")`) échappait au relevé."""
         calls = []
-        for match in re.finditer(r"\bt\(", source):
+        for match in re.finditer(rf"\b{re.escape(callee)}\(", source):
             depth, i = 1, match.end()
             while i < len(source) and depth > 0:
                 if source[i] == "(":
@@ -779,20 +871,38 @@ class TestCatalogues(unittest.TestCase):
         source = read(self.LOCALES_DIR / "fr.js")
         template = re.search(r'"common\.docTitle":\s*"([^"]+)"', source)
         self.assertIsNotNone(template, "common.docTitle introuvable dans fr.js")
-        labels = dict(re.findall(r'"page\.([a-z]+)\.label":\s*"([^"]+)"', source))
 
-        # {fichier .html: clé de libellé}. `respo.html` est le seul à ne pas
-        # porter le nom de sa clé de page : c'est le second accueil.
-        expected_key = {"index.html": "home", "respo.html": "respo"}
+        def label(key):
+            found = re.search(rf'"{re.escape(key)}":\s*"([^"]+)"', source)
+            self.assertIsNotNone(found, f"{key} absente de fr.js")
+            return found.group(1)
+
+        # Deux familles de documents, et c'est tout le découpage du site.
+        #
+        # Les GABARITS de `pages/` sont les sept pages d'une pièce, instanciées dans
+        # le dossier de chaque pièce au build : leur libellé est celui de leur page
+        # (`respo.html` est le seul à ne pas porter le nom de sa clé, c'est le second
+        # accueil d'une pièce).
+        #
+        # Les deux `.html` de la RACINE vivent au-dessus des pièces (le sélecteur de la
+        # troupe et la gestion des pièces du responsable) : ce ne sont pas des pages de
+        # pièce, elles n'ont pas de clé `page.*` et leur libellé leur appartient.
+        expected = {
+            REPO_ROOT / "index.html": "chooser.label",
+            REPO_ROOT / "respo.html": "manage.label",
+        }
+        for path in sorted((REPO_ROOT / "pages").glob("*.html")):
+            page = {"index": "home", "respo": "respo"}.get(path.stem, path.stem)
+            expected[path] = f"page.{page}.label"
+
         mismatches = []
-        for path in sorted(REPO_ROOT.glob("*.html")):
-            key = expected_key.get(path.name, path.stem)
-            self.assertIn(key, labels, f"{path.name} : page.{key}.label absente de fr.js")
-            want = template.group(1).replace("{page}", labels[key])
+        for path, key in sorted(expected.items()):
+            want = template.group(1).replace("{page}", label(key))
             found = re.search(r"<title>([^<]*)</title>", read(path))
             self.assertIsNotNone(found, f"{path.name} : pas de <title>")
             if found.group(1) != want:
-                mismatches.append(f"{path.name} : « {found.group(1)} » au lieu de « {want} »")
+                where = path.relative_to(REPO_ROOT)
+                mismatches.append(f"{where} : « {found.group(1)} » au lieu de « {want} »")
         self.assertEqual(
             mismatches,
             [],
@@ -855,15 +965,55 @@ class TestStructureLabels(unittest.TestCase):
             self.assertEqual(roman_numeral(n), want, f"roman_numeral({n})")
 
     def test_no_act_or_scene_title_is_written_back_into_the_play(self):
-        """Le script publié ne doit plus porter de titre d'acte ni de scène : ce
+        """Aucun script publié ne doit porter de titre d'acte ni de scène : ce
         serait une donnée dans une langue, et elle repartirait vers le PDF, les
         colonnes de l'Avancement et la portée de la Répartition."""
-        script = json.loads(read(REPO_ROOT / "data" / "script.json"))
-        self.assertIn(script.get("language"), LANGUAGES, "la pièce publiée doit dire sa langue")
-        for ai, act in enumerate(script.get("acts", [])):
-            self.assertNotIn("title", act, f"acte {ai}")
-            for si, scene in enumerate(act.get("scenes", [])):
-                self.assertNotIn("title", scene, f"acte {ai}, scène {si}")
+        for play_id, script in published_scripts():
+            self.assertIn(
+                script.get("language"), LANGUAGES, f"{play_id} : la pièce doit dire sa langue"
+            )
+            for ai, act in enumerate(script.get("acts", [])):
+                self.assertNotIn("title", act, f"{play_id}, acte {ai}")
+                for si, scene in enumerate(act.get("scenes", [])):
+                    self.assertNotIn("title", scene, f"{play_id}, acte {ai}, scène {si}")
+
+
+class TestPublishedPlays(unittest.TestCase):
+    """Les pièces réellement présentes dans le dépôt, contre la disposition que le
+    site et l'Action attendent d'elles. Ce n'est pas un test de comportement mais un
+    garde-fou d'ARBRE : une pièce mal rangée ne se voit pas en relisant du code, elle
+    se voit quand une page rend un 404 chez la troupe."""
+
+    def test_no_play_script_claims_another_play_than_its_own_folder(self):
+        """Un script qui nomme une AUTRE pièce que son dossier ferait refuser tous les
+        dépôts de la pièce (`validate_script` compare les deux), donc le garde-fou se
+        retournerait contre la troupe.
+
+        Il ne demande PAS que l'identifiant soit présent, et cet écart est
+        délibéré : `validate_script` accepte un script qui n'en porte pas (c'est le cas
+        d'un fichier téléchargé avant que ce champ existe, et le dossier décide alors
+        seul). Exiger la présence ici rendrait la CI rouge pour un dépôt que l'Action
+        accepte, donc arrêterait le déploiement du site sur un fichier parfaitement
+        utilisable, et ce silence est exactement ce que le projet redoute le plus."""
+        for play_id, script in published_scripts():
+            declared = script.get("id")
+            if not declared:
+                continue
+            self.assertEqual(
+                declared,
+                play_id,
+                f"plays/{play_id}/data/script.json déclare l'identifiant "
+                f"{declared!r} : ses dépôts seraient tous refusés.",
+            )
+
+    def test_every_play_has_a_deposit_zone(self):
+        """Elle doit EXISTER dans le dépôt avant que le respo clique le bouton de
+        dépôt de la pièce : GitHub ne sert sa page d'envoi que sur un dossier qu'il
+        connaît, et git ne versionne pas un dossier vide, d'où le `.gitkeep`."""
+        for play_id in play_ids():
+            zone = REPO_ROOT / "uploads" / play_id
+            self.assertTrue(zone.is_dir(), f"uploads/{play_id}/ manque")
+            self.assertTrue((zone / ".gitkeep").exists(), f"uploads/{play_id}/.gitkeep manque")
 
 
 if __name__ == "__main__":

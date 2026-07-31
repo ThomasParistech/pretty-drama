@@ -1,0 +1,225 @@
+/* Les deux pages racine du site : le sélecteur de pièce de la troupe et la gestion
+   des pièces du responsable.
+
+   Elles empruntent tout leur habillage à `home.css` (le hero de la marque, la grille
+   de cartes, le pied de page et son sélecteur de langue) : ce sont des accueils, et
+   l'entrée du site doit avoir la même tenue quelle que soit la porte. Ce fichier ne
+   porte donc QUE ce qui leur est propre, à savoir ce qu'une carte de pièce dit de son
+   avancement, le geste de création, et le relevé des dépôts sans pièce. */
+
+/* Le titre de la page prend la place du titre de la pièce sur l'accueil d'une pièce
+   (`.home-play-title`), à un corps près : ici c'est une question posée au lecteur, pas
+   le nom d'une œuvre, donc elle ne mérite pas les 44 px d'un titre de pièce. */
+.chooser-heading {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* Les cartes d'une pièce sont plus courtes que celles d'une page (un titre et deux
+   lignes, contre un sceau de 52 px et deux paragraphes) : elles resserrent donc leur
+   gouttière intérieure, le reste (largeur de base, survol, bague de focus) venant de
+   `.home-card`. Pas de `align-items` ici : un conteneur flex étire déjà ses éléments
+   par défaut, donc les cartes d'une rangée ont la même hauteur sans qu'on le demande
+   (une règle l'écrivait, elle ne faisait rien). */
+.chooser-card {
+  gap: 4px;
+}
+
+/* Le titre est déjà en serif et à la couleur de la marque (`.home-card-title`) : il
+   ne reste qu'à défaire le soulignement du lien, sur une carte de gestion où le titre
+   EST le lien (sur le sélecteur, c'est la carte entière). */
+.chooser-card-link {
+  text-decoration: none;
+}
+
+.chooser-card-link:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: 4px;
+}
+
+/* La part enregistrée, le seul chiffre que la carte met en avant. En chiffres à
+   chasse fixe comme tous les nombres alignés du site (la grille de l'Avancement, les
+   décomptes de la Répartition) : deux cartes côte à côte se comparent alors sans que
+   les virgules se décalent.
+   À l'encre du texte et NON au vert de `--ok`, qui a été essayé et retiré : ce vert
+   est celui de la complétion sur tout le site (une case de la grille, une prise
+   enregistrée), donc il faisait lire « 0,7 % » comme une bonne nouvelle. Un chiffre
+   d'avancement est un fait, pas un état atteint ; la couleur du statut appartient à
+   l'Avancement de la pièce, qui la mesure par personnage et par scène. */
+.chooser-card-share {
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.chooser-card-count,
+.chooser-card-when,
+.chooser-card-empty {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+
+/* Une pièce encore vide ne montre pas « 0 % » (cf. `Progress`) : la phrase prend la
+   place du chiffre, donc elle prend aussi sa hauteur de ligne pour que deux cartes
+   voisines gardent la même. */
+.chooser-card-empty {
+  font-style: italic;
+  line-height: 33px;
+}
+
+/* Les deux liens de service d'une carte de gestion, en pied : ils sont la raison de
+   cette page (le responsable n'a pas à connaître GitHub), mais ils ne concurrencent
+   pas le titre, qui est la destination normale. Filet du haut plutôt qu'une marge
+   seule : ils forment un pied de carte, comme le pied du bandeau partagé. */
+.chooser-card-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.chooser-card-links a {
+  color: var(--accent);
+}
+
+.chooser-empty {
+  color: var(--ink-soft);
+  text-align: center;
+  padding: 10px 0 20px;
+}
+
+/* Les deux blocs propres à la gestion. Ils vivent SOUS la grille et à la largeur du
+   contenu, pas dans la grille : ce ne sont pas des pièces, et une carte de la même
+   largeur qu'une pièce se lirait comme une pièce de plus. */
+/* Elles vivent SOUS la grille et à la largeur du contenu, pas dans la grille : ce ne
+   sont pas des pièces, et une carte de la même largeur qu'une pièce se lirait comme une
+   pièce de plus. La largeur maximale est celle de `.page-notice` (theme.css) et pas un
+   700 px nu : `.home` ne porte aucun remplissage latéral (c'est `.home-grid` qui a le
+   sien), donc sous 700 px ces deux cartes touchaient les deux bords de l'écran alors que
+   les cartes de pièces juste au-dessus restaient rentrées. */
+.chooser-new,
+.chooser-unrouted {
+  width: 100%;
+  max-width: min(700px, calc(100% - var(--notice-gutter)));
+  margin: 10px auto;
+  padding: 22px;
+}
+
+/* Ni `font-family` ni remplissage de champ ici : la serif des titres et la géométrie
+   des champs sont des règles d'ÉLÉMENT du thème (`h1, h2, h3` et
+   `select, input[type="text"], textarea`). Le `font-size: 16px` du thème sur un champ
+   porte de surcroît un contrat qu'on ne défait pas : en dessous, iOS zoome à la mise au
+   point, et ces deux pages s'ouvrent au téléphone. */
+.chooser-new h2,
+.chooser-unrouted h2 {
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+
+.chooser-new-hint,
+.chooser-unrouted-hint {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin-bottom: 14px;
+}
+
+/* Le champ et le bouton sur une rangée, qui se replie d'elle-même sur une fenêtre
+   étroite : `flex-wrap` et jamais un nombre de colonnes fixé, comme les réglages de
+   la Répétition et les deux cases de la Recherche. */
+.chooser-new-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.chooser-new-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  /* Le champ prend la place qui reste, mais il ne descend pas sous une largeur où un
+     titre de pièce ne se relit plus. */
+  flex: 1 1 240px;
+}
+
+.chooser-new-error,
+.chooser-new-done {
+  margin-top: 12px;
+  font-size: 13.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chooser-new-error {
+  color: var(--warn);
+}
+
+.chooser-new-done a {
+  color: var(--accent);
+}
+
+/* Le relevé des dépôts sans pièce. Une liste et non le tableau à quatre colonnes du
+   journal d'une pièce : ces fichiers n'ont par définition rien réussi, donc une
+   colonne de statut ne dirait qu'une chose (cf. `Unrouted`). */
+.chooser-unrouted ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chooser-unrouted li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 13.5px;
+}
+
+.chooser-unrouted-file {
+  font-weight: 600;
+  /* Un nom de fichier vient du dépôt, donc de personne de confiance : il peut être
+     long et sans espace, et sans cette coupure il élargirait la carte. */
+  overflow-wrap: anywhere;
+}
+
+/* Le motif du refus, à l'ambre des avertissements du site (AA sur le blanc de la
+   carte, cf. le commentaire de `--warn` dans theme.css). */
+.chooser-unrouted-why {
+  color: var(--warn);
+}
+
+.chooser-unrouted-when {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+}
+
+@media (max-width: 600px) {
+  .chooser-heading {
+    font-size: 24px;
+  }
+}
+
+/* La panne de chargement de la liste, distincte du vide (cf. `App.jsx`) : à l'ambre
+   des avertissements du site, comme les cinq autres. */
+.chooser-error {
+  color: var(--warn);
+  text-align: center;
+  padding: 10px 20px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}

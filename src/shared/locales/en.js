@@ -166,8 +166,8 @@ export const EN = {
   "editor.readError":
     "The published script exists but could not be read (damaged file, or a network problem). " +
     "So that your play cannot be overwritten, the editor is disabled. " +
-    "Reload the page to try again; if the error persists, the repository's data/script.json is " +
-    "probably damaged; on GitHub, open the file history, pick an earlier version and view it raw, " +
+    "Reload the page to try again; if the error persists, this play's script is probably damaged " +
+    "in the repository; on GitHub, open the file history, pick an earlier version and view it raw, " +
     "then upload it again before carrying on.",
   "editor.touchOnly": "For practical reasons, {page} is only available on a computer.",
 
@@ -459,4 +459,46 @@ export const EN = {
   // -------------------------------------------------------------------- home
 
   "home.footer": "A free tool for theatre companies, {link}",
+  "home.changePlay": "Switch play",
+
+  // ------------------------------------------------------- choosing a play
+
+  "chooser.label": "Plays",
+  "manage.label": "Manage plays",
+
+  "chooser.heading": "Choose a play",
+  "chooser.empty": "No plays yet. The coordinator will create one.",
+  "chooser.loadError":
+    "The list of plays could not be loaded. The site may not be published yet: " +
+    "try again in a few minutes, or ask the coordinator.",
+  "chooser.recorded": {
+    one: "{count} line recorded out of {total}",
+    other: "{count} lines recorded out of {total}",
+  },
+  "chooser.emptyPlay": "Play still empty",
+
+  "manage.heading": "Your plays",
+  "manage.empty": "No plays yet: create the first one below.",
+  "manage.lastDeposit": "Last upload on {date}",
+  "manage.neverDeposited": "No uploads yet",
+  "manage.deposit": "Upload files",
+  "manage.folder": "Open the folder on GitHub",
+  "manage.deposit.aria": "Upload files for {title}",
+  "manage.folder.aria": "Open the folder of {title} on GitHub",
+
+  "manage.new.title": "New play",
+  "manage.new.hint":
+    "Give it a title, then download its starting script. Upload it, and the play shows " +
+    "up here.",
+  "manage.new.label": "Title of the play",
+  "manage.new.download": "Download the starting script",
+  "manage.new.deposit": "Upload this file to create the play",
+  "manage.new.done": "Script downloaded. Upload it to create the play.",
+  "manage.new.emptyTitle": "Give the play a title.",
+  "manage.new.badTitle": "This title leaves no usable address: add letters or digits to it.",
+  "manage.new.taken": "A play already uses this address: change a word of the title.",
+
+  "manage.unrouted.title": "Uploads with no play",
+  "manage.unrouted.hint":
+    "These files did not say which play they belong to. Upload them from their own play's upload button.",
 };

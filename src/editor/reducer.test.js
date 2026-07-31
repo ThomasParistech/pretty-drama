@@ -508,3 +508,28 @@ test("EMPTY_SCRIPT est un script que sanitizeScript accepte tel quel", () => {
     characters: [],
   });
 });
+
+test("l'identifiant de la pièce est recopié, jamais reminté", () => {
+  // Le contraire de ce que font les ids de répliques et de personnages juste
+  // au-dessus : celui-ci nomme le dossier de la pièce et sa zone de dépôt, donc en
+  // fabriquer un neuf enverrait le prochain script téléchargé vers une pièce qui
+  // n'existe pas, en laissant derrière lui les mp3 déjà déposés.
+  assert.equal(sanitizeScript({ id: "transport-de-femmes", acts: [] }).id, "transport-de-femmes");
+});
+
+test("un identifiant de pièce mal formé devient vide plutôt qu'un chemin", () => {
+  // Il finit dans un chemin (`plays/<id>/`) et dans une URL : même validation que
+  // côté Action, qui refusera alors de promouvoir le fichier plutôt que de deviner
+  // sa destination. Un script d'avant ce champ tombe dans le même cas.
+  for (const bad of ["../evil", "Majuscule", "avec espace", "-tiret", "x".repeat(65), 42, null]) {
+    assert.equal(sanitizeScript({ id: bad, acts: [] }).id, "", String(bad));
+  }
+  assert.equal(sanitizeScript({ acts: [] }).id, "");
+});
+
+test("l'identifiant de la pièce entre de lui-même dans les champs comparés", () => {
+  // history.js dérive SCRIPT_FIELDS d'`Object.keys(EMPTY_SCRIPT)` exprès : un champ
+  // ajouté à la pièce doit entrer dans la comparaison d'identité qui éteint
+  // « Modifications non téléchargées », sans qu'une liste soit à tenir à la main.
+  assert.ok(Object.keys(EMPTY_SCRIPT).includes("id"));
+});

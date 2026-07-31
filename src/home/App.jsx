@@ -4,13 +4,13 @@ import LocaleSwitch from "../shared/LocaleSwitch.jsx";
 import PageMark from "../shared/PageMark.jsx";
 import T from "../shared/T.jsx";
 import { t } from "../shared/locale.js";
-import { ACTOR_CARDS, PAGES, pageDescKey, pageLabelKey } from "../shared/pages.js";
+import { ACTOR_CARDS, PAGES, chooserHref, pageDescKey, pageLabelKey } from "../shared/pages.js";
 import "./home.css";
 
 // Les deux accueils partagent tout sauf leur liste de cartes : `index.html`
 // (les trois pages de la troupe) et `respo.html` (les cinq), cf.
 // src/shared/pages.js.
-export default function App({ cards = ACTOR_CARDS }) {
+export default function App({ cards = ACTOR_CARDS, page = "home" }) {
   const [title, setTitle] = useState(null);
 
   useEffect(() => {
@@ -54,6 +54,14 @@ export default function App({ cards = ACTOR_CARDS }) {
           room for it (cf. LocaleSwitch.jsx). Both home pages carry it, so the two
           audiences each have it at hand. */}
       <footer className="home-footer">
+        {/* Le SEUL lien du site qui sorte d'une pièce, et le seul endroit qui
+            connaisse la profondeur d'une page (`chooserHref`). Il vit au pied de
+            l'accueil de la pièce et nulle part ailleurs : on change de pièce en
+            repassant par l'entrée, comme on y change de langue. Les cinq autres
+            pages n'en portent pas, leur bandeau ramenant déjà ici. */}
+        <p className="home-change-play">
+          <a href={chooserHref(page)}>{t("home.changePlay")}</a>
+        </p>
         <T
           k="home.footer"
           p={{

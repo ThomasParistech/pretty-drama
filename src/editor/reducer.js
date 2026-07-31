@@ -18,6 +18,9 @@ import { firstFreeColor, isPaletteColor } from "../shared/characterColors.js";
 // this module runnable under `node --test`. locale.js would NOT be safe: it
 // reads `window` at module load.
 import { DEFAULT_LOCALE, isLocale } from "../shared/i18n.js";
+// Pur lui aussi (il ne porte qu'une expression et son test), donc sans danger
+// pour `node --test` : cf. src/shared/plays.js.
+import { isPlayId } from "../shared/plays.js";
 
 export function newId() {
   return crypto.randomUUID();
@@ -40,7 +43,15 @@ export const SAFE_ID = /^[0-9a-zA-Z-]{1,64}$/;
 // reader's UI locale. It is set in the Structure section of the rail, and it is
 // what lets build_script_pdf.py compose its own headings and set its babel, and
 // useTts.js pick a voice that matches the dialogue.
+// `id` est l'identifiant de la pièce, celui qui nomme son dossier dans le dépôt
+// (`plays/<id>/`) et sa zone de dépôt (`uploads/<id>/`), cf. src/shared/plays.js.
+// L'éditeur ne le fabrique ni ne le modifie JAMAIS : il le reçoit avec le script
+// et le rend tel quel dans le fichier téléchargé, ce qui est ce qui permet à
+// l'Action de savoir quelle pièce ce dépôt met à jour. Il est vide ici parce
+// qu'EMPTY_SCRIPT est le repli d'une page qui n'a pas encore lu de script ; c'est
+// la page de gestion des pièces qui mint l'identifiant, une fois, à la création.
 export const EMPTY_SCRIPT = {
+  id: "",
   title: "",
   language: DEFAULT_LOCALE,
   characters: [],
@@ -120,6 +131,14 @@ export function sanitizeScript(raw) {
   };
 
   return {
+    // L'identifiant de la pièce est RECOPIÉ, jamais reminté, contrairement aux ids
+    // de répliques et de personnages juste au-dessus : il nomme le dossier de la
+    // pièce et sa zone de dépôt, donc en fabriquer un neuf ici enverrait le
+    // prochain script téléchargé vers une pièce qui n'existe pas, en laissant
+    // derrière lui les mp3 déjà déposés. Un fichier écrit avant ce champ, ou
+    // hand-édité de travers, rend une chaîne vide : l'Action refusera de le
+    // promouvoir plutôt que de deviner sa destination.
+    id: isPlayId(raw.id) ? raw.id : "",
     title: typeof raw.title === "string" ? raw.title : "",
     // An unknown or absent language falls back to French, the project's default.
     // A script.json written before this field existed therefore keeps working.

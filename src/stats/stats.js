@@ -167,40 +167,6 @@ export function speechStats(lines, characters) {
   return { rows, totalWords, totalLines };
 }
 
-// Part en pourcentage. Rendue par ce module et pas calculée dans le JSX : c'est
-// la seule division de la page, et « 0 % » sur une part non nulle se lirait
-// comme un bug (cf. `formatShare`, qui s'en charge).
-export function share(value, total) {
-  if (!total) return 0;
-  return (value * 100) / total;
-}
-
-// La part telle qu'elle s'écrit dans une légende : un chiffre après la décimale,
-// comme le `%1.1f%%` de la référence.
-//
-// Ici et pas dans le JSX, comme tout ce qui peut se tromper : le seuil ci-dessous
-// est une règle, pas un dessin, donc `node --test` le rejoue. `t` et `fmt` sont
-// PASSÉS, comme à `actLabel` : ce module reste pur, donc testable sans DOM.
-//
-// La virgule décimale et l'espace avant le signe ne sont plus écrits à la main :
-// `Intl.NumberFormat` les tient, et il les tient MIEUX. Le code d'avant faisait
-// un `.replace(".", ",")` et posait une espace ORDINAIRE avant le `%`, ce que
-// `.stats-legend-share { white-space: nowrap }` devait rattraper ; Intl produit
-// une vraie insécable U+00A0 en français et rien du tout en anglais (« 12.4% »).
-// Le `nowrap` devient donc une ceinture de plus, gardée et sans effet.
-export function formatShare(value, total, t, fmt) {
-  const ratio = total ? value / total : 0;
-  // Une part non nulle n'affiche JAMAIS « 0,0 % » : un mot sur les dix mille de
-  // la pièce y tombait, et un zéro en face d'un décompte de 1 se lit comme un
-  // bug d'arrondi, ce que le commentaire de `share` veut justement éviter. En
-  // dessous du dixième de point, on dit le seuil et pas la valeur.
-  //
-  // Le seuil lui-même est FORMATÉ et non écrit en dur : « < 0,1 % » en français,
-  // « < 0.1% » en anglais, sans qu'un catalogue ait à connaître le chiffre.
-  if (ratio > 0 && ratio < 0.0005) return t("stats.shareBelow", { value: fmt.percent(0.001) });
-  return fmt.percent(ratio);
-}
-
 // ------------------------------------------------------ le centre de l'anneau
 
 // Le total et son unité sont écrits DANS le trou de l'anneau, en unités du

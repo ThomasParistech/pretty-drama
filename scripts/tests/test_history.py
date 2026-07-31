@@ -1,4 +1,5 @@
-"""Tests du journal des dépôts affiché par la page Avancement.
+"""Tests des journaux de dépôt : celui de chaque pièce (affiché par son Avancement) et
+celui de la racine (affiché par la page de gestion des pièces).
 
 C'est le SEUL canal d'erreur du projet (ni issue ni statut README), donc une
 entrée perdue est une erreur que le respo ne verra jamais, et sa forme est un
@@ -19,6 +20,7 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import common
 import update_history
 from update_history import MAX_RUNS, add_run
 
@@ -125,38 +127,94 @@ class TestExampleJournal(unittest.TestCase):
 
 
 class TestMain(unittest.TestCase):
-    """Le script tel que le workflow l'appelle, sur de vrais fichiers."""
+    """Le script tel que le workflow l'appelle, sur de vrais fichiers.
 
-    def run_main(self, tmp, result):
-        """Écrit un uploads_result.json puis joue main() sur un journal du dossier
-        temporaire. Retourne le journal écrit (ou None s'il n'a rien écrit)."""
-        history = Path(tmp) / "history.json"
-        result_path = Path(tmp) / "uploads_result.json"
+    Un journal PAR PIÈCE (une pièce ignore les dépôts des autres, comme elle ignore
+    leurs répliques), plus un journal RACINE pour ce qu'aucune pièce ne réclame. Sans
+    ce dernier, un fichier posé sans identifiant lisible disparaîtrait sans un mot,
+    ce qui est exactement ce qu'un canal d'erreur ne doit jamais faire."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.plays = Path(self.tmp.name) / "plays"
+        self.root_history = Path(self.tmp.name) / "history.json"
+        self.result_path = Path(self.tmp.name) / "uploads_result.json"
+
+    def run_main(self, result):
+        """Écrit un uploads_result.json puis joue main(). Rend le couple
+        (journaux par pièce, journal racine), chacun None s'il n'a rien été écrit."""
         if result is not None:
-            result_path.write_text(json.dumps(result), encoding="utf-8")
-        with mock.patch.object(update_history, "HISTORY_PATH", history), mock.patch.object(
-            update_history, "RESULT_PATH", result_path
+            self.result_path.write_text(json.dumps(result), encoding="utf-8")
+        else:
+            self.result_path.unlink(missing_ok=True)
+        # `PLAYS_DIR` est patché dans common, où `play_data_dir` le relit à chaque
+        # appel : c'est ce qui déplace les journaux de pièce dans le dossier de test.
+        with mock.patch.object(common, "PLAYS_DIR", self.plays), mock.patch.multiple(
+            update_history, ROOT_HISTORY_PATH=self.root_history, RESULT_PATH=self.result_path
         ), redirect_stdout(io.StringIO()):
             update_history.main()
-        return json.loads(history.read_text(encoding="utf-8")) if history.exists() else None
+        return self.journals(), self.read(self.root_history)
 
-    def test_a_deposit_is_appended_with_a_utc_stamp(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            journal = self.run_main(tmp, VOIX + SCRIPT)
-            self.assertEqual(journal["runs"][0]["files"], VOIX + SCRIPT)
-            self.assertRegex(journal["runs"][0]["at"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+    def journals(self):
+        return {
+            path.parent.parent.name: self.read(path)
+            for path in sorted(self.plays.glob("*/data/history.json"))
+        }
+
+    def read(self, path):
+        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+    def test_a_deposit_is_appended_to_its_own_play_with_a_utc_stamp(self):
+        journals, root = self.run_main({"plays": {"le-malade": VOIX + SCRIPT}, "unrouted": []})
+        self.assertEqual(set(journals), {"le-malade"})
+        self.assertEqual(journals["le-malade"]["runs"][0]["files"], VOIX + SCRIPT)
+        self.assertRegex(
+            journals["le-malade"]["runs"][0]["at"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$"
+        )
+        # Rien à la racine : ce dépôt a trouvé sa pièce.
+        self.assertIsNone(root)
+
+    def test_two_plays_get_two_journals_and_the_same_stamp(self):
+        # Deux fichiers déposés ensemble sont UN dépôt, même quand ils concernent deux
+        # pièces : la date doit être la même des deux côtés, sinon le journal
+        # raconterait deux dépôts qui n'ont pas eu lieu.
+        journals, _ = self.run_main(
+            {"plays": {"le-malade": VOIX, "transport": SCRIPT}, "unrouted": []}
+        )
+        self.assertEqual(set(journals), {"le-malade", "transport"})
+        self.assertEqual(journals["le-malade"]["runs"][0]["files"], VOIX)
+        self.assertEqual(journals["transport"]["runs"][0]["files"], SCRIPT)
+        self.assertEqual(
+            journals["le-malade"]["runs"][0]["at"], journals["transport"]["runs"][0]["at"]
+        )
+
+    def test_what_no_play_claims_goes_to_the_root_journal(self):
+        journals, root = self.run_main({"plays": {}, "unrouted": REFUSE})
+        self.assertEqual(journals, {})
+        self.assertEqual(root["runs"][0]["files"], REFUSE)
 
     def test_nothing_is_written_when_no_file_was_deposited(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            self.assertIsNone(self.run_main(tmp, []))
-            # Résultat absent (le workflow a sauté le traitement) : idem.
-            self.assertIsNone(self.run_main(tmp, None))
+        for result in ({"plays": {}, "unrouted": []}, {"plays": {"le-malade": []}}, {}, None):
+            journals, root = self.run_main(result)
+            self.assertEqual(journals, {})
+            self.assertIsNone(root)
 
     def test_an_unreadable_journal_is_not_a_failure(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            (Path(tmp) / "history.json").write_text("{pas du json", encoding="utf-8")
-            journal = self.run_main(tmp, VOIX)
-            self.assertEqual(len(journal["runs"]), 1)
+        data = self.plays / "le-malade" / "data"
+        data.mkdir(parents=True)
+        (data / "history.json").write_text("{pas du json", encoding="utf-8")
+        journals, _ = self.run_main({"plays": {"le-malade": VOIX}, "unrouted": []})
+        self.assertEqual(len(journals["le-malade"]["runs"]), 1)
+
+    def test_a_malformed_result_is_not_a_failure(self):
+        # uploads_result.json est écrit par la machine, mais le journal est un
+        # confort : une forme inattendue ne doit pas faire échouer le run, qui
+        # commiterait alors sans consigner les dépôts déjà fusionnés.
+        for bad in ({"plays": "nope", "unrouted": "nope"}, [1, 2, 3], {"plays": {"x": "nope"}}):
+            journals, root = self.run_main(bad)
+            self.assertEqual(journals, {})
+            self.assertIsNone(root)
 
 
 if __name__ == "__main__":

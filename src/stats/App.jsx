@@ -16,11 +16,11 @@ import {
   blockRects,
   centerFontSize,
   clampColumns,
-  formatShare,
   scopeOf,
   scopeLines,
   speechStats,
 } from "./stats.js";
+import { formatShare } from "../shared/share.js";
 import { actLabel, sceneLabel } from "../shared/structureLabels.js";
 import { fmt, t } from "../shared/locale.js";
 import { pageLabelKey } from "../shared/pages.js";

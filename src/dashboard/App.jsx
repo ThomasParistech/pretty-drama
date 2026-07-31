@@ -9,6 +9,8 @@ import { pageLabelKey } from "../shared/pages.js";
 import T from "../shared/T.jsx";
 import { CheckIcon, CrossIcon, DownloadIcon, WarnIcon } from "../shared/icons.jsx";
 import { githubUploadUrl, slugify } from "../shared/data.js";
+import formatWhen from "../shared/formatWhen.js";
+import { isPlayId } from "../shared/plays.js";
 import "./dashboard.css";
 
 // Pure read of data/manifest.json: recording progress per character, so the
@@ -80,20 +82,6 @@ function detailOf(row) {
       }}
     />
   );
-}
-
-// La date d'une ligne du journal, année comprise (un journal se relit des mois
-// plus tard, et deux saisons de répétitions passent par les mêmes jours). Rend
-// null sur un horodatage illisible, plutôt que d'afficher « Invalid Date ».
-//
-// `fmt.dateTime` remplace deux `toLocale*` figés sur « fr-FR » et le mot de
-// liaison « à » qui les joignait : le format d'une locale porte son propre
-// séparateur (une virgule en anglais), donc il n'y avait rien à traduire, juste
-// à cesser de l'écrire à la main.
-function formatWhen(iso) {
-  const then = new Date(iso);
-  if (Number.isNaN(then.getTime())) return null;
-  return fmt.dateTime(then);
 }
 
 function okCount(lines) {
@@ -173,7 +161,7 @@ function Dashboard({ manifest }) {
       <PlayHeader page="dashboard" title={manifest.title || t("common.untitledPlay")} />
       <div className="container">
         <div className="dash-actions">
-          <UploadLinks />
+          <UploadLinks playId={manifest.id} />
           <ScriptPdfLink title={manifest.title || ""} />
         </div>
 
@@ -358,8 +346,19 @@ function KindMark({ kind }) {
 // qu'en exemples de noms de fichiers sur une deuxième ligne : c'est l'extension
 // seule qui décide du traitement (`kind_of`), et le bouton tient sur une ligne.
 // Masqué hors github.io (dev local, domaine perso) où l'URL est indevinable.
-function UploadLinks() {
-  const url = githubUploadUrl();
+function UploadLinks({ playId }) {
+  // La zone de dépôt de CETTE pièce, `uploads/<id>/`. C'est le dossier qui route le
+  // fichier vers sa pièce, jamais son contenu : un ZIP abîmé, donc illisible, doit
+  // quand même atterrir dans le journal de sa pièce. Le respo ne tape jamais ce
+  // chemin, il clique ce bouton depuis la pièce où il travaille.
+  //
+  // Sans identifiant valide (un `script.json` hand-édité qui a perdu son champ `id`),
+  // la carte se masque au lieu de viser la racine d'`uploads/` : là-bas un ZIP de voix
+  // est refusé, et le refus va dans le journal RACINE, que l'Avancement de cette pièce
+  // n'affiche jamais. Le respo aurait déposé sans que rien ne se dise sur la page qu'il
+  // a sous les yeux, ce qui est pire qu'un bouton absent. Même règle que hors
+  // github.io : on ne forge pas une adresse dont on sait qu'elle ne marchera pas.
+  const url = isPlayId(playId) ? githubUploadUrl(playId) : null;
   if (!url) return null;
   // Pas de conteneur ici : les deux cartes de la page partagent `.dash-actions`,
   // qui les aligne sur la même largeur (cf. dashboard.css).

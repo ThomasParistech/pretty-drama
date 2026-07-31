@@ -137,6 +137,16 @@
   color: var(--accent);
 }
 
+/* « Changer de pièce », au-dessus de la phrase du pied et non à côté d'elle : c'est
+   une sortie de page, la phrase dit ce qu'est le site, et sur une seule ligne les deux
+   se lisaient comme une suite de liens (même leçon que le sélecteur de langue, juste
+   en dessous). Un cran plus gros que le reste du pied : c'est le seul chemin qui sorte
+   de la pièce, et il ne doit pas se chercher. */
+.home-change-play {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
 /* Le sélecteur de langue, seul endroit du site où la langue se choisit (cf.
    LocaleSwitch.jsx). Sous la phrase du pied et non à côté : la phrase dit ce
    qu'est le site, le sélecteur est une commande, et les mettre sur une ligne

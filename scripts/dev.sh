@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Usage: scripts/dev.sh [port]
-# Lance le serveur de dev et ouvre les DEUX accueils dans le navigateur : la
-# racine (acteurs) et respo.html (responsable). Vite n'en ouvrirait qu'un avec
-# --open, d'où ce script.
+# Lance le serveur de dev et ouvre les DEUX entrées du site dans le navigateur : le
+# sélecteur de pièce de la troupe (la racine) et la gestion des pièces du responsable
+# (respo.html). Vite n'en ouvrirait qu'une avec --open, d'où ce script.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

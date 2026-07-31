@@ -74,11 +74,14 @@ jobs:
       - name: Run front tests (reducer, undo stack, shared helpers)
         run: npm test
 
-      # Le manifest est dérivé : on le reconstruit pour que le site déployé
-      # colle à script.json et clips.json même après une édition à la main dans
-      # le dépôt. Il n'est PAS commité (seul uploads.yml écrit dans le dépôt).
-      - name: Rebuild data/manifest.json
-        run: python scripts/build_manifest.py
+      # Les manifests sont dérivés : on les reconstruit pour que le site déployé
+      # colle aux script.json et clips.json même après une édition à la main dans
+      # le dépôt, et l'index des pièces avec eux (il les lit, donc il vient après).
+      # Rien n'est commité ici (seul uploads.yml écrit dans le dépôt).
+      - name: Rebuild the manifests and the plays index
+        run: |
+          python scripts/build_manifest.py
+          python scripts/build_plays_index.py
 
       # Le PDF du script est un confort, jamais une condition de déploiement :
       # d'où le continue-on-error ici, et le code de retour 0 que
@@ -104,18 +107,34 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             texlive-latex-recommended texlive-lang-french texlive-fonts-recommended lmodern
 
-      # Écrit data/script.pdf, que la copie de data/ ci-dessous emporte dans
-      # dist/. Doit donc rester AVANT « Build site ».
-      - name: Build data/script.pdf
+      # Écrit plays/<id>/data/script.pdf, que la copie de plays/ ci-dessous emporte
+      # dans dist/. Doit donc rester AVANT « Build site ».
+      - name: Build the printable script of every play
         continue-on-error: true
         run: python scripts/build_script_pdf.py
 
+      # `npm run build` écrit lui-même les sept pages de chaque pièce depuis les
+      # gabarits de `pages/` (cf. vite.config.js), donc dist/plays/<id>/ existe déjà
+      # quand on y recopie les données et les clips de la pièce.
+      #
+      # L'exclusion des `.html` n'est pas une précaution, elle est nécessaire :
+      # `plays/<id>/*.html` sont les gabarits instanciés en clair dans l'arbre de
+      # travail (gitignorés), alors que ceux de `dist/` sont la version que Vite a
+      # écrite, avec les URLs d'assets hachées. Les recopier par-dessus servirait un
+      # site qui référence `/src/rehearsal/main.jsx`, donc une page blanche.
+      # Les deux `mkdir -p` ne sont pas décoratifs : un dépôt sans aucune pièce est
+      # un état atteignable (fork tout neuf, ou pièce d'exemple supprimée pour
+      # partir propre), et alors `plays/` n'existe pas, `dist/plays/` non plus
+      # (Vite n'a écrit aucune page de pièce), et `rsync` échouerait sur un dossier
+      # source absent. Le site doit se construire quand même : c'est justement lui
+      # qui porte la page où l'on crée sa première pièce. Même précaution que le
+      # `mkdir -p clips` d'avant, et pour la même raison.
       - name: Build site
         run: |
           npm run build
+          mkdir -p data plays dist/plays
           cp -r data dist/data
-          mkdir -p clips
-          cp -r clips dist/clips
+          rsync -a --exclude='*.html' plays/ dist/plays/
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6

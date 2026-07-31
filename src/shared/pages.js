@@ -77,6 +77,26 @@ export const RESPO_CARDS = ["rehearsal", "recorder", "stats", "editor", "dashboa
 // ferait perdre le chemin de l'éditeur.
 const RESPO_ONLY = new Set(["editor", "dashboard"]);
 
+// L'accueil de LA PIÈCE, voisin de la page courante : les sept pages d'une pièce
+// vivent dans le même dossier (`plays/<id>/`), donc ce lien reste un href relatif nu,
+// exactement comme du temps où le site ne connaissait qu'une pièce.
 export function homeHref(page) {
   return RESPO_ONLY.has(page) ? "./respo.html" : "./index.html";
+}
+
+// Le chemin d'une page de pièce, vu de la RACINE : le seul endroit du front qui
+// écrive la disposition `plays/<id>/<page>.html`. Les deux pages racine sont les
+// seules à en avoir besoin (leurs cartes de pièces), et elles le nommaient chacune
+// de son côté, donc à deux endroits d'où la disposition pouvait dériver.
+export function playHref(playId, page) {
+  return `./plays/${playId}/${page}.html`;
+}
+
+// Le SEUL lien du site qui sorte d'une pièce, et donc le seul endroit qui connaisse
+// la profondeur d'une page de pièce : les deux pages racine sont deux niveaux
+// au-dessus (`plays/<id>/rehearsal.html` -> `../../index.html`). Il ne vit qu'au pied
+// de l'accueil d'une pièce, jamais sur les cinq autres pages : on change de pièce en
+// repassant par l'accueil, comme on change de langue en repassant par l'entrée.
+export function chooserHref(page) {
+  return RESPO_ONLY.has(page) ? "../../respo.html" : "../../index.html";
 }

@@ -165,7 +165,15 @@ export default function App() {
       zip.file(`${lineId}.${take.ext}`, take.blob);
       clips[lineId] = take.text;
     }
-    zip.file("manifest.json", JSON.stringify(clips, null, 2));
+    // `play` nomme la pièce dont ces voix sortent. Il ne sert PAS à router le
+    // dépôt : c'est le dossier `uploads/<id>/` où le respo pose le fichier qui le
+    // fait, sans quoi un ZIP abîmé (illisible, donc sans identifiant lisible non
+    // plus) n'aurait aucun journal où se dire. Il sert à le VÉRIFIER, et c'est ce
+    // qui fait refuser un ZIP déposé dans la zone d'une autre pièce avec un motif
+    // lisible, au lieu d'écrire les voix d'une pièce par-dessus une autre.
+    // Vide sur une pièce dont le script n'a pas encore d'identifiant : l'Action
+    // traite alors le ZIP sans rien vérifier, comme les ZIP d'avant ce champ.
+    zip.file("manifest.json", JSON.stringify({ play: manifest.id, clips }, null, 2));
     const blob = await zip.generateAsync({ type: "blob" });
     // One session may record several characters: name the file after all of
     // them (readability only, the pipeline works from line ids).

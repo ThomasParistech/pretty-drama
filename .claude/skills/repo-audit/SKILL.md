@@ -11,7 +11,8 @@ en contexte avant un commit, `repo-audit` cherche les problèmes
 **systémiques** (un invariant discrètement violé quelque part, du code mort,
 une doc périmée) sur tout l'arbre. Comme `diff-review`, il **tranche lui-même
 tout ce qui est technique et n'escalade que le produit, l'UX et l'UI** (§7) — le
-livrable est un worktree assaini + un rapport priorisé.
+livrable est un worktree assaini + un rapport priorisé et **court** (§9 : ce qui est
+corrigé s'inventorie en une ligne, il ne se démontre pas).
 
 Si l'intention est « est-ce que je peux committer ce que je viens de faire »,
 c'est `diff-review` qu'il faut, pas ce skill.
@@ -54,8 +55,9 @@ comptent. Un `Sûr: non` purement technique s'applique (il l'a marqué ainsi par
 qu'il touche au comportement ou au JSX, pas parce que le choix t'échappe). Et un
 `Sûr: oui` se **RÉFUTE** quand une mesure, un précédent du dépôt ou une
 contrainte qu'il ne voyait pas dit le contraire : un refus argumenté est un
-résultat d'audit, qui va dans le rapport ET dans un commentaire du code, pour que
-la question ne se rouvre pas au prochain passage. Un finding invérifiable est
+résultat d'audit, et il s'écrit **dans un commentaire du code**, pas dans le
+rapport, parce que c'est le code que le prochain passage relira, et donc lui seul
+qui peut empêcher la question de se rouvrir. Un finding invérifiable est
 abandonné, pas corrigé « au cas où ». Fusionne le tout dans le rapport (§9).
 
 ## 2. Zones, par risque décroissant
@@ -233,32 +235,62 @@ verbatim.
 
 ## 9. Rapport
 
-Un seul rapport terminal (pas de fichier, pas d'artifact). En tête : périmètre
-(« dépôt entier à `HEAD`, commit `<sha>` ») et ce qui a été survolé faute de
-temps. Puis findings front + back confondus, triés par sévérité décroissante :
+Un seul rapport terminal (pas de fichier, pas d'artifact), et **court**.
+
+Ce qui est corrigé est corrigé : le rapport en tient l'INVENTAIRE, pas la
+démonstration. Le pourquoi de chaque fix vit déjà dans le commentaire du code, que
+ce dépôt exige de toute façon, et dans le diff que le lecteur a sous la main : le
+répéter ici lui fait lire deux fois la même chose, en moins précis. Un rapport
+d'audit n'est pas le journal de l'audit.
+
+Un audit du dépôt entier relève légitimement plus d'entrées qu'une revue de diff,
+donc ce n'est pas leur NOMBRE qu'on borne, c'est leur longueur : **une ligne
+chacune**, et rien de plus.
+
+En tête, UNE ligne : périmètre (« dépôt entier à `HEAD`, commit `<sha>` »), état des
+vérifications, et ce qui a été survolé faute de temps.
+
+### Corrigé
+
+Une LIGNE par correction, dans l'ordre de sévérité décroissante :
 
 ```
-- [sévérité] [catégorie] fichier:ligne — constat en une phrase.
-  Fix : appliqué | proposé : …
+- [sévérité] fichier:ligne — le défaut, en une demi-phrase.
 ```
 
+- Pas de « Fix : appliqué » (tout ce qui est dans cette section l'est), pas de
+  catégorie (la sévérité et le fichier suffisent à trier), pas de justification.
+- On nomme le DÉFAUT, jamais sa cause en trois temps ni la solution retenue.
 - `sévérité` : **haute** (invariant cassé, faille CI, perte de données, bug
   visible), **moyenne** (cas limite, test manquant, duplication, a11y, code
   mort), **basse** (polissage, doc).
-- `catégorie` : `invariant`, `securite`, `bug`, `tests`, `mort`, `duplication`,
-  `donnees`, `ci`, `doc`, `i18n`, ou celles du front-reviewer (`structure`,
-  `tokens`, `duplication`, `a11y`, `responsive`, `textes`, `contrat`).
+- **Une famille qui se répète est une ligne, pas dix** : un même défaut sur douze
+  fichiers se dit « douze occurrences » avec deux ou trois fichiers nommés en
+  exemple. C'est le relevé le plus utile d'un audit, et le plus vite illisible.
+- Les corrections **basses** ne prennent pas une ligne chacune : UNE ligne les compte
+  et les nomme en quelques mots.
 
-Trois sections, par sévérité décroissante : **Corrigé**, **À valider** — et
-celle-ci ne contient QUE des questions de produit, d'UX ou d'UI (§7) : une entrée
-technique qui y atterrit est une correction que tu n'as pas faite, pas un choix à
-soumettre. Elle est souvent vide, et c'est le bon signe. Chaque entrée y pose la
-question en une phrase, dit ce que tu ferais et pourquoi, et ce que ça change à
-l'écran —, et **RAS** (une ligne par dimension entièrement conforme :
-invariants, CI, tests, front, doc…). Un finding de l'agent front que tu as
-RÉFUTÉ se dit aussi, avec sa mesure : c'est ce qui empêche l'audit suivant de le
-reproposer. Termine par une phrase de synthèse (santé
-générale du dépôt).
+### À valider
+
+Ce qui attend le responsable, et rien d'autre (produit, UX, UI : cf. §7). Une entrée
+technique qui atterrit ici est une correction que tu n'as pas faite, pas un choix à
+soumettre. Deux lignes par entrée au maximum : la question, puis ce que tu ferais et
+ce que ça change à l'écran. Souvent vide, et c'est le bon signe ; vide, elle s'écrit
+« Rien ».
+
+### RAS
+
+**Une seule ligne**, pas une par dimension : les dimensions entièrement conformes
+s'énumèrent d'affilée (« invariants, sécurité CI, tests, front, doc »).
+
+Puis **une phrase** de synthèse sur la santé du dépôt, qui ferme le rapport.
+
+**Ce qui n'a pas sa place dedans** : une section « Réfuté » (un finding de l'agent
+front que tu as réfuté s'écrit avec sa mesure **dans un commentaire du code**, et
+c'est ÇA qui empêche l'audit suivant de le reproposer, puisque le prochain audit lit
+le code et non ce rapport ; il ne coûte ici qu'une ligne au plus) ; la sortie des
+vérifications quand elles passent (« vertes » suffit ; un échec, lui, se cite) ; les
+captures, les tableaux, et l'annonce de ce que tu vas faire ensuite.
 
 ## Garde-fous
 

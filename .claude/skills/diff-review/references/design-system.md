@@ -6,15 +6,39 @@ le signaler : soit le code est à corriger, soit ce contrat est à mettre à jou
 
 ## Pages
 
+Le dépôt héberge **plusieurs pièces**, chacune entièrement cloisonnée (cf. la section
+« Plusieurs pièces » de `CLAUDE.md`). Deux familles de documents, donc.
+
+**Les deux pages RACINE**, au-dessus des pièces, entrées Vite écrites en clair :
+
 | Entrée | Page | CSS propre |
 | --- | --- | --- |
-| `index.html` | Accueil des acteurs (Répétition, Enregistrement, Répartition) | `src/home/home.css` |
-| `respo.html` | Accueil du responsable (les 5 pages) | `src/home/home.css` (même `App.jsx`, autre liste de cartes) |
-| `rehearsal.html` | Répétition | `src/rehearsal/rehearsal.css` |
-| `recorder.html` | Enregistrement | `src/recorder/recorder.css` |
-| `stats.html` | Répartition | `src/stats/stats.css` |
-| `dashboard.html` | Avancement | `src/dashboard/dashboard.css` |
-| `editor.html` | Édition | `src/editor/editor.css` |
+| `index.html` | Sélecteur de pièce de la troupe | `src/home/home.css` + `src/chooser/chooser.css` |
+| `respo.html` | Gestion des pièces du responsable (même `App.jsx`, drapeau `manage`) | idem |
+
+Elles portent la MARQUE et pas un sceau de page : pas de clé `page.*`, pas de `desc`,
+le hero des accueils, et tout leur habillage vient de `home.css`.
+
+**Les sept pages d'une PIÈCE**, gabarits de `pages/` instanciés dans le dossier de
+chaque pièce par `vite.config.js` :
+
+| Gabarit | Page | CSS propre |
+| --- | --- | --- |
+| `pages/index.html` | Accueil des acteurs de la pièce (Répétition, Enregistrement, Répartition) | `src/home/home.css` |
+| `pages/respo.html` | Accueil du responsable de la pièce (les 5 pages) | `src/home/home.css` (même `App.jsx`, autre liste de cartes) |
+| `pages/rehearsal.html` | Répétition | `src/rehearsal/rehearsal.css` |
+| `pages/recorder.html` | Enregistrement | `src/recorder/recorder.css` |
+| `pages/stats.html` | Répartition | `src/stats/stats.css` |
+| `pages/dashboard.html` | Avancement | `src/dashboard/dashboard.css` |
+| `pages/editor.html` | Édition | `src/editor/editor.css` |
+
+À l'intérieur d'une pièce, aucun chemin ne change : `data/manifest.json` et
+`./rehearsal.html` sont des chemins relatifs qui résolvent dans son dossier. Quatre
+helpers de `src/shared/` connaissent la disposition `plays/<id>/`, et aucune PAGE :
+`chooserHref` (le lien « changer de pièce » au pied de l'accueil d'une pièce),
+`playHref` (le chemin qu'écrivent les cartes des deux pages racine), `githubRepoUrl`
+(qui doit reconnaître un site Pages racine dont le premier segment est `plays`) et
+`githubPlayFolderUrl`.
 
 **Sceaux (`--page-mark` / `--page-mark-soft`, classes `.page-<clé>` de
 `theme.css`)** : la marque, la Répétition, l'Enregistrement et la Répartition
@@ -151,11 +175,11 @@ le bloc `prefers-reduced-motion`).
 | Doc du bandeau `.header-hint` (une seule classe, les deux paragraphes ont le même style : c'est leur place qui les distingue) | `theme.css` pour le style, mais **rendue par `PlayHeader` lui-même**, jamais par les pages : le premier paragraphe est `PAGES[page].desc` (le même que la carte de l'accueil, un seul endroit pour les deux emplois), le second la prop `hint`, facultative. Les deux encadrent les réglages (`desc` en tête du bandeau déplié, `hint` en pied) | les cinq : `desc` partout, `hint` seulement sur Enregistrement et Édition |
 | Confirmation d'action destructive | `src/shared/ConfirmModal.jsx` — rendu en portail, Escape annule, focus initial sur le bouton à proposer. **Jamais de `window.confirm`** (dialogue natif hors thème). Citation de la réplique visée : `.confirm-quote` (`theme.css`) + `excerpt` (`data.js`) | Édition (réplique, scène, acte), Enregistrement (jeter une prise), et via `LeaveGuard` |
 | Garde de sortie de page (travail non téléchargé) | `src/shared/LeaveGuard.jsx` — clics de liens interceptés en capture + `beforeunload` en filet | Édition, Enregistrement |
-| Sélecteur de langue du SITE (deux drapeaux) | `src/shared/LocaleSwitch.jsx` — deux vrais liens portant `?lang=`, donc clic droit et nouvel onglet, et aucun état : c'est le chargement suivant qui mémorise le choix (`locale.js`). **Monté au pied des deux accueils et par eux SEULS**, et c'est une règle, pas un hasard : une langue est un réglage de SITE, donc elle se choisit en entrant, et le pied du bandeau partagé est une composition finie (le sceau seul et centré, encadré de deux filets courts) qu'un second objet décentrerait. Le nom d'une langue s'y écrit **dans cette langue** (`Français`, `English`), jamais traduit : c'est le seul littéral accentué que le garde CI exempte nommément. Ne pas le confondre avec la langue de la PIÈCE, qui montre les mêmes drapeaux dans le plan du rail mais est un CHAMP éditant `script.json`, avec un nom de langue traduit | les deux accueils |
+| Sélecteur de langue du SITE (deux drapeaux) | `src/shared/LocaleSwitch.jsx` — deux vrais liens portant `?lang=`, donc clic droit et nouvel onglet, et aucun état : c'est le chargement suivant qui mémorise le choix (`locale.js`). **Monté au pied des accueils et par eux SEULS** (les deux pages racine, qui sont l'entrée du site, et les deux accueils d'une pièce), et c'est une règle, pas un hasard : une langue est un réglage de SITE, donc elle se choisit en entrant, et le pied du bandeau partagé est une composition finie (le sceau seul et centré, encadré de deux filets courts) qu'un second objet décentrerait. Le nom d'une langue s'y écrit **dans cette langue** (`Français`, `English`), jamais traduit : c'est le seul littéral accentué que le garde CI exempte nommément. Ne pas le confondre avec la langue de la PIÈCE, qui montre les mêmes drapeaux dans le plan du rail mais est un CHAMP éditant `script.json`, avec un nom de langue traduit | les accueils |
 | Phrase portant du balisage | `src/shared/T.jsx` — `<T k="…" p={{ … }} />`, le morceau de JSX devenant un PARAMÈTRE de la phrase. Une phrase découpée en fragments dans le composant est un finding, cf. la section Langue | toutes celles qui citent un `<strong>`, un `<code>`, une icône ou un lien au milieu d'une phrase |
 | Libellés d'acte et de scène | `src/shared/structureLabels.js` — DÉRIVÉS du rang (`actLabel(t, i)`, `sceneLabel(t, i)`), les actes et les scènes ne portant aucun titre dans `script.json`. Pur, `t` reçu en argument, et c'est ce qui permet aux deux axes de langue de coexister : les quatre pages qui NAVIGUENT passent le `t` du lecteur, l'Édition un `t` lié à `script.language` (cf. la section Tokens, « Deux axes de langue »). Le Python en tient une seconde implémentation pour le papier (`STRUCTURE`, `roman_numeral` dans `build_script_pdf.py`), depuis la langue de la PIÈCE, donc le plan du rail et le papier disent le même mot, et `TestStructureLabels` interdit aux deux de diverger | les deux selects de portée, l'Avancement, la Répartition, la Recherche, le plan du rail, le PDF |
 | Compte de répliques d'un objet de la pièce | `src/editor/CountBadge.jsx` — chiffre nu à l'écran (la colonne des comptes doit s'aligner), la phrase dans l'`aria-label`, `role="img"` pour le rendre valable sur un `<span>`. Les deux panneaux du rail en avaient chacun leur copie, alors que leur CSS était déjà commun (`.character-count, .structure-count`) | les sections « Structure » et « Personnages » du rail de l'Édition |
-| Montage d'une page | `src/shared/mountPage.jsx` — `applyDocumentLanguage` puis `createRoot(...).render(...)`, et l'import de `theme.css`, dont l'ORDRE compte (avant le CSS de la page, qui le surcharge) : d'où l'import de ce module AVANT `App.jsx` dans chaque point d'entrée. Les sept entrées étaient sept copies du même corps | les sept `main.jsx` / `respo.jsx` |
+| Montage d'une page | `src/shared/mountPage.jsx` — `applyDocumentLanguage` puis `createRoot(...).render(...)`, et l'import de `theme.css`, dont l'ORDRE compte (avant le CSS de la page, qui le surcharge) : d'où l'import de ce module AVANT `App.jsx` dans chaque point d'entrée. Les entrées étaient autant de copies du même corps | les neuf points d'entrée (`main.jsx` / `respo.jsx`) |
 | Numérotation « (3/12) » de mes répliques | `src/shared/data.js` — `myLineNumbers` (la Map) et `myLineNumber` (le libellé, `t` reçu en argument : ce module est couvert par `node --test`). Le gabarit était écrit dans deux JSX, parenthèses et barre comprises | Répétition, Enregistrement |
 | Fetch manifest | `src/shared/useManifest.js` | Répétition, Enregistrement, Répartition, Avancement (l'accueil appelle `fetchManifest` directement : il n'a ni écran de chargement ni écran d'erreur, un manifest absent laisse juste le titre vide) |
 | Écran chargement/erreur plein-page | `src/shared/PageState.jsx` : les DEUX états prennent la carte partagée `.page-notice` (l'attente comme le message : c'est le même écran à deux moments, et le second succède presque toujours au premier) | toutes sauf accueil |

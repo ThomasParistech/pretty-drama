@@ -235,8 +235,8 @@ export const FR = {
   "editor.readError":
     "Le script publié existe mais n'a pas pu être lu (fichier abîmé ou problème réseau). " +
     "Pour ne pas risquer d'écraser votre pièce, l'éditeur est désactivé. " +
-    "Rechargez la page pour réessayer ; si l'erreur persiste, le fichier data/script.json " +
-    "du dépôt est probablement abîmé ; sur GitHub, ouvrez l'historique du fichier, choisissez une " +
+    "Rechargez la page pour réessayer ; si l'erreur persiste, le script de cette pièce est " +
+    "probablement abîmé dans le dépôt ; sur GitHub, ouvrez l'historique du fichier, choisissez une " +
     "version antérieure et affichez-la en version brute, puis redéposez-la avant de continuer.",
   "editor.touchOnly":
     "Pour des raisons de praticité, le mode {page} n'est disponible que depuis un ordinateur.",
@@ -617,4 +617,83 @@ export const FR = {
   // -------------------------------------------------------------------- home
 
   "home.footer": "Un outil libre pour les troupes de théâtre, {link}",
+  // Le seul lien du site qui sorte d'une pièce, au pied de son accueil. Il dit
+  // « changer » et pas « retour » : on ne remonte pas d'où l'on vient, on va choisir
+  // autre chose, et c'est aussi vrai pour qui a ouvert la pièce par un favori.
+  "home.changePlay": "Changer de pièce",
+
+  // ------------------------------------------------------- choosing a play
+
+  // Les deux pages RACINE, celles qui vivent au-dessus des pièces : le sélecteur de
+  // la troupe (index.html) et la gestion des pièces du responsable (respo.html).
+  // Ce ne sont pas des pages de pièce : elles n'ont ni sceau ni phrase de doc, elles
+  // portent la marque, et leur libellé ne sert qu'à l'onglet du navigateur.
+  "chooser.label": "Pièces",
+  "manage.label": "Gestion des pièces",
+
+  "chooser.heading": "Choisissez une pièce",
+  "chooser.empty": "Aucune pièce pour l'instant. Le responsable en créera une.",
+  // La PANNE, distincte du vide : un 404 est un vide légitime (l'index n'a pas encore
+  // été construit), tout le reste est une panne, et l'annoncer « aucune pièce »
+  // dirait à la troupe que ses pièces ont disparu. Même distinction que partout
+  // ailleurs sur le site (cf. `HttpError` dans data.js).
+  "chooser.loadError":
+    "Impossible de charger la liste des pièces. Le site n'est peut-être pas encore " +
+    "publié : réessayez dans quelques minutes ou contactez le responsable.",
+  // Le décompte d'une carte de pièce. Les deux nombres sont des paramètres, donc
+  // formatés par le moteur : « 1 144 » et « 1,144 » sans qu'on s'en occupe.
+  "chooser.recorded": {
+    one: "{count} réplique enregistrée sur {total}",
+    other: "{count} répliques enregistrées sur {total}",
+  },
+  // Une pièce créée mais pas encore écrite : le décompte n'aurait rien à dire, et
+  // « 0 % » se lirait comme un retard alors que c'est un début.
+  "chooser.emptyPlay": "Pièce encore vide",
+
+  "manage.heading": "Vos pièces",
+  "manage.empty": "Aucune pièce pour l'instant : créez la première ci-dessous.",
+  "manage.lastDeposit": "Dernier dépôt le {date}",
+  "manage.neverDeposited": "Aucun dépôt pour l'instant",
+  // Les deux liens propres d'une pièce : sa zone de dépôt, et son dossier dans le
+  // dépôt pour le seul geste que le site ne peut pas porter (la supprimer demande un
+  // commit). Le second dit « dossier » et pas « supprimer » : c'est ce qu'il ouvre,
+  // et la suppression s'y fait sous les yeux de qui l'a demandée.
+  "manage.deposit": "Déposer des fichiers",
+  "manage.folder": "Ouvrir le dossier sur GitHub",
+  // Les mêmes, mais NOMMANT leur pièce : ces deux liens se répètent une fois par
+  // carte, et dans la liste des liens d'un lecteur d'écran « Déposer des fichiers »
+  // quatre fois de suite ne désigne plus rien. À l'écran le titre est juste
+  // au-dessus, donc le libellé visible reste court.
+  "manage.deposit.aria": "Déposer des fichiers pour {title}",
+  "manage.folder.aria": "Ouvrir le dossier de {title} sur GitHub",
+
+  "manage.new.title": "Nouvelle pièce",
+  // Les trois temps du geste, dans l'ordre où on les fait : c'est la seule phrase de
+  // doc du site qui décrive un parcours en trois étapes, et elle le doit, la pièce
+  // n'existant qu'une fois le fichier déposé et traité.
+  // Deux phrases, comme toute phrase de doc du site : le deux-points y est réservé à
+  // une énumération, et il introduisait ici une conséquence dans une phrase de
+  // vingt-quatre mots.
+  "manage.new.hint":
+    "Donnez un titre, puis téléchargez le script de départ. Déposez-le, et la pièce " +
+    "apparaîtra ici.",
+  "manage.new.label": "Titre de la pièce",
+  "manage.new.download": "Télécharger le script de départ",
+  "manage.new.deposit": "Déposer ce fichier pour créer la pièce",
+  "manage.new.done": "Script téléchargé. Déposez-le pour créer la pièce.",
+  "manage.new.emptyTitle": "Donnez un titre à la pièce.",
+  "manage.new.badTitle":
+    "Ce titre ne laisse aucune adresse utilisable : ajoutez-y des lettres ou des chiffres.",
+  // Le test porte sur l'ADRESSE dérivée du titre et pas sur le titre lui-même : deux
+  // titres différents peuvent se réduire au même identifiant (« L'École des femmes »
+  // et « L École des femmes »), et un message qui parle du titre décrirait alors un
+  // fait faux.
+  "manage.new.taken": "Une pièce occupe déjà cette adresse : changez un mot du titre.",
+
+  // Le journal des dépôts qu'aucune pièce n'a réclamés. Il n'est affiché que s'il
+  // porte quelque chose : c'est un relevé d'anomalies et pas le journal des dépôts,
+  // qui vit dans l'Avancement de chaque pièce.
+  "manage.unrouted.title": "Dépôts sans pièce",
+  "manage.unrouted.hint":
+    "Ces fichiers n'ont pas dit à quelle pièce ils appartiennent. Déposez-les depuis le bouton de dépôt de leur pièce.",
 };
