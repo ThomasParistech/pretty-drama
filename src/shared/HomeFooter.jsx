@@ -30,7 +30,7 @@ export default function HomeFooter({ children }) {
         p={{
           link: (
             <a
-              href="https://github.com/ThomasParistech/prettydrama-voices"
+              href="https://github.com/ThomasParistech/pretty-drama"
               target="_blank"
               rel="noreferrer"
             >

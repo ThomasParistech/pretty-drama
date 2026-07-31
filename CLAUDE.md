@@ -197,8 +197,8 @@ multi-page site, and switching language navigates.
 Each has a comment explaining it at the site. Do not "fix" one without reading that.
 
 - The upload URL names `main` (`BRANCH`, `shared/data.js`). `/upload/<branch>` needs a
-  branch that exists and fails onto the repo home page, never a 404; `/tree/` aliased
-  `master`, which is what hid the mistake.
+  branch that really exists and fails onto the repo home page, never a 404; `/tree/`
+  resolves names it rejects, which is what hides a wrong value.
 - Collapse tracks are `minmax(0, 1fr)` / `minmax(0, 0fr)`, never `1fr`/`0fr`.
 - `min-height: 0` on `.play-header-settings-inner` and `.editor-rail-body`.
 - `.editor-layout` states `grid-template-rows: minmax(0, 1fr)` explicitly.

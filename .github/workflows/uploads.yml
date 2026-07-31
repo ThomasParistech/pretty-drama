@@ -20,7 +20,7 @@ name: uploads
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
     paths:
       - "uploads/**"
   workflow_dispatch:

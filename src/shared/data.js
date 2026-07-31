@@ -155,7 +155,7 @@ export function githubRepoUrl() {
     // the template so the link renders and can be styled/tested; it is NOT
     // meant to be committed to during dev.
     owner = "ThomasParistech";
-    repo = "prettydrama-voices";
+    repo = "pretty-drama";
   }
   if (!owner || !repo) return null;
   return `https://github.com/${owner}/${repo}`;
@@ -164,18 +164,19 @@ export function githubRepoUrl() {
 // The branch the upload URL names, written once. `main`, which is the default
 // branch of the repository the README has troupes fork, hence of their fork.
 //
-// It used to say `master`, and that was measured to be broken: GitHub only serves
-// `/upload/<branch>/<path>` for a branch that REALLY exists, and it fails by
-// silently dropping both the upload form and the path, landing on the repository's
-// home page (verified on this repository and on two unrelated ones). `HEAD` fails
-// the same way. The `/tree/` view, for its part, does alias `master` to the default
-// branch, which is exactly why the wrong branch went unnoticed: the folder link
-// worked, and only the upload button, the coordinator's daily gesture and the sole
-// channel by which anything enters this repository, went nowhere.
+// It has to be a branch that REALLY exists: GitHub only serves
+// `/upload/<branch>/<path>` for a real branch, and otherwise fails by silently
+// dropping both the upload form and the path, landing on the repository's home
+// page (measured on this repository and on two unrelated ones). `HEAD` fails the
+// same way. Worse, the `/tree/` view is more forgiving and resolves names this one
+// rejects, so a folder link can keep working while the upload button, the
+// coordinator's daily gesture and the sole channel by which anything enters this
+// repository, goes nowhere. That is how a wrong value here stays unnoticed: test
+// the upload button itself, never a folder link.
 //
-// The workflows accept `[main, master]` and stay that way: they read the branch
-// they were pushed on, they do not name one. A troupe whose fork is still on
-// `master` is the one case this constant gets wrong, and the fix is one word here.
+// The workflows name no branch of their own beyond their `push` filter: they read
+// the one they were pushed on. A fork that renames its default branch is the one
+// case this constant gets wrong, and the fix is one word here.
 const BRANCH = "main";
 
 // GitHub's upload page on a play's upload area, `uploads/<id>/`, or on the ROOT of
