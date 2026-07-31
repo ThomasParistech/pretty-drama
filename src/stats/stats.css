@@ -1,8 +1,8 @@
 /* Speaking share page. Uses only the shared tokens of theme.css: this page re-skins
    nothing (only the editor does that), and REDEFINING a `--header-*` token is
    forbidden here by the CI (scripts/tests/test_contracts.py). READING one stays
-   allowed, and the legend bar does it (`--header-shadow`), just as the editor reads
-   `--header-accent`: two stacked bands must carry the same shadow.
+   allowed, and the legend bar does it (`--header-shadow`), just as the editor reads that
+   same token for its panels: two stacked bands must carry the same shadow.
 
    The three panels are shared `.card` elements, like everything that carries content
    on this site. This file only lays them out and draws what the theme does not know
@@ -373,73 +373,40 @@
 
 /* --------------------------------------------------------------------- block */
 
-/* The block takes the width of the card and its height follows its viewBox: a word
-   therefore makes the same square everywhere, whatever the window.
-   `crispEdges` disables the antialiasing of the edges: without it, two neighbouring runs
-   leave a translucent sliver between them, and on a block of 120 columns the whole grid
-   looked veiled. */
-/* No `border-radius`: `--radius` is 10 px and would crop the words of the four corners,
-   which are data. The block is a rectangle of squares, it ends square. */
-/* The block takes ALL the width of the card, give or take the rounding (below), and it
-   is the floor of the "Words per line" slider that keeps a reasonable square: at 50 words
-   per line, the width of a card gives a 16 px side. A ceiling of 12 px per square existed
-   here, back when the slider went down to 24 (a 34 px side, where the block stops being a
-   mosaic and becomes a stack of bars); it no longer has an object, and it made a narrow
-   block float in the middle of its card. */
+/* The block takes ALL the width of the card, ALWAYS, and its height follows its
+   viewBox: a word therefore makes the same square everywhere, whatever the window.
+   The "Words per line" slider changes the GRANULARITY of the drawing (how many words
+   in a row, hence the size of a square and the height of the whole), never its
+   geometry: the block occupies the same width at 50 words per line as at 200, and the
+   two settings can be compared because only what is inside the frame has changed. A
+   drawing that resized as the slider moved read as if the setting were zooming the
+   card, which it is not.
+   That is what the rounded width cost, and why it is gone: the width used to be
+   snapped DOWN to a whole multiple of the number of columns
+   (`round(down, 100%, var(--stats-columns) * 1px)`, with the block centred on the
+   remainder), so as to give every square a whole number of pixels. It worked, and it
+   made the block up to one square narrower than its card, differently for every value
+   of the slider, which is exactly the coupling this drawing must not have. Dropped
+   with it: the `min-width` floor of one pixel per square, which existed only to keep
+   `round(down, A, B)` from returning ZERO once the card was narrower than the setting
+   (a block that disappeared in silence, legend and caption staying in place).
+   What the fixed width costs in exchange, and it is worth knowing before "fixing" it:
+   a square is no longer a whole number of pixels (120 columns in 820 px is 6.833 px
+   per word), and `crispEdges` snaps each edge to the nearest screen pixel, so cells
+   come out 7, 7, 7, 6, 7… A periodic one-pixel difference, which on a dense grid can
+   read as a faint screen across the block. The alternative is to give up
+   `crispEdges`, and it is worse: antialiasing lets the background through at every
+   boundary between two runs (a grey sliver, measured), and closing that means
+   overflowing each rectangle onto its neighbour, which in the dimmed state
+   (`.stats-block-rect.dimmed`, 12 % opacity) paints the overlaps twice and draws a
+   lattice over the whole mosaic.
+   No `border-radius`: `--radius` is 10 px and would crop the words of the four
+   corners, which are data. The block is a rectangle of squares, it ends square. */
 .stats-block {
   display: block;
   width: 100%;
   height: auto;
   shape-rendering: crispEdges;
-}
-
-/* The width of the block is ROUNDED to a whole multiple of the number of columns, and
-   that is not cosmetic: it is what makes the words all the same size. `crispEdges` snaps
-   each edge to the nearest screen pixel, and in the card of the coordinator's home page
-   the whole play makes 120 columns for 820 px of width, that is 6.833 px per word: the
-   cells therefore came out at 7, 7, 7, 6, 7… (measured), a narrow column every six words
-   and a short row every six rows. On a 120 x 86 grid this periodic 1 px defect reads
-   exactly like the blocking of a JPEG, a screen of tighter columns and rows across the
-   block. At 720 px (exactly 6 px per word) everything is regular and the colours stay
-   pure, on a simple screen as well as at double density (checked to the pixel on both).
-   The two other paths were tried and set aside, measurements in hand: leaving the
-   antialiasing on (removing `crispEdges`) does give cells that are all equal, but it puts
-   one pixel of blending at each boundary, and that blending lets the background through
-   (two neighbouring runs gave a grey where one ends and the other begins), that is the
-   sliver above; making it disappear requires overflowing each rectangle onto its
-   neighbour and painting the list in reverse so that the next one covers the overflow, a
-   lot of finesse to make the block less sharp. The price paid is therefore the width: up
-   to one cell less than the card (100 px out of 820 for the whole play), hence the
-   centring, without which the block would look off-centre in its card. The multiple is
-   counted in CSS pixels and not in screen pixels, which no query knows about: at a
-   density of 1.5 and an odd cell there remains an alternation of 25/26 screen px, that is
-   4 % of regular variation, against the 15 % of irregular variation of today.
-   `@supports` and not only `calc()`: the declaration contains a `var()`, so it is not
-   checked at parse time, and on a browser without `round()` it would fall back to
-   `width: auto` instead of handing back to the `width: 100%` above. The fallback of the
-   `var()` goes with it: without the variable (set by the JSX, which alone knows the number
-   of columns), the multiple is 1 px and the block takes back the whole width, as
-   before. */
-@supports (width: round(down, 100%, 1px)) {
-  .stats-block {
-    width: calc(round(down, 100%, var(--stats-columns, 1) * 1px));
-    margin-inline: auto;
-  }
-}
-
-/* The floor of one pixel per square. It is UNREACHABLE with today's bounds, and it stays
-   all the same, because it is what makes the ceiling of the slider raisable without
-   rediscovering the trap: `round(down, A, B)` is ZERO as soon as A < B, hence as soon as
-   the card is narrower than the setting (the card is the window minus 82 px: container
-   40, rule 2, card 40). The block then DISAPPEARS in silence, legend and explanatory
-   caption staying in place. At 200 words per line it would take a window of 282 px, below
-   all real phones; a ceiling of 250 existed for the duration of one attempt, and there a
-   320 px screen was enough. The price is a block that can exceed its card by at most one
-   square width minus one pixel, well within its 20 px of padding; handing back to
-   `width: 100%` instead would make `crispEdges` paint some squares at 1 px and others at
-   0, that is words that vanish, far worse than a slightly wide block. */
-.stats-block {
-  min-width: calc(var(--stats-columns, 1) * 1px);
 }
 
 /* No `cursor: pointer` here, and that is deliberate: the mosaic follows the

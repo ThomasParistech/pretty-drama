@@ -15,6 +15,21 @@
   --ed-ghost: #8f8f88; /* drag handle of lines without a character (≥ 3:1 on white) */
   --accent: #7a5cc0;
   --accent-soft: #f2eefb;
+  /* The hover of the accent buttons (`.btn.primary:hover`, theme.css). The re-skin
+     has to carry it too, otherwise the page's own button goes lilac at rest and
+     darkens into the shared WINE under the pointer.
+     It is `--ed-tile-lit`, a DEEPER LILAC and not a darker violet, because on this
+     page `.btn.primary` is not a solid button at all: it is the upload tile's
+     object, pale fill and violet ink (see `.btn.primary` below). "Darker on
+     hover" therefore means the same step the tile itself takes, the accent at
+     22 % (`.editor-upload-tip .upload-tile:hover`), and the two must not part
+     company: the button says it is that tile, so it has to respond like it.
+     The token stays in the loop rather than the value being written straight into
+     the hover rule: it is the one place that says "what an accent button of this
+     page becomes under the pointer", and anything solid the page grows later
+     (the Rehearsal pages' `.ctrl-btn.play` is the shared theme's other reader)
+     picks up a page colour instead of the wine. */
+  --accent-dark: var(--ed-tile-lit);
   --border: #e8e1d3;
   /* "Rail" wants no shadow on its own surfaces: the lines are thin rows
      separated by a rule, not cards laid on the page. The shared header keeps
@@ -40,64 +55,106 @@
 
   --ed-title: #26261f;
   --ed-rule: #ece5d6;
-  /* The tile of an ACT in the rail's outline: the WINE of the brand, lightened
-     to less than a fifth of its strength (#ead8db), clearly darker than the
-     rail's background (luminance ratio 1.20 on the cream `--ed-sidebar`, when a
-     WHITE surface laid on that same cream only holds 1.14: the act band
-     therefore stands out from the panel slightly more than the white cards it
-     contains, which is the right reading order). This is what makes the act row
-     a band, and the white scenes that follow it cards laid inside it. A
-     `--paper-dark` would have been enough for a technical tile but not for the
-     reading (1.05 on this background, so the same cream as the panel to the eye).
-     Two attempts before this one, in that order: a sand (`#e7dabc`), which held
-     the same ratio but was a third colour family on a page that only wants two;
-     then a tint of the page's purple (`--accent` at 22%), which brought it back
-     to a single hue but laid the outline in a lilac so close to the
-     `--accent-soft` of an open scene that the band and the card it contains read
-     as two states of the same object.
-     The wine separates them for good, and it is not one colour more: it is that
-     of the download button just above (`--header-accent`, the only place on the
-     page that carries it at full strength) and that of the two faces of the
-     logo, at the foot of the header. A TINT and not a hex, written with the
-     expression the search's `<mark>` already uses.
-     We READ `--header-accent` without redefining it, which the contract allows
-     (named precedent: `--ed-panel-shadow`): this wine is the only red this
-     `:root` does not re-skin, hence the only one that will not shift under the
-     outline.
-     18% and no more: the outline's darkened accent holds 5.4:1 on it (an act's
-     "you are here") and the handle in `--ink-soft` 3.7:1; at 28% the ink falls
-     to just 4.5:1 and the handle below the threshold for a drawing. */
-  --ed-tile-act: color-mix(in srgb, var(--header-accent) 18%, #fff);
-  /* The accent, but dark enough to carry TEXT on the two pale surfaces of the
-     outline: on the act tile `--accent` falls to 3.7:1 (AA failure) and on the
-     lilac `--accent-soft` to 4.4:1, when this one holds 5.4:1 and 6.5:1. Same
-     lesson as `characterInk`: we cap the lightness, we keep the hue. The RULES
-     and the backgrounds keep taking `--accent`, a line not having to hold the
-     contrast of a text. */
+  /* The tile of an ACT in the rail's outline: the page's own violet, at a bit less
+     than a third of its strength (#d4cbeb). It is what makes the act row a BAND, and
+     the white scenes that follow it cards laid inside it: it is a shade darker than
+     the panel (luminance ratio 1.36 on the lilac `--ed-sidebar`, when a white surface
+     laid on that same lilac only holds 1.14), so the band stands out from the panel
+     slightly more than the cards it contains, which is the right reading order. A
+     `--paper-dark` would have been enough for a technical tile but not for the reading
+     (1.05 on this background, so the same cream as the panel to the eye).
+     Three attempts before this one, in that order: a sand (`#e7dabc`), which held the
+     ratio but was a third colour family on a page that only wants two; the brand's
+     wine at 18 % (`#ead8db`), which read as that third family again once the rail
+     itself had become lilac, a pink band in a purple panel; then this same violet AT
+     FULL STRENGTH, a dark band carrying white ink, which was simply too strong. A
+     saturated band repeated once per act, in a panel that is otherwise all pale lilac
+     and white, opened a gulf between the tile and its background and pulled the eye
+     away from the text column, which is the very defect for which the violet had
+     already been refused as the rail's own background (cf. `--ed-sidebar`). The tint
+     keeps what the dark band was after, one single hue in the panel, and gives up the
+     contrast that came with it.
+     32 % and no more, and that is the ceiling: the outline's darkened accent, which an
+     act's "you are here" takes, holds 4.76:1 on the tint (an act's name is 15 px, so
+     4.5:1 is required) and falls under AA at 36 %. The floor is `--ed-tile-lit`, the
+     accent at 22 %: closer than this the band and the open scene it contains read as
+     two states of the same object, which is what happened when the tile WAS that 22 %.
+     Everything else the row carries keeps the ink it has on a white scene row, the
+     handle and the ✕ in `--ink-soft` at 3.3:1; only the ✕'s hover needed its own value
+     (see `.structure-row.act .chip-delete:hover`).
+     A TINT and not a hex, written with the expression the search's `<mark>` already
+     uses, so the band follows the accent if the page is ever re-skinned again.
+     Corollary of the switch to the violet: this token no longer READS
+     `--header-accent`. The wine stays on the page in the one place that wears it at
+     full strength, the logo at the foot of the header. */
+  --ed-tile-act: color-mix(in srgb, var(--accent) 32%, #fff);
+  /* The accent, but dark enough to carry TEXT on the pale purple surfaces of the
+     outline: on the act tile `--accent` falls to 3.7:1 (AA failure) and on the lilac
+     of the panel to 4.4:1, when this one holds 5.4:1 and 6.5:1. Same lesson as
+     `characterInk`: we cap the lightness, we keep the hue. The RULES and the
+     backgrounds keep taking `--accent`, a line not having to hold the contrast of a
+     text.
+     A measured hex and not a value computed from `--accent`, and that is a choice,
+     not an oversight: the ratios written above are true of THIS value, so
+     recomputing them at each re-skin would make them false without anything saying
+     so. The `oklch(from … min(l, 0.5) c h)` idiom of `characterInk` was considered:
+     over there it is mandatory (twenty palette colours, they cannot be measured one
+     by one), here there is ONE ink, on TWO known backgrounds. And relative colour
+     syntax is the least supported in the whole repo, more recent than the
+     `color-mix` of the tile just above.
+     Corollary to know: re-tuning `--accent` requires re-measuring this ink, just as
+     it would require re-measuring a `color-mix`. */
   --ed-accent-ink: #5f45a0;
-  /* A measured hex and not a value computed from `--accent`, and that is a
-     choice, not an oversight: the three ratios written above (5.4:1 on the act
-     tile, 6.5:1 on the lilac, and the failure of `--accent` at 3.7:1) are true
-     of THIS value, so recomputing them at each re-skin would make them false
-     without anything saying so. The `oklch(from … min(l, 0.5) c h)` idiom of
-     `characterInk` was considered: over there it is mandatory (twenty palette
-     colours, they cannot be measured one by one), here there is ONE ink, on TWO
-     known backgrounds. And relative colour syntax is the least supported in the
-     whole repo, more recent than the `color-mix` of the tile just above.
-     Corollary to know: re-tuning `--accent` requires re-measuring this ink, just
-     as it would require re-measuring a `color-mix`. */
 
   /* The hover rule of the two surfaces one POINTS AT in the outline, the row of
      a scene and the thumbnail of a language flag. A token because their two
      comments require them to "respond the same way": the expression was written
      twice, and two twins fall out of step at the first tweak. The background is
-     already a shared token (`--accent-soft`). */
+     already a shared token (`--ed-tile-lit`). */
   --ed-tile-hover-border: color-mix(in srgb, var(--accent) 35%, var(--border));
   /* The rail's background. This token already bore this name when it was the
      background of no sidebar at all (it served the character chips, in the white
      header): the direction has been called "Rail" from the start, the page had
-     no rail. */
-  --ed-sidebar: #f5f0e5;
+     no rail.
+     THE LILAC OF THE SEAL, and no longer the warm cream (#f5f0e5): the rail is the
+     page's own furniture, and this page is the only purple one on the site. The
+     cream was the shared paper of the four other pages, so the rail read as a piece
+     borrowed from them, laid beside a white text column.
+     `--accent-soft` is EXACTLY the disc of the editor's seal (`--page-mark-soft` of
+     `.page-editor`, theme.css: the same #f2eefb), so the panel and the quill at the
+     top of the page are the same lilac, not two neighbouring ones. It is read
+     through the re-skinned token and not copied as a hex: this `:root` already
+     re-skins `--accent-soft` to that value, and a second literal would be one more
+     place to keep in step with the seal.
+     What the value gives: a white surface laid on it (character chips, scene rows,
+     the play's name field) keeps the 1.14 luminance ratio it had on the cream, so
+     the cards still read as cards, and the violet act band its 1.36 (cf.
+     `--ed-tile-act`).
+     Known and unchanged: the panel's secondary labels (`--ink-soft`, the section
+     title and "Language of the play") hold 4.44:1 here where the cream gave 4.46,
+     i.e. the same hair under the 4.5 of AA. It is not a regression of this change,
+     it is a debt the cream already carried, and paying it means giving the rail its
+     own darker secondary ink rather than tuning this background.
+     The violet AT FULL STRENGTH was tried here and rejected: it works (the panel
+     inverts, white ink, tiles going deeper instead of lighter, everything measured),
+     but a saturated column beside the text one pulls the eye away from the play,
+     and this page is the one where one reads what one is writing. The lilac says
+     "the editor's furniture" without asking for attention. What that attempt cost,
+     if it is ever reopened: the panel's `<mark>` and the character inks of the search
+     results are measured for a pale background and each needs its own value on a dark
+     one, the act band's tint included. */
+  --ed-sidebar: var(--accent-soft);
+  /* The "lit" surface of the rail: the section open in the strip, the scene one
+     points at or has open, the current search hit, the flag of the play's language,
+     the hover of the two "+" rows. The rail being that lilac now, the lit state can
+     no longer BE `--accent-soft`: it would be the background itself. So it is the
+     same lilac deeper, 22 %, which holds 1.18 of luminance ratio against the panel
+     and 1.34 against a white row: the ladder rest -> pointed at -> open still rises
+     by hue alone, nothing moves on screen.
+     What it carries: `--ink` at 10.6:1, `--ed-accent-ink` at 5.5:1 (the labels that
+     go with this fill take that darkened ink, `--accent` being too pale on it), and
+     a drawing in `--ink-soft` at 3.8:1, above the 3:1 of a drawing. */
+  --ed-tile-lit: color-mix(in srgb, var(--accent) 22%, #fff);
   --ed-danger: #c0603f;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
@@ -125,19 +182,49 @@
 /* No focus rule here: the one in theme.css derives from --accent, which this
    local :root already re-skins in purple. */
 
-/* Same "Download" button as the Recording page: warm accent of the shared
-   theme (which the local :root re-skins in purple), hover included; the
-   theme's hover rule (var(--accent-dark)) applies as it is.
-   A download presents itself the same way on the three pages that offer one,
-   and that is the SHAPE as much as the colour: the attempt at a pale flat fill,
-   in the hue of the outline's act tile, was made and dropped. It required
-   repainting the drawing (white falls to 1.4:1 on a pale tile) and above all it
-   went out for good: the `opacity: 0.45` of disabled buttons leaves a pale flat
-   fill at 1.2:1 on the white of the header, and this button IS disabled when the
-   page opens, as long as nothing has been modified. The wine fill stays frank. */
+/* The page's one solid button: the "Continue" of the upload box, and "Reassign" in
+   the character modal. It takes the page's violet and not the header's wine (it used
+   to be pinned to `--header-accent`, back when the page carried a solid wine
+   "Download" button in its header, matching the Recording page; that button is gone,
+   replaced by the upload tile, and the wine now wears at full strength in the one
+   place that keeps it, the logo at the foot of the header).
+   It is THE UPLOAD TILE, the four values read from the same tokens the tile reads
+   (`.editor-upload-tip .upload-tile` below, which is where they are explained): pale
+   `--accent-soft` fill, no border of its own, the darkened violet as ink, the deeper
+   lilac under the pointer. The box's "Continue" is the tile one has just pressed,
+   carried on to its confirmation, so it is the same object, and the modal is now the
+   only place a `.btn.primary` appears on the page.
+   NOT the theme's own rule, which fills with `var(--accent)`: that value fills
+   NOTHING else here. Every surface of the page that carries the violet carries a
+   tint of it (`--ed-tile-lit` at 22 %, `--ed-tile-act` at 32 %, the search hit at
+   12 %, `--accent-soft` for the rail itself) and every piece of violet TEXT takes
+   the darkened ink, so the theme's rule put the page's only saturated block of
+   colour inside a modal, three centimetres from the pale tile that opened it. A
+   solid `--ed-accent-ink` was the step in between and is gone too: it fixed the
+   colour and kept the foreign SHAPE, a filled pill on a page whose every accent
+   surface is pale.
+   What this costs, and it is a real cost, knowingly paid: the button no longer
+   asserts itself by weight of colour against the "Cancel" beside it, which is a
+   white pill of the same size. What is left to tell them apart is the fill, the
+   violet ink and the 700 (`.btn` is 600, and the tile's label is 700 for the same
+   reason) - the same three signals that make the tile read as the row's main action
+   next to the header's other buttons. It is the one modal of the site whose two
+   buttons are both safe, so nothing destructive rides on the distinction.
+   `font-weight` and `color` are the two properties the theme's `.btn.primary` does
+   NOT set to something we keep: it hands out `color: #fff`, made for the fill we are
+   dropping, so the ink has to be stated here or the label goes white on lilac. */
 .btn.primary {
-  background: var(--header-accent);
-  border-color: var(--header-accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+  color: var(--ed-accent-ink);
+  font-weight: 700;
+}
+
+/* The tile's own hover, through `--accent-dark` so that the two stay in step (see
+   that token). The theme's rule already sets the background from it; the border
+   follows, the rest state having tied the two together. */
+.btn.primary:hover:not(:disabled) {
+  border-color: var(--accent-dark);
 }
 
 /* The "Rail" re-skin also covers the destructive button (character deletion
@@ -244,24 +331,130 @@ h3 {
   padding: 7px 10px;
 }
 
-/* The download is an icon on its own too, next to this pair (cf. App.jsx: its
-   written label competed with the play's title in the always visible row). It
-   remains the page's main action, so its drawing is bigger, but the HEIGHT is
-   aligned with that of the history buttons (19 + 2x6 = 17 + 2x7 = 31 px): three
-   neighbouring buttons of which one is two pixels taller read as a misalignment,
-   not as a hierarchy. It is the width, more generous, that says it along with
-   the accent colour. */
-/* Selector written `.btn.script-download-btn` and not on the class alone:
-   `.btn.icon` (theme.css) already sets a padding and would win over a single
-   class.
-   A qualified name (`script-`) because the Recording page has its own download
-   button, with opposite rules (touch target of 40 px, against 31 px here): the
-   two stylesheets do not meet today, each being loaded only by its own page, but
-   two `.download-btn` of opposite values would break silently the day one of
-   them moved up into theme.css. */
-.btn.script-download-btn {
-  font-size: 19px;
-  padding: 6px 12px;
+/* Undo and redo as two CREAM chips, and only WHEN they are available: the page's
+   darker paper fills them and the neutral ink draws the arrow.
+   They were LILAC, `--accent-soft` and `--ed-accent-ink`, which was the right idea
+   on the wrong pair. The reasoning then was that the pale fill kept the history
+   behind the upload tile, the row's main action; but the tile was a white card, so
+   the only two coloured surfaces of the row were the two buttons one presses in
+   passing, and the gesture that LEAVES the page wore nothing. The violet moved to
+   the tile (see `.editor-upload-tip` below), and the history keeps a fill of its
+   own in the page's OTHER family: warm, flat, silent. Two live surfaces in the row,
+   one look each, so nothing has to be told apart by size.
+   `--paper-dark` is the site's one cream step, the very fill `.btn:hover` takes on
+   every page: a live chip therefore looks like a plain button under the pointer.
+   Accepted, this row holding no other white button to confuse it with, and it is
+   what makes the pair read as ordinary controls next to a tile that is not one.
+   The hover then has to go one step further than that fill, hence `--border`, the
+   next cream down of this page: a colour change reads on a chip, where a ring
+   appearing out of nowhere would read as a target (the lesson of the home link's
+   hover, theme.css). Rest and hover sit 1.05 apart in luminance, the same distance
+   the theme's white -> `--paper-dark` hover covers.
+   The border takes the fill's value, as it did when this was lilac: it makes each
+   button ONE flat shape instead of a tinted rectangle inside a warmer outline.
+   Ink `--ink` and no longer the darkened violet: the accent belongs to the tile now,
+   and a neutral arrow is what says "another kind of control" rather than a small
+   version of the same one. 10.9:1 on this fill, where the old pairing was cut to
+   clear 4.5.
+   `:not(:disabled)` is still the whole point of the rule. These two buttons spend
+   most of the session dark (nothing to undo when the page opens), and
+   `.btn:disabled` says that with `opacity: 0.45`, which washes any fill out: a
+   sleeping button keeps the plain white shape of the theme, and the cream IS the
+   signal that the gesture is live. */
+.history-group .btn:not(:disabled) {
+  background: var(--paper-dark);
+  border-color: var(--paper-dark);
+  color: var(--ink);
+}
+
+.history-group .btn:not(:disabled):hover {
+  background: var(--border);
+  border-color: var(--border);
+}
+
+/* The upload tile, the page's main action, sits at the end of the same row (see
+   App.jsx and UploadTile.jsx). Its SHAPE is shared with the Progress page and lives
+   in theme.css (paddings, the seal's slot, the label); what follows is what this page
+   adds to it, and it is only ever the editor's tile that is repainted, the Progress
+   page keeping the white card twice over.
+   The tile is the one gesture of the page that leaves it, so it is the one thing in
+   the row that is filled: the lilac of the rail and of the seal's disc, the whole
+   label in the darkened violet, bold. It used to be a white card between two lilac
+   history chips, i.e. the row's quietest surface was its only real action (the swap
+   is written up on `.history-group` above).
+   Ink `--ed-accent-ink` and not `--accent`: this is 15 px of text on `--accent-soft`,
+   where the accent falls to 4.5:1 (measured 4.47) and this one holds 6.5:1. The same
+   measurement, and the same token, as `.dirty-hint` further down, which is the pill
+   this tile answers: the two are now the same lilac carrying the same violet, on
+   purpose, "there is unsaved work" and "send it" being one thought in two objects.
+   They are told apart by shape and size (a 13 px pill, a 15 px tile with a border
+   radius), never by colour.
+   The label becomes ONE ink, the group of words that names the file giving up its own
+   (`color: inherit`): `--page-mark` is the same violet undarkened, 4.4:1 on this
+   lilac, and a violet word inside a violet label distinguishes nothing anyway. The
+   span keeps its `white-space: nowrap`, which is what holds "script de la pièce"
+   together at the end of a line.
+   The border takes the fill's value, so the tile is one flat lilac shape and not a
+   tint inside a cream outline, and the hover deepens the hue to `--ed-tile-lit`
+   (the accent at 22 %, the rail's "lit" surface) rather than letting the theme's
+   `--accent` ring appear around a filled tile, where it would read as a second
+   object. `.lift-hover` still gives the one-pixel rise and the shadow.
+   `transition` is written out in full and that is mandatory, not duplication: it is
+   ONE property, so this declaration REPLACES the theme's, and the tile must keep
+   `transform` and `box-shadow` in it or `.lift-hover` would snap (theme.css says so
+   at that class). `background` is the only addition.
+   The fill is NOT guarded by `:not(:disabled)`, where the history chips above are:
+   the tile keeps one shape in both states and only FADES when there is nothing to
+   send (`.upload-tile:disabled`, 0.45 opacity, theme.css). It did switch back to the
+   theme's white card when asleep, on the reasoning that the fill was the signal; but
+   the two states then differed in fill, ink, weight AND opacity at once, so the
+   row's main action changed object rather than going quiet, and the eye had to
+   re-find it every time the play became dirty again. Fading alone says "same
+   gesture, not available", which is what `.btn:disabled` says everywhere else on
+   the site. The washed-out lilac is below AA, and that is allowed: WCAG 1.4.3
+   exempts an inactive control, and the `title` on the wrapper is what tells the
+   coordinator why it sleeps.
+   The HOVER keeps the guard, on the other hand: `:hover` still fires on a disabled
+   button (the reason `.lift-hover` is dropped in the JSX), and a tile whose fill
+   deepens under a mouse that cannot click it promises a gesture that will not
+   happen. */
+.editor-upload-tip .upload-tile {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.editor-upload-tip .upload-tile .upload-tile-text {
+  color: var(--ed-accent-ink);
+  font-weight: 700;
+}
+
+.editor-upload-tip .upload-tile .upload-tile-word {
+  color: inherit;
+}
+
+.editor-upload-tip .upload-tile:not(:disabled):hover {
+  background: var(--ed-tile-lit);
+  border-color: var(--ed-tile-lit);
+}
+
+/* Below this width the three of them no longer fit: `.play-header-row` wraps, but
+   the flex algorithm shrinks the title (`flex: 1`) long before wrapping anything,
+   and the tile cannot shrink below its own label. The row then cut "Transport de
+   Femmes" into two crushed lines and, on a really narrow window, overflowed
+   sideways. So we ask for the wrap ourselves: the tile takes a line of its own,
+   centred, and the title gets its full width back.
+   Carried by the tooltip WRAPPER and not by the tile: it is the wrapper that is the
+   flex item of the row (a disabled button receives no mouse event, hence that
+   wrapper, see theme.css).
+   860 px is the width at which the title starts to be squeezed with a two-word
+   title, measured on this play; it is deliberately not one of the site's mobile
+   breakpoints, this row being the only thing it is about. */
+@media (max-width: 860px) {
+  .editor-upload-tip {
+    flex: 0 0 100%;
+    justify-content: center;
+  }
 }
 
 /* `.btn-tip`, the wrapper that carries the tooltip of buttons that go dark, is
@@ -285,13 +478,42 @@ h3 {
   color: #fff;
 }
 
+/* The pill next to the upload tile, `editor.dirty` in the catalogues (cited by key and
+   not quoted: the wording follows the gesture the tile names, and it has moved once). It is in the page's
+   VIOLET, that of the quill of the header and, since the tile was filled, of the
+   tile's whole label, and no longer in the orange `--warn`: it says the state of the work, not a
+   problem to fix, and it stands two centimetres from the button that resolves it.
+   The orange was the only warm alert of a purple row, and it read as an error
+   where there is nothing wrong: one has typed, that is all.
+   `--ed-accent-ink` and not `--accent`: it is text, on the palest of the page's
+   two purple surfaces, where the accent falls to 4.5:1 (measured 4.47) and this
+   ink holds 6.5:1. That is exactly what this token is for (see its comment at the
+   top of the file), and the same reason the outline uses it. */
 .dirty-hint {
   font-size: 13px;
   font-weight: 600;
-  color: var(--warn);
-  background: var(--warn-soft);
+  color: var(--ed-accent-ink);
+  background: var(--accent-soft);
   border-radius: 999px;
   padding: 4px 12px;
+}
+
+/* The two keys the page's doc names (`{enter}` and `{shiftEnter}` of
+   `editor.hintTyping`, rendered in the foot of the header by PlayHeader). They
+   already came out in bold; the weight alone left them the grey of the sentence
+   around them, and a key one is meant to PRESS is the only concrete object in a
+   doc otherwise made of prose.
+   Same violet as the quill of the header, the coloured word of the upload tile
+   and `.dirty-hint` above: the page has one accent, and it marks what one acts
+   on. `--accent` and not `--ed-accent-ink` because the ground here is the white
+   of the header (5.1:1 at 13.5 px), not the pale purple that forces the ink (cf.
+   the comment on `.dirty-hint`).
+   Written here and not in theme.css: `.header-hint` is shared by the five pages,
+   and the doc's bold is only the editor's business (the other four have no bold
+   in theirs). Nothing of the header's own identity is touched, which is what the
+   `--header-*` tokens reserve. */
+.header-hint strong {
+  color: var(--accent);
 }
 
 /* The editor's two full-page screens (unreadable script, page opened with a
@@ -432,8 +654,13 @@ h3 {
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
+/* The step below the open section: the same lilac, halfway between the panel and
+   the lit tile (it used to be the cream `--paper-dark`, a warm wash on what is now a
+   purple strip). The only three-state ladder of the panel, hence the only place with
+   a value of its own rather than a token: everywhere else pointing at something and
+   having it open share `--ed-tile-lit` and differ by their rule. */
 .editor-rail-tab:hover {
-  background: var(--paper-dark);
+  background: color-mix(in srgb, var(--accent) 12%, #fff);
   color: var(--ink);
 }
 
@@ -452,9 +679,9 @@ h3 {
    reads it from the attribute rather than from one more class, so the appearance
    cannot fall out of step with the accessible name. */
 .editor-rail-tab[aria-expanded="true"] {
-  background: var(--accent-soft);
+  background: var(--ed-tile-lit);
   border-color: color-mix(in srgb, var(--accent) 30%, transparent);
-  color: var(--accent);
+  color: var(--ed-accent-ink);
 }
 
 /* The panel DOES NOT SCROLL: it is each section that grants scrolling to what
@@ -681,8 +908,10 @@ h3 {
   text-align: left;
 }
 
+/* The lilac of the rail and no longer the cream: this wash lies inside a white chip
+   laid on a purple panel. */
 .character-name:hover {
-  background: var(--paper-dark);
+  background: var(--accent-soft);
 }
 
 .character-rename-input {
@@ -832,12 +1061,12 @@ h3 {
    **It is a TILE, and its colour says its level.** Both rows were transparent,
    hence the colour of the panel: the outline was only a column of text where the
    open scene alone laid something down, and nothing distinguished an act from a
-   scene but its serif and its indent. An act now takes the heavily lightened wine
-   `--ed-tile-act` and a scene the white of the surfaces that carry content
-   (`--card`, like the character chips right next to it in the rail), so the act
-   reads as the band that contains the cards of its scenes, and it is IT that
-   stands out. An act is the only object of the panel not to be white, and that is
-   deliberate: it is not content, it is a subheading.
+   scene but its serif and its indent. An act now takes a tint of the page's violet
+   (`--ed-tile-act`) and a scene the white of the surfaces that carry content
+   (`--card`, like the character chips right next to it in the rail), so the act reads
+   as the band that contains the cards of its scenes, and it is IT that stands out. An
+   act is the only object of the panel not to be white, and that is deliberate: it is
+   not content, it is a subheading.
    The padding goes from 1 to 3 px at the top and bottom and stops being zero on
    the left: a tile needs air, and the handle was touching its edge.
    The transparent rule at rest remains what keeps the current scene from shifting
@@ -862,6 +1091,17 @@ h3 {
   color: var(--ed-title);
 }
 
+/* The one thing on an act row that the band's tint costs an override: the ✕'s hover.
+   Everything else keeps the ink it has on a white scene row (the handle and the ✕ at
+   rest in `--ink-soft`, 3.3:1 on the tint, above the 3:1 of a drawing; the name in
+   `--ed-title` at 9.8:1; the count on its cream pill, which is opaque, so the tint
+   does not reach it). `--ed-danger`, though, only holds 2.72:1 there, i.e. the ✕ goes
+   faint at the very moment one points at it, so it is darkened by a tenth for this row
+   alone: 3.25:1 on the band, and the same terracotta. */
+.structure-row.act .chip-delete:hover {
+  color: color-mix(in srgb, var(--ed-danger) 90%, #000);
+}
+
 /* A SCENE row opens as a whole, not only through its button: it is the line that
    is the object, so the hover must light the line and not the word.
    The `:not` is necessary, at equal specificity with the rule below. Act rows take
@@ -878,26 +1118,26 @@ h3 {
 
 .structure-row.scene:not(.current):hover {
   border-color: var(--ed-tile-hover-border);
-  background: var(--accent-soft);
+  background: var(--ed-tile-lit);
 }
 
 /* The open scene, in accent: it is the row that says where one is, and it says so
    through `aria-current` too (cf. StructurePanel.jsx). */
 .structure-row.scene.current {
   border-color: var(--accent);
-  background: var(--accent-soft);
+  background: var(--ed-tile-lit);
 }
 
-/* The act that contains it takes the accent on its name alone, and not the frame
-   of the scene: two framed rows one under the other would fight over the "you are
-   here", when the scene is the only object really open. It serves to find where one
-   is in an outline that exceeds the height of the panel, when the current scene has
-   scrolled out of view.
-   It is the DARKENED accent (`--ed-accent-ink`) now that the row carries a solid
-   tile: on it `--accent` only holds 3.7:1. The ink is purple on a wine band, so the
-   hue AND the lightness detach it from it, and it is the same difference in
-   lightness that distinguishes the two labels of a current act, its name in accent
-   and its count in grey. */
+/* The act that contains it takes the accent on its name alone, and not the frame of
+   the scene: two framed rows one under the other would fight over the "you are here",
+   when the scene is the only object really open. It serves to find where one is in an
+   outline that exceeds the height of the panel, when the current scene has scrolled
+   out of view.
+   It is the DARKENED accent (`--ed-accent-ink`) and not `--accent`, the row carrying a
+   solid tile: on it the accent falls to 3.3:1 where this ink holds 4.76:1. That
+   measurement is what caps the tile's tint at 32 % (cf. `--ed-tile-act`), and it is
+   the difference in lightness between the two, on one single hue, that distinguishes
+   the current act's name from its count in grey. */
 .structure-row.act.current .structure-name {
   color: var(--ed-accent-ink);
 }
@@ -905,10 +1145,11 @@ h3 {
 /* Same handle as the lines (class `drag-handle` kept on the button): it is the same
    gesture on another object of the play. All that is left to do is tighten the box,
    sized over there for a row 40 px tall.
-   In `--ink-soft` and no longer in `--ed-ghost`, which is sized for white: on the
-   tile of an act it falls to 2.4:1, below the threshold for a drawing (the tile has
-   changed hue, not lightness, so the measurement holds). It is at the same time the
-   ink of the ✕ that faces it at the end of the row. */
+   In `--ink-soft` and no longer in `--ed-ghost`, which is sized for white: it holds
+   5.1:1 on the white tile of a scene, 3.8:1 on the lilac of an open one and 3.3:1 on
+   the violet tile of an act, where `--ed-ghost` falls to 2.4:1, below the threshold
+   for a drawing. It is at the same time the ink of the ✕ that faces it at the end of
+   the row. */
 .structure-handle {
   font-size: 13px;
   line-height: 1;
@@ -1038,12 +1279,12 @@ h3 {
 
 .structure-language-flag:not(.current):hover {
   border-color: var(--ed-tile-hover-border);
-  background: var(--accent-soft);
+  background: var(--ed-tile-lit);
 }
 
 .structure-language-flag.current {
   border-color: var(--accent);
-  background: var(--accent-soft);
+  background: var(--ed-tile-lit);
 }
 
 /* The focus ring lands on the flag and not on the label that surrounds it: the
@@ -1093,7 +1334,7 @@ h3 {
 .structure-add:hover {
   color: var(--ed-accent-ink);
   border-color: var(--accent);
-  background: var(--accent-soft);
+  background: var(--ed-tile-lit);
 }
 
 /* The theme's ring and not the browser's, and it is the PANEL that decides: its two
@@ -1185,9 +1426,9 @@ h3 {
 }
 
 .search-replace-toggle[aria-expanded="true"] {
-  background: var(--accent-soft);
+  background: var(--ed-tile-lit);
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
-  color: var(--accent);
+  color: var(--ed-accent-ink);
 }
 
 .search-replace-toggle[aria-expanded="true"] svg {
@@ -1392,7 +1633,7 @@ h3 {
    `aria-current`. */
 .search-hit.current {
   border-color: var(--accent);
-  background: var(--accent-soft);
+  background: var(--ed-tile-lit);
 }
 
 .search-hit-who {
@@ -1447,14 +1688,30 @@ h3 {
    here, and hence too their padding of 2px 6px, which was the box of the button
    and not that of the title: it went away with it, so the two titles now align on
    the left edge of the lines panel, instead of being indented 6 px relative to it.
-   They are `<h2>` and `<h3>`, which take the serif and `--ed-title` from the
-   heading rules; all that is left here is their size, their weight and the gap to
-   the next block. */
+   They are `<h2>` and `<h3>`, which take the serif from the heading rules; all that
+   is left here is their size, their weight, the gap to the next block and their
+   colour.
+   IN THE PAGE'S PURPLE, and no longer in the near-black `--ed-title` of the heading
+   rules: these two are the only titles of the column, and they name the same two
+   objects the rail's outline lists just beside them, at the same moment. Sharing the
+   accent is what ties the two halves of the page together, where a black title made
+   the column look like a document that had nothing to do with the panel selecting
+   inside it. It also separates them from what they are titles OF: the lines below are
+   in `--ink` on white cards, so the hierarchy no longer rests on size alone.
+   `--accent` at full strength and not the darkened `--ed-accent-ink`: this is text on
+   the column's cream (`--paper`), where the accent holds 4.73:1, above AA even for
+   small text, when the darkened ink is reserved for the pale purple SURFACES of the
+   rail (there the accent falls to 3.3:1, cf. its own comment). A title is also the
+   one place a hue can be frank without weighing anything down: it is a few words, not
+   a filled band (cf. `--ed-tile-act`, where full strength was too strong).
+   The count next to the scene title stays grey (`--ink-soft`): it is not part of the
+   title, it is a piece of information about it. */
 
 .act-title {
   font-size: 24px;
   font-weight: 600;
   margin-bottom: 6px;
+  color: var(--accent);
 }
 
 .scene-block {
@@ -1472,6 +1729,7 @@ h3 {
 .scene-title {
   font-size: 19px;
   font-weight: 600;
+  color: var(--accent);
 }
 
 .scene-line-count {
@@ -1656,8 +1914,11 @@ h3 {
   margin-top: 8px;
 }
 
+/* `--paper-dark` and not `--ed-sidebar`, which it used to take when that token was
+   a cream: this button lives in the TEXT column, which stays on the site's warm
+   paper. The purple belongs to the rail. */
 .add-first-line-btn:hover {
-  background: var(--ed-sidebar);
+  background: var(--paper-dark);
   color: var(--ink);
 }
 
@@ -1667,88 +1928,6 @@ h3 {
   gap: 8px;
   margin-top: 10px;
   font-size: 14.5px;
-}
-
-/* The header's two paragraphs of doc are rendered by PlayHeader, in the same
-   `.header-hint` (theme.css). The editor is the only one to put a link in them,
-   hence the only rules that remain here.
-   This link to another page of the site is the seal of the target page PLUS its
-   name, never an underlined word: it is the shape the return to the home page at
-   the foot of the header already has (logo + word, with no underline), and the
-   site names its pages by their pill everywhere else (home page cards, headers,
-   upload log). The colours come from the class `page-<key>` set on the link:
-   nothing hard-coded here, and the editor's purple accent does not tint a
-   destination that is green. */
-/* An `inline` element and not `inline-flex`: the word must sit on the baseline of
-   the paragraph like any other word, and a flex box does not expose the baseline
-   of its text (it had to be re-centred by hand, with `vertical-align: middle`, and
-   it landed one pixel too low). The seal, for its part, is offset on its own
-   account (cf. `.hint-page-mark`), on the model of `.warn-icon` in theme.css.
-   `nowrap` keeps the seal and the word on the same line: the disc alone at the end
-   of a line would mean nothing. */
-.hint-page-link {
-  white-space: nowrap;
-  /* On an inline element, the vertical padding paints the wash without pushing
-     the lines of the paragraph apart: it is only there to cover the seal, which
-     sticks out of the content box of the text. The right padding, for its part,
-     serves the wash and not the spacing, hence the negative margin that cancels
-     it: without it the next word ended up two spaces away from the link, which
-     reads as a typo. The JSX space does stay: it is the only opportunity for a
-     line break between the link and the rest of the sentence. */
-  padding: 3px 6px 3px 3px;
-  margin-right: -5px;
-  border-radius: 999px;
-  color: var(--page-mark);
-  font-weight: 600;
-  text-decoration: none;
-  transition: background 0.15s;
-}
-
-/* Same intention as the return to the home page (the seal's background spreads and
-   takes in the word, so that they read as a single object), but NOT the same means,
-   and the difference is deliberate: over there the wash is a radial gradient in a
-   `::before`, because a solid background left an edge at the border of its box on
-   the 36 px pill set in the middle of an empty header. Here the pill is 19 px
-   within a line of text, the "box" is a capsule one line tall squeezed between two
-   words, and its edge is exactly what we want to see: it is what shows where the
-   link begins and where it ends. No one-pixel step upwards either, it would make
-   the line of text around it jump. */
-.hint-page-link:hover {
-  background: var(--page-mark-soft);
-}
-
-/* A ring built on the colour of the target page, as the one of the link back to the
-   home page is built on `--header-accent`: the shared ring derives from `--accent`,
-   which this page re-skins in purple. */
-.hint-page-link:focus-visible {
-  outline: 2px solid var(--page-mark);
-  outline-offset: 2px;
-}
-
-/* The doc pill is the smallest of the site: it lives inside 13.5 px text, where the
-   36 px of the seal would be three lines tall. The Progress icon (two bars) is still
-   legible at this size; a seal with a finer drawing would require going back up.
-   Prefixed by `.play-header` for the same reason `.play-header-home-mark` is in
-   theme.css: the mobile rule that shrinks the header's seals targets
-   `.play-header .page-mark`, and without this prefix it would take this pill from
-   19 to 30 px below 800 px, that is bigger than on a wide window. */
-.play-header .hint-page-mark {
-  width: 19px;
-  height: 19px;
-  font-size: 12px;
-  margin-right: 5px;
-  /* The disc lines up on the CAPITAL band of the text and not on its x-height:
-     the word it precedes starts with a capital, and centred on the x the seal
-     read a pixel and a half too low.
-     Hence this pair, and not a `vertical-align` given as a length: `middle`
-     centres the MARGIN box on the baseline plus half the x-height, so 3 px of
-     bottom margin raise the pill by 1.5 px, exactly the difference between the
-     two bands. A length would have been more direct but it is measured from the
-     seal's baseline, and an `inline-flex` whose only child is an SVG has no
-     reliable one (Chrome synthesises it, the spec speaks of the bottom edge of
-     the margin: 4 px of difference from one browser to the next). */
-  vertical-align: middle;
-  margin-bottom: 3px;
 }
 
 /* ---- Narrow window ----
@@ -1801,6 +1980,15 @@ h3 {
 @media (prefers-reduced-motion: reduce) {
   .editor-rail,
   .search-replace-toggle svg {
+    transition-duration: 0s;
+  }
+
+  /* The upload tile is switched off in theme.css, the file its `transition` lives
+     in, but this page redeclares that transition to add `background` to the list
+     (`transition` being ONE property, the shorthand replaces the theme's), and that
+     redeclaration outranks the theme's switch-off. So the tile needs its twin here,
+     in the file that took the property over. */
+  .editor-upload-tip .upload-tile {
     transition-duration: 0s;
   }
 }

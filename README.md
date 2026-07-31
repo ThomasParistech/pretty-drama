@@ -57,9 +57,12 @@ Le site en héberge autant que vous voulez, et **chaque pièce est indépendante
 ses pages, ses voix, ses dépôts et son journal lui appartiennent. On choisit la
 pièce en entrant, et une fois dedans le reste n'existe plus.
 
-Pour en créer une : sur votre page de gestion, bloc **« Nouvelle pièce »**, donnez
-le titre, téléchargez le script de départ, déposez-le avec le lien proposé. La
-pièce apparaît quelques minutes plus tard, prête à être écrite dans l'Édition.
+Pour en créer une : sur votre page de gestion, la tuile **« Nouvelle pièce »** (le
+**+** en pointillés, à la suite des pièces) ouvre une petite fenêtre. Donnez
+le titre et cliquez sur **« Créer la pièce »**. GitHub s'ouvre avec le fichier déjà
+prêt (il ne contient que le titre), vous n'avez qu'à confirmer l'enregistrement avec
+le bouton vert en bas de la page. La pièce apparaît quelques minutes plus tard, prête
+à être écrite dans l'Édition.
 
 Pour en supprimer une, c'est le seul geste qui demande de passer par GitHub : sur
 votre dépôt, ouvrez le dossier `plays/`, puis celui de la pièce, et supprimez-le.
@@ -77,26 +80,26 @@ propre dossier, sans rien perdre.
 Tout se passe sur **votre accueil** (`…/respo.html`) : vous n'avez plus jamais
 besoin de revenir sur cette page GitHub.
 
-Tout se dépose au même endroit, **pièce par pièce** : le bouton **« Déposer des
-voix ou le script de la pièce »**, en haut de la page **Avancement** de la pièce
-concernée. Glissez vos fichiers dans la zone, cliquez sur **« Commit changes »**,
-et c'est fini. Le site reconnaît chaque fichier tout seul.
+Chaque fichier part de la page qui le concerne, **pièce par pièce**, et les deux
+gestes se ressemblent : une tuile blanche, une phrase qui nomme le fichier, puis la
+page de dépôt de GitHub où vous glissez le fichier avant de confirmer avec le
+bouton vert en bas de la page. Le site reconnaît chaque fichier tout seul.
 
-C'est le bouton de la pièce qui décide à quelle pièce le dépôt appartient : un
+C'est la tuile de la pièce qui décide à quelle pièce le dépôt appartient : un
 fichier déposé depuis la mauvaise pièce est refusé et vous le dit, plutôt que
 d'écrire les voix d'une pièce par-dessus une autre.
 
 **Écrire ou corriger la pièce** (page Édition)
 1. Ajoutez vos personnages, tapez les répliques (la touche **Entrée** crée la
    suivante), choisissez qui parle.
-2. Cliquez sur le bouton de téléchargement (la flèche vers le bas, en haut à
-   droite) : un fichier `script.json` arrive dans vos téléchargements. Il reste
-   éteint tant que vous n'avez rien modifié.
-3. Déposez-le avec le bouton ci-dessus.
+2. Cliquez sur **« Mettre à jour le script de la pièce »**, en haut à droite. La
+   tuile reste éteinte tant que vous n'avez rien modifié. Une fenêtre annonce ce
+   qui va se passer, puis **« Continuer »** télécharge le `script.json` et ouvre
+   GitHub : glissez-y le fichier et confirmez.
 
-**Publier les voix reçues** (page Avancement) : déposez le ou les fichiers
-`voix-xxx.zip` reçus, avec le même bouton (seule l'extension compte, pas le nom),
-depuis la page de la pièce qu'ils concernent.
+**Publier les voix reçues** (page Avancement) : la tuile **« Déposer les voix
+(ZIP) »**, sous le titre de la pièce concernée. Déposez-y le ou les fichiers
+`voix-xxx.zip` reçus (seule l'extension compte, pas le nom).
 
 Dans les deux cas le site se met à jour tout seul en quelques minutes : il
 nettoie le son, met les voix en ligne, prend en compte le nouveau texte et

@@ -1,0 +1,102 @@
+[
+  {
+    "name": "the ordinary case: a title read back in an address bar",
+    "title": "Transport de Femmes",
+    "id": "transport-de-femmes"
+  },
+  {
+    "name": "capitals are folded, spaces become hyphens",
+    "title": "Le Malade imaginaire",
+    "id": "le-malade-imaginaire"
+  },
+  {
+    "name": "surrounding whitespace leaves nothing behind",
+    "title": "  Antigone  ",
+    "id": "antigone"
+  },
+  {
+    "name": "a digit is a character like any other",
+    "title": "piece2",
+    "id": "piece2"
+  },
+  {
+    "name": "accents are folded onto their letter, never dropped",
+    "title": "Bérénice",
+    "id": "berenice"
+  },
+  {
+    "name": "an apostrophe is a separator",
+    "title": "L'École des femmes",
+    "id": "l-ecole-des-femmes"
+  },
+  {
+    "name": "the typographic apostrophe folds like the typewriter one (a title pasted from a word processor carries that one)",
+    "title": "L’École des femmes",
+    "id": "l-ecole-des-femmes"
+  },
+  {
+    "name": "several separators in a row give a single hyphen",
+    "title": "Le Songe d'une nuit d'été",
+    "id": "le-songe-d-une-nuit-d-ete"
+  },
+  {
+    "name": "accents alone still leave an address",
+    "title": "éèê",
+    "id": "eee"
+  },
+  {
+    "name": "a ligature has no decomposition, so it is dropped like any unknown character, and the leading hyphen it would leave goes with it",
+    "title": "Æschyle & C°",
+    "id": "schyle-c"
+  },
+  {
+    "name": "trailing punctuation leaves no trailing hyphen",
+    "title": "Ubu roi !",
+    "id": "ubu-roi"
+  },
+  {
+    "name": "nor do trailing hyphens themselves",
+    "title": "Fin de partie ---",
+    "id": "fin-de-partie"
+  },
+  {
+    "name": "a title made of digits is an address",
+    "title": "1789",
+    "id": "1789"
+  },
+  {
+    "name": "an over-long title is truncated to 64 characters",
+    "title": "Le Bourgeois gentilhomme, comédie-ballet en cinq actes de Molière et Lully",
+    "id": "le-bourgeois-gentilhomme-comedie-ballet-en-cinq-actes-de-moliere"
+  },
+  {
+    "name": "truncation cuts inside a word without ceremony",
+    "title": "un titre interminable un titre interminable un titre interminable",
+    "id": "un-titre-interminable-un-titre-interminable-un-titre-interminabl"
+  },
+  {
+    "name": "and it can fall right on a hyphen, which the pattern refuses at the end of the string just as much as at the start",
+    "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbb",
+    "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  {
+    "name": "an empty title leaves no address, and no invented name",
+    "title": "",
+    "id": ""
+  },
+  {
+    "name": "nor does a title made of whitespace",
+    "title": "   ",
+    "id": ""
+  },
+  {
+    "name": "nor one made entirely of punctuation",
+    "title": "???",
+    "id": ""
+  },
+  {
+    "name": "nor one made entirely of hyphens",
+    "title": "---",
+    "id": ""
+  }
+]

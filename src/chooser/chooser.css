@@ -72,23 +72,77 @@
   font-style: italic;
 }
 
+/* A whole row to itself, and it matters now that the grid holds one item more than the
+   plays: this sentence is a flex item like the creation tile, so without a full basis the
+   two sat side by side, the sentence reading as the label of the tile. */
 .chooser-empty {
+  flex: 1 1 100%;
   color: var(--ink-soft);
   text-align: center;
   padding: 10px 0 20px;
 }
 
-/* The two blocks specific to management. They live BELOW the grid and at the width of
-   the content, not in the grid: they are not plays, and a card of the same width as a
-   play would read as one more play.
+/* The creation tile, last item of the grid: the empty slot after the plays.
+   It borrows the basis of a play card (`.home-card`) so the row keeps its rhythm, and
+   gives up everything else a card has: no paper, no shadow, a dashed outline and the soft
+   ink. That is the whole point, and it is measured against what it replaces (a card with
+   a field and a button, open at all times, asking for a play on every visit): the offer
+   has to be READABLE and never louder than the plays it follows, which are the subject of
+   the page.
+   `align-self: stretch` and no height of its own: the tallest card of the row sets the
+   height, and a fixed one would leave it short or hanging on the day a card gains a
+   line. */
+.chooser-new-tile {
+  flex: 0 1 330px;
+  align-self: stretch;
+  min-height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 26px 22px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s, background-color 0.12s;
+}
+
+/* No lift on hover, unlike every other clickable surface here (`.lift-hover`): a tile
+   that rises out of the paper would claim the attention the plays are owed. It answers
+   in ink and in its outline instead, which is enough to say it can be clicked. */
+.chooser-new-tile:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+  background-color: var(--card);
+}
+
+.chooser-new-tile:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* The "+" reads as a sign and not as a letter: bigger than the label, and its own line
+   height so it centres on the cap height of the words next to it rather than on their
+   baseline. */
+.chooser-new-tile-plus {
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* The report of uploads with no play, the one block of the management page that lives
+   BELOW the grid and at the width of the content, not in the grid: it is not a play, and
+   a card of the same width as a play would read as one more play. (The creation gesture
+   used to sit here too; it is a tile in the grid and a modal now.)
    The narrow-window inset is not a bare 700 px: `.home` carries no side padding (it is
-   `.home-grid` that has its own), so below 700 px these two cards were touching both
-   edges of the screen while the play cards just above stayed tucked in. And it is the
-   GRID's inset that is copied here, 20 px per side, not `--notice-gutter`, which is
-   worth 16: these blocks sit right under the play cards, in the same column, so an
-   edge four pixels off from theirs is read as a misalignment and not as a gutter of
-   its own. */
-.chooser-new,
+   `.home-grid` that has its own), so below 700 px this card was touching both edges of
+   the screen while the play cards just above stayed tucked in. And it is the GRID's inset
+   that is copied here, 20 px per side, not `--notice-gutter`, which is worth 16: the
+   block sits right under the play cards, in the same column, so an edge four pixels off
+   from theirs is read as a misalignment and not as a gutter of its own. */
 .chooser-unrouted {
   width: 100%;
   max-width: min(700px, calc(100% - 40px));
@@ -100,8 +154,9 @@
    geometry of the fields are ELEMENT rules of the theme (`h1, h2, h3` and
    `select, input[type="text"], textarea`). The theme's `font-size: 16px` on a field
    moreover carries a contract that must not be undone: below that, iOS zooms on focus,
-   and these two pages are opened on a phone. */
-.chooser-new h2,
+   and these two pages are opened on a phone.
+   The creation panel has no heading of its own: the tile that opens it carries the words
+   one line above (see `NewPlayTile`). */
 .chooser-unrouted h2 {
   font-size: 22px;
   margin-bottom: 6px;
@@ -114,53 +169,41 @@
   margin-bottom: 14px;
 }
 
-/* The field and the button on one row, which wraps by itself on a narrow window:
-   `flex-wrap` and never a fixed number of columns, like the Rehearsal settings and the
-   two checkboxes of the Search. */
-.chooser-new-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 10px;
-}
-
-.chooser-new-row label {
+/* The label above its field, the whole width of the box: the action button is the box's
+   own (`.modal-actions`), so nothing shares this line. The field stretches on its own,
+   being a flex item of this column, and a play title is read back whole even on a
+   phone. */
+.chooser-new-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
   font-size: 13px;
   color: var(--ink-soft);
-  /* The field takes the space that is left, but it does not go below a width where a
-     play title can no longer be read back. */
-  flex: 1 1 240px;
 }
 
-/* Paragraphs, not flex boxes: `WarnIcon` already carries its own gutter and its own
+/* A paragraph, not a flex box: `WarnIcon` already carries its own gutter and its own
    baseline (`.warn-icon`, theme.css), which is how the four other warnings of the
-   site slip it in at the head of a sentence, and the link of `.chooser-new-done`
-   flows inline like any other. A flex box laid a second gutter on top of that margin
-   and, on a message that takes three lines at 375 px, centred the triangle on the
-   middle of the paragraph instead of sitting it on the first line. Same lesson as
+   site slip it in at the head of a sentence. A flex box laid a second gutter on top of
+   that margin and, on a message that takes three lines at 375 px, centred the triangle
+   on the middle of the paragraph instead of sitting it on the first line. Same lesson as
    `.stats-warning`, where it is written down. */
-.chooser-new-error,
-.chooser-new-done {
+.chooser-new-error {
   margin-top: 12px;
   font-size: 13.5px;
-}
-
-.chooser-new-error {
   color: var(--warn);
-}
-
-.chooser-new-done a {
-  color: var(--accent);
 }
 
 /* The report of uploads with no play. A list and not the four-column table of a play's
    log: these files have by definition succeeded at nothing, so a status column would
-   only say one thing (see `Unrouted`). */
+   only say one thing (see `Unrouted`).
+   `margin` and `padding` reset with the markers, as every other bullet-less list of the
+   site does (`.stats-legend`, `.character-list`): dropping `list-style` alone leaves the
+   UA's 40 px `padding-inline-start`, so the file names and their separating rules sat
+   inset from the heading and the hint right above them, and lost that width on a phone. */
 .chooser-unrouted ul {
   list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -208,4 +251,12 @@
   color: var(--warn);
   text-align: center;
   padding: 10px 20px 20px;
+}
+
+/* The tile is the only thing this file animates, and it neutralises it here, as each
+   file of the project does for its own (see the same block in home.css). */
+@media (prefers-reduced-motion: reduce) {
+  .chooser-new-tile {
+    transition-duration: 0s;
+  }
 }

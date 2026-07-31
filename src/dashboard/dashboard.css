@@ -1,132 +1,202 @@
-/* The two gestures of the page, stacked and centred at the top: upload what you
-   receive, take away the printable script. They do NOT look alike, and that is
-   deliberate: the upload is a white card (a destination, you leave for GitHub),
-   the download is the solid button of the site. They therefore each have their own
-   width, hence `align-items: center` and not `stretch`: aligning them on the same
-   width would leave the button stretched across the whole card, which no other
-   button on the site does. */
+:root {
+  /* Re-skin of the shared accent, scoped to this page (this file is only loaded by the
+     Progress page), exactly as editor.css does for its violet. It is what gives the
+     page a colour of its own everywhere and not only in its header: the theme paints
+     `--focus-ring`, `.btn.primary`, `accent-color` and the selection with `--accent`,
+     so the whole page turns navy without a single rule here naming them.
+     It replaces `--dash-mark-ink`, a darkened GREEN this file used to keep because the
+     seal's green failed AA as text on its own tint, and because the seal tokens are set
+     on the `<header>` ELEMENT and therefore do not exist in the body of the page. The
+     navy fails neither test (7.9:1 on white, 6.8:1 on `--accent-soft`, 5.5:1 on the
+     hover fill below) and lives on `:root`, so the darkened twin and the whole trap
+     around it are gone. Everything the page tints now reads ONE pair: the two file
+     tiles, the journal's header row, the header band of the grid.
+     Same value as the `--page-mark` the theme sets for `page-dashboard`, and that is
+     the point rather than a duplication: theme.css stays the source of truth of the
+     SEAL (its block says why the colour left the greens, and the favicon of
+     dashboard.html duplicates it for the same reason a <link> cannot read a variable),
+     this pair is the same colour made available to the body of the page. */
+  --accent: #1d4e89;
+  --accent-soft: #e8eef8;
+  --accent-dark: #163d6c;
+
+  /* The "lit" state of a filled tile of this page, the accent at 22 %: the same step,
+     and the same 22 %, as `--ed-tile-lit` in the editor. `--accent-soft` is about the
+     same colour at 12 %, so the hover deepens the hue the tile already wears instead of
+     switching to another one.
+     It sits at `:root` now that `--accent` does. It used to be declared on
+     `.dash-script-tile` itself and could not move, being a `color-mix` on `--page-mark`:
+     at `:root` that variable does not exist, the `color-mix` was invalid, the whole
+     custom property computed to the guaranteed-invalid value and INHERITED down as
+     such, so the hover fell back to a transparent fill inside a `currentColor` border. */
+  --dash-tile-lit: color-mix(in srgb, var(--accent) 22%, #fff);
+
+  /* The status column, the second of the grid's two frozen columns. Fixed, because its
+     content is: a 22 px disc or a count of two or three figures. Roughly the pitch of a
+     scene column, so the eye reads the row total and the cells at the same rhythm.
+     The FIRST one, the names, has no width here on purpose: it sizes itself on the
+     longest name of the cast (`width: 1%` further down), a play whose characters are
+     called Anne and Luc having no reason to pay for a column cut for Mme de Sotenville.
+     Its width is therefore only known once drawn, and the status column's `left` offset
+     needs it as a length: `ProgressTable` measures it and writes it into
+     `--dash-name-w` on the table. See the comment there. */
+  --dash-status-w: 52px;
+}
+
+/* The row of the voices upload, centred under the header. It carried the PDF tile too,
+   side by side with this one, until that one moved up into the header (see
+   `ScriptPdfLink` and `.dash-script-tile` below): the page's two gestures are still
+   the same object, they are no longer in the same place, and the one that stays here
+   is the one that feeds the grid and the journal underneath it.
+   What the pair needed is therefore gone with it: `align-items: stretch` equalised
+   two card HEIGHTS, and `flex-wrap` let them fall back to a stack on a phone. A
+   single tile as wide as its own label needs neither; the flex row is kept for the
+   centring, which `margin: auto` alone cannot do on a tile that must not stretch
+   (`flex: none`, theme.css). */
 .dash-actions {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
+  justify-content: center;
   margin: 0 auto 26px;
 }
 
-/* Only one of the two can be missing, the upload card outside github.io: the PDF
-   button, for its part, is unconditional (see `ScriptPdfLink`), so this block is
-   never empty and no longer needs the `:empty` rule that used to hide it, back when
-   the button waited to know whether the file existed. */
+/* The voices tile, the one gesture left in the body of the page. It keeps the shared
+   white card (the filled treatment is for the two tiles that live in a header), and the
+   only colour on it is the ink of the words that name the file.
+   Its rim NEVER changes under the pointer, and that is the point of the first rule: the
+   theme repaints that border with `--accent` on hover, and a card that gains an outline
+   reads as a target being framed. This tile already answers with the lift and the shadow
+   of `.lift-hover`, the site's hover for a card, so the border keeps the cream it has at
+   rest and nothing about the tile changes colour. Same shape as the theme's rule plus
+   the row, so it wins by specificity and not by luck. (It used to have a second and more
+   urgent reason: `--accent` was the site's WINE here, a foreign colour on this page.
+   The page re-skins the accent now, so what is left is the reason above, which stands
+   on its own.)
+   The words: `--accent`, so the page's two file gestures name their file in one ink. It
+   cannot come from a `page-<key>` class on the span the way it does everywhere else on
+   the site (that is what `.upload-tile-word` reads, theme.css): the seal tokens live on
+   the `<header>` element, this tile is in the body, and the span used to carry
+   `page-recorder`, which is exactly how "voix (ZIP)" ended up wine on this page.
+   7.9:1 on the white card.
+   The `(ZIP)` inside it follows, keeping the lighter weight that sets it apart. */
+.dash-actions .upload-tile:hover:not(:disabled) {
+  border-color: var(--border);
+}
 
-/* The PDF takes the download button of the site, `.btn.primary`: the same one as
-   the ZIP of the takes (Recording) and as the script (Editor). A download presents
-   itself the same way everywhere, and the accent fill distinguishes it at once from
-   the upload card just above.
-   All that remains here are the two things `.btn` does not provide for, never
-   having served on an <a>: the underline the browser puts on a link, and the
-   wrapping of the label when the window narrows.
-   The hover comes from `.lift-hover` (theme.css), the class of the gesture common to
-   all clickable surfaces of the site: the two gestures of the page therefore react
-   the same way under the mouse, even though they do not look alike at rest. What is
-   not taken over from it is the accent-tinted rule of the upload card: the fill of
-   the button already has its accent border, there would be nothing to see. It keeps
-   instead the darkening of `.btn.primary:hover`, which is what download buttons do
-   everywhere else. */
-.dash-script-btn {
-  text-decoration: none;
-  text-align: center;
-  text-wrap: balance;
-  /* `.btn` only transitions `background` and `border-color`, and a `transition`
-     declaration overwrites the previous one instead of adding to it: it is
-     therefore here that `transform` and `box-shadow`, those of `.lift-hover`, must
-     be listed, otherwise the lift appears all at once. */
+.dash-actions .upload-tile-word {
+  color: var(--accent);
+}
+
+/* The row can be EMPTY again, so it hides itself: outside github.io the upload tile
+   renders nothing (`UploadLinks` refuses to forge an address it knows will fail), and
+   it is now the only thing in here. Without this, local dev and a custom domain would
+   show a 26 px gap between the header and the grid, on the one configuration where
+   nobody could connect it to a button that is not there. The rule existed before, for
+   this same reason, and was deleted the day the PDF tile made the block
+   unconditional. */
+.dash-actions:empty {
+  display: none;
+}
+
+/* The PDF tile takes EVERYTHING from `.upload-tile` (theme.css): the card, the row,
+   the padding, the label, the focus ring, the lift. It used to be a solid `.btn.primary`
+   pill and then a pale green one, and both times this file carried a small pile of
+   rules to undo what `.btn` does on an `<a>` (the underline, the wrapping, a transition
+   rewritten to keep the lift). Nothing of that is left: the two gestures of the page
+   are the same object, so they share one rule set, and the JSX composes the same two
+   spans (see `ScriptPdfLink`).
+   What follows is what this tile adds now that it lives in the HEADER, and it is the
+   same repaint, for the same reason, as the Editing page's update tile
+   (`.editor-upload-tip`, editor.css): the gesture that carries the play itself is the
+   one thing in the top row that is filled. Here the fill is the page's own tint and the
+   whole label plus the arrow take the page's ink, bold. It reads `--accent-soft` and
+   `--accent` and no longer the seal's `--page-mark-soft`/`--page-mark`, though the two
+   pairs hold the same colour: the accent pair lives on `:root` (see the top of the
+   file), so the tile no longer depends on sitting inside the element that carries
+   `page-dashboard`, and it says the same thing as the voices tile down in the body,
+   which cannot reach the seal tokens at all.
+   `color` on the tile and not on the label: the arrow follows `currentColor` like every
+   icon of the site, so one declaration gives both the same ink. The label then has to
+   give up the two colours the shared rules pin on it, `--ink` on `.upload-tile-text`
+   and `--page-mark` on the group of words that names the file: the same navy inside a
+   navy sentence would distinguish nothing anyway. The `(PDF)` keeps its lighter weight,
+   which is what still sets it apart.
+   The border takes the fill's value, so the tile is one flat shape and not a tint
+   inside a cream outline, and the hover deepens the hue instead of letting the theme's
+   `--accent` ring appear around a filled tile.
+   `transition` is written out in full and that is mandatory, not duplication: it is ONE
+   property, so this declaration REPLACES the theme's, and the tile must keep `transform`
+   and `box-shadow` in it or `.lift-hover` would snap (theme.css says so at that class).
+   `background` is the only addition, and it is what stops the fill jumping while the
+   border animates. The reduced-motion twin at the end of this file follows from it. */
+.dash-script-tile {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+  color: var(--accent);
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 
-/* The shared ring, like the upload card just above: the two gestures of the page
-   announce themselves the same way at the keyboard. A `.btn` does without it
-   everywhere else (the browser's ring is enough on a solid fill), but this one is an
-   `<a>` set beside a card which does carry the ring: two different rings in the same
-   block read as two natures of control.
-   The accent on the cream of the page stays visible, the fill of the button being
-   inside the offset. */
-.dash-script-btn:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: var(--focus-ring-offset);
+/* `:not(:disabled)` on an `<a>` that can never be disabled is not dead weight, it is
+   the whole point: it gives this rule the shape, and therefore the specificity, of the
+   theme's `.upload-tile:hover:not(:disabled)`, which paints the border with `--accent`.
+   Written as the plain `.dash-script-tile:hover` it lost that fight by one class, and
+   the tile deepened under the pointer while its border took the full-strength accent, a
+   ring around a shape that is meant to stay flat (it was worse still when `--accent`
+   was the site's wine here: the border turned a colour the page shows nowhere). Equal
+   specificity, and this file is loaded after theme.css, so the lit fill wins. The
+   Editing tile is spared by its wrapper (`.editor-upload-tip .upload-tile...`, one
+   class deeper). */
+.dash-script-tile:hover:not(:disabled) {
+  background: var(--dash-tile-lit);
+  border-color: var(--dash-tile-lit);
 }
 
-/* Like "(ZIP)" and "(JSON)" on the upload card: the extension is said, not
-   shouted. Here it keeps the white of the label, the weight and the size are
-   enough: an opacity on the accent fill would drop below the contrast threshold
-   (that is already the reason for the choice on .dash-upload-format). */
-.dash-script-format {
-  font-weight: 400;
-  font-size: 0.86em;
-}
-
-/* A real button, the width of its content: at full width, the two seals ended up
-   flattened against the edges, thirty pixels away from the label they qualify.
-   They therefore frame it closely (the mic of Recording on the left, the quill of
-   Editing on the right), and the button shrinks with the screen until it takes
-   up all the available width. */
-.dash-upload {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  max-width: 100%;
-  padding: 12px 16px;
-  text-decoration: none;
+.dash-script-tile .upload-tile-text,
+.dash-script-tile .upload-tile-word {
   color: inherit;
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 
-/* The lift and the shadow come from `.lift-hover` (theme.css); all that remains
-   here is what is specific to this card, the rule that switches to the accent
-   colour. */
-.dash-upload:hover {
-  border-color: var(--accent);
+.dash-script-tile .upload-tile-text {
+  font-weight: 700;
 }
 
-.dash-upload:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: var(--focus-ring-offset);
+/* The drawing that opens the tile. The voices tile puts its 34 px seal there; here it
+   is the bare download arrow, so it is sized by hand instead of following the label at
+   1 em, which would leave a glyph small enough to read as punctuation.
+   19 px and no longer 22, which is the fix for a tile that stood 3.5 px taller than the
+   Editing one: the arrow is the tallest thing in the row, so it, and not the label, was
+   setting the height. The label's line box is 19.5 px (`.upload-tile-text`, theme.css,
+   1.3 x 15 px), so the arrow now sits just under it and the two header tiles measure the
+   same 45.5 px. That is the ceiling, and it is written down there too: grow this and the
+   tile grows with it. Known and left alone: under 560 px the shared rule takes the label
+   to 14 px, so its line box (18.2 px) drops below the arrow and this tile leads by 0.8 px
+   again. It is a sub-pixel on a width where the tile has a line to itself, and the fix
+   would be a media query whose only content is a second arrow size.
+   22 px was chosen when the tile sat NEXT TO the 34 px seal of the voices one, where a
+   small arrow read as punctuation beside a disc. It has no such neighbour any more, it
+   sits beside a play title, and 19 px against a 15 px label keeps the same relation.
+   `flex: none` because `.upload-tile` is a flex row and an SVG in it would otherwise be
+   squeezed by a label that wraps. */
+.dash-script-tile svg {
+  flex: none;
+  width: 19px;
+  height: 19px;
 }
 
-/* The seals of the two pages whose work the upload folder receives (mic for the
-   recorded voices, quill for the written script). `flex: none` is already carried by
-   .page-mark: they do not compress, it is the label that wraps. */
-.dash-upload-mark {
-  width: 34px;
-  height: 34px;
-  font-size: 19px;
-}
-
-/* The label is in black: "Upload" is the gesture, it belongs to no page. Only the
-   two groups of words that name a file take the colour of their page, through the
-   --page-mark set by the `page-<key>` class of the same span (the source of truth
-   stays theme.css). */
-.dash-upload-text {
-  color: var(--ink);
-  font-size: 15px;
-  font-weight: 600;
-  text-align: center;
-  text-wrap: balance;
-}
-
-/* Each group stays unbreakable: "voices (ZIP)" broken at the end of a line would
-   leave an orphan parenthesis under the word it qualifies. */
-.dash-upload-word {
-  color: var(--page-mark);
-  white-space: nowrap;
-}
-
-/* The extension: said, not shouted. It does not compete with the word it follows.
-   The discretion comes from the weight and the size, NEVER from an opacity: at 0.75
-   on the page colour, "(JSON)" fell to 3.1:1 on the white card (below the AA
-   threshold for its ~13 px). */
-.dash-upload-format {
-  font-weight: 400;
-  font-size: 0.86em;
+/* Below this width the seal, the play title and the tile no longer fit on one line.
+   `.play-header-row` wraps, but the flex algorithm shrinks the title's button long
+   before it wraps anything, and the tile cannot go under its own label: the title ends
+   up crushed into two lines beside it. So we ask for the wrap ourselves, and the tile
+   takes a line of its own, its content centred (`justify-content` on a tile that is
+   now full width centres the arrow and the label INSIDE it, which is what we want).
+   The Editing page does the same thing at the same width, on its wrapper rather than
+   on its tile (a disabled button receives no mouse event, so its tooltip lives on a
+   span). It is deliberately not one of the site's mobile breakpoints: it is about this
+   row and nothing else. */
+@media (max-width: 860px) {
+  .dash-script-tile {
+    flex: 0 0 100%;
+    justify-content: center;
+  }
 }
 
 /* Orphan lines: the only alert of the page. A refused file, for its part, is NOT
@@ -205,20 +275,93 @@
   border-left: 1px solid var(--border);
 }
 
+/* The first CHARACTER row and not the first row of the body: the body now opens with
+   the totals, whose two frozen cells are the empty corner and carry no border at all
+   (see `.dash-corner`), so the rule that closes the corner from below is the one on the
+   name and the count just under it. */
 .dash-table .dash-act,
-.dash-table tbody tr:first-child .dash-name {
+.dash-table .dash-totals + tr .dash-name,
+.dash-table .dash-totals + tr .dash-status {
   border-top: 1px solid var(--border);
 }
 
-/* Column of names frozen on the left: it is what says whom the row is about, a
-   "2/5" cell all alone on the screen means nothing. The corner belongs to the same
-   column and therefore follows it, otherwise the act and scene headers would pass
-   beside it when scrolling. */
+/* ---- The grid's rounded corners ----
+   On the CELLS and not on the scrolling container, though a radius there would have
+   clipped the whole table at once and in one declaration. It was tried: a clip cuts the
+   1 px border of a cell on the diagonal, so each corner came out looking sheared rather
+   than drawn, which is exactly the look a radius is meant to avoid.
+   Four corners, four cells, each named by its position in the table rather than by a
+   class of its own: the first act (the header band starts there, the two cells to its
+   left being the empty corner), the last act, and the two ends of the last row. Plus
+   the shoulder of the frozen column, where the names begin under the corner, so the two
+   arms of the band open the same way.
+   The two on the left belong to frozen cells and therefore hold at any scroll position;
+   the two on the right ride with the scenes, which is what one wants: they mark the end
+   of the table, not the edge of the window. */
+.dash-table .dash-corner-status + .dash-act,
+.dash-table .dash-totals + tr .dash-name {
+  border-top-left-radius: var(--radius);
+}
+
+/* The three other corners curve between two borders the cell really has (a name has its
+   left rule and the row above gives it a top, the last row has its bottom). The act had
+   a top and a right and nothing on its left, so the browser tapered the stroke along the
+   arc and the curve faded out before reaching the bottom of it.
+   Its own `border-left`, then, and it is what dictated the shadow further down the file,
+   at `.dash-corner-status`: read that comment before touching either. The two are one
+   decision, the line of the frozen block's right edge, drawn here by a border and
+   everywhere else by a shadow at the same pixel.
+   Known and accepted: the acts are not sticky, so scrolled sideways this rule slides
+   under the corner with them and the act row alone loses its beige line, for the 33 px
+   of its height. What is left there is the boundary between the page's cream and the
+   band's pale navy, which reads on its own, and it is paid only while the table is
+   scrolled. */
+.dash-table .dash-corner-status + .dash-act {
+  border-left: 1px solid var(--border);
+}
+
+.dash-table thead tr:first-child th:last-child {
+  border-top-right-radius: var(--radius);
+}
+
+.dash-table tbody tr:last-child .dash-name {
+  border-bottom-left-radius: var(--radius);
+}
+
+.dash-table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: var(--radius);
+}
+
+/* The two frozen columns on the left, names then status: it is what says whom the row
+   is about and how much is left for them, and a lone "5" in the middle of the scenes
+   means nothing. The corner cells belong to the same two columns and therefore follow
+   them, otherwise the act and scene headers would pass beside them when scrolling.
+   The offsets: the names at the very edge, the status right after them, hence
+   `--dash-name-w`, measured on the drawn table by `ProgressTable` (see its comment).
+   `0px` while it is not known: the fallback lasts less than a frame (the measure is a
+   layout effect, so it runs before the first paint) and it never leaves the status
+   column half-way over a name.
+
+   `width: 1%` on the names, the trick the journal's three first columns already use
+   below: a specified width smaller than the content is raised to the content's own
+   width, and above all the column stops taking a share of the surplus that `width:
+   100%` spreads over the table. The column is therefore exactly as wide as the longest
+   name (itself capped by `.dash-name-text`), and everything else goes to the scenes. */
 .dash-table .dash-name,
-.dash-table .dash-corner {
+.dash-table .dash-corner-name {
   position: sticky;
   left: 0;
   z-index: 2;
+  width: 1%;
+}
+
+.dash-table .dash-status,
+.dash-table .dash-corner-status {
+  position: sticky;
+  left: var(--dash-name-w, 0px);
+  z-index: 2;
+  width: var(--dash-status-w);
+  min-width: var(--dash-status-w);
 }
 
 /* No shadow at the edge of the frozen column: it was tried, and it soiled every
@@ -226,27 +369,85 @@
    the table down to its foot (the `border-right` of the corner then that of the
    names). */
 
-/* The corner stays empty (neither card background nor rule around it: it closes the
-   grid at the top left), with two exceptions due to the freezing. An OPAQUE
-   background, that of the page: with `background: none` the scene numbers were
-   visibly scrolling underneath. And it is IT that carries the left rule of the two
-   header rows, not the first act or scene cell: that one leaves when scrolling (it
+/* ---- The header band of the grid ----
+   Everything that NAMES a row or a column (the acts, the scene numbers, the character
+   names) wears the page's tint and the page's ink, the same pair as the journal's sticky
+   header row below and the two file tiles.
+   This band is the whole reason the page's colour left the greens (see the
+   `page-dashboard` block of theme.css). Painted in `--ok-soft`, which is also the fill
+   of the "done" disc, it made a character's NAME look recorded and the column titles
+   look like statuses. In the page's navy it can be as wide as it likes: nothing in this
+   table is navy except what names something, and the two signals that mean anything, the
+   green tick and the amber count, are the only saturated colours left in the grid.
+   The band runs along the top and down the left, the L that frames the figures, and the
+   white is left to the only thing that is data. The corner is NOT part of it, and that
+   is what makes it an L rather than a block: the tint marks what NAMES something, and
+   the corner names nothing. Tinted, it welded the two arms together into one big header
+   and put the heaviest surface of the page exactly where the eye enters the grid.
+   `--accent-soft` and NOT `--page-mark-soft`, though the two hold the same colour: the
+   seal tokens are set on the `<header>` ELEMENT by its `page-<key>` class, so they
+   resolve to nothing this far down the page. The accent pair is this page's answer to
+   that, on `:root` (see the top of the file). The ink measures 6.8:1 on this tint, hence
+   AA at every size used here. */
+.dash-table .dash-act,
+.dash-table .dash-scene,
+.dash-table .dash-name {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* The corner stays EMPTY: neither the tint of the band it sits at the elbow of, nor a
+   rule around it (it closes the grid at the top left). Two exceptions, both owed to the
+   freezing. An OPAQUE background, that of the page: with `background: none` the scene
+   numbers were visibly scrolling underneath. And it is IT that carries the left edge of
+   the header rows, not the first act or scene cell: that one leaves when scrolling (it
    was taking the left edge of the top of the table with it, and the headers ended up
    open on the left), whereas the corner does not move.
-   It therefore extends upwards the right rule of the column of names, exactly as the
-   shared border of the `collapse` model used to. */
+   That edge sits on the STATUS half alone, the right side of the frozen block, and it
+   is drawn by the shadow of the next rule rather than by a border. The names half
+   carries nothing, so the corner stays one surface and no line is drawn above a column
+   header that does not exist. */
 .dash-table .dash-corner {
   border: none;
-  border-right: 1px solid var(--border);
   background: var(--paper);
 }
 
+/* The right edge of the frozen block, and it is an outset SHADOW and not a border. The
+   reason is the first act's rounded corner, further down: to be drawn at full width all
+   the way round, that curve needs a real `border-left` on the act cell (with a
+   zero-width left border the browser tapers the stroke along the arc and the corner
+   fades out halfway). And a `border-left` on the act lands one pixel to the RIGHT of a
+   `border-right` on the corner, adjacent cells not sharing an edge under
+   `border-collapse: separate`, so the act row's edge could never line up with the scene
+   row's underneath it.
+   A shadow paints OUTSIDE the box, exactly where that `border-left` is. Every row
+   therefore draws the same line at the same pixel: the act row by its own border, all
+   the others by this. It rides with the sticky cells, and their `z-index: 2` lays it
+   over whatever scrolls beneath. */
+.dash-table .dash-corner-status,
+.dash-table .dash-status {
+  box-shadow: 1px 0 0 var(--border);
+}
+
+.dash-table .dash-status {
+  border-right: none;
+}
+
+/* The act row draws that line itself, so the shadow stops short of it. Two of them at
+   the same pixel would be a doubling nobody could see, but the shadow knows nothing of
+   the rounded corner and would run straight up through it: that is the stub this whole
+   arrangement exists to remove. */
+.dash-table thead tr:first-child .dash-corner-status {
+  box-shadow: none;
+}
+
+/* The acts take the journal header's type as well as its colours, down to the size:
+   they are the same object, a band that names what is underneath, and 11.5 px uppercase
+   is what keeps it from competing with the figures it covers. */
 .dash-table .dash-act {
-  font-size: 12.5px;
+  font-size: 11.5px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--ink-soft);
-  background: var(--paper-dark);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -256,16 +457,17 @@
   min-width: 54px;
 }
 
-/* Ratios read as a column of numbers: aligned digits, big numerator, the
-   total kept small so the eye scans "how much is done", not "out of how many". */
+/* Ratios read as a column of numbers: aligned digits, big numerator, the total kept
+   small so the eye scans "how much is done", not "out of how many". */
 .dash-table td {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   line-height: 1.1;
 }
 
-/* The numerator carries the status colour, the denominator stays neutral: no
-   opacity (it washed out the amber on the peach background, illegible). */
+/* The numerator carries the status colour (from `td.todo`, further down), the
+   denominator stays neutral: no opacity, which washed the amber out on the peach
+   background and left it illegible. */
 .dash-cell-ok {
   font-size: 15.5px;
   font-weight: 700;
@@ -277,11 +479,40 @@
   color: var(--ink-soft);
 }
 
+/* The tick of a FINISHED cell, in place of its ratio. No disc under it, unlike the
+   journal's status below (`.dash-journal-mark.ok`): the cell is already tinted green,
+   and a disc filled `--ok-soft` on that tint would be a ring one cannot see. The cell
+   IS the disc here, which is also what makes the two objects agree rather than repeat
+   each other.
+   `display: flex` with auto margins and not the inline box of a drawing in a sentence:
+   the cell holds this and nothing else, so an inline box would sit on the text baseline
+   of an empty line and hang half a strut too low.
+   16 px, a shade over the 15.5 of the numerator it replaces: the tick has to be spotted
+   from further away than a figure is read. Its ink comes from the cell (`td.done` sets
+   `color`), so the state is declared once. */
+.dash-table .dash-tick {
+  display: flex;
+  margin: 0 auto;
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+}
+
+/* Right-aligned, against the status column that sums the row up: the eye follows one
+   edge from a name to its count instead of crossing a gap of a different width at each
+   line. That alignment is the reason the count is a column at all.
+   `--font-ui` and no longer `--font-serif`: this column is a LABEL one identifies at a
+   glance while reading a line of figures, not a piece of the play. Cormorant Garamond
+   is a display serif, thin and high-contrast, and at the size a frozen column can
+   afford it thickened into a grey smudge, an "e" and an "o" apart. Inter at 15 px in
+   semi-bold holds the same room and stays a name (the play's own text keeps the serif
+   everywhere it is quoted: the dialogue cards, the orphan lines above this grid, the
+   printed script). */
 .dash-table .dash-name {
-  font-family: var(--font-serif);
-  font-size: 17px;
-  font-weight: 700;
-  text-align: left;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: right;
   white-space: nowrap;
   padding-right: 14px;
 }
@@ -291,32 +522,66 @@
    grid for all the rest. Cut, it stays legible in full in the tooltip of the `title`
    carried by the cell.
    The cut itself is the shared class `.truncate` (theme.css), set in JSX: all that
-   remains here is what is specific to this column, its maximum width. */
+   remains here is what is specific to this column, its maximum width and the
+   `margin-left: auto` that pushes a short name to the right edge of the cell (a block
+   narrower than its cell ignores the `text-align` of that cell).
+   A CAP and no longer a width: the column measures itself on the cast, so this only
+   settles where an unreasonable name stops. In `em`, hence following the font-size the
+   mobile rule lowers, and above all an absolute length as far as the intrinsic sizing
+   of the table is concerned: a percentage resolves to `none` while the browser measures
+   the column, and the cap would let go exactly when it is needed. */
 .dash-name-text {
   display: block;
   max-width: 12em;
+  margin-left: auto;
 }
 
-/* The same "behind" / "all recorded" tint as the cells, carried also by the acts,
-   the scene numbers and the names: an act, a column or a row that is entirely green
-   reads without counting the cells. Full tint on the header side (the cells are
-   lightened), to mark the summary. */
-.dash-table th.todo {
-  color: var(--warn);
-  background: var(--warn-soft);
+/* The row that lays an act's or a scene's tick beside its label. It is a flex INSIDE
+   the cell and never the cell itself: `display: flex` on a `th` makes the table wrap it
+   in an anonymous cell, and a frozen column loses its `sticky` along the way (see the
+   comment in the JSX). Centred, like the text of the acts and the scene numbers.
+   The names no longer use it: their marker became the status column beside them. */
+.dash-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
 }
 
-.dash-table th.done {
+/* The marker never shrinks and never wraps with the label: it is the fixed part of
+   the cell, the label is what gets cut. 13 px, under the 14 px of the grid: it
+   accompanies a word, it does not compete with the figures of the cells.
+   Bare drawing and no disc, unlike the tick of a CELL: there the tick stands alone and
+   needs a body of its own, here it leans against a label that already gives it one.
+   It is the same `--ok` as the tick below, and it stays green on the navy band, which
+   is the whole point of the page having left the greens: here the only green thing is
+   the one thing that means "done", so a finished scene is spotted by hue and not only by
+   shape. 4.4:1 against the band, below the 4.5 of a text but well past the 3:1 a drawing
+   owes. */
+.dash-mark {
+  display: inline-flex;
+  flex: none;
+  font-size: 13px;
   color: var(--ok);
-  background: var(--ok-soft);
 }
 
+/* Nothing to record in a scene or an act: the label alone, in the soft ink, and
+   `HeadMark` renders no marker at all. Same for a character with no line. */
 .dash-table th.empty {
   color: var(--ink-soft);
 }
 
-/* Backgrounds lightened towards white: the tint is enough to spot the column that
-   is behind, and the coloured figure keeps all its contrast on top of it. */
+/* The state of a CELL is its background, and the ink of what stands on it: an amber
+   wash under a ratio still to be finished, a green one under the tick that says it is.
+   The tint is what lets a column be scanned without reading a single figure, and it can
+   be laid on freely again now that the page's own colour is a navy: while the page was
+   green, a green cell and a green header said two different things with one colour, and
+   that is what sent the identity out of the family (see the `page-dashboard` block of
+   theme.css).
+   Both backgrounds are lightened towards white: the tint is enough to spot the column
+   that is behind, and the coloured figure keeps all of its contrast on top of it.
+   `--warn` is AA on `--warn-soft` and on white, hence on any mix of the two. */
 .dash-table td.todo {
   color: var(--warn);
   background: color-mix(in srgb, var(--warn-soft) 65%, #fff);
@@ -327,8 +592,8 @@
   background: color-mix(in srgb, var(--ok-soft) 65%, #fff);
 }
 
-/* No line in the scene: cell left empty, white background by default, so it fades
-   out by itself among the tinted cells. */
+/* No line in the scene: cell left empty, white background by default, so it fades out
+   by itself among the tinted ones. */
 
 .dash-legend {
   color: var(--ink-soft);
@@ -348,8 +613,10 @@
   padding-top: 18px;
 }
 
+/* The page's ONLY heading: the grid above carries none (see the comment above
+   `<Journal>` in App.jsx), so this one names the journal and nothing else.
+   font-family and font-weight come from the h1,h2,h3 rule of theme.css. */
 .dash-journal h2 {
-  /* font-family and font-weight come from the h1,h2,h3 rule of theme.css. */
   font-size: 18px;
   margin: 0 0 12px;
 }
@@ -381,13 +648,26 @@
 }
 
 /* Discreet header, stuck to the top while scrolling: without it, the columns of
-   icons are named nowhere. */
+   icons are named nowhere.
+   It wears the page's colour rather than the neutral `--paper-dark` it used to: this
+   band is the one surface of the journal wide enough to say where one is. It is the same
+   pair as the grid's header band above, and it used to be `--ok-soft`, which is also the
+   fill of the `ok` disc two rules below: a green band over a column of green discs, in
+   which "STATUT" read as a status of its own. That collision is what sent the page's
+   colour out of the greens (see the `page-dashboard` block of theme.css). The disc keeps
+   its green, is now the only green in the table, and never touches this row anyway, the
+   cells under it being white.
+   `--accent-soft`/`--accent` and NOT the seal's `--page-mark-soft`/`--page-mark`, though
+   the two pairs hold the same colour: the seal tokens are set by the `page-<key>` class
+   on the `<header>` ELEMENT, so they are not inherited this far down the page and would
+   resolve to nothing. The accent pair lives on `:root` (see the top of the file) and
+   measures 6.8:1, hence AA for these 11.5 px capitals. */
 .dash-journal-table th {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--paper-dark);
-  color: var(--ink-soft);
+  background: var(--accent-soft);
+  color: var(--accent);
   font-size: 11.5px;
   font-weight: 600;
   text-transform: uppercase;
@@ -507,24 +787,6 @@
 }
 
 @media (max-width: 560px) {
-  /* The label goes over two or three lines: the seals shrink to leave it the
-     width, without ever going under the text (it is their position on the left and
-     on the right that says which file goes where). */
-  .dash-upload {
-    gap: 9px;
-    padding: 11px 12px;
-  }
-
-  .dash-upload-mark {
-    width: 30px;
-    height: 30px;
-    font-size: 17px;
-  }
-
-  .dash-upload-text {
-    font-size: 14px;
-  }
-
   /* The four columns barely fit: we tighten the gutters rather than let the table
      go off into horizontal scrolling on the slightest phone. */
   .dash-journal-table th,
@@ -532,16 +794,23 @@
     padding: 7px 8px;
   }
 
-  /* Progress grid: the frozen column costs width to the ones that scroll, so it is
-     the one we tighten first (shorter name, less gutter), and the cells afterwards.
-     The pitch of the scenes drops to 44 px, enough to hold "12/12" without crushing
-     the figures. */
+  /* Progress grid: the two FROZEN columns cost width to the ones that scroll, so they
+     are the ones we tighten first (shorter name, less gutter), and the cells
+     afterwards. The pitch of the scenes drops to 44 px, enough to hold "12/12" without
+     crushing the figures.
+     Only the CAP of the names moves, not their column: that one measures itself on the
+     cast on a phone as everywhere else, and a play with short names owes nothing to the
+     longest one a phone could hold. */
+  :root {
+    --dash-status-w: 44px;
+  }
+
   .dash-name-text {
     max-width: 6.5em;
   }
 
   .dash-table .dash-name {
-    font-size: 15.5px;
+    font-size: 14px;
     padding-right: 8px;
   }
 
@@ -553,15 +822,35 @@
   .dash-table .dash-scene {
     min-width: 44px;
   }
+
+  /* The markers are part of that pitch: at their desktop size, with a 6 px gutter,
+     they pushed the scene columns past their 44 px, exactly the width the phone does
+     not have. */
+  .dash-head {
+    gap: 4px;
+  }
+
+  .dash-mark {
+    font-size: 12px;
+  }
+
+  .dash-table .dash-tick {
+    width: 15px;
+    height: 15px;
+    font-size: 15px;
+  }
 }
 
-/* The file neutralizes its OWN animations, like every other CSS file of the site.
-   The page's two gestures are two card-links that lift on hover, and each declares
-   its own `transition` (the comment on `.dash-script-btn` says why it has to), so
-   theme.css cannot switch them off in our place. */
+/* ---- Reduced motion ----
+   The voices tile is switched off in theme.css, the file its `transition` lives in.
+   The PDF tile has to be switched off HERE, because it is here that it redeclares that
+   transition to add `background` to the list (`transition` being ONE property, the
+   shorthand replaces the theme's), and this file is loaded after theme.css, so at equal
+   specificity its declaration wins over the theme's switch-off. Each file neutralizes
+   its own animations, and this page owns that one again: the block had disappeared the
+   day the PDF button stopped being a `.btn` with a transition of its own. */
 @media (prefers-reduced-motion: reduce) {
-  .dash-script-btn,
-  .dash-upload {
+  .dash-script-tile {
     transition-duration: 0s;
   }
 }

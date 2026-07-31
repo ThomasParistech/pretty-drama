@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import PageMark from "../shared/PageMark.jsx";
 import PlayHeader from "../shared/PlayHeader.jsx";
 import PageState from "../shared/PageState.jsx";
+import UploadTile from "../shared/UploadTile.jsx";
 import useManifest from "../shared/useManifest.js";
 import { actLabel, sceneLabel } from "../shared/structureLabels.js";
 import { fmt, t } from "../shared/locale.js";
@@ -88,10 +89,84 @@ function okCount(lines) {
   return lines.filter((l) => l.status === "ok").length;
 }
 
-// A single status scale for the whole grid: cells, names, scenes, acts.
+// A single status scale for the whole grid: cells, status column, names, scenes, acts.
+// On a cell it is the background tint, on a header the ink.
 function statusClass(ok, total) {
   if (total === 0) return "empty";
   return ok < total ? "todo" : "done";
+}
+
+// The summary marker of an ACT, at the left of its label: a green tick once everything
+// in it is recorded, and NOTHING at all as long as lines are missing.
+//
+// An act spans several scene columns, so it is the one label of the grid with no cell
+// of its own in the two summaries (the totals row gives one to each scene, the status
+// column one to each character). This tick is what stands in for it.
+//
+// It replaces the amber/green background the header kinds used to carry. The tint
+// said the same thing, but it said it in colour ALONE, so it needed the legend to be
+// read at all and left nothing for a screen reader; and painting a whole act cost the
+// grid its calm, the amber of "behind" covering three quarters of the table on a play
+// that has just started.
+//
+// The waiting state draws nothing, where it used to draw an hourglass. The grid says
+// what is left in FIGURES all around this label, so a second sign for "there is work
+// left" only repeated it, one step further from the numbers that answer "how much".
+// What is left is the one thing worth spotting from afar, a finished act.
+//
+// Nothing to record: no marker either, the same silence as a cell with no line (a
+// green tick over an empty act would claim work that does not exist). The status
+// class of the header carries the ink, so the state is encoded once, by `statusClass`.
+function HeadMark({ ok, total }) {
+  if (total === 0 || ok < total) return null;
+  const label = t("dashboard.mark.done");
+  return (
+    <span className="dash-mark" role="img" aria-label={label} title={label}>
+      <CheckIcon />
+    </span>
+  );
+}
+
+// What ONE cell of the grid says, and what the status column beside the names says
+// about a whole character: "recorded out of total", the ratio, on a background tinted
+// by the state. It reads without a key, which a bare count of what is missing does not:
+// "2/5" carries the size of the job along with what is left of it, and the coordinator
+// reads the two together ("Claire has five lines here and has sent two").
+//
+// ONE exception, the finished cell, and it is what the tint alone could not do: it
+// drops the ratio and takes the green tick. "5/5" is a subtraction to be made before
+// one can be sure there is nothing left to do, and there are a hundred of them on a
+// grid; the tick answers before it is read, and what a finished column looks like is
+// the one thing the page is scanned for.
+//
+// Nothing to record: an empty cell, white, and nothing to announce either. It is then
+// the only thing on the row that says nothing at all, which is exactly right.
+function CellMark({ ok, total }) {
+  if (total === 0) return null;
+  if (ok >= total) {
+    const label = t("dashboard.mark.done");
+    return (
+      <span className="dash-tick" role="img" aria-label={label} title={label}>
+        <CheckIcon />
+      </span>
+    );
+  }
+  // Two elements and not one string: the two numbers do not have the same weight (the
+  // recorded one stands out from the total). Each goes through `fmt.number`, the
+  // formatter for numbers written alone, outside any sentence.
+  // The slash STAYS in the JSX, and that is deliberate even though a fraction slash is
+  // normally a fact of language kept in the string (`recorder.lineCounter` is
+  // "{n}/{total}" in both catalogues, French included, which is what settles it): the
+  // two numbers have to be two elements for their weights, so routing the separator
+  // through the catalogue would mean a `<T>` per CELL, that is several hundred on a play
+  // of twenty characters and forty scenes, in exchange for a character both languages
+  // write the same way.
+  return (
+    <>
+      <span className="dash-cell-ok">{fmt.number(ok)}</span>
+      <span className="dash-cell-total">/{fmt.number(total)}</span>
+    </>
+  );
 }
 
 function Dashboard({ manifest }) {
@@ -160,12 +235,20 @@ function Dashboard({ manifest }) {
           back to the home page), and unfolding it only to find a link felt
           empty. It says what the page is for, never how to read the grid (that
           is `.dash-legend`'s job, under the table) nor how to upload (the upload
-          card is right below, it reads on its own). */}
-      <PlayHeader page="dashboard" title={manifest.title || t("common.untitledPlay")} />
+          card is right below, it reads on its own).
+          The PDF tile is its `actions`, the place the Editing page gives to its
+          update tile: the two pages now put the gesture that carries the play
+          ITSELF in the top row, and the row is always visible where the body
+          scrolls away. What stays below, in `.dash-actions`, is the upload of the
+          voices, which belongs with the grid and the journal it feeds. */}
+      <PlayHeader
+        page="dashboard"
+        title={manifest.title || t("common.untitledPlay")}
+        actions={<ScriptPdfLink title={manifest.title || ""} />}
+      />
       <div className="container">
         <div className="dash-actions">
           <UploadLinks playId={manifest.id} />
-          <ScriptPdfLink title={manifest.title || ""} />
         </div>
 
         {orphanLines.length > 0 && (
@@ -222,6 +305,12 @@ function Dashboard({ manifest }) {
 
         <p className="dash-legend">{t("dashboard.legend")}</p>
 
+        {/* No <h2> over the grid, though the journal below has one: it was tried and
+            the page read worse for it. The grid IS the page (the header's sentence
+            already says so, and it fills the screen under the two upload/download
+            gestures), so naming it added a heading that repeated the page and pushed
+            the table down; the journal's own title, for its part, is what tells a
+            second and quite different block apart at the foot of the page. */}
         <Journal runs={runs} />
       </div>
     </>
@@ -322,10 +411,11 @@ function Status({ failed }) {
 }
 
 // The upload's type carried by the seal of the page that produces that file: the
-// Recording page's mic for voices, the Editing page's quill for the script. They
-// are the same two seals as the upload button at the top of the page, so the
-// association reads without a legend. A file that is neither a ZIP nor a script is
-// claimed by no page: neutral pill, without a page colour.
+// Recording page's mic for voices, the Editing page's quill for the script. They are
+// the seals of the two upload tiles of the site (the mic on this page, the quill on
+// the Editing page), so the association reads without a legend. A file that is
+// neither a ZIP nor a script is claimed by no page: neutral pill, without a page
+// colour.
 function KindMark({ kind }) {
   const label = t(KIND_LABEL_KEY[kind] ?? KIND_LABEL_KEY.inconnu);
   if (kind === "inconnu") {
@@ -345,15 +435,18 @@ function KindMark({ kind }) {
   );
 }
 
-// The coordinator's daily gesture: dropping a file they received (a ZIP of voices) or
-// produced (the script.json from the Editing page) into the GitHub upload screen
-// of THEIR repo. A single button because there is only one folder, `uploads/`:
-// the Action deduces the type from the extension. Two cards towards the same URL
-// would read as two different destinations.
-// What one uploads is therefore read in the label, not in the choice of button:
-// the two seals frame the text (the Recording page's mic on the left, the Editing
-// page's quill on the right) and both words carry their page's colour.
-// "Upload" stays in black: it is the gesture, it belongs to neither of the two.
+// The coordinator's daily gesture: dropping the ZIP of voices they received into
+// the GitHub upload screen of THEIR repo.
+//
+// VOICES ONLY, and it is said in the label. The tile used to name the two files the
+// upload folder accepts, the voices and the script.json, because the folder really
+// does take both (the Action deduces the type from the extension alone). But the
+// script is not a file a coordinator RECEIVES: they write it on the Editing page,
+// which now carries its own tile for it, download included (see `upload` there).
+// Naming it here as well made this button the destination of a file one had first
+// to go and fetch elsewhere, and left the Editing page ending on a download whose
+// sequel was written on another page.
+//
 // The expected extension is said in parentheses in the label itself, rather than
 // as example file names on a second line: it is the extension alone that decides
 // the processing (`kind_of`), and the button fits on one line.
@@ -374,35 +467,52 @@ function UploadLinks({ playId }) {
   // work.
   const url = isPlayId(playId) ? githubUploadUrl(playId) : null;
   if (!url) return null;
-  // No container here: the page's two cards share `.dash-actions`, which aligns
-  // them to the same width (cf. dashboard.css).
+  // No container here: `.dash-actions` is the tile's own row (cf. dashboard.css). It
+  // held the PDF tile too until that one moved into the header, and it is the reason
+  // that block hides itself when empty: this component is the only thing left in it,
+  // and it renders nothing outside github.io.
   return (
-    <a className="dash-upload card lift-hover" href={url} target="_blank" rel="noreferrer">
-      <PageMark page="recorder" className="dash-upload-mark" />
-      {/* The two coloured words are PARAMETERS: each carries its page's colour, and
-          the sentence keeps its own language's word order. The old JSX was six
-          fragments inside four nested spans, where the order mattered. */}
-      <span className="dash-upload-text">
-        <T
-          k="dashboard.upload"
-          p={{
-            voices: (
-              <span className="dash-upload-word page-recorder">
-                {t("dashboard.upload.voices")}{" "}
-                <span className="dash-upload-format">(ZIP)</span>
-              </span>
-            ),
-            script: (
-              <span className="dash-upload-word page-editor">
-                {t("dashboard.upload.script")}{" "}
-                <span className="dash-upload-format">(JSON)</span>
-              </span>
-            ),
-          }}
-        />
-      </span>
-      <PageMark page="editor" className="dash-upload-mark" />
-    </a>
+    // `tone="dashboard"`: the mic keeps its DRAWING, which says the voices come from
+    // the Recording page, and takes THIS page's colour, like the coloured word beside
+    // it. The wine of Recording was the only foreign colour on the page, and it read
+    // as a warning on the one gesture the coordinator repeats every week; the Editing
+    // tile, for its part, has always coloured its word with the page it sits on, so
+    // this is the rule of the two tiles and not an exception here.
+    <UploadTile page="recorder" tone="dashboard" href={url}>
+      {/* The coloured group of words is a PARAMETER: it carries this page's colour and
+          the sentence keeps its own language's word order. The old JSX was six fragments
+          inside four nested spans, where the order mattered.
+          NO `page-<key>` class on it, where the site's other tiles have one, and it is
+          not an omission. It carried `page-recorder`, which rendered "voix (ZIP)" in
+          Recording's WINE while every comment around it said the page's colour: the
+          class is what gives `.upload-tile-word` its ink (theme.css), and
+          `page-dashboard` would hand out the seal's `--page-mark`, which is set on the
+          `<header>` ELEMENT and so reads as nothing this far down the page. The tile
+          takes the page's `--accent` instead, re-skinned on `:root` and pinned by
+          `.dash-actions .upload-tile-word` (dashboard.css). */}
+      <T
+        k="dashboard.upload"
+        p={{
+          voices: (
+            <span className="upload-tile-word">
+              {/* The format is a parameter of the WORD and not a span written after it:
+                  the parentheses and the space that carries them are punctuation, so
+                  they live in the string like every other separator on the site, and a
+                  language free to put the format first can. Nested `<T>`, the format
+                  itself being markup (its own weight, `.upload-tile-format`). */}
+              <T
+                k="dashboard.upload.voices"
+                p={{
+                  format: (
+                    <span className="upload-tile-format">{t("common.format.zip")}</span>
+                  ),
+                }}
+              />
+            </span>
+          ),
+        }}
+      />
+    </UploadTile>
   );
 }
 
@@ -415,21 +525,34 @@ function UploadLinks({ playId }) {
 // served at a public URL of the site: this is the same discretion as respo.html,
 // not a lock.
 //
-// `.btn.primary`, the site's download button: the same as the ZIP of takes
-// (Recording page) and as the script (Editing page). A download presents itself
-// the same way everywhere, and the flat accent separates it clearly from the
-// upload card right above, which is the page's other gesture (going to upload on
-// GitHub) and has no reason to look like it.
+// It wears the site's TILE, the one of the Editing page's "Mettre à jour le script de
+// la pièce" and of the voices tile below: an arrow, then a sentence whose coloured
+// group of words names the file. It was the solid `.btn` pill before, and side by side
+// with the voices tile that reading did not hold: two cards in a row are two moves of
+// the same visit, whereas a pill next to a card reads as the page's one button and the
+// card as mere decoration. The look says what is true, that these are two files and
+// two directions, and the DIRECTION is what the arrow and the verb carry.
+// Everything visual therefore comes from `.upload-tile` (theme.css), whose name is now
+// short of the truth: it is the shape of a FILE gesture, not of an upload. See the
+// comment at the class.
 //
-// No seal here, unlike on the upload card: there the quill designates the
-// script.json one UPLOADS, taking it back for a PDF one DOWNLOADS would make two
-// opposite gestures read under the same pill. The download arrow says everything.
+// It is rendered as the `actions` of `PlayHeader`, and TINTED there (the page's navy,
+// `.dash-script-tile` in dashboard.css), exactly as the Editing page's update tile is
+// in its own header. Consequence worth knowing: the tile no longer sits beside the
+// voices one, so nothing has to equalise their heights. It no longer depends on sitting
+// inside the element that carries `page-dashboard` either, the page's colour being
+// re-skinned onto `--accent` at `:root` and therefore readable anywhere in it.
 //
-// "the play to print" and not "the play's script": the upload card right above
-// already says "the play's script (JSON)", and two labels sharing their group of
-// words could no longer be told apart except by the acronym. Yet PDF is the only
-// one of the three (ZIP, JSON, PDF) a coordinator reads without thinking about it: the
-// difference cannot be made to rest on the one they do not know.
+// No seal here, unlike on the voices tile: there the mic designates the page the
+// voices come from, and a seal on a file one DOWNLOADS would make two opposite
+// gestures read under the same pill. The download arrow says everything, and it takes
+// the place the seal holds on the neighbour.
+//
+// "the play to print" and not "the play's script": the Editing page's upload tile
+// says "the play's script (JSON)", and two labels sharing their group of words could
+// no longer be told apart except by the acronym. Yet PDF is the only one of the three
+// (ZIP, JSON, PDF) a coordinator reads without thinking about it: the difference
+// cannot be made to rest on the one they do not know.
 // "to print" says the use, and the word "script" stays with the upload, where it
 // designates the working file.
 const SCRIPT_PDF_HREF = "data/script.pdf";
@@ -464,31 +587,85 @@ function ScriptPdfLink({ title }) {
     // `download` renames along the way: the coordinator gets "transport-de-femmes.pdf"
     // and not "script.pdf", which says nothing once in the downloads folder.
     <a
-      className="btn primary dash-script-btn lift-hover"
+      className="upload-tile card lift-hover dash-script-tile"
       href={SCRIPT_PDF_HREF}
       download={`${name}.pdf`}
     >
       <DownloadIcon />
-      <span>
+      {/* The same two spans as `UploadTile`'s body, the shared classes included: the
+          arrow stands where its seal stands, then the label. Not the component itself,
+          which is a link to GitHub in a new tab or a button, and neither of those is a
+          download. */}
+      <span className="upload-tile-text">
         <T
           k="dashboard.pdf"
-          p={{ format: <span className="dash-script-format">(PDF)</span> }}
+          p={{
+            play: (
+              <span className="upload-tile-word page-dashboard">
+                {/* Same shape as the voices tile: the format is a parameter of the
+                    word, so its parentheses and the space before them stay in the
+                    string. */}
+                <T
+                  k="dashboard.pdf.play"
+                  p={{
+                    format: (
+                      <span className="upload-tile-format">{t("common.format.pdf")}</span>
+                    ),
+                  }}
+                />
+              </span>
+            ),
+          }}
         />
       </span>
     </a>
   );
 }
 
-// Characters × scenes grid: "recorded / total" ratio in each cell. Acts,
-// scene numbers and character names carry the same amber/green tint as the
-// cells, so a whole row, column or act reads as done at a glance.
+// Characters × scenes grid: "recorded / total" in each cell, on a tinted background
+// (`CellMark`). Acts and scene numbers carry a tick once their whole column is in
+// (`HeadMark`), so a finished scene reads at a glance without counting the cells.
 //
-// The names column is frozen (CSS), the rest scrolls inside the container: a play
-// with fifteen scenes fits on no phone, and a "2/5" cell without its name says
+// A character's own total is a COLUMN, right after the names, and no longer a marker
+// tucked in front of the name. It is the figure the coordinator acts on ("Claire, four
+// of twelve"), so it deserves the same shape as the cells it sums up, and reading it
+// down the page needs the ratios under one another rather than after names of every
+// length. That is also why the names align RIGHT: they end against their own count
+// instead of drifting away from it.
+//
+// The names AND that column are frozen (CSS), the rest scrolls inside the container: a
+// play with fifteen scenes fits on no phone, and a lone "2/5" without its name says
 // nothing. The scrolling container is therefore a named and focusable region: it
 // contains no focusable element, so without `tabIndex` it could be walked neither
 // by keyboard nor by screen reader.
 function ProgressTable({ acts, scenes, rows }) {
+  // The only thing the CSS cannot work out on its own: the width of the names column,
+  // which the status column beside it needs as its `left` offset to freeze in turn.
+  //
+  // That column has NO width of its own (`width: 1%` in dashboard.css): it takes the
+  // width of the longest name of the cast, and a play whose characters are called Anne
+  // and Luc must not pay for a column cut for the longest name a phone could hold. So
+  // the width is a result, read off the drawn table rather than decided in advance.
+  //
+  // A layout effect and not an effect: it runs before the first paint, so the fallback
+  // written at the `left` (`0px`) is never seen. A `ResizeObserver` afterwards, because
+  // that width moves without React: the window is resized, the language is switched on
+  // a name that translates, the serif font arrives after the first paint. Writing the
+  // value back cannot loop, `left` on a frozen cell changing no width; and an identical
+  // number re-rendered nothing, React comparing state by value.
+  const nameCorner = useRef(null);
+  const [nameWidth, setNameWidth] = useState(0);
+  useLayoutEffect(() => {
+    const el = nameCorner.current;
+    if (!el) return undefined;
+    const read = () => setNameWidth(el.getBoundingClientRect().width);
+    read();
+    if (typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(read);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div
       className="dash-table-wrap"
@@ -496,69 +673,119 @@ function ProgressTable({ acts, scenes, rows }) {
       role="region"
       aria-label={t("dashboard.table")}
     >
-      <table className="dash-table">
+      <table className="dash-table" style={{ "--dash-name-w": `${nameWidth}px` }}>
         <thead>
           <tr>
-            <th className="dash-corner" />
+            {/* The corner is TWO cells and not one spanning cell: each of the two
+                frozen columns has to carry its own `left` offset (see dashboard.css),
+                and the first of the two halves is the element measured above, being the
+                one cell of that column that is always there whatever the cast. */}
+            <th className="dash-corner dash-corner-name" ref={nameCorner} />
+            <th className="dash-corner dash-corner-status" />
             {acts.map((act) => (
               <th
                 key={act.key}
                 className={`dash-act ${statusClass(act.ok, act.total)}`}
                 colSpan={act.span}
               >
-                {act.title}
+                {/* The tick and the label are wrapped, in both header kinds: the cell
+                    itself must stay a `table-cell` (a `display: flex` on a `th` is
+                    re-wrapped in an anonymous cell by the table fixup, which costs a
+                    frozen column its freezing and every header its rules), so the row
+                    that lays the two side by side is an element INSIDE it. */}
+                <span className="dash-head">
+                  <HeadMark ok={act.ok} total={act.total} />
+                  {act.title}
+                </span>
               </th>
             ))}
           </tr>
           <tr>
-            <th className="dash-corner" />
+            <th className="dash-corner dash-corner-name" />
+            {/* The one corner cell that is NOT silent, and it is silent on screen all
+                the same: the status column has no visible title (44 px wide on a phone,
+                and the ratios say what they are), so a screen reader reading a cell of
+                it would hear the character's name and nothing about the column. An
+                `aria-label` on the header cell of the last header row is what names it,
+                the accessible name of a `th` being what the cells under it are
+                announced with. The legend under the table says the same thing to
+                whoever reads it with their eyes. */}
+            <th
+              className="dash-corner dash-corner-status"
+              aria-label={t("dashboard.total.play")}
+            />
             {scenes.map((scene) => (
               <th
                 key={scene.key}
                 title={t("common.actScene", { act: scene.act, scene: scene.title })}
                 className={`dash-scene ${statusClass(scene.ok, scene.total)}`}
               >
+                {/* No `HeadMark` here, where the acts still carry one: the totals row
+                    just below gives each scene its ratio and its tick, and a second
+                    tick over the number would say the same thing twice, in a cell 44 px
+                    wide on a phone. An act has no cell of its own in that row (it spans
+                    several), so there the tick stays its only signal. */}
                 {scene.label}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
+          {/* The scenes' own totals, the row that mirrors the status column of the
+              names: what the whole cast owes in that scene, in the same shape as one
+              cell of the grid. It opens the body rather than closing it, for the same
+              reason the status column comes right after the names and not at the far
+              right: a summary one has to go looking for at the end of a table that
+              scrolls both ways is a summary nobody reads.
+              Where it crosses the two frozen columns it carries the EMPTY corner and not
+              the play's own total: that cell would have been the one figure of the grid
+              summing up two summaries at once, a number nobody comes here for, sitting
+              in the corner the eye lands on first. The corner therefore simply grows by
+              a row, and the grid keeps one silent block at its top left.
+              The count comes from the scenes and not from `rows`, hence from every line
+              of the play including those pointing at no character: it is the truth about
+              a scene, and the gap between it and the sum of the characters is exactly
+              what the orphans banner above the grid is for. */}
+          <tr className="dash-totals">
+            {/* Named for a screen reader and blank on screen, exactly like the header of
+                the status column above and for the same reason: the row carries no title
+                of its own, so its cells would be announced under the name of the scene
+                and nothing else, indistinguishable from a character's. It is the FIRST
+                cell that takes it, the one a row is announced by. */}
+            <th
+              className="dash-corner dash-corner-name"
+              aria-label={t("dashboard.total.cast")}
+            />
+            <th className="dash-corner dash-corner-status" />
+            {scenes.map((scene) => (
+              <td key={scene.key} className={statusClass(scene.ok, scene.total)}>
+                <CellMark ok={scene.ok} total={scene.total} />
+              </td>
+            ))}
+          </tr>
           {rows.map((row) => (
             <tr key={row.character.id}>
               {/* The name is wrapped so it can be truncated when room runs out
                   (the column is frozen, it takes room from the scenes); the
-                  `title` then renders it in full. */}
+                  `title` then renders it in full. No `.dash-head` flex row around it
+                  any more: the marker that used to sit beside the name is the status
+                  column next door, and all that is left in the cell is the name. */}
               <th
                 className={`dash-name ${statusClass(row.ok, row.total)}`}
                 title={row.character.name}
               >
                 <span className="dash-name-text truncate">{row.character.name}</span>
               </th>
-              {row.cells.map((cell, i) =>
-                // No line in this scene: empty cell, without a marker.
-                cell.total === 0 ? (
-                  <td key={scenes[i].key} className="empty" />
-                ) : (
-                  <td key={scenes[i].key} className={statusClass(cell.ok, cell.total)}>
-                    {/* Two elements and not one string: the two numbers do not
-                        have the same weight (the recorded one stands out from the
-                        total). Each goes through `fmt.number`, the formatter for
-                        numbers written alone, outside any sentence.
-                        The slash STAYS in the JSX, and that is deliberate even though
-                        a fraction slash is normally a fact of language kept in the
-                        string (`recorder.lineCounter` is "{n}/{total}" in both
-                        catalogues, French included, which is what settles it): the two
-                        numbers have to be two elements for their weights, so routing
-                        the separator through the catalogue would mean a `<T>` per CELL,
-                        that is several hundred on a play of twenty characters and forty
-                        scenes, in exchange for a character both languages write the
-                        same way. */}
-                    <span className="dash-cell-ok">{fmt.number(cell.ok)}</span>
-                    <span className="dash-cell-total">/{fmt.number(cell.total)}</span>
-                  </td>
-                )
-              )}
+              {/* The character's whole play, in the same shape as one of their cells:
+                  the ratio over all the scenes, or the tick. */}
+              <td className={`dash-status ${statusClass(row.ok, row.total)}`}>
+                <CellMark ok={row.ok} total={row.total} />
+              </td>
+              {row.cells.map((cell, i) => (
+                <td key={scenes[i].key} className={statusClass(cell.ok, cell.total)}>
+                  <CellMark ok={cell.ok} total={cell.total} />
+                </td>
+              ))}
             </tr>
           ))}
         </tbody>

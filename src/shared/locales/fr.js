@@ -102,6 +102,17 @@ export const FR = {
   // of the same site.
   "common.actScene": "{act}, {scene}",
 
+  // The format a file tile announces, parentheses INCLUDED: they are punctuation, so
+  // they live here and not in the JSX, like every separator of the site (cf.
+  // `common.myLineNumber`, which carries the "(3/12)" of the two reading pages). Both
+  // catalogues write them the same way, and that is not a reason to write them in a
+  // component: what a language decides is where the group goes and what surrounds it,
+  // which is exactly what the `{format}` of `dashboard.upload.voices` and
+  // `dashboard.pdf.play` leaves it. The acronym itself is the extension the coordinator
+  // reads in their own file manager, hence untranslated.
+  "common.format.zip": "(ZIP)",
+  "common.format.pdf": "(PDF)",
+
   // "Nom (3/12)" on my dialogue cards: my rank among MY lines in the scene. Two
   // pages show it (Rehearsal and Recording) and each wrote this template on its
   // own side, brackets and slash included. The leading space is in the string, as
@@ -169,7 +180,7 @@ export const FR = {
 
   "page.dashboard.label": "Avancement",
   "page.dashboard.desc":
-    "Suivez l'avancement des enregistrements et déposez les fichiers que vous recevez.",
+    "Suivez l'avancement des enregistrements et déposez les fichiers de voix que vous recevez.",
 
   "page.editor.label": "Édition",
   "page.editor.desc": "Éditez la pièce : personnages, actes, scènes et répliques.",
@@ -252,11 +263,11 @@ export const FR = {
   // The two sentences of the `hint`, in the order of the work: what serves while
   // typing, then what serves once you are done.
   "editor.hintTyping": "Dans une réplique, {enter} crée la suivante, {shiftEnter} un retour à la ligne.",
-  "editor.hintDownload":
-    "Une fois vos modifications terminées, téléchargez le script avec le bouton en haut de la " +
-    "page, puis déposez le fichier obtenu sur la page {page} comme pour les voix des acteurs.",
+  "editor.hintUpload":
+    "Une fois vos modifications terminées, cliquez sur le bouton en haut de la page pour mettre " +
+    "à jour la pièce.",
 
-  "editor.dirty": "Modifications non téléchargées",
+  "editor.dirty": "Modifications non sauvegardées",
   // The accessible name of a button does not depend on its state; only the tooltip
   // says why it is asleep.
   "editor.undo": "Annuler",
@@ -265,8 +276,27 @@ export const FR = {
   "editor.redo": "Rétablir",
   "editor.redo.tip": "Rétablir la modification annulée (Ctrl+Y)",
   "editor.redo.none": "Rien à rétablir pour l'instant",
-  "editor.download": "Télécharger le script",
-  "editor.download.none": "Aucune modification à télécharger pour l'instant",
+  "editor.upload": "Mettre à jour le {script}",
+  "editor.upload.script": "script de la pièce",
+  "editor.upload.tip": "Télécharger le script, puis le déposer sur GitHub",
+  "editor.upload.none": "Aucune modification à déposer pour l'instant",
+
+  // The box that announces the gesture, BEFORE it happens: hence the future tense
+  // throughout, and the order of the two halves is the order they will come in.
+  // `{file}` arrives as code, like in `editor.leaveBody`. It has no title of its own:
+  // the box wears the tile's label, `editor.upload` composed with
+  // `editor.upload.script`, so the gesture is named identically where it is offered
+  // and where it is confirmed.
+  // The green button is quoted by the name GitHub gives it in this language: the
+  // coordinator is looking for it on a page we do not own, and a translated name they
+  // cannot find would be worse than no name.
+  // The last sentence is the only one about what follows the commit: the Action takes
+  // minutes, and without that a coordinator reloads the site and concludes it failed.
+  "editor.uploadNotice.body":
+    "Le fichier {file} va être téléchargé, puis GitHub s'ouvrira dans un autre onglet : " +
+    "glissez-y le fichier et appuyez sur le bouton vert « Valider les modifications ».{br}" +
+    "La mise à jour prendra ensuite quelques minutes.",
+  "editor.uploadNotice.go": "Continuer",
 
   "editor.leaveTitle": "Vous n'avez pas téléchargé le script",
   "editor.leaveBody":
@@ -566,7 +596,25 @@ export const FR = {
     "{count} : personne ne peut les enregistrer. Ouvrez la page {page} et assignez-leur un personnage.",
   "dashboard.legend":
     "Chaque cellule indique le nombre de répliques enregistrées sur le total des répliques du " +
-    "personnage dans la scène.",
+    "personnage dans la scène. La colonne à droite des noms résume chaque personnage, la ligne " +
+    "sous les numéros de scène résume chaque scène, et la coche verte remplace le compte quand " +
+    "il n'en manque plus aucune.",
+  // The tooltip and the accessible name of the tick, wherever it is drawn: in a finished
+  // cell, in the status column, or before a scene number or an act. It is never written
+  // on the page (that column is 44 px wide on a phone), so it is what a screen reader
+  // gets in place of a drawing, and what the pointer gets as a tooltip.
+  "dashboard.mark.done": "Toutes les répliques sont enregistrées",
+  // The names of the grid's two summaries, and they are NEVER written on the screen:
+  // neither the status column nor the totals row carries a title (the column is 52 px
+  // wide, and a ratio says what it is), so these two go into an `aria-label` on the
+  // header cell that names the column and on the one that opens the row. A screen
+  // reader then announces "Toute la pièce, Claire, 4 sur 12" instead of a bare figure.
+  // The legend under the table says the same thing to whoever reads with their eyes.
+  "dashboard.total.play": "Toute la pièce",
+  "dashboard.total.cast": "Tous les personnages",
+  // The grid's name, and it is NOT written on the screen: the grid needs no title
+  // (see the comment above `<Journal>` in dashboard/App.jsx), it needs to be reachable
+  // by keyboard and by screen reader, which is what this label is for.
   "dashboard.table": "Avancement par personnage et par scène",
 
   "dashboard.journal.title": "Derniers dépôts de fichiers",
@@ -609,16 +657,21 @@ export const FR = {
   "dashboard.kind.script": "Script",
   "dashboard.kind.inconnu": "Autre",
 
-  // The two coloured words of the upload button are parameters: each carries the
+  // The coloured group of words of the upload tile is a parameter: it carries the
   // colour of its page, and French as much as English keeps its own word order.
-  "dashboard.upload": "Déposer des {voices} ou le {script}",
-  "dashboard.upload.voices": "voix",
-  "dashboard.upload.script": "script de la pièce",
+  "dashboard.upload": "Déposer les {voices}",
+  "dashboard.upload.voices": "voix {format}",
 
-  // "la pièce à imprimer" and not "le script de la pièce": the upload card just
-  // above already says "script de la pièce (JSON)", and two labels sharing their
-  // group of words were told apart by the acronym alone.
-  "dashboard.pdf": "Télécharger la pièce à imprimer {format}",
+  // "la pièce à imprimer" and not "le script de la pièce": the upload tile of the
+  // Editing page says "script de la pièce", and two labels sharing their group of
+  // words were told apart by the acronym alone (the Editing tile names no format,
+  // producing the file rather than pointing at one, so there the acronym is not even
+  // there to tell them apart).
+  // Same shape as `dashboard.upload` above and as `editor.upload`: a sentence whose
+  // coloured group of words names the FILE, so the three tiles of the site read the
+  // same way. `{play}` carries "(PDF)" with it, as "voix" carries "(ZIP)".
+  "dashboard.pdf": "Télécharger la {play}",
+  "dashboard.pdf.play": "pièce à imprimer {format}",
   // The name of the downloaded file when the play's title leaves nothing after
   // cleaning: "script.pdf" says nothing in a downloads folder, but it is better
   // than nothing.
@@ -681,16 +734,45 @@ export const FR = {
   // The three stages of the gesture, in the order they are done: it is the site's
   // only doc sentence that describes a three-step journey, and it has to, the play
   // only existing once the file has been uploaded and processed.
-  // Two sentences, like every doc sentence on the site: the colon there is reserved
-  // for an enumeration, and here it introduced a consequence inside a
-  // twenty-four-word sentence.
+  // Two sentences, like every doc sentence on the site, and no colon: it is reserved
+  // for an enumeration here.
+  // The GitHub button is not named here, only in the file the next step opens
+  // (`manage.new.fileNote`): this sentence is read BEFORE GitHub opens, so a label to
+  // look for would arrive too early to be of any use.
+  // What the file CONTAINS is not said either: the coordinator has nothing to do with
+  // it, GitHub hands it to them already written, and the file explains itself once it is
+  // open (`manage.new.fileNote`). Naming the format here would put a word of plumbing
+  // into the only sentence that has to be followed.
+  // The DELAY is said, on the other hand, and it is the one thing this block cannot
+  // leave out: the play does not appear on commit, it appears once the Action has run,
+  // and a coordinator who reloads this page onto the same list concludes the gesture
+  // failed.
   "manage.new.hint":
-    "Donnez un titre, puis téléchargez le script de départ. Déposez-le, et la pièce " +
-    "apparaîtra ici.",
+    "Donnez un titre, puis créez la pièce. Confirmez l'enregistrement sur GitHub, et " +
+    "la pièce apparaîtra ici dans quelques minutes.",
   "manage.new.label": "Titre de la pièce",
-  "manage.new.download": "Télécharger le script de départ",
-  "manage.new.deposit": "Déposer ce fichier pour créer la pièce",
-  "manage.new.done": "Script téléchargé. Déposez-le pour créer la pièce.",
+  "manage.new.create": "Créer la pièce",
+  // What the coordinator READS in GitHub's text box, written into the file itself under
+  // the separator line, where the Action stops reading. A box holding one bare word
+  // explains nothing, and this is the only screen of the whole journey the site does not
+  // own: it can put a sentence there, so it does.
+  // Two sentences and no more: the gesture that finishes the job, and what to expect
+  // afterwards. The title is not asked for, it is already on the line above, and saying
+  // "add nothing" invited reading the box as a form to fill in.
+  // The GitHub button is NAMED, where `manage.new.hint` only describes it, and it is
+  // named in the reader's language like everything else in this catalogue: github.com is
+  // translated too, and the company that reads the site in French reads its GitHub in
+  // French. It is the only label of another site this catalogue carries, so it is also
+  // the only line to fix should GitHub word it differently.
+  // The line breaks are DATA here, and this is the only entry of either catalogue where
+  // they are: everywhere else a string is one paragraph and the wrapping belongs to the
+  // renderer. This one is written into a file, read in GitHub's editor, which wraps
+  // nothing: as one long line it reads as a wall. So the source lines below are the
+  // file's lines, and they are kept short enough to be read in that box.
+  "manage.new.fileNote":
+    "Cliquez simplement sur le bouton vert « Valider les modifications ».\n" +
+    "La nouvelle pièce, dont le titre est écrit au-dessus, sera en ligne\n" +
+    "dans quelques minutes.",
   "manage.new.emptyTitle": "Donnez un titre à la pièce.",
   "manage.new.badTitle":
     "Ce titre ne laisse aucune adresse utilisable : ajoutez-y des lettres ou des chiffres.",

@@ -1,4 +1,9 @@
-"""Bits shared by every Action script: repo paths, JSON writing, timestamps."""
+"""Bits shared by every Action script: a play's identity, repo paths, JSON writing,
+timestamps.
+
+The identity half (the pattern, the minting of an identifier from a title, the empty
+play) is the Python side of src/shared/plays.js: the browser announces, the Action
+decides, and scripts/tests/ holds the two in agreement."""
 
 # This import keeps the annotations in this module (`list[str]`, `str | None`) from
 # being evaluated: the workflow runs on Python 3.12, but a dev may have an older
@@ -9,6 +14,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -30,6 +36,63 @@ def is_play_id(value) -> bool:
     precaution as LINE_ID_PATTERN, and for the same reason: this value becomes a
     path."""
     return isinstance(value, str) and PLAY_ID_PATTERN.fullmatch(value) is not None
+
+
+# The bound of the pattern above, written once: `mint_play_id` truncates to the same
+# length, otherwise a long title would produce an identifier this very module would
+# refuse a line later.
+MAX_PLAY_ID_LENGTH = 64
+
+
+def mint_play_id(title) -> str:
+    """The identifier of a play, DERIVED from its title. "L'École des femmes" ->
+    "l-ecole-des-femmes".
+
+    This is where a play is named, and it is the Action that does it: the site hands
+    over a title (a text file carrying nothing else), the Action turns it into the slug
+    that will name `plays/<id>/`, `uploads/<id>/` and a URL segment the troupe reads in
+    its address bar. Hence a slug and not a UUID as for the lines, which only ever name
+    mp3 files.
+
+    Mirror of `mintPlayId` (src/shared/plays.js), which the management page uses to
+    ANNOUNCE the address before the upload and to refuse a duplicate on the spot. The
+    two are held together by scripts/tests/play-id-cases.json, read by both test suites:
+    letting them diverge would show the troupe one address and create another.
+
+    Returns the empty string when the title leaves nothing (empty, or all punctuation):
+    the caller then refuses the upload rather than build a folder named "play-1" that
+    would mean nothing to anyone, and would live for years in the troupe's URL.
+    """
+    if not isinstance(title, str):
+        return ""
+    # Lowercase FIRST, then decompose and drop the combining marks: that is what folds
+    # "É" onto "e" instead of dropping it. Everything that is not a letter or a digit
+    # becomes a hyphen (apostrophes and spaces alike), and hyphens are trimmed at both
+    # ends, a folder name starting with one reading like a command-line option.
+    folded = unicodedata.normalize("NFD", title.lower())
+    base = "".join(c for c in folded if not unicodedata.combining(c))
+    base = re.sub(r"[^a-z0-9]+", "-", base).strip("-")
+    # The truncation can fall right on a hyphen, which the pattern refuses at the end
+    # of the string just as much as at the start.
+    return base[:MAX_PLAY_ID_LENGTH].rstrip("-")
+
+
+def new_play_script(play_id: str, title: str, language: str) -> dict:
+    """The empty play a creation upload brings into being.
+
+    Mirror of `EMPTY_SCRIPT` (src/editor/reducer.js), and a guard in
+    scripts/tests/test_contracts.py holds the two in agreement: it is the same
+    document, one being the editor's fallback and the other the seed of a brand new
+    play. The empty act and scene are not decorative, they are the structural floor the
+    editor lays down too, because there has to be a scene to write the first line in.
+    """
+    return {
+        "id": play_id,
+        "title": title,
+        "language": language,
+        "characters": [],
+        "acts": [{"scenes": [{"lines": []}]}],
+    }
 
 
 # A play's layout, in one place. Each play is a SILO: its pages, data, clips and

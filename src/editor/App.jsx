@@ -1,15 +1,16 @@
 import React, { useEffect, useMemo, useReducer, useState, useCallback } from "react";
 import PageState from "../shared/PageState.jsx";
-import { fetchScript, downloadBlob, HttpError } from "../shared/data.js";
+import UploadTile from "../shared/UploadTile.jsx";
+import { fetchScript, downloadBlob, githubUploadUrl, HttpError } from "../shared/data.js";
+import { isPlayId } from "../shared/plays.js";
 import { EMPTY_SCRIPT, allLines, newId, indexAfterMove, indexAfterRemoval } from "./reducer.js";
 import { historyReducer, initHistory } from "./history.js";
 import PlayHeader from "../shared/PlayHeader.jsx";
-import PageMark from "../shared/PageMark.jsx";
 import { fmt, t, translator } from "../shared/locale.js";
 import T from "../shared/T.jsx";
 import { actLabel } from "../shared/structureLabels.js";
-import { PAGES, pageLabelKey } from "../shared/pages.js";
-import { DownloadIcon, UndoIcon, RedoIcon, WarnIcon } from "../shared/icons.jsx";
+import { pageLabelKey } from "../shared/pages.js";
+import { UndoIcon, RedoIcon, WarnIcon } from "../shared/icons.jsx";
 import CharacterPanel from "./CharacterPanel.jsx";
 import EditorRail from "./EditorRail.jsx";
 import SearchPanel from "./SearchPanel.jsx";
@@ -123,6 +124,9 @@ export default function App() {
     };
   }, [dispatch]);
 
+  // The file, on the disk, and the page's state marked as up to date. It is the
+  // rescue gesture of `LeaveGuard` (save the work before leaving) and the first
+  // half of `upload` below.
   const download = useCallback(() => {
     const blob = new Blob([JSON.stringify(script, null, 2)], {
       type: "application/json",
@@ -130,6 +134,40 @@ export default function App() {
     downloadBlob(blob, "script.json");
     dispatch({ type: "MARK_SAVED" });
   }, [script, dispatch]);
+
+  // The play's upload page on GitHub, or null wherever it cannot be known (local
+  // dev outside github.io, custom domain, a script.json that has lost its `id`).
+  // Read here and not inside the tile: it decides what the gesture is made of.
+  const uploadUrl = isPlayId(script.id) ? githubUploadUrl(script.id) : null;
+
+  // The page's outward gesture: the tile ANNOUNCES, the box's button acts. Clicking
+  // the tile opens a box that says what is about to happen (a file downloads, then
+  // GitHub opens, where you drag it), and "Continue" does both, in that order.
+  //
+  // A browser cannot upload for the coordinator (the site commits nothing, see the
+  // doc), so the journey has always had these two halves; what changed is that the
+  // page no longer stops halfway. It used to download and say, in its header, to go
+  // and find the button on the Progress page: two pages for one gesture, and the
+  // file sat in a downloads folder in between.
+  //
+  // The box comes FIRST, before anything happens, and that order is the whole point:
+  // announced, the download and the tab that opens are two steps of one gesture;
+  // fired first and explained afterwards, they are two surprises one then reads the
+  // caption of. It is also the only moment where the two halves can be named
+  // together, which is what a coordinator landing on a bare GitHub form is missing.
+  //
+  // Both live in the same click, hence in the same user gesture: that is what lets
+  // `window.open` through the pop-up blockers.
+  //
+  // Without a usable URL the gesture stays a plain download, and no box: it is the
+  // play's only way out, and hiding it as the Progress page hides its tile would
+  // leave this page with no exit at all. But a box promising a page that will never
+  // open is worse than no box.
+  const [uploadNotice, setUploadNotice] = useState(false);
+  const upload = useCallback(() => {
+    if (uploadUrl) setUploadNotice(true);
+    else download();
+  }, [download, uploadUrl]);
 
   // Insert a new line and focus it: the UUID is minted here (not in the
   // reducer, which must stay pure) so we know which textarea to focus.
@@ -321,13 +359,12 @@ export default function App() {
           <>
             {/* The two sentences are in the order in which they are lived: what
                 serves during typing first, what serves once one has finished
-                next (type, download, upload). The other way round announced the
-                way out of the page before entering it, and cut the file's
-                journey in two. Accepted price: this page's `hint` is the only
-                one not to open on an imperative (see pages.js), it arrives one
-                sentence later. And no "press the button": that is the finger's
-                verb, and this is the only page the finger does not open (see
-                useTouchPointer.js). */}
+                next (type, then send). The other way round announced the way out
+                of the page before entering it, and cut the file's journey in two.
+                Accepted price: this page's `hint` is the only one not to open on
+                an imperative (see pages.js), it arrives one sentence later. And
+                no "press the button": that is the finger's verb, and this is the
+                only page the finger does not open (see useTouchPointer.js). */}
             <T
               k="editor.hintTyping"
               p={{
@@ -341,25 +378,22 @@ export default function App() {
                 breaks where the work changes nature, during typing then once it
                 is finished, rather than at the width of the window. */}
             <br />
-            {/* The green Progress seal rather than an underlined word: the
-                destination is a page of the site, which the company recognises by
-                its badge (home, headers, upload journal), and a plain hyperlink in
-                the middle of a doc sentence was the only underlined thing in the
-                whole header. The word stays inside the link: it is what names the
-                page, the seal is decorative.
-                The link is a PARAMETER of the sentence: cut around it, the
-                sentence froze the French word order inside the component. */}
-            <T
-              k="editor.hintDownload"
-              p={{
-                page: (
-                  <a className="hint-page-link page-dashboard" href={PAGES.dashboard.href}>
-                    <PageMark page="dashboard" className="hint-page-mark" label="" />
-                    {t(pageLabelKey("dashboard"))}
-                  </a>
-                ),
-              }}
-            />
+            {/* One GESTURE, and nothing of the machinery behind it: click the button
+                to update the play. The sentence used to describe the whole journey
+                (the download, GitHub, the drag) and then send one on to the Progress
+                page to read what became of the file, carrying a link there (the green
+                seal plus the page's name, the shape the return home has at the foot of
+                the header) and, with it, the only rules of this file for a link inside
+                a doc paragraph; all of it went away together.
+                Why: the doc says what to DO here, the button says what it does (it
+                announces the download and the JSON, cf. `UploadTile`), and the journal
+                belongs to the page that holds it, which announces itself on the home
+                page and in its own header. Naming the transport in the doc made the
+                second half of a two-sentence doc a procedure, and pointing at another
+                page made it speak of somewhere else.
+                Plain `t()` and no longer `<T>`: with the link gone the sentence has
+                no markup inside it, so nothing has to become a parameter. */}
+            {t("editor.hintUpload")}
           </>
         }
         actions={
@@ -402,30 +436,58 @@ export default function App() {
                 </button>
               </span>
             </span>
-            {/* Icon only: the button lives next to the undo/redo pair, already
-                wordless, and its written label was the only text of the row to
-                compete with the play's title on a narrow window. The verb is
-                carried by the tooltip and the aria-label, and the header's doc
-                sentence says what the gesture is for.
-                Dark when there is nothing to download (`dirty` is a comparison of
+            {/* The site's upload tile (theme.css, UploadTile.jsx), the same object
+                as the one on the Progress page: one gesture, "this file leaves for
+                GitHub", one look, wherever it is triggered from.
+                NO seal here, hence no `page` (see UploadTile.jsx): the tile would
+                carry the quill, the page that produces the script, and it sits in
+                the header row where `PlayHeader` already shows that very quill. The
+                same drawing twice in one row reads as two objects to tell apart,
+                and the second one says nothing the first has not. On the Progress
+                page the tile keeps its seal, which is the MIC there: it names the
+                page the voices come from, not the page one is on.
+                It was an icon-only button before, and it read as the third of the
+                row's buttons, a neighbour of undo and redo, when it is the only one
+                that leaves the page. Its written label comes back with the tile: it
+                is the row's only text besides the play's title, and on a narrow
+                window it wraps onto its own line (`.play-header-row` wraps) rather
+                than cutting into the title.
+                Faded when there is nothing to upload (`dirty` is a comparison of
                 states, not a flag: undoing back to the last download turns it off
-                too), like the two history buttons next to it: uploading the script
+                too), like the two history buttons next to it, except that it keeps
+                its lilac fill and only goes quiet (`.editor-upload-tip`,
+                editor.css): the row's main action must not change object between
+                two states. Uploading the script
                 exactly as it is already published teaches the Action nothing, and
                 a button that is always live makes one doubt whether anything is
-                left to send. Tooltip on the wrapper, like the other two, for the
-                same reason. */}
+                left to send. Tooltip on the wrapper and not on the tile, like the
+                other two: a disabled control receives no mouse event. */}
             <span
-              className="btn-tip"
-              title={t(dirty ? "editor.download" : "editor.download.none")}
+              className="btn-tip editor-upload-tip"
+              title={t(dirty ? "editor.upload.tip" : "editor.upload.none")}
             >
-              <button
-                className="btn primary icon script-download-btn"
-                onClick={download}
-                disabled={!dirty}
-                aria-label={t("editor.download")}
-              >
-                <DownloadIcon />
-              </button>
+              <UploadTile onClick={upload} disabled={!dirty}>
+                {/* The coloured group of words is a PARAMETER, as on the Progress
+                    page: it carries this page's colour, and each language keeps its
+                    own word order.
+                    No extension after it, where the Progress tile does say "(ZIP)":
+                    over there the coordinator has a file on their disk and has to
+                    recognise it among others, here the file does not exist yet, this
+                    button is what produces it. The label says what the gesture DOES
+                    ("update the play's script"), and naming a format in it described
+                    the means instead. `.upload-tile-format` stays alive for the
+                    Progress tile, which is the one that has something to name. */}
+                <T
+                  k="editor.upload"
+                  p={{
+                    script: (
+                      <span className="upload-tile-word page-editor">
+                        {t("editor.upload.script")}
+                      </span>
+                    ),
+                  }}
+                />
+              </UploadTile>
             </span>
           </>
         }
@@ -529,6 +591,45 @@ export default function App() {
           <T k="editor.leaveBody" p={{ file: <code>script.json</code> }} />
         </p>
       </LeaveGuard>
+
+      {/* What the gesture is made of, said before it happens (see `upload` above).
+          No destructive gesture here, so no `confirmLabel`: the box has "Continue",
+          which downloads and then opens the upload page, and the shared Cancel,
+          which does nothing at all, the work staying in the tab as it was.
+          Both halves are called from this button, hence inside one click: that is
+          what pop-up blockers ask of `window.open`. The download goes first, it is
+          the file the page one is about to see asks for. */}
+      {uploadNotice && (
+        <ConfirmModal
+          /* The box's title is the TILE's label, written once and composed here from
+             the same two keys (`editor.upload` around `editor.upload.script`): the
+             button one has just pressed and the box that confirms it must name the
+             same gesture, and two entries saying "update the play's script" would
+             fall out of step at the first reword. It arrives as a plain string, the
+             coloured span of the tile being of no use in a modal's heading. */
+          title={t("editor.upload", { script: t("editor.upload.script") })}
+          primaryLabel={t("editor.uploadNotice.go")}
+          onPrimary={() => {
+            setUploadNotice(false);
+            download();
+            window.open(uploadUrl, "_blank", "noopener,noreferrer");
+          }}
+          onCancel={() => setUploadNotice(false)}
+        >
+          <p>
+            {/* The break before the last sentence is a PARAMETER of the entry and not
+                a `<br />` written here between two keys, as the header's doc does with
+                its two: there the two sentences are two separate entries, here it is
+                one entry whose last sentence changes subject (what one does, then what
+                happens next). Passed as `{br}`, the break stays inside the translation,
+                so each language places it after its own last full stop. */}
+            <T
+              k="editor.uploadNotice.body"
+              p={{ file: <code>script.json</code>, br: <br /> }}
+            />
+          </p>
+        </ConfirmModal>
+      )}
 
       {deleteRequest && (
         <DeleteCharacterModal

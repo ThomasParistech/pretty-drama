@@ -11,6 +11,14 @@
 // handed to the cast, and would leave behind a folder of clips nothing claims any
 // more.
 //
+// What MINTS it for real is the Action (`mint_play_id`, scripts/common.py): the site
+// creates a play by handing over its title, nothing else, and the identifier is derived
+// from that title on arrival. What this module does with `mintPlayId` is ANNOUNCE that
+// same address beforehand, so the management page can refuse an unusable title or a
+// duplicate on the spot instead of letting the coordinator discover it in the journal
+// minutes later. The two are held together by scripts/tests/play-id-cases.json, read by
+// both test suites.
+//
 // A PURE module (no DOM, no storage, no `window`): it is covered by `node --test`
 // and imported both by the Editing reducer and by the play management page.
 
@@ -35,7 +43,7 @@ export function isPlayId(value) {
 // has just minted and the Action would refuse.
 export const MAX_PLAY_ID_LENGTH = 64;
 
-// The identifier of a play about to be created, derived from its title.
+// The identifier a play about to be created will receive, derived from its title.
 //
 // `slugify` is the project's only slug maker (src/shared/data.js): it is already
 // what names the ZIP of the takes and the play's PDF, and its output (lowercase,
@@ -44,20 +52,9 @@ export const MAX_PLAY_ID_LENGTH = 64;
 // trailing hyphen.
 //
 // Returns the empty string when the title leaves nothing (empty, or all
-// punctuation): the caller then asks for another title rather than build a folder
+// punctuation): the caller then asks for another title rather than announce a folder
 // named "piece-1" that would mean nothing to anyone.
 export function mintPlayId(title) {
   const base = slugify(typeof title === "string" ? title : "", "");
   return base.slice(0, MAX_PLAY_ID_LENGTH).replace(/-+$/g, "");
-}
-
-// The empty play the management page makes you download in order to create one.
-//
-// Mirror of `EMPTY_SCRIPT` (src/editor/reducer.js), and a test holds the two in
-// agreement: it is the same document, one serving as the editor's fallback and the
-// other as the seed of a brand new play. The empty act and scene are not
-// decorative, they are the structural floor the editor lays down too, because
-// there has to be a scene to write the first line in.
-export function newPlayScript(id, title, language) {
-  return { id, title, language, characters: [], acts: [{ scenes: [{ lines: [] }] }] };
 }

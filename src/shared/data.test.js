@@ -7,7 +7,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { EXCERPT_MAX, excerpt, githubUploadUrl, myLineNumbers, slugify } from "./data.js";
+import {
+  EXCERPT_MAX,
+  excerpt,
+  githubNewPlayUrl,
+  githubUploadUrl,
+  myLineNumbers,
+  slugify,
+} from "./data.js";
+import { isPlayId } from "./plays.js";
 
 // The module only touches `window` inside function bodies: it is therefore enough
 // to set it before the call. The cases outside github.io rely on
@@ -73,6 +81,82 @@ test("the upload URL names the branch the fork really has", () => {
   // home page, so the coordinator sees a plausible GitHub page and no error.
   atUrl("https://troupe.github.io/depot/respo.html");
   assert.match(githubUploadUrl("piece"), /\/upload\/main\//);
+});
+
+// --------------------------------------------------------- githubNewPlayUrl
+
+test("creating a play opens GitHub's editor on a file in the upload area", () => {
+  // The whole creation gesture is this URL: the file's path and its content travel in
+  // it, and the coordinator only has to confirm the commit.
+  atUrl("https://les-troubadours.github.io/mon-depot/respo.html");
+  assert.equal(
+    githubNewPlayUrl("l-ecole-des-femmes", "L'École des femmes", "Commit as is."),
+    "https://github.com/les-troubadours/mon-depot/new/main" +
+      "?filename=uploads/_new-play/l-ecole-des-femmes.txt" +
+      "&value=L'%C3%89cole%20des%20femmes%0A---%0ACommit%20as%20is.%0A"
+  );
+});
+
+test("the file says the title on its first line, then the note for the human", () => {
+  // The Action reads the first line and stops at the separator: the note is there
+  // because this box is the only screen of the journey the site does not own, and one
+  // bare word in a text box explains nothing.
+  atUrl("https://troupe.github.io/depot/respo.html");
+  const url = githubNewPlayUrl("antigone", "Antigone", "Ligne une.\nLigne deux.");
+  const content = decodeURIComponent(url.match(/&value=(.*)$/)[1]);
+  assert.equal(content, "Antigone\n---\nLigne une.\nLigne deux.\n");
+  // The datum is the FIRST line, whatever the note holds afterwards.
+  assert.equal(content.split("\n")[0], "Antigone");
+});
+
+test("the file lands in the creation zone, which is what routes it", () => {
+  // The FOLDER is the whole instruction: the Action reads no name and no extension there,
+  // which is what keeps the gesture safe on a page where both are editable fields.
+  atUrl("https://troupe.github.io/depot/respo.html");
+  assert.match(
+    githubNewPlayUrl("antigone", "Antigone", "note"),
+    /filename=uploads\/_new-play\/antigone\.txt&/
+  );
+});
+
+test("the creation zone can never be the name of a play", () => {
+  // A play's zone is `uploads/<id>/`: if this folder were a valid play id, the Action
+  // would take the creation zone for a play of that name, and the other way round.
+  atUrl("https://troupe.github.io/depot/respo.html");
+  const url = githubNewPlayUrl("antigone", "Antigone", "note");
+  const zone = url.match(/filename=uploads\/([^/]+)\//)[1];
+  assert.ok(!isPlayId(zone), `"${zone}" is a valid play id`);
+});
+
+test("the path keeps its slash literal, so GitHub reads it as a path", () => {
+  // Percent-encoded, it is the one thing that could have GitHub take the whole of it
+  // for a file NAME, hence a play created at the root of the repo where no Action
+  // watches, with nothing to say so.
+  atUrl("https://troupe.github.io/depot/respo.html");
+  assert.ok(!githubNewPlayUrl("antigone", "Antigone", "note").includes("%2F"));
+});
+
+test("the file is proposed as .txt, which is a courtesy and not a contract", () => {
+  // So that GitHub opens it as text and so that it reads back in the repository. The
+  // Action reads no extension in the creation zone, so a coordinator who edits the name
+  // before committing breaks nothing: this test guards the courtesy, not the routing.
+  atUrl("https://troupe.github.io/depot/respo.html");
+  assert.match(githubNewPlayUrl("antigone", "Antigone", "note"), /\.txt(&|$)/);
+});
+
+test("the title is encoded, so nothing it holds can cut the query short", () => {
+  atUrl("https://troupe.github.io/depot/respo.html");
+  // A space, an ampersand and a hash: the three characters that would cut the query
+  // short or open a second parameter.
+  const url = githubNewPlayUrl("piece", "Un & Deux #3", "note");
+  assert.match(url, /&value=Un%20%26%20Deux%20%233%0A/);
+});
+
+test("the creation URL names the branch the fork really has", () => {
+  // Same trap as the upload URL, and the same silence: GitHub serves `/new/<branch>`
+  // only for a branch that EXISTS, and otherwise lands on the repository's home page.
+  atUrl("https://troupe.github.io/depot/respo.html");
+  assert.match(githubNewPlayUrl("piece", "Pièce", "note"), /\/new\/main\?/);
 });
 
 // ------------------------------------------------------------------ slugify

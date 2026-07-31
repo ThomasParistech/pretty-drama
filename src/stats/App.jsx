@@ -688,13 +688,15 @@ function Timeline({ block, rows, where, colorOf, nameOf, highlight, pinned }) {
           only serves those who do not need it. */}
       <p className="stats-caption">{t("stats.timeline.caption")}</p>
 
+      {/* The viewBox is the whole geometry: the setting lives INSIDE it (columns of
+          words and rows), and the rendered width is always that of the card (cf.
+          stats.css). So moving the slider changes the grain of the drawing and
+          nothing else, neither its width nor its place in the card. The
+          `--stats-columns` variable that used to come down to the CSS with it is gone
+          with the rounded width it served. */}
       <svg
         className="stats-block"
         viewBox={`0 0 ${columns} ${lineCount}`}
-        /* The number of columns comes down to the CSS, which rounds the rendered
-           width to a whole multiple of that number: that is what gives every word
-           exactly the same size under `crispEdges` (cf. stats.css). */
-        style={{ "--stats-columns": columns }}
         role="img"
         // The summary follows the SETTLED choice and not the hover: a description
         // that rewrote itself as the cursor went by is not a description.

@@ -18,21 +18,25 @@ import { homeHref } from "./pages.js";
 // showed up at the top then jumped to the bottom when the manifest arrived. Two
 // renderings of the same object cannot stay in agreement; a single one can.
 //
-// `page-home` is set on the link itself: that is what gives the hover the cream
-// of the brand (`--page-mark-soft`) without hard-coding it into theme.css. On
-// the manager's pages the header class sets that token to green or purple; set
-// here, it gives the link back the sand of the masks, which is also the
-// background of its badge.
+// **The button takes the colour of the page it leaves**, not the wine of the
+// brand: `page-${page}` on the link, and the same key passed to the seal as
+// `tone` so the badge follows instead of resetting the tokens on itself. On the
+// coordinator's two pages it therefore reads navy (Progress) or purple
+// (Editing) down to the hover wash, which is `--page-mark-soft`; on the other
+// four `page-<key>` already holds the wine and the sand, so nothing moves there.
+// The button is the foot of THIS header, so it wears the colour of this header;
+// what says "home" is the drawing of the two masks, exactly as the doctrine of
+// the seals has it (theme.css: it is the icons that say where one is).
 export default function HomeLink({ page }) {
   return (
     <div className="play-header-foot">
       <a
-        className="play-header-home page-home"
+        className={`play-header-home page-${page}`}
         href={homeHref(page)}
         aria-label={t("common.homeLink")}
         title={t("common.homeLink")}
       >
-        <PageMark page="home" className="play-header-home-mark" label="" />
+        <PageMark page="home" tone={page} className="play-header-home-mark" label="" />
         <span className="play-header-home-word">PrettyDrama</span>
       </a>
     </div>

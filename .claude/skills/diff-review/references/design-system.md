@@ -41,9 +41,10 @@ segment is `plays`).
 
 **Seals (`--page-mark` / `--page-mark-soft`, `.page-<key>` classes in
 `theme.css`)**: the brand, Rehearsal, Recorder and Stats share **exactly** the
-same pair (burgundy `#8b2635` on sand `#f5eeda`); only the Dashboard (green) and
-the Editor (purple) have their own colour, because they are the coordinator's two
-modes. Two neighbouring but distinct hues between troupe pages is a finding:
+same pair (burgundy `#8b2635` on sand `#f5eeda`); only the Dashboard (ink navy
+`#1d4e89`, deliberately clear of the `--ok` green and the `--warn` amber that page
+has to show as STATUSES) and the Editor (purple) have their own colour, because
+they are the coordinator's two modes. Two neighbouring but distinct hues between troupe pages is a finding:
 either it is the same seal, or it is frankly another colour. What tells these
 pages apart is the icon. The favicon and the `theme-color` of the `.html`
 duplicate the seal colour (a `<link>` tag cannot read a CSS variable), so the seven
@@ -72,9 +73,13 @@ full-page `.page-notice` and `.load-error` cards, which centre with
 `--ease-header` (the header collapse curve, neutralised by the
 `prefers-reduced-motion` block).
 
-- A page **may** re-skin tokens in a `:root` local to its CSS (only the Editor
-  does, the "Rail" design: accent `#7a5cc0`, IBM Plex/Spectral fonts, warmed
-  neutrals).
+- A page **may** re-skin tokens in a `:root` local to its CSS, and two do: the
+  Editor, wholesale (the "Rail" design: accent `#7a5cc0`, IBM Plex/Spectral fonts,
+  warmed neutrals), and the Dashboard, the accent triplet only (`--accent`
+  `#1d4e89` + its soft and dark, the same navy as its seal). The Dashboard's is
+  what lets the grid band, the journal head and both file tiles read ONE navy: the
+  seal tokens are set on the `<header>` ELEMENT, so nothing in the body of the page
+  can reach them.
 - **Invariant**: a re-skin must never change the visible identity of a shared
   component. The brand and the header title (PageHeader/PlayHeader) render
   identically on every page through the reserved tokens `--header-accent`,
@@ -85,15 +90,22 @@ full-page `.page-notice` and `.load-error` cards, which centre with
   Editor) or `--page-mark(-soft)` (re-skinned by EVERY page, through the
   `page-<key>` class both headers set on their root). The guard is about
   REDEFINITION, not reading: a page may READ a reserved token when it must render
-  exactly like the header, and three places do — Stats, whose legend bar takes
-  `--header-shadow` (two stacked bands carry the same shadow) and, on the Editor,
-  `.btn.primary` then the act tile of the rail plan (`--ed-tile-act`, an 18% tint
-  of `--header-accent`), both taking the wine. That last one is the only red the
-  Editor's `:root` does not re-skin, hence the only one that will not shift under
-  the plan, and precisely why the tile reads it instead of adding a hex. So that
-  is not a finding; redefining one is. A single exemption, `.play-header-home*`:
-  the home link speaks the brand, not the page, so it carries `page-home` itself,
-  a class set in JSX that this guard, which reads only CSS, cannot see. That is
+  exactly like the header, and `--header-shadow` is the only one two pages still
+  do read (Stats, whose legend bar carries the same shadow as the band above it,
+  and the Editor's `--ed-panel-shadow`, that page having set `--shadow: none`).
+  Nothing reads `--header-accent` any more: the Editor's `.btn.primary` is now the
+  upload tile's own object, a pale `--accent-soft` fill with `--ed-accent-ink`, and
+  the act tile of the rail plan is a tint of the page's own violet, the wine being
+  left to the logo at the header foot, the one place that wears it at full
+  strength. Neither is a finding; redefining a reserved token is. Note too that
+  the Progress page's PDF download carries no `.btn` class at all: it is the file
+  tile (`.upload-tile`, see the "File tile" row of the map below), documented at
+  `.dash-script-tile` (`dashboard.css`). A single exemption to the seal-token
+  guard, `.play-header-home*`: the home link is the FOOT of the header it closes,
+  so it wears that header's colour (badge, word, hover wash and focus ring
+  together, navy on Progress and purple on Editing) and carries `page-${page}`
+  itself, a class set in JSX that this guard, which reads only CSS, cannot see.
+  What says "home" there is the drawing of the two masks, not the hue. That is
   exactly how a header shadow disappeared on the Editor page alone. If a shared
   component's identity (accent colour, font, size) goes through a re-skinnable
   token, that is a high finding; re-skinned "matching" neutrals (`--card`,
@@ -158,13 +170,14 @@ full-page `.page-notice` and `.load-error` cards, which centre with
 | Element | Source | Pages |
 | --- | --- | --- |
 | Brand header (seal + play title in the top row, brand and home link at the foot) | `src/shared/PageHeader.jsx` — no longer mounted directly by any page: it only serves as the header of `PageState` screens, the ones with no settings to carry. **Same geometry as `PlayHeader`, and the same `HomeLink` at the foot**: these screens are the waiting state of the five play-header pages, so a brand placed at the top here and at the bottom there jumped from one end of the header to the other when the manifest arrived. Its `title` is the **play title, and nothing else**; it is optional, and the `<span>` is not rendered without it (loading, unreadable manifest): never a page label here, see below. Its typography is the SAME CSS rule as `.play-header-title`, not one that resembles it | through `PageState` only |
-| Play header (seal + play title, collapsible; **no** page label written out, it crowded the bar on mobile: the seal says the page) | `src/shared/PlayHeader.jsx` — the top row says ONLY the play title, the collapse button swallows it whole; the word "PrettyDrama" and the home link live at the foot of the expanded header (`.play-header-home`, logo + word, class `page-home` set on the link for the cream wash of its hover). Act/scene selects are passed as `children` by the pages that have them (`.selects-row`), because their variants are real: `disabled` while recording, "to record" counters. **Two pages pass none**, the Dashboard and the Editor: the latter moved its whole plan (play title, act/scene, "+ Scene"/"+ Act") into the "Structure" section of its rail, because it SHAPES the structure where the other two walk through it. **The header collapses on all five pages, these two included** (which have no settings at all): their expanded area then holds only the doc and the home link, and a page that did not collapse would be the only one keeping its header under the thumb | Rehearsal, Recorder, Stats, Editor, Dashboard |
+| Play header (seal + play title, collapsible; **no** page label written out, it crowded the bar on mobile: the seal says the page) | `src/shared/PlayHeader.jsx` — the top row says ONLY the play title, the collapse button swallows it whole; the word "PrettyDrama" and the home link live at the foot of the expanded header (`.play-header-home`, logo + word; the class it sets on itself is described in the Home link row below, the single place for it). Act/scene selects are passed as `children` by the pages that have them (`.selects-row`), because their variants are real: `disabled` while recording, "to record" counters. **Two pages pass none**, the Dashboard and the Editor: the latter moved its whole plan (play title, act/scene, "+ Scene"/"+ Act") into the "Structure" section of its rail, because it SHAPES the structure where the other two walk through it. **The header collapses on all five pages, these two included** (which have no settings at all): their expanded area then holds only the doc and the home link, and a page that did not collapse would be the only one keeping its header under the thumb | Rehearsal, Recorder, Stats, Editor, Dashboard |
 | Bottom control bar `.controls` + `.ctrl-btn` | CSS in `theme.css` | Rehearsal, Recorder |
 | Indexed progress slider | `src/shared/ProgressBar.jsx` | Rehearsal, Recorder |
 | Dialogue cards `.dialogue-card` (+ shared "my lines" palette `.mine` and `.active` border) | `theme.css` — pages set `.mine` next to their semantic class and keep only their real deviations | Rehearsal, Recorder |
 | Buttons `.btn` / `.btn.primary` | `theme.css` | all |
-| Home link (logo in both masks + the word "PrettyDrama", between two short rules) | `src/shared/HomeLink.jsx`, **one component for both headers**. Carries `page-home` on the link itself: that is what gives the hover the brand cream (`--page-mark-soft`) instead of the header's green or purple. `test_contracts.py` forbids seal tokens to header rules and exempts `.play-header-home*` by name, that JSX-set class being invisible to it | both headers, so the five pages and their waiting screens |
-| Page seal (round pill + icon) | `src/shared/PageMark.jsx` (+ `PAGES` in `src/shared/pages.js`) — the `page-<key>` class it sets carries its colours, so it displays correctly anywhere, including outside a header. `label` prop when the seal does not designate its own page (the journal's Type column: the mic there means "Voice"), and `label=""` when it is **decorative**, i.e. when the word is already written right next to it (home cards, hero brand, the home link at the header foot which already carries its `aria-label`, and the page link of a `.hint-page-mark` doc sentence): otherwise every link announces itself twice | both headers, the home cards, the Dashboard's upload button, and BOTH icon columns of its journal (the Status column reuses the `.page-mark` pill with `--ok`/`--warn` hues instead of a page colour) |
+| File tile (white card, opening drawing, label whose coloured group of words names the file) | `src/shared/UploadTile.jsx` + `.upload-tile*` (`theme.css`). ONE look for "a file passes between the coordinator and the repository", in BOTH directions: the class name says `upload` for history only, see the paragraph at the class. The component covers the two uploads (a link to GitHub on Progress, a button on Editing since the file must be downloaded first); the PDF download of Progress composes the same classes by hand (`.dash-script-tile`), the component being a GitHub link or a button and neither being a download. The direction is carried by the opening drawing (a seal for what leaves, `DownloadIcon` for what comes back) and by the verb, never by the shape. The coloured word takes the page one is READING, never the page the file comes from: on Progress the PDF tile lives in the header and carries `page-dashboard`, while the voices tile sits in the BODY, where the seal tokens (set on the `<header>` element) resolve to nothing, so it carries no `page-<key>` at all and takes the page's re-skinned `--accent` through `.dash-actions .upload-tile-word`. Its SEAL still draws Recording's mic, `tone` on `PageMark` being what splits the drawing from the colour | Progress (voices, PDF), Editing (script) |
+| Home link (logo in both masks + the word "PrettyDrama", between two short rules) | `src/shared/HomeLink.jsx`, **one component for both headers**. Carries `page-${page}` on the link itself, and passes the same key to the seal as `tone`: badge, word, hover wash (`--page-mark-soft`) and focus ring all take the colour of the page one is LEAVING, so navy on Progress and purple on Editing, wine on the four others. `test_contracts.py` forbids seal tokens to header rules and exempts `.play-header-home*` by name, that JSX-set class being invisible to it | both headers, so the five pages and their waiting screens |
+| Page seal (round pill + icon) | `src/shared/PageMark.jsx` (+ `PAGES` in `src/shared/pages.js`) — the `page-<key>` class it sets carries its colours, so it displays correctly anywhere, including outside a header. `label` prop when the seal does not designate its own page (the journal's Type column: the mic there means "Voice"), and `label=""` when it is **decorative**, i.e. when the word is already written right next to it (home cards, hero brand, the home link at the header foot which already carries its `aria-label`, and the file tile, whose label names the file): otherwise every link announces itself twice. `tone` when the DRAWING and the COLOURS part company, which happens in exactly two places, the home link and the voices tile of Progress | both headers, the home cards, the Dashboard's voices tile, and BOTH icon columns of its journal (the Status column reuses the `.page-mark` pill with `--ok`/`--warn` hues instead of a page colour) |
 | Header doc `.header-hint` (one class only, both paragraphs share the style: their place is what tells them apart) | `theme.css` for the style, but **rendered by `PlayHeader` itself**, never by the pages: the first paragraph is `PAGES[page].desc` (the same one as the home card, one place for both uses), the second the optional `hint` prop. The two bracket the settings (`desc` at the top of the expanded header, `hint` at the foot) | all five: `desc` everywhere, `hint` only on Recorder and Editor |
 | Destructive-action confirmation | `src/shared/ConfirmModal.jsx` — rendered in a portal, Escape cancels, initial focus on the button being proposed. **Never `window.confirm`** (unthemed native dialog). Quotation of the targeted line: `.confirm-quote` (`theme.css`) + `excerpt` (`data.js`) | Editor (line, scene, act), Recorder (discard a take), and through `LeaveGuard` |
 | Page-exit guard (undownloaded work) | `src/shared/LeaveGuard.jsx` — link clicks intercepted in the capture phase + `beforeunload` as a net | Editor, Recorder |

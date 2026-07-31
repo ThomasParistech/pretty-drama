@@ -161,13 +161,13 @@ export function githubRepoUrl() {
   return `https://github.com/${owner}/${repo}`;
 }
 
-// The branch the upload URL names, written once. `main`, which is the default
-// branch of the repository the README has troupes fork, hence of their fork.
+// The branch the two GitHub URLs of this module name, written once. `main`, which is
+// the default branch of the repository the README has troupes fork, hence of their fork.
 //
 // It has to be a branch that REALLY exists: GitHub only serves
-// `/upload/<branch>/<path>` for a real branch, and otherwise fails by silently
-// dropping both the upload form and the path, landing on the repository's home
-// page (measured on this repository and on two unrelated ones). `HEAD` fails the
+// `/upload/<branch>/<path>` (and `/new/<branch>`) for a real branch, and otherwise
+// fails by silently dropping both the form and the path, landing on the repository's
+// home page (measured on this repository and on two unrelated ones). `HEAD` fails the
 // same way. Worse, the `/tree/` view is more forgiving and resolves names this one
 // rejects, so a folder link can keep working while the upload button, the
 // coordinator's daily gesture and the sole channel by which anything enters this
@@ -194,6 +194,70 @@ export function githubUploadUrl(playId) {
   const repo = githubRepoUrl();
   if (!repo) return null;
   return `${repo}/upload/${BRANCH}/uploads${playId ? `/${playId}` : ""}`;
+}
+
+// The zone where a play is created, written once on this side. Mirror of `NEW_PLAY_DIR`
+// (scripts/process_uploads.py), and a guard in scripts/tests/test_contracts.py compares
+// the two: the FOLDER is what tells the Action this file is a play to create, so a name
+// that drifted here would commit the file into a folder nothing scans, where it would sit
+// for good with no play, no journal line and nothing to say so.
+//
+// It cannot be the name of a play (`_` is outside SAFE_PLAY_ID), which is what keeps the
+// creation zone and a play's own upload zone from ever being taken for one another.
+const NEW_PLAY_DIR = "_new-play";
+
+// The line that closes the datum and opens the note. Mirror of `TITLE_SEPARATOR`
+// (scripts/process_uploads.py), which is the side that READS it, and a guard in
+// scripts/tests/test_contracts.py compares the two: diverged, the note would be read as
+// part of the title and every creation would be refused for carrying several lines.
+const TITLE_SEPARATOR = "---";
+
+// GitHub's "new file" page, pre-filled: the play CREATION gesture, in ONE click.
+//
+// The site can commit nothing, so a play is still born from a file arriving in
+// `uploads/`. What changed is who writes that file: nothing is downloaded any more, this
+// URL opens GitHub's own editor with the name and the content already in place, and all
+// that is left for the coordinator to do is confirm the commit. One gesture instead of
+// three, and no file wandering through a downloads folder.
+//
+// The FOLDER carries the whole instruction, and that is deliberate: on the page this URL
+// opens, the file name is a field and the content is a text box, both of which the
+// coordinator can edit before committing. So the Action reads neither the name nor the
+// extension of what lands in `_new-play/` (it reads it as one play title, whatever it is
+// called), and the `.txt` below is only there so that GitHub opens it as text and so that
+// the file reads back in the repository. Only the folder cannot be fumbled.
+//
+// The content is the title, then the separator, then `note`, which is what the
+// coordinator actually READS in that box: a box holding one bare word explains nothing,
+// where a sentence says the title is the line above and that committing as-is is all
+// there is to do. Everything past the separator is ignored by the Action, so typing into
+// the note breaks nothing.
+//
+// `note` is a MANDATORY parameter with no default, exactly as `slugify`'s fallback is: it
+// is interface text, so it belongs in the catalogues and follows the reader's locale,
+// and this module cannot reach them (it is covered by `node --test`, where importing
+// locale.js would read `window` and `navigator` on load).
+//
+// `filename` and `value` are GitHub's own parameters on `/new/<branch>`, and the whole
+// path goes in `filename`, which is why this one does not carry the folder in the URL
+// path the way the upload button does. The slash stays literal (it is legal in a query
+// string): percent-encoded, it is the one thing that could have GitHub read the whole
+// value as a file NAME, and the play would then be committed at the root of the repo,
+// where no workflow watches and nothing reports it.
+//
+// Like the upload URL, this one has to be checked by CLICKING it on a real fork, never
+// by reading it: GitHub answers a malformed `/new/` with its repository home page, so a
+// wrong shape here shows the coordinator a plausible GitHub page and no error at all.
+//
+// Returns null wherever the repository cannot be known (custom domain), like
+// `githubUploadUrl`: the caller then hides the gesture rather than forge an address that
+// leads nowhere.
+export function githubNewPlayUrl(playId, title, note) {
+  const repo = githubRepoUrl();
+  if (!repo) return null;
+  const filename = `uploads/${NEW_PLAY_DIR}/${encodeURIComponent(playId)}.txt`;
+  const content = `${title}\n${TITLE_SEPARATOR}\n${note}\n`;
+  return `${repo}/new/${BRANCH}?filename=${filename}&value=${encodeURIComponent(content)}`;
 }
 
 // "Serge" -> "serge", "Éléonore d'Aquitaine" -> "eleonore-d-aquitaine"

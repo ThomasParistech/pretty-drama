@@ -11,24 +11,32 @@ therefore serves to VERIFY and not to route: a file that names a play other than
 the one whose upload zone it sits in is refused with a readable reason, rather
 than writing one play's voices or script over another's.
 
-The kind is deduced from the extension: `.zip` = an actor's voices, `.json` = the
-play's script. Hidden files are left in place (`.gitkeep`, which keeps the upload
-zone alive in git), any other file is reported to the journal then removed
+Inside a play's zone the kind is deduced from the extension: `.zip` = an actor's voices,
+`.json` = the play's script. Hidden files are left in place (`.gitkeep`, which keeps the
+upload zone alive in git), any other file is reported to the journal then removed
 (leaving it there would have it reported again on every run).
 
-**A play is born from a script upload**, in an upload zone that matches no play
-yet: the folder is then created with the promoted script inside. Two paths lead
-there, and the second one is a safety net:
- - `uploads/<new id>/script.json`, what the plays management page offers;
+**A play is CREATED in its own zone**, `uploads/_new-play/`, and there the folder is the
+whole instruction: every file that lands in it is read as one play title, whatever its
+name and whatever its extension. That is the same rule as everywhere else in this module
+taken to its end, and it is what makes the gesture hard to get wrong: the coordinator
+commits that file through GitHub's file editor, where the NAME is a field they can edit
+and the content is a box they can retype, so anything that depended on the name would
+depend on a text box. Only the folder is out of reach.
+
+`_new-play` can never be the name of a play (`_` is outside PLAY_ID_PATTERN), which is
+what keeps the creation zone and a play's zone from ever being confused for one another.
+
+Two safety nets remain, for a coordinator who knows an id already:
+ - `uploads/<new id>/script.json`, an upload zone matching no play yet;
  - `uploads/script.json` at the root, routed by the file's `id` alone, for the case
-   where GitHub would refuse to serve its upload page on a folder it does not know
-   yet, and for the coordinator who would drop a file at the old address by habit.
+   where GitHub would refuse to serve its upload page on a folder it does not know yet.
 A voice ZIP, on the other hand, is never accepted at the root: voices always
 concern a play that exists, and that play carries its own upload button.
 
-What no play claims (a file dropped at the root with no readable id, an upload
-folder whose name is not a valid id) is recorded in the ROOT journal,
-`data/history.json`, displayed by the plays management page. The journal is the
+What no play claims (a title that leaves no address, a file dropped at the root with no
+readable id, an upload folder whose name is not a valid id) is recorded in the ROOT
+journal, `data/history.json`, displayed by the plays management page. The journal is the
 project's only feedback channel: a refused file always says so somewhere, without
 letting one play's uploads into another play's journal for that.
 
@@ -77,12 +85,14 @@ import sys
 import tempfile
 from pathlib import Path
 
-from build_manifest import sanitize_script
+from build_manifest import DEFAULT_LANGUAGE, sanitize_script
 from common import (
     REPO_ROOT,
     UPLOADS_DIR,
     is_play_id,
     load_json,
+    mint_play_id,
+    new_play_script,
     play_clips_dir,
     play_data_dir,
     play_uploads_dir,
@@ -111,6 +121,34 @@ MAX_MANIFEST_BYTES = 2 * 1024 * 1024
 MAX_CLIP_BYTES = 50 * 1024 * 1024
 # A whole play in JSON weighs a few hundred kilobytes.
 MAX_SCRIPT_BYTES = 5 * 1024 * 1024
+# A creation file carries one line of data. The cap is generous on purpose (the note the
+# site writes under the separator takes a few hundred bytes, and the longest title the
+# Editing page lets you type has no limit of its own), and it is there so that a text file
+# dropped here by mistake is refused on its size instead of being read whole into memory.
+MAX_TITLE_BYTES = 4 * 1024
+
+# Everything from this line onwards is a note for the human, not data. Mirror of
+# `TITLE_SEPARATOR` in src/shared/data.js, which is the side that WRITES it, and a guard
+# in scripts/tests/test_contracts.py compares the two: diverged, the note would be read
+# as part of the title and every creation would be refused for having several lines. Loud,
+# unlike the folder name, but it would refuse the site's only creation gesture.
+#
+# A horizontal rule, and no per-line comment marker: the note then reads as ordinary
+# prose over as many lines as it needs, and no character becomes forbidden at the start of
+# a play title ("#Balance" is a title a company may well pick).
+TITLE_SEPARATOR = "---"
+
+# The zone where a play is created: one file, one title. Mirror of `NEW_PLAY_DIR` in
+# src/shared/data.js, which builds the URL the management page's button opens, and a
+# guard in scripts/tests/test_contracts.py compares the two: a file committed into a
+# folder this script does not scan would sit there for good, with no play, no journal
+# line and nothing at all to say so.
+#
+# The leading underscore is not decoration. It puts this name OUTSIDE
+# PLAY_ID_PATTERN, so no play can ever be called `_new-play`, and the creation zone can
+# never be mistaken for a play's upload zone (nor the other way round). It also sorts it
+# above the plays in the GitHub folder listing.
+NEW_PLAY_DIR = "_new-play"
 
 LOUDNORM = "loudnorm=I=-16:TP=-1.5:LRA=11"
 
@@ -392,29 +430,143 @@ def validate_script(raw: bytes, current: dict, expected_play: str = "") -> None:
         )
 
 
-def process_script(path: Path, script_path: Path, expected_play: str = "") -> None:
-    """Promote an uploaded script to the play's script.json, or raise UploadError.
+def read_title(path: Path) -> str:
+    """The play title a file of the creation zone carries, or raise UploadError.
 
-    `script_path` is the destination (`plays/<id>/data/script.json`). It arrives as an
-    argument and is no longer a module path: it is the upload folder that designates
-    the play, and this destination may not exist yet, a script upload being what
-    CREATES a play."""
+    The file has one datum, its FIRST LINE, and everything from the separator line
+    onwards is a note addressed to the human (the site writes one: it says the title is
+    above the line, and that committing as-is is all there is to do). The coordinator meets
+    this file in GitHub's editor, a text box with a big green button under it, and a box
+    holding one bare word explains nothing.
+
+    So: cut at the separator, and what comes before must be exactly ONE line. Strict,
+    where the rest of this module is tolerant, and for the same reason the note exists:
+    that box is editable. Typing INTO the note changes nothing (it is ignored, which is
+    what the note says), while typing a second line above it, or emptying the box, is
+    refused with a reason instead of creating a play named after a sentence.
+
+    A file with no separator at all is the same rule with nothing to cut: its whole
+    content is the title. `strip()` before counting, because a text file ends with a
+    newline and a trailing blank line is not a second line.
+    """
+    raw = path.read_bytes()[: MAX_TITLE_BYTES + 1]
+    if len(raw) > MAX_TITLE_BYTES:
+        raise UploadError(
+            "ce fichier est bien trop gros pour créer une pièce : sa première ligne "
+            "doit porter le titre, et rien d'autre"
+        )
+    try:
+        # utf-8-sig, not utf-8: a text file saved from Windows carries a BOM, which
+        # would otherwise become the first character of the title, hence a leading
+        # hyphen in the identifier, which PLAY_ID_PATTERN refuses.
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise UploadError("ce fichier n'est pas un texte lisible") from exc
+    # `splitlines` also settles the line endings: CRLF and CR alone leave no `\r` behind,
+    # so the check below has one thing to look for.
+    kept: list[str] = []
+    for line in text.splitlines():
+        if line.strip() == TITLE_SEPARATOR:
+            break
+        kept.append(line)
+    title = "\n".join(kept).strip()
+    if not title:
+        raise UploadError(
+            "ce fichier ne porte aucun titre : la première ligne doit être le titre de "
+            "la pièce"
+        )
+    if "\n" in title:
+        raise UploadError(
+            f"ce fichier porte plusieurs lignes avant le séparateur « {TITLE_SEPARATOR} » : "
+            "seule la première, le titre de la pièce, doit s'y trouver"
+        )
+    return title
+
+
+def promote_script(raw: bytes, script_path: Path, expected_play: str = "") -> None:
+    """Validate a candidate script and write it as the play's source of truth.
+
+    The single door to `plays/<id>/data/script.json`, whether the candidate arrived as a
+    `.json` upload or was built here from a title. `script_path` may not exist yet: this
+    is also what CREATES a play.
+
+    The bytes are written VERBATIM. For a `.json` that is the whole point (it is the file
+    the editor produced, and it alone carries everything, character colours included:
+    `sanitize_script` copies the valid form of them but ignores whatever it does not
+    know about)."""
     current = load_json(script_path, {})
     if not isinstance(current, dict):
         current = {}
-    raw = path.read_bytes()
     validate_script(raw, current, expected_play)
-    # Verbatim bytes: this is the file the editor produced, and it alone carries
-    # everything (character colours included: sanitize_script does copy the valid
-    # form of them, but it ignores everything it does not know about).
     script_path.parent.mkdir(parents=True, exist_ok=True)
     script_path.write_bytes(raw)
+
+
+def process_script(path: Path, script_path: Path, expected_play: str = "") -> None:
+    """Promote an uploaded `.json` script, or raise UploadError."""
+    promote_script(path.read_bytes(), script_path, expected_play)
+
+
+def create_play(path: Path) -> str:
+    """Bring a play into being from one file of the creation zone. Returns its id.
+
+    The identifier is minted HERE and nowhere else, and this is the moment it is fixed
+    forever: it names the play's folder and its address on the site, so renaming the
+    play later will change its title, not its address.
+
+    The play's LANGUAGE is the project's default, and that is deliberate: this file says
+    nothing about it, and the reader's locale is not the play's language (the site never
+    conflates the two axes, cf. CLAUDE.md). The rail's outline sets it in one click, on
+    the page where the document is shaped.
+
+    A play that already lives at that address is refused, and the write still goes
+    through `promote_script`, the single door to `script.json`, which would refuse the
+    empty document a second time were this gate ever removed.
+    """
+    title = read_title(path)
+    play_id = mint_play_id(title)
+    if not play_id:
+        # A title made entirely of punctuation leaves no address: better to say so than
+        # to fabricate a folder named "play-1", which would live for years in the
+        # troupe's URL.
+        raise UploadError(
+            f"« {short(title, 60)} » ne laisse aucune adresse utilisable : donnez un "
+            "titre contenant des lettres ou des chiffres"
+        )
+    script_path = play_data_dir(play_id) / "script.json"
+    if script_path.exists():
+        # The address is already taken, and TWO titles can land on it: the identifier is
+        # a folding, so "L'École des femmes" and "L'Ecole des femmes" mint the same one.
+        # The management page refuses a duplicate on the spot (`manage.new.taken`), but
+        # the title travels in a text box the coordinator can retype on GitHub, so the
+        # collision reaches here all the same, and it is the same reason it says: change
+        # a word of the title. Without this gate the promotion safeguard answered in its
+        # place, and its reason spoke of a script with no line to someone who uploaded a
+        # title; worse, on a play created but not yet written it said nothing at all and
+        # the title and language of the existing play were quietly overwritten.
+        raise UploadError(
+            f"la pièce « {play_id} » existe déjà à cette adresse : changez un mot du "
+            "titre, ou modifiez la pièce existante depuis la page Édition"
+        )
+    script = new_play_script(play_id, title, DEFAULT_LANGUAGE)
+    promote_script(
+        json.dumps(script, ensure_ascii=False, indent=2).encode("utf-8") + b"\n",
+        script_path,
+        play_id,
+    )
+    ensure_play_layout(play_id)
+    return play_id
 
 
 def kind_of(path: Path) -> str:
     """Upload kind deduced from the extension alone. Lenient about the name: the
     browser cheerfully renames files to "script (1).json" or "voix-serge (2).zip"
-    when the file already exists in the downloads."""
+    when the file already exists in the downloads.
+
+    Only for a file dropped in a play's zone or at the root. The creation zone reads no
+    extension at all (the folder is the whole instruction) and files its journal lines
+    under `script` itself: what the coordinator dropped there does become the play's
+    starting script, and "title" would name our own plumbing."""
     suffix = path.suffix.lower()
     if suffix == ".zip":
         return "voix"
@@ -541,6 +693,44 @@ def process_play_zone(play_id: str, files: list[Path]) -> tuple[list[dict], int]
     return entries, total
 
 
+def process_new_play_zone(files: list[Path]) -> tuple[dict[str, list[dict]], list[dict]]:
+    """The creation zone, `uploads/_new-play/`. Returns (lines by play, unroutable lines).
+
+    One file, one play. The name of the file is never read, nor its extension: the FOLDER
+    is the whole instruction, and that is what makes the gesture robust. The coordinator
+    commits this file through GitHub's file editor, where the name is a field they can
+    edit and the content a box they can retype, so anything read from the name would rest
+    on a text box; the journal line even carries the name they chose, whatever it was.
+
+    A creation that FAILS brought no play into being, so it has no journal to speak in:
+    its line goes to the ROOT journal, the one the management page displays, and it
+    carries the only thing to fix. That is also the page the gesture was made from,
+    whereas a play's Progress page would be a strange place to hide it.
+    """
+    by_play: dict[str, list[dict]] = {}
+    unrouted: list[dict] = []
+    for path in files:
+        entries: list[dict] = []
+        # `record` swallows the exception (that is its job), so the play the file created
+        # comes back this way rather than as a return value.
+        outcome: dict[str, str] = {}
+
+        def work(path=path, outcome=outcome):
+            outcome["play"] = create_play(path)
+            print(f"{path.name}: play {outcome['play']} created")
+            return 0
+
+        # The kind comes from the ZONE and not from `kind_of`: the file may well be named
+        # "Antigone" with no extension at all, and the journal must not show the "?" of an
+        # unknown type on the one upload that worked.
+        record(entries, path, "script", work)
+        if "play" in outcome:
+            by_play.setdefault(outcome["play"], []).extend(entries)
+        else:
+            unrouted.extend(entries)
+    return by_play, unrouted
+
+
 def claimed_play_id(path: Path) -> str:
     """The play a file dropped at the ROOT of `uploads/` claims to belong to.
 
@@ -563,11 +753,12 @@ def claimed_play_id(path: Path) -> str:
 
 
 def process_root_zone(files: list[Path]) -> tuple[dict[str, list[dict]], list[dict], int]:
-    """The root of `uploads/`: the creation channel, and the coordinator's safety net.
+    """The root of `uploads/`: the coordinator's safety net.
 
     Returns (lines by play, unroutable lines, clips merged). A script is routed there
     by its id alone, towards an existing play as well as towards a play to create.
-    Everything else is unroutable, and says so.
+    Everything else is unroutable, and says so. Creating a play has its own zone
+    (`process_new_play_zone`), which is where the management page sends the coordinator.
     """
     by_play: dict[str, list[dict]] = {}
     unrouted: list[dict] = []
@@ -633,8 +824,10 @@ def main() -> None:
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
     # The survey of the zones BEFORE any processing: one zone per folder, plus the
-    # root. An empty folder does not count (it carries only its `.gitkeep`).
+    # creation zone and the root. An empty folder does not count (it carries only its
+    # `.gitkeep`).
     zones: dict[str, list[Path]] = {}
+    new_play_files: list[Path] = []
     unnamed: list[tuple[str, list[Path]]] = []
     for entry in sorted(UPLOADS_DIR.iterdir()):
         if not entry.is_dir():
@@ -642,14 +835,20 @@ def main() -> None:
         files = deposited_files(entry)
         if not files:
             continue
-        if is_play_id(entry.name):
+        # Tested BEFORE `is_play_id`, and the two can never both be true (`_` is outside
+        # the pattern): without this branch the creation zone would be discarded as a
+        # folder whose name is not a play id, which is exactly the message the
+        # coordinator must never get on the site's own gesture.
+        if entry.name == NEW_PLAY_DIR:
+            new_play_files = files
+        elif is_play_id(entry.name):
             zones[entry.name] = files
         else:
             unnamed.append((entry.name, files))
     root_files = deposited_files(UPLOADS_DIR)
 
     every = [p for files in zones.values() for p in files]
-    every += root_files + [p for _, files in unnamed for p in files]
+    every += root_files + new_play_files + [p for _, files in unnamed for p in files]
     if any(kind_of(p) == "voix" for p in every) and shutil.which("ffmpeg") is None:
         print("ffmpeg not found", file=sys.stderr)
         sys.exit(1)
@@ -658,6 +857,14 @@ def main() -> None:
     # root journal for what no play claims.
     results: dict = {"plays": {}, "unrouted": []}
     total = 0
+
+    # Creations FIRST, for the same reason `deposited_files` puts scripts before voices:
+    # a play has to exist before anything can attach to it.
+    new_by_play, new_unrouted = process_new_play_zone(new_play_files)
+    for play_id, entries in new_by_play.items():
+        results["plays"].setdefault(play_id, []).extend(entries)
+    results["unrouted"].extend(new_unrouted)
+
     for play_id, files in zones.items():
         entries, count = process_play_zone(play_id, files)
         total += count

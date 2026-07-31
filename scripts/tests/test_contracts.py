@@ -24,8 +24,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from build_manifest import COLOR_PATTERN, DEFAULT_LANGUAGE, LANGUAGES
 from build_script_pdf import STRUCTURE, _TENS, _UNITS, roman_numeral
-from common import PLAY_ID_PATTERN, REPO_ROOT, play_data_dir, play_ids
-from process_uploads import LINE_ID_PATTERN
+from common import (
+    MAX_PLAY_ID_LENGTH,
+    PLAY_ID_PATTERN,
+    REPO_ROOT,
+    is_play_id,
+    mint_play_id,
+    new_play_script,
+    play_data_dir,
+    play_ids,
+)
+from process_uploads import LINE_ID_PATTERN, NEW_PLAY_DIR, TITLE_SEPARATOR
 
 SRC = REPO_ROOT / "src"
 THEME_CSS = SRC / "shared" / "theme.css"
@@ -55,12 +64,13 @@ FORBIDDEN_IN_HEADER = (
 )
 
 # A single exception, and it is deliberate: the link back to the home page. It
-# says the BRAND and not the page, so it carries `page-home` itself
-# (HomeLink.jsx), which brings its seal back to the sand of the masks on all
-# four pages instead of taking the green of Progress or the purple of Editing.
-# This guard only reads CSS and cannot see that class set in JSX: the exemption
-# is therefore written here, which stands as a decision. It covers ONLY the seal
-# tokens.
+# is the FOOT of the header it closes, so it wears that header's colour, badge,
+# word, hover wash and focus ring together: the navy of Progress, the purple of
+# Editing, the wine of the four other pages. It carries `page-${page}` itself
+# (HomeLink.jsx) and what says "home" there is the drawing of the two masks, not
+# the hue. This guard only reads CSS and cannot see that class set in JSX: the
+# exemption is therefore written here, which stands as a decision. It covers ONLY
+# the seal tokens.
 HEADER_TOKEN_EXEMPT_PREFIX = ".play-header-home"
 EXEMPT_TOKENS = ("--page-mark", "--page-mark-soft")
 
@@ -193,6 +203,158 @@ class TestPlayIdPattern(unittest.TestCase):
             self.assertIsNotNone(PLAY_ID_PATTERN.fullmatch(good), good)
         for bad in ("-tiret-en-tete", "Majuscule", "avec espace", "accentué", "a" * 65, ""):
             self.assertIsNone(PLAY_ID_PATTERN.fullmatch(bad), bad)
+
+
+class TestPlayIdMinting(unittest.TestCase):
+    """A play is created by uploading its TITLE, and the identifier is derived from it
+    on arrival (`mint_play_id`). The management page derives the same one beforehand
+    (`mintPlayId`, src/shared/plays.js) so as to announce the address and refuse a
+    duplicate on the spot.
+
+    Two implementations, therefore, and this is the one contract of the project whose
+    breakage nobody would see: the page would announce one address, the Action would
+    create another, and the play would simply appear where nobody was told to look. They
+    are held together by a shared table of cases, read here and by
+    src/shared/plays.test.js: a case is written once and checked on both sides."""
+
+    CASES_PATH = REPO_ROOT / "scripts" / "tests" / "play-id-cases.json"
+
+    def cases(self) -> list[dict]:
+        return json.loads(read(self.CASES_PATH))
+
+    def test_the_shared_table_is_read_and_covers_more_than_the_easy_cases(self):
+        # A guard that would pass on an empty table guards nothing, and this one is the
+        # whole contract.
+        cases = self.cases()
+        self.assertGreater(len(cases), 5, "shared table not read")
+        self.assertTrue(any(case["id"] == "" for case in cases), "no unusable title")
+        self.assertTrue(
+            any(len(case["id"]) == MAX_PLAY_ID_LENGTH for case in cases), "no truncated title"
+        )
+
+    def test_the_action_mints_what_the_page_announced(self):
+        for case in self.cases():
+            with self.subTest(case["name"]):
+                self.assertEqual(mint_play_id(case["title"]), case["id"])
+
+    def test_the_shared_table_is_read_by_the_front_test_too(self):
+        """Half a contract is worse than none: this table only holds the two sides
+        together if the JS suite reads it as well, and it is one deletion away from
+        being Python-only."""
+        source = read(SRC / "shared" / "plays.test.js")
+        self.assertIn(self.CASES_PATH.name, source)
+
+    def test_every_minted_identifier_is_accepted_by_the_pattern(self):
+        # The identifier becomes a folder and a URL segment: minting one the pattern
+        # refuses would create the play and then refuse all of its uploads.
+        for case in self.cases():
+            if case["id"] == "":
+                continue
+            with self.subTest(case["name"]):
+                self.assertTrue(is_play_id(mint_play_id(case["title"])))
+
+    def test_a_non_string_title_mints_nothing(self):
+        # `read_title` only ever hands over text, but this function names folders: it
+        # answers "no address" rather than raising, on this side as on the other.
+        for bad in (None, 42, [], {}, b"Antigone"):
+            self.assertEqual(mint_play_id(bad), "")
+
+
+class TestCreationZone(unittest.TestCase):
+    """`uploads/_new-play/` is the whole creation gesture: the site writes a file into it
+    through GitHub's editor, and the Action reads everything that lands there as a play
+    title, whatever the file is called.
+
+    So the folder name is the ONE thing both sides must agree on, and nothing would report
+    a disagreement: the file would be committed into a folder this pipeline does not scan,
+    where it would sit for good with no play, no journal line and no error anywhere. Hence
+    a guard, plus the one that keeps the name out of PLAY_ID_PATTERN: were it a valid play
+    id, `main` would take the creation zone for a play of that name."""
+
+    def js_zone(self) -> str:
+        found = re.search(r'const NEW_PLAY_DIR = "([^"]+)";', read(SRC / "shared" / "data.js"))
+        self.assertIsNotNone(found, "NEW_PLAY_DIR not found in src/shared/data.js")
+        return found.group(1)
+
+    def test_both_sides_name_the_same_folder(self):
+        self.assertEqual(
+            self.js_zone(),
+            NEW_PLAY_DIR,
+            "NEW_PLAY_DIR (src/shared/data.js) and NEW_PLAY_DIR "
+            "(scripts/process_uploads.py) have diverged: the site would commit the file "
+            "into a folder the Action does not read, and nothing would say so.",
+        )
+
+    def test_the_folder_can_never_be_a_play_id(self):
+        self.assertIsNone(PLAY_ID_PATTERN.fullmatch(NEW_PLAY_DIR), NEW_PLAY_DIR)
+
+    def js_separator(self) -> str:
+        found = re.search(r'const TITLE_SEPARATOR = "([^"]+)";', read(SRC / "shared" / "data.js"))
+        self.assertIsNotNone(found, "TITLE_SEPARATOR not found in src/shared/data.js")
+        return found.group(1)
+
+    def test_both_sides_agree_on_the_line_that_closes_the_title(self):
+        """The site WRITES that line and the Action READS it: the title is what comes
+        before it, the note for the coordinator is what follows.
+
+        Diverged, the note would be read as part of the title and every creation would be
+        refused for carrying several lines. Loud, unlike the folder name, but it is the
+        site's only creation gesture that would stop working."""
+        self.assertEqual(
+            self.js_separator(),
+            TITLE_SEPARATOR,
+            "TITLE_SEPARATOR (src/shared/data.js) and TITLE_SEPARATOR "
+            "(scripts/process_uploads.py) have diverged: the note the site writes into "
+            "the file would be read as part of the play's title.",
+        )
+
+    def test_the_separator_is_not_a_title_anyone_could_type(self):
+        # It is compared against a whole line, and a play titled exactly that leaves no
+        # address anyway (`mint_play_id` folds it to nothing), so it can never be
+        # swallowed by the cut.
+        self.assertEqual(mint_play_id(TITLE_SEPARATOR), "")
+
+    def test_the_site_writes_the_folder_into_the_url_it_opens(self):
+        # The constant could exist and be used nowhere: what matters is that the path the
+        # button opens really goes through it.
+        source = js_without_comments(read(SRC / "shared" / "data.js"))
+        self.assertIn("uploads/${NEW_PLAY_DIR}/", source)
+
+
+class TestNewPlay(unittest.TestCase):
+    """The empty play a creation upload brings into being (`new_play_script`,
+    scripts/common.py) against the editor's fallback (`EMPTY_SCRIPT`,
+    src/editor/reducer.js).
+
+    It is the same document, written on both sides of the pipeline: a field added to one
+    and not the other would give a play born without it, which the editor would then
+    fill in silently, and the difference would only show up in a diff of script.json
+    weeks later."""
+
+    def empty_script_keys(self) -> set[str]:
+        body = re.search(
+            r"export const EMPTY_SCRIPT = \{(.*?)^\};", read(REDUCER_JS), re.DOTALL | re.MULTILINE
+        )
+        self.assertIsNotNone(body, "EMPTY_SCRIPT not found in src/editor/reducer.js")
+        return set(re.findall(r"^  ([a-zA-Z]+):", body.group(1), re.MULTILINE))
+
+    def test_a_created_play_has_exactly_the_fields_of_an_editor_play(self):
+        keys = self.empty_script_keys()
+        self.assertGreaterEqual(len(keys), 5, f"keys read: {keys}")
+        self.assertEqual(set(new_play_script("antigone", "Antigone", "fr")), keys)
+
+    def test_a_created_play_carries_its_identifier_its_title_and_its_language(self):
+        fresh = new_play_script("antigone", "Antigone", "en")
+        self.assertEqual(fresh["id"], "antigone")
+        self.assertEqual(fresh["title"], "Antigone")
+        self.assertEqual(fresh["language"], "en")
+
+    def test_a_created_play_carries_a_scene_to_write_in(self):
+        # The structural floor the editor lays down too: without a scene, the first
+        # opening of the Editing page would have nothing to display.
+        fresh = new_play_script("antigone", "Antigone", "fr")
+        self.assertEqual(fresh["acts"], [{"scenes": [{"lines": []}]}])
+        self.assertEqual(fresh["characters"], [])
 
 
 class TestCharacterPalette(unittest.TestCase):

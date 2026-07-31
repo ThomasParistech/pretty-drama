@@ -20,12 +20,20 @@ import { PAGES, pageLabelKey } from "./pages.js";
 // otherwise every link announces itself "Rehearsal, Rehearsal, Rehearse
 // Italian-style…". An image that repeats its neighbour informs nobody, it
 // doubles the length of the announcement.
-export default function PageMark({ page, className = "", label }) {
+//
+// `tone`: the DRAWING comes from `page`, the COLOURS from `tone`, and they only
+// part company in one place, the link back home in the header foot. There the
+// two masks are the brand, so the icon is the brand's, while the badge must take
+// the colour of the page it is leaving (navy on Progress, purple on Editing):
+// the button is a piece of that header, not a piece of the home page. Without
+// this the class the seal sets on itself would win over the header's, since it
+// sits on the very element that reads the tokens.
+export default function PageMark({ page, className = "", label, tone = page }) {
   const { Icon } = PAGES[page];
   const decorative = label === "";
   return (
     <span
-      className={`page-mark page-${page} ${className}`.trim()}
+      className={`page-mark page-${tone} ${className}`.trim()}
       role={decorative ? undefined : "img"}
       aria-label={decorative ? undefined : (label ?? t(pageLabelKey(page)))}
       aria-hidden={decorative ? "true" : undefined}

@@ -32,7 +32,8 @@ plays/<id>/
   data/script.pdf           derived, gitignored
   clips/<lineId>.mp3        committed
 uploads/<id>/               that play's upload zone
-uploads/                    root: the only play-CREATION channel
+uploads/_new-play/          the play-CREATION zone: file = title, `---`, note
+uploads/                    root: safety net for a script naming its own play
 data/plays.json             play index, derived, committed
 data/history.json           journal for uploads no play claimed
 ```
@@ -46,8 +47,13 @@ data/history.json           journal for uploads no play claimed
 - **The upload FOLDER routes, the content verifies.** A file belongs to the zone it
   landed in, so a corrupt ZIP still reaches its play's journal; the id inside only
   rejects a file dropped in another play's zone.
-- A play is born from a script upload into an orphan zone. Deleting one needs a commit,
-  so it happens by hand on GitHub. Migrating a fork:
+- A play is born in `uploads/_new-play/`: the site cannot commit, so creating one is an
+  upload like any other. **There the FOLDER is the whole instruction**: every file is read
+  as one title, name and extension ignored, because the coordinator commits it through
+  GitHub's editor where both are editable fields. The content is the title, then
+  `TITLE_SEPARATOR` (`---`), then a note for the human that the Action never reads. `_new-play` is outside `SAFE_PLAY_ID`
+  (leading `_`), so it can never collide with a play's zone. Deleting a play needs a
+  commit, so it happens by hand on GitHub. Migrating a fork:
   `python3 scripts/migrate_to_plays.py <id>`.
 
 ## Architecture
@@ -91,11 +97,16 @@ the commit precedes the deploy.
 
 `script.json` (from the Editor, promoted through the upload zone) and a Recorder ZIP
 (`{play: id, clips: {lineId: raw text}}` plus one `{lineId}.{ext}` per line) both land in
-`uploads/<id>/`. Then, in order:
+`uploads/<id>/`. A play is CREATED by a file in `uploads/_new-play/` whose first line is
+its title (what follows `---` is a note for the coordinator, never data). Then, in order:
 
 1. `process_uploads.py`: transcodes voices (ffmpeg, mono 64 kbps mp3), merge
-   **all-or-nothing per ZIP**; validates and promotes a script **verbatim**; deletes each
-   file even on error; writes `uploads_result.json`.
+   **all-or-nothing per ZIP**; validates and promotes a script **verbatim**; creates a
+   play from a title (`read_title` is strict, `mint_play_id` names it, an address already
+   taken is refused before anything is written, `promote_script` is the single door to
+   `script.json`), filed as kind `script` by the ZONE since `kind_of` never sees it;
+   deletes each file even on error; writes `uploads_result.json`. A refused creation
+   reports to the ROOT journal, the management page's own.
 2. `update_history.py`: one entry per affected play plus the root journal, one timestamp
    per run. Written by `uploads.yml` only, so a journal holds only uploads.
 3. `build_manifest.py`: joins `script.json` and `clips.json` into `manifest.json`, **the
@@ -117,6 +128,10 @@ copying expected values. Breaking a pair breaks CI.
 | --- | --- |
 | `^[0-9a-zA-Z-]{1,64}$` | `SAFE_ID` (`editor/reducer.js`), `LINE_ID_PATTERN` (`process_uploads.py`) |
 | `^[a-z0-9][a-z0-9-]{0,63}$` | `SAFE_PLAY_ID` (`shared/plays.js`), `PLAY_ID_PATTERN` (`common.py`) |
+| Title -> play id, through `scripts/tests/play-id-cases.json` (read by both suites) | `mintPlayId` (`shared/plays.js`) announces, `mint_play_id` (`common.py`) decides |
+| Fields of a brand new play | `EMPTY_SCRIPT` (`editor/reducer.js`), `new_play_script` (`common.py`) |
+| Creation zone `_new-play`, never a valid play id | `NEW_PLAY_DIR` (`shared/data.js`), `NEW_PLAY_DIR` (`process_uploads.py`) |
+| `---` closes the title and opens the note | `TITLE_SEPARATOR` (`shared/data.js`) writes it, (`process_uploads.py`) reads it |
 | Act/scene labels, roman numerals | `shared/structureLabels.js`, `build_script_pdf.py` |
 | Vite entries = root `.html` files | `vite.config.js` |
 | ZIP format | `downloadZip` (`recorder/App.jsx`), `parse_manifest` (`process_uploads.py`) |
@@ -131,7 +146,9 @@ copying expected values. Breaking a pair breaks CI.
   from `build_manifest.compute_status`. The browser ships **raw** text. The folding in
   `editor/search.js` is not this.
 - **Line ids are never recycled** (they name the mp3s). **Play ids are never re-minted**
-  (they name a folder and a URL). Validate a play id **before** building a path.
+  (they name a folder and a URL). Validate a play id **before** building a path. A play
+  id is minted in **one** place, `mint_play_id` on arrival of the `.txt`; the front's
+  `mintPlayId` only announces it.
 - **`sanitize_script` (Python) tolerantly mirrors `sanitizeScript` (JS)**: malformed
   input is ignored, never a crash. Three deliberate asymmetries: JS re-mints bad or
   duplicate ids, Python only requires a non-empty string; JS floors the structure,
@@ -179,26 +196,32 @@ multi-page site, and switching language navigates.
 
 | Area | Files |
 | --- | --- |
-| Root pages | `src/chooser/` (one component, `manage` flag; no link from chooser to management). One `PlayCard` for both, the whole card a link, `manage` adding the recorded share and nothing else |
+| Root pages | `src/chooser/` (one component, `manage` flag; no link from chooser to management). One `PlayCard` for both, the whole card a link, `manage` adding the recorded share and nothing else. `NewPlay.jsx` is the creation gesture in two halves: `NewPlayTile` ends the GRID (dashed, the empty slot after the plays, `aria-haspopup`), and it opens the shared `ConfirmModal` (`creating` in `App.jsx`), never a panel in the page. ONE click from there, `githubNewPlayUrl` (`shared/data.js`), nothing downloaded; the tile is the gate and hides when the repo is unknown |
 | A play's 2 home pages | `src/home/App.jsx` + `ACTOR_CARDS`/`RESPO_CARDS` (`shared/pages.js`); the actor list omits the editor |
 | Headers | `shared/PlayHeader.jsx` (five pages), `shared/PageHeader.jsx` (manifest-less, via `PageState`), `shared/HomeLink.jsx` (at the header foot, not the top row) |
-| Shared look | `shared/theme.css`: `.dialogue-card`, `.page-shell`/`.page-scroll`, `.truncate`, `.btn-tip`, `.lift-hover`, `.page-notice`, `.confirm-quote`, `.flag-icon`, `--shadow-float` |
+| Shared look | `shared/theme.css`: `.dialogue-card`, `.page-shell`/`.page-scroll`, `.truncate`, `.btn-tip`, `.lift-hover`, `.page-notice`, `.confirm-quote`, `.flag-icon`, `.upload-tile`, `--shadow-float` |
 | Rehearsal / Recorder | `shared/ProgressBar.jsx`, `shared/useScrollToActiveCard.js`, `recorder/useRecorder.js`, `downloadZip` (`recorder/App.jsx`) |
 | Colours | `shared/characterColors.js` (Tableau 10, stored per character; lightness is what distinguishes). Filling has one implementation: the front's `assignColors` |
 | Stats | `src/stats/stats.js` (pure, tested) does all the maths; `App.jsx` only draws |
-| Dashboard | `dashboard/App.jsx`: `ProgressTable`, `Journal`, `githubUploadUrl` (`shared/data.js`) |
-| Editor | `editor/EditorRail.jsx` (one section open at a time), `StructurePanel` (the plan; only the play has a name, acts and scenes derive labels from rank), `history.js` (wraps a pure `scriptReducer`; `dirty = present !== saved`), `search.js` (pure; no regex; length-preserving folding) |
-| Guards | `shared/LeaveGuard.jsx` (capture-phase clicks + `beforeunload`), `shared/ConfirmModal.jsx` (portal, replaces `window.confirm`) |
-| Python shared | `scripts/common.py`: `REPO_ROOT`, `write_json`, `load_json`, and the play layout helpers |
+| Dashboard | `dashboard/App.jsx`: `ProgressTable`, `Journal`, `githubUploadUrl` (`shared/data.js`); its tile takes the VOICES only. Second page after the Editor to re-skin `--accent` on its own `:root` (the seal's navy, so the body can reach a colour the `<header>`-scoped seal tokens do not carry) |
+| Editor | its upload tile downloads `script.json` then opens the play's upload page (`upload`, `App.jsx`); `editor/EditorRail.jsx` (one section open at a time), `StructurePanel` (the plan; only the play has a name, acts and scenes derive labels from rank), `history.js` (wraps a pure `scriptReducer`; `dirty = present !== saved`), `search.js` (pure; no regex; length-preserving folding) |
+| File tiles | `shared/UploadTile.jsx` + `.upload-tile` (`theme.css`): ONE look for "a file passes between the coordinator and the repo", both ways. A link on the Dashboard (voices), a button in the Editor (script, downloaded first), and the Dashboard's PDF download composing the same classes (`.dash-script-tile`). The direction is in the opening drawing and the verb, never the shape; the coloured word takes the page one READS (`tone` on `PageMark` keeps the mic of Recording on a navy Dashboard tile) |
+| Guards | `shared/LeaveGuard.jsx` (capture-phase clicks + `beforeunload`), `shared/ConfirmModal.jsx` (portal, replaces `window.confirm`; `bodyTakesFocus` for the one box that is a FORM and not a question, so its field keeps the focus) |
+| Python shared | `scripts/common.py`: `REPO_ROOT`, `write_json`, `load_json`, the play layout helpers, and a play's identity (`PLAY_ID_PATTERN`, `mint_play_id`, `new_play_script`), the Python side of `shared/plays.js` |
 | Dev server | `serveRepoData` and `ensureScriptPdf` in `vite.config.js` |
 
 ## Traps
 
 Each has a comment explaining it at the site. Do not "fix" one without reading that.
 
-- The upload URL names `main` (`BRANCH`, `shared/data.js`). `/upload/<branch>` needs a
-  branch that really exists and fails onto the repo home page, never a 404; `/tree/`
-  resolves names it rejects, which is what hides a wrong value.
+- The upload and creation URLs name `main` (`BRANCH`, `shared/data.js`).
+  `/upload/<branch>` and `/new/<branch>` need a branch that really exists and fail onto
+  the repo home page, never a 404; `/tree/` resolves names it rejects, which is what
+  hides a wrong value.
+- `githubNewPlayUrl` keeps the slashes of `filename=uploads/_new-play/<id>.txt`
+  **literal**. Encoded, GitHub would read the whole thing as a file name and the play
+  would be committed at the repo root, where no Action watches and nothing reports it.
+  The `.txt` is a courtesy (GitHub opens it as text), never a contract.
 - Collapse tracks are `minmax(0, 1fr)` / `minmax(0, 0fr)`, never `1fr`/`0fr`.
 - `min-height: 0` on `.play-header-settings-inner` and `.editor-rail-body`.
 - `.editor-layout` states `grid-template-rows: minmax(0, 1fr)` explicitly.
@@ -210,8 +233,11 @@ Each has a comment explaining it at the site. Do not "fix" one without reading t
 - Nothing `fixed` inside `container: ed-column`.
 - Tooltips of buttons that disable go on a `.btn-tip` wrapper; `select:disabled` needs
   an explicit rule.
-- Stats block width rounds to a whole multiple of the column count, with a
-  one-pixel-per-square `min-width` floor.
+- The Stats block always takes the FULL width of its card: the "Words per line"
+  slider changes the grain inside the viewBox, never the drawing's width (the
+  rounded-to-a-multiple width and its `min-width` floor are gone; `crispEdges`
+  therefore snaps cells to whole pixels and one can be 1 px wider than its
+  neighbour).
 - Scroll-follow clamps its target to the scroller's real range and has a second exit;
   the seek-drag flag is consumed; `onPointerMove` repeats `scrub`'s guard.
 - `dragging` and `resizing` drop transitions mid-drag.

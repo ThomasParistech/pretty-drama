@@ -8,7 +8,7 @@ import { fmt, t } from "../shared/locale.js";
 import { playHref } from "../shared/pages.js";
 import { isPlayId } from "../shared/plays.js";
 import { formatShare } from "../shared/share.js";
-import NewPlay from "./NewPlay.jsx";
+import NewPlay, { NewPlayTile } from "./NewPlay.jsx";
 import "../home/home.css";
 import "./chooser.css";
 
@@ -34,6 +34,11 @@ export default function App({ manage = false }) {
   const [plays, setPlays] = useState(null);
   const [error, setError] = useState(null);
   const [unrouted, setUnrouted] = useState([]);
+  // Closed until asked for: a company creates a play perhaps twice a year, and the
+  // subject of this page is the plays that exist. The state lives here and not in
+  // `NewPlay` because the gesture has two halves: the tile, which belongs to the grid,
+  // and the box it opens, which is a modal (`NewPlay` renders nothing until then).
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     fetchPlaysIndex()
@@ -118,6 +123,13 @@ export default function App({ manage = false }) {
               sorted.map((play) => <PlayCard key={play.id} play={play} manage={manage} />)
             ))
           )}
+          {/* The creation gesture ends the row of the plays, as the empty slot after
+              them, and it opens a modal (see `NewPlayTile`). It waits for the list, like
+              the box it opens and for the same reason: the uniqueness check has nothing
+              to compare against without it. In the breakdown case there is no list at
+              all, so it stays away rather than offer a gesture whose refusals it cannot
+              compute. */}
+          {manage && !error && plays !== null && <NewPlayTile onOpen={() => setCreating(true)} />}
         </div>
 
         {manage && (
@@ -131,7 +143,9 @@ export default function App({ manage = false }) {
                 The record of uploads without a play, on the other hand, does not depend
                 on the list, and it stays displayed: it may even be what explains the
                 breakdown. */}
-            {plays !== null && <NewPlay taken={plays} />}
+            {creating && plays !== null && (
+              <NewPlay taken={plays} onClose={() => setCreating(false)} />
+            )}
             <Unrouted runs={unrouted} />
           </>
         )}

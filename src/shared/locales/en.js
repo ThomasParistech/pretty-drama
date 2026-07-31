@@ -75,6 +75,9 @@ export const EN = {
 
   "common.actScene": "{act}, {scene}",
 
+  "common.format.zip": "(ZIP)",
+  "common.format.pdf": "(PDF)",
+
   "common.myLineNumber": " ({n}/{total})",
 
   // `{page}` is the Editing page's name, INTERPOLATED from `page.editor.label`
@@ -114,7 +117,8 @@ export const EN = {
     "See how the speaking is divided between the characters, in words and in lines, scene by scene.",
 
   "page.dashboard.label": "Progress",
-  "page.dashboard.desc": "Follow how the recordings are going, and upload the files you receive.",
+  "page.dashboard.desc":
+    "Follow how the recordings are going, and upload the voice files you receive.",
 
   "page.editor.label": "Editing",
   "page.editor.desc": "Edit the play: characters, acts, scenes and lines.",
@@ -176,19 +180,33 @@ export const EN = {
   "editor.touchOnly": "For practical reasons, {page} is only available on a computer.",
 
   "editor.hintTyping": "Inside a line, {enter} creates the next one, {shiftEnter} a line break.",
-  "editor.hintDownload":
-    "Once your changes are done, download the script with the button at the top of the page, " +
-    "then upload the file you get on the {page} page, just like the cast's voices.",
+  "editor.hintUpload":
+    "Once your changes are done, click the button at the top of the page to update the play.",
 
-  "editor.dirty": "Changes not downloaded",
+  "editor.dirty": "Changes not saved",
   "editor.undo": "Undo",
   "editor.undo.tip": "Undo the last change (Ctrl+Z)",
   "editor.undo.none": "Nothing to undo yet",
   "editor.redo": "Redo",
   "editor.redo.tip": "Redo the undone change (Ctrl+Y)",
   "editor.redo.none": "Nothing to redo yet",
-  "editor.download": "Download the script",
-  "editor.download.none": "No changes to download yet",
+  "editor.upload": "Update the {script}",
+  "editor.upload.script": "script of the play",
+  "editor.upload.tip": "Download the script, then upload it on GitHub",
+  "editor.upload.none": "No changes to upload yet",
+
+  // The box that announces the gesture, BEFORE it happens: hence the future tense
+  // throughout, and the order of the two halves is the order they will come in.
+  // `{file}` arrives as code, like in `editor.leaveBody`. It has no title of its own:
+  // the box wears the tile's label (see the French entry).
+  // "Commit changes" is the name GitHub prints on that green button in English, kept
+  // verbatim for the same reason the French entry keeps the French one: it is a button
+  // on a page we do not own, and it has to be found by its name.
+  "editor.uploadNotice.body":
+    "The {file} file will be downloaded, then GitHub will open in another tab: drag the file " +
+    "in and press the green \"Commit changes\" button.{br}" +
+    "The update will then take a few minutes.",
+  "editor.uploadNotice.go": "Continue",
 
   "editor.leaveTitle": "You have not downloaded the script",
   "editor.leaveBody":
@@ -424,7 +442,12 @@ export const EN = {
   "dashboard.orphans":
     "{count}: nobody can record them. Open the {page} page and assign them a character.",
   "dashboard.legend":
-    "Each cell gives the number of recorded lines out of the character's total lines in that scene.",
+    "Each cell gives the number of recorded lines out of the character's total lines in that " +
+    "scene. The column beside the names sums up each character, the row under the scene numbers " +
+    "sums up each scene, and the green tick replaces the count once none are missing any more.",
+  "dashboard.mark.done": "All the lines are recorded",
+  "dashboard.total.play": "Whole play",
+  "dashboard.total.cast": "All the characters",
   "dashboard.table": "Progress by character and by scene",
 
   "dashboard.journal.title": "Latest file uploads",
@@ -452,11 +475,11 @@ export const EN = {
   "dashboard.kind.script": "Script",
   "dashboard.kind.inconnu": "Other",
 
-  "dashboard.upload": "Upload {voices} or the {script}",
-  "dashboard.upload.voices": "voices",
-  "dashboard.upload.script": "script of the play",
+  "dashboard.upload": "Upload the {voices}",
+  "dashboard.upload.voices": "voices {format}",
 
-  "dashboard.pdf": "Download the play for printing {format}",
+  "dashboard.pdf": "Download the {play}",
+  "dashboard.pdf.play": "play for printing {format}",
   "dashboard.pdfSlug": "script",
 
   // -------------------------------------------------------------------- home
@@ -489,13 +512,23 @@ export const EN = {
   "manage.recorded": "{share} of lines recorded",
 
   "manage.new.title": "New play",
+  // The GitHub button is described and never quoted, on this side too: github.com
+  // follows the language of the reader's own account, so the label they see is not ours
+  // to name (cf. the note in fr.js).
   "manage.new.hint":
-    "Give it a title, then download its starting script. Upload it, and the play shows " +
-    "up here.",
+    "Give it a title, then create the play. Confirm the commit on GitHub, and the " +
+    "play shows up here within a few minutes.",
   "manage.new.label": "Title of the play",
-  "manage.new.download": "Download the starting script",
-  "manage.new.deposit": "Upload this file to create the play",
-  "manage.new.done": "Script downloaded. Upload it to create the play.",
+  "manage.new.create": "Create the play",
+  // Written into the file itself, under the separator line where the Action stops
+  // reading: it is what the coordinator sees in GitHub's text box, and its line breaks
+  // are data (see fr.js, which also carries why the button is named here and not in
+  // `manage.new.hint`). The button keeps its English label on this side, which is the
+  // same rule as the French one: GitHub is read in the reader's language.
+  "manage.new.fileNote":
+    'Just click the green "Commit changes" button.\n' +
+    "The new play, whose title is written above, will be online\n" +
+    "in a few minutes.",
   "manage.new.emptyTitle": "Give the play a title.",
   "manage.new.badTitle": "This title leaves no usable address: add letters or digits to it.",
   "manage.new.taken": "A play already uses this address: change a word of the title.",
