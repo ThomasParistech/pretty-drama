@@ -474,20 +474,19 @@ export const EN = {
   "chooser.loadError":
     "The list of plays could not be loaded. The site may not be published yet: " +
     "try again in a few minutes, or ask the coordinator.",
-  "chooser.recorded": {
-    one: "{count} line recorded out of {total}",
-    other: "{count} lines recorded out of {total}",
+  "chooser.characters": {
+    one: "{count} character",
+    other: "{count} characters",
+  },
+  "chooser.words": {
+    one: "{count} word",
+    other: "{count} words",
   },
   "chooser.emptyPlay": "Play still empty",
 
   "manage.heading": "Your plays",
   "manage.empty": "No plays yet: create the first one below.",
-  "manage.lastDeposit": "Last upload on {date}",
-  "manage.neverDeposited": "No uploads yet",
-  "manage.deposit": "Upload files",
-  "manage.folder": "Open the folder on GitHub",
-  "manage.deposit.aria": "Upload files for {title}",
-  "manage.folder.aria": "Open the folder of {title} on GitHub",
+  "manage.recorded": "{share} of lines recorded",
 
   "manage.new.title": "New play",
   "manage.new.hint":

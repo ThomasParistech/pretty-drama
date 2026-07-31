@@ -61,9 +61,9 @@ Pour en créer une : sur votre page de gestion, bloc **« Nouvelle pièce »**, 
 le titre, téléchargez le script de départ, déposez-le avec le lien proposé. La
 pièce apparaît quelques minutes plus tard, prête à être écrite dans l'Édition.
 
-Pour en supprimer une, c'est le seul geste qui demande de passer par GitHub :
-le lien **« Ouvrir le dossier sur GitHub »** de sa carte vous y amène
-directement, et vous supprimez le dossier depuis là.
+Pour en supprimer une, c'est le seul geste qui demande de passer par GitHub : sur
+votre dépôt, ouvrez le dossier `plays/`, puis celui de la pièce, et supprimez-le.
+Quelques minutes plus tard la pièce a disparu de la liste.
 
 Si votre site tournait déjà avec une seule pièce avant cette version, lancez une
 fois `python3 scripts/migrate_to_plays.py <nom-de-la-piece>` (par exemple

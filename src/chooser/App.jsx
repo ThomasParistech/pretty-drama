@@ -2,13 +2,7 @@ import React, { useEffect, useState } from "react";
 import HomeFooter from "../shared/HomeFooter.jsx";
 import HomeHero from "../shared/HomeHero.jsx";
 import formatWhen from "../shared/formatWhen.js";
-import {
-  HttpError,
-  fetchPlaysIndex,
-  fetchUnroutedHistory,
-  githubPlayFolderUrl,
-  githubUploadUrl,
-} from "../shared/data.js";
+import { HttpError, fetchPlaysIndex, fetchUnroutedHistory } from "../shared/data.js";
 import { WarnIcon } from "../shared/icons.jsx";
 import { fmt, t } from "../shared/locale.js";
 import { playHref } from "../shared/pages.js";
@@ -47,8 +41,7 @@ export default function App({ manage = false }) {
       // nothing better to make of it.
       //
       // An entry whose id is not a valid one is dropped, and the id is validated
-      // HERE, once, before anything builds a path out of it: this page turns it into
-      // three (`playHref`, and the two GitHub links of `ManageCard`), which is the
+      // HERE, once, before anything builds a path out of it (`playHref`), which is the
       // project's rule everywhere (cf. `UploadLinks` in dashboard/App.jsx, and
       // `play_dir` on the Python side). `plays.json` is derived, but it is committed,
       // hence hand-editable in the repository like every other file the pages read.
@@ -122,13 +115,7 @@ export default function App({ manage = false }) {
             (sorted.length === 0 ? (
               <p className="chooser-empty">{t(manage ? "manage.empty" : "chooser.empty")}</p>
             ) : (
-              sorted.map((play) =>
-                manage ? (
-                  <ManageCard key={play.id} play={play} />
-                ) : (
-                  <ChooseCard key={play.id} play={play} />
-                )
-              )
+              sorted.map((play) => <PlayCard key={play.id} play={play} manage={manage} />)
             ))
           )}
         </div>
@@ -161,96 +148,60 @@ export default function App({ manage = false }) {
 // built once for the whole sort, where the method rebuilds one per call.
 const collator = new Intl.Collator(undefined, { sensitivity: "base" });
 
-// What a card says about its play's progress. Two numbers and a percentage, never a
-// bar: the page chooses a play, it does not follow it, and the play's Progress page
-// shows the detail per character and per scene.
-function Progress({ play }) {
+// What a card says about its play. What the play IS, and nothing about the work in
+// progress: how many roles it hands out, how long it is. An actor choosing a play asks
+// "is this the one, and how big is my share of it", never "how far along are the
+// recordings", which the play's own Progress page measures by character and by scene.
+//
+// The management card adds ONE item, the recorded share: it is the coordinator's own
+// question, the one they open this page to answer over all the plays at once.
+//
+// One row of items which WRAPS, told apart by space alone: see `chooser.css`, where a
+// drawn separator was tried and removed, a wrapped row always leaving it dangling.
+function PlayStats({ play, manage }) {
   const total = Number(play.lines) || 0;
   const recorded = Number(play.recorded) || 0;
   if (total === 0) {
-    // "0 %" on a play that has just been created would read as being behind,
-    // whereas it is a beginning.
+    // A play created but not yet written: "0 personnages 0 mots" describes nothing, and
+    // a "0 %" would read as being behind where it is a beginning.
     return <span className="chooser-card-empty">{t("chooser.emptyPlay")}</span>;
   }
   return (
-    <>
-      {/* `formatShare` and not `fmt.percent`: it is the same measure as the Speaking
-          share page's legend, hence the same rounding rule, and it carries a
-          threshold that matters here too. On a play of more than two thousand lines
-          of which only one is recorded, a bare percentage shows "0.0 %" facing
-          "1 line recorded", which reads as a bug; below a tenth of a point we say
-          the threshold ("< 0.1 %") and not the value. */}
-      <span className="chooser-card-share">{formatShare(recorded, total, t, fmt)}</span>
-      <span className="chooser-card-count">
-        {t("chooser.recorded", { count: recorded, total })}
-      </span>
-    </>
-  );
-}
-
-// The troupe chooser's card: the whole card is the link, like the page cards of the
-// home pages, because it has only one destination and because it is opened with a
-// finger.
-function ChooseCard({ play }) {
-  return (
-    <a className="home-card card lift-hover chooser-card" href={playHref(play.id, "index")}>
-      <span className="home-card-title">{play.title || t("common.untitledPlay")}</span>
-      <Progress play={play} />
-    </a>
-  );
-}
-
-// The management page's card. It is NOT a link, unlike the chooser's: it carries
-// three of them (the play, its upload folder, its folder), and a link inside a link
-// is not valid HTML. The title stays the big gesture, the other two are service
-// links, at the foot of the card.
-//
-// Those two links are the reason for this page: the coordinator must not have to know
-// GitHub in order to upload a file nor to remove a play, they click a link that takes
-// them exactly to the right place.
-function ManageCard({ play }) {
-  const upload = githubUploadUrl(play.id);
-  const folder = githubPlayFolderUrl(play.id);
-  const last = play.lastDeposit ? formatWhen(play.lastDeposit) : null;
-  const name = play.title || t("common.untitledPlay");
-  return (
-    <div className="home-card card chooser-card">
-      <a className="home-card-title chooser-card-link" href={playHref(play.id, "respo")}>
-        {name}
-      </a>
-      <Progress play={play} />
-      <span className="chooser-card-when">
-        {last ? t("manage.lastDeposit", { date: last }) : t("manage.neverDeposited")}
-      </span>
-      {/* Hidden outside github.io (local dev, custom domain), where the upload
-          address cannot be guessed: we do not forge a 404, like the Progress page's
-          upload card. */}
-      {upload && folder && (
-        <span className="chooser-card-links">
-          {/* The accessible name NAMES the play, the visible label does not: on a page
-              that lists the plays, these two links repeat once per card, and in a list
-              of links (a screen reader's walk) "Upload files" four times in a row no
-              longer says anything. On screen, the card already carries the title right
-              above. */}
-          <a
-            href={upload}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={t("manage.deposit.aria", { title: name })}
-          >
-            {t("manage.deposit")}
-          </a>
-          <a
-            href={folder}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={t("manage.folder.aria", { title: name })}
-          >
-            {t("manage.folder")}
-          </a>
-        </span>
+    <span className="chooser-card-stats">
+      <span>{t("chooser.characters", { count: Number(play.characters) || 0 })}</span>
+      <span>{t("chooser.words", { count: Number(play.words) || 0 })}</span>
+      {manage && (
+        // `formatShare` and not `fmt.percent`: it is the same measure as the Speaking
+        // share page's legend, hence the same rounding rule, and it carries a
+        // threshold that matters here too. On a play of more than two thousand lines
+        // of which only one is recorded, a bare percentage shows "0.0 %", which reads
+        // as a bug; below a tenth of a point we say the threshold ("< 0.1 %") and not
+        // the value.
+        <span>{t("manage.recorded", { share: formatShare(recorded, total, t, fmt) })}</span>
       )}
-    </div>
+    </span>
+  );
+}
+
+// A play's card, the SAME on both root pages down to the one extra figure: the two
+// pages list the same objects, and a coordinator who also acts must recognise a play
+// from one page to the other. Only the destination differs, each page opening the
+// home page that belongs to it.
+//
+// The whole card is the link, like the page cards of the home pages: it has one
+// destination and it is opened with a finger. The management card used to be a `div`
+// carrying three links (the play, its upload area, its folder on GitHub), a link
+// inside a link not being valid HTML; the two service links are gone, the upload
+// gesture living on the play's Progress page, next to the log that reports it.
+function PlayCard({ play, manage }) {
+  return (
+    <a
+      className="home-card card lift-hover chooser-card"
+      href={playHref(play.id, manage ? "respo" : "index")}
+    >
+      <span className="home-card-title">{play.title || t("common.untitledPlay")}</span>
+      <PlayStats play={play} manage={manage} />
+    </a>
   );
 }
 

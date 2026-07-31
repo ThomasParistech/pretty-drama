@@ -161,7 +161,7 @@ export function githubRepoUrl() {
   return `https://github.com/${owner}/${repo}`;
 }
 
-// The branch these two URLs name, written once. `main`, which is the default
+// The branch the upload URL names, written once. `main`, which is the default
 // branch of the repository the README has troupes fork, hence of their fork.
 //
 // It used to say `master`, and that was measured to be broken: GitHub only serves
@@ -193,15 +193,6 @@ export function githubUploadUrl(playId) {
   const repo = githubRepoUrl();
   if (!repo) return null;
   return `${repo}/upload/${BRANCH}/uploads${playId ? `/${playId}` : ""}`;
-}
-
-// A play's folder on github.com, for the one gesture the site cannot carry:
-// deleting a play, which requires a commit. The management page links there rather
-// than pretend.
-export function githubPlayFolderUrl(playId) {
-  const repo = githubRepoUrl();
-  if (!repo) return null;
-  return `${repo}/tree/${BRANCH}/plays/${playId}`;
 }
 
 // "Serge" -> "serge", "Éléonore d'Aquitaine" -> "eleonore-d-aquitaine"

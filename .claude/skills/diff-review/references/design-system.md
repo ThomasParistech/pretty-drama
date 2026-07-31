@@ -33,11 +33,11 @@ play's folder by `vite.config.js`:
 | `pages/editor.html` | Editor | `src/editor/editor.css` |
 
 Inside a play no path changes: `data/manifest.json` and `./rehearsal.html` are
-relative paths that resolve in its folder. Four `src/shared/` helpers know about
+relative paths that resolve in its folder. Three `src/shared/` helpers know about
 the `plays/<id>/` layout, and no PAGE does: `chooserHref` (the "change play" link
 at the foot of a play's home), `playHref` (the path written by the cards of both
-root pages), `githubRepoUrl` (which must recognise a root Pages site whose first
-segment is `plays`) and `githubPlayFolderUrl`.
+root pages) and `githubRepoUrl` (which must recognise a root Pages site whose first
+segment is `plays`).
 
 **Seals (`--page-mark` / `--page-mark-soft`, `.page-<key>` classes in
 `theme.css`)**: the brand, Rehearsal, Recorder and Stats share **exactly** the

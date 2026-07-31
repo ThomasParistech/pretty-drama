@@ -39,7 +39,7 @@ data/history.json           journal for uploads no play claimed
 
 - **Inside a play no path changes** (`fetch("data/manifest.json")`, `./rehearsal.html`).
   Only these know about `plays/<id>/`: `chooserHref`, `playHref` (`shared/pages.js`),
-  `githubRepoUrl`, `githubPlayFolderUrl` (`shared/data.js`), `vite.config.js`.
+  `githubRepoUrl` (`shared/data.js`), `vite.config.js`.
 - No `?play=<slug>`: links are bare relative hrefs, so the param dies on every nav.
 - `plays/.gitkeep` and `uploads/.gitkeep` are tracked: `uploads.yml` runs `git add -A
   plays data uploads`, and `git add` of a missing path fails with code 128.
@@ -102,7 +102,9 @@ the commit precedes the deploy.
    only file pages read**. Status per line `ok` / `perime` / `manquant`. A play whose
    script will not parse is **skipped with its manifest untouched**.
 4. `build_plays_index.py`: `data/plays.json`, from FOLDERS not manifests, ordered by id
-   (the pages sort by title with `Intl.Collator`).
+   (the pages sort by title with `Intl.Collator`). Carries what a card says: cast size,
+   length in words (`count_words`, twin of `countWords` in `stats.js`), lines and
+   recorded.
 5. `build_script_pdf.py`: `data/script.pdf`, gitignored, built by `build.yml` only, and
    it **cannot fail the deploy**.
 
@@ -177,7 +179,7 @@ multi-page site, and switching language navigates.
 
 | Area | Files |
 | --- | --- |
-| Root pages | `src/chooser/` (one component, `manage` flag; no link from chooser to management) |
+| Root pages | `src/chooser/` (one component, `manage` flag; no link from chooser to management). One `PlayCard` for both, the whole card a link, `manage` adding the recorded share and nothing else |
 | A play's 2 home pages | `src/home/App.jsx` + `ACTOR_CARDS`/`RESPO_CARDS` (`shared/pages.js`); the actor list omits the editor |
 | Headers | `shared/PlayHeader.jsx` (five pages), `shared/PageHeader.jsx` (manifest-less, via `PageState`), `shared/HomeLink.jsx` (at the header foot, not the top row) |
 | Shared look | `shared/theme.css`: `.dialogue-card`, `.page-shell`/`.page-scroll`, `.truncate`, `.btn-tip`, `.lift-hover`, `.page-notice`, `.confirm-quote`, `.flag-icon`, `--shadow-float` |
@@ -194,8 +196,8 @@ multi-page site, and switching language navigates.
 
 Each has a comment explaining it at the site. Do not "fix" one without reading that.
 
-- The GitHub URLs name `main` (`BRANCH`, `shared/data.js`). `/upload/<branch>` needs a
-  branch that exists and fails onto the repo home page, never a 404; `/tree/` aliases
+- The upload URL names `main` (`BRANCH`, `shared/data.js`). `/upload/<branch>` needs a
+  branch that exists and fails onto the repo home page, never a 404; `/tree/` aliased
   `master`, which is what hid the mistake.
 - Collapse tracks are `minmax(0, 1fr)` / `minmax(0, 0fr)`, never `1fr`/`0fr`.
 - `min-height: 0` on `.play-header-settings-inner` and `.editor-rail-body`.

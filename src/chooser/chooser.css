@@ -4,8 +4,8 @@
    They borrow all their styling from `home.css` (the brand hero, the card grid, the
    footer and its language switch): they are home pages, and the entrance of the site
    must have the same bearing whichever door you come through. This file therefore
-   carries ONLY what is specific to them, namely what a play card says about its
-   progress, the creation gesture, and the report of uploads with no play. */
+   carries ONLY what is specific to them, namely what a play card says about its play,
+   the creation gesture, and the report of uploads with no play. */
 
 /* The landmark holds all the content of the page, the grid of plays and, on the
    management page, the two blocks that belong to it (see `App.jsx`). A flex column and
@@ -29,7 +29,7 @@
   color: var(--ink);
 }
 
-/* A play's cards are shorter than a page's (a title and two lines, against a 52 px
+/* A play's cards are shorter than a page's (a title and one line, against a 52 px
    seal and two paragraphs): they therefore tighten their inner gutter, the rest (base
    width, hover, focus ring) coming from `.home-card`. No `align-items` here: a flex
    container already stretches its items by default, so the cards of a row have the
@@ -38,76 +38,38 @@
   gap: 4px;
 }
 
-/* The title is already in serif and in the brand colour (`.home-card-title`): all
-   that remains is to undo the underline of the link, on a management card where the
-   title IS the link (on the selector, it is the whole card).
-   Undone at REST only: the management card is the one card of the site that does not
-   lift under the pointer (it is not itself a link, it carries three), so with the
-   underline gone for good, nothing but the colour said that the title was clickable,
-   and that colour is the very one the selector's inert titles wear. It comes back on
-   hover, which is the site's plainest affordance and the only one that does not rest
-   on colour alone. */
-.chooser-card-link {
-  text-decoration: none;
-}
+/* What a card says about its play, on one wrapping row: its cast size, its length in
+   words, and on the management page the recorded share (see `PlayStats`).
 
-.chooser-card-link:hover {
-  text-decoration: underline;
-}
-
-.chooser-card-link:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: var(--focus-ring-offset);
-  border-radius: 4px;
-}
-
-/* The recorded share, the only figure the card puts forward. In fixed-width digits
-   like every aligned number on the site (the Progress grid, the Speaking share counts):
-   two cards side by side can then be compared without the decimal separators
-   shifting.
-   In the text ink and NOT in the green of `--ok`, which was tried and removed: that
-   green is the green of completion all over the site (a cell of the grid, a recorded
-   take), so it made "0.7 %" read as good news. A progress figure is a fact, not a
-   state reached; the colour of status belongs to the play's Progress page, which
+   In fixed-width digits like every aligned number on the site (the Progress grid, the
+   Speaking share counts): two cards side by side can then be compared without the
+   figures shifting.
+   In the soft ink and NOT in the green of `--ok`, which was tried and removed on the
+   share: that green is the green of completion all over the site (a cell of the grid, a
+   recorded take), so it made "0.7 %" read as good news. A progress figure is a fact,
+   not a state reached; the colour of status belongs to the play's Progress page, which
    measures it by character and by scene. */
-.chooser-card-share {
-  font-size: 22px;
-  font-weight: 600;
+/* The items are told apart by SPACE alone, and this is not an oversight: a middle dot
+   was drawn between them and removed. The row wraps (three items on a 330 px card, and
+   a phone is narrower still), and a separator has to belong to one of the two items it
+   sits between, so whichever one carries it, a wrap leaves it dangling at the end of a
+   line or opening the next one. Space never dangles. */
+.chooser-card-stats {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 14px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
-  color: var(--ink);
 }
 
-.chooser-card-count,
-.chooser-card-when,
+/* A still empty play says so instead of describing itself in zeros (see `PlayStats`):
+   the sentence takes the place of the row, in the same size so that two neighbouring
+   cards keep the same height. */
 .chooser-card-empty {
   font-size: 13.5px;
   color: var(--ink-soft);
-}
-
-/* A still empty play does not show "0 %" (see `Progress`): the sentence takes the
-   place of the figure, so it also takes its line height so that two neighbouring
-   cards keep the same one. */
-.chooser-card-empty {
   font-style: italic;
-  line-height: 33px;
-}
-
-/* The two service links of a management card, at the foot: they are the reason for
-   this page (the manager does not have to know GitHub), but they do not compete with
-   the title, which is the normal destination. A top rule rather than a margin alone:
-   they form a card footer, like the foot of the shared header. */
-.chooser-card-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border);
-  font-size: 13px;
-}
-
-.chooser-card-links a {
-  color: var(--accent);
 }
 
 .chooser-empty {

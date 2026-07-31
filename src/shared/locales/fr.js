@@ -651,37 +651,31 @@ export const FR = {
   "chooser.loadError":
     "Impossible de charger la liste des pièces. Le site n'est peut-être pas encore " +
     "publié : réessayez dans quelques minutes ou contactez le responsable.",
-  // The count on a play card. Both numbers are parameters, hence formatted by the
-  // engine: "1 144" and "1,144" without anyone having to see to it.
-  "chooser.recorded": {
-    one: "{count} réplique enregistrée sur {total}",
-    other: "{count} répliques enregistrées sur {total}",
+  // What a card says about its play: how many roles it hands out, how long it is. The
+  // number is a parameter, hence formatted by the engine ("12 340" and "12,340"
+  // without anyone having to see to it), and the plural is the engine's too.
+  // "personnages" and never "acteurs": it is the word of script.json, and the same
+  // word the Speaking share page uses (cf. `page.stats.desc`).
+  "chooser.characters": {
+    one: "{count} personnage",
+    other: "{count} personnages",
   },
-  // A play created but not yet written: the count would have nothing to say, and
+  "chooser.words": {
+    one: "{count} mot",
+    other: "{count} mots",
+  },
+  // A play created but not yet written: the figures would have nothing to say, and
   // "0 %" would read as a delay when it is a beginning.
   "chooser.emptyPlay": "Pièce encore vide",
 
   "manage.heading": "Vos pièces",
   "manage.empty": "Aucune pièce pour l'instant : créez la première ci-dessous.",
-  "manage.lastDeposit": "Dernier dépôt le {date}",
-  // It opens like `dashboard.journal.empty` and is NOT interpolated from it: that one
-  // is a whole sentence with a continuation ("chaque fichier déposé apparaîtra ici…"),
-  // this one a card label, and quoting a fragment of a sentence is exactly what the
-  // project forbids, since it freezes the French word order in the caller. Two labels
-  // are written once; two texts that happen to begin alike are not the same label.
-  "manage.neverDeposited": "Aucun dépôt pour l'instant",
-  // A play's two own links: its upload area, and its folder in the repository for
-  // the one gesture the site cannot carry (deleting it requires a commit). The
-  // second says "dossier" and not "supprimer": that is what it opens, and the
-  // deletion happens there under the eyes of whoever asked for it.
-  "manage.deposit": "Déposer des fichiers",
-  "manage.folder": "Ouvrir le dossier sur GitHub",
-  // The same, but NAMING their play: these two links repeat once per card, and in a
-  // screen reader's list of links "Déposer des fichiers" four times in a row no
-  // longer designates anything. On screen the title is just above, so the visible
-  // label stays short.
-  "manage.deposit.aria": "Déposer des fichiers pour {title}",
-  "manage.folder.aria": "Ouvrir le dossier de {title} sur GitHub",
+  // The ONE thing a management card says that a troupe's card does not: the recorded
+  // share, the coordinator's own question, asked of every play at once. The share
+  // arrives already written (`formatShare`, which holds the rounding and the "< 0,1 %"
+  // threshold it shares with the Speaking share page's legend), like the figure of
+  // `stats.shareBelow`: the catalogue receives it, it does not format it.
+  "manage.recorded": "{share} des répliques enregistrées",
 
   "manage.new.title": "Nouvelle pièce",
   // The three stages of the gesture, in the order they are done: it is the site's

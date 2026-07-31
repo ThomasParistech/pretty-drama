@@ -7,14 +7,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {
-  EXCERPT_MAX,
-  excerpt,
-  githubPlayFolderUrl,
-  githubUploadUrl,
-  myLineNumbers,
-  slugify,
-} from "./data.js";
+import { EXCERPT_MAX, excerpt, githubUploadUrl, myLineNumbers, slugify } from "./data.js";
 
 // The module only touches `window` inside function bodies: it is therefore enough
 // to set it before the call. The cases outside github.io rely on
@@ -73,24 +66,13 @@ test("with no play named, the upload URL aims at the root, the creation channel"
   assert.match(githubUploadUrl(), /\/upload\/main\/uploads$/);
 });
 
-test("both GitHub URLs name the branch the fork really has", () => {
-  // The one thing about these URLs that nothing on the site can report. GitHub only
+test("the upload URL names the branch the fork really has", () => {
+  // The one thing about this URL that nothing on the site can report. GitHub only
   // serves `/upload/<branch>/<path>` for a branch that EXISTS: given a branch that
   // does not, it drops the upload form AND the path and lands on the repository's
-  // home page, so the coordinator sees a plausible GitHub page and no error. The
-  // `/tree/` view, on the other hand, aliases `master` to the default branch, which
-  // is what let the wrong branch survive unnoticed: the folder link kept working.
+  // home page, so the coordinator sees a plausible GitHub page and no error.
   atUrl("https://troupe.github.io/depot/respo.html");
   assert.match(githubUploadUrl("piece"), /\/upload\/main\//);
-  assert.match(githubPlayFolderUrl("piece"), /\/tree\/main\//);
-});
-
-test("a play's folder on GitHub, for the only gesture the site does not carry", () => {
-  atUrl("https://troupe.github.io/depot/respo.html");
-  assert.equal(
-    githubPlayFolderUrl("ma-piece"),
-    "https://github.com/troupe/depot/tree/main/plays/ma-piece"
-  );
 });
 
 // ------------------------------------------------------------------ slugify
