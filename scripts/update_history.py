@@ -1,30 +1,29 @@
-"""Consigne les dépôts de ce run dans les journaux : un par pièce, plus la racine.
+"""Logs this run's uploads into the journals: one per play, plus the root one.
 
-Le respo ne lit ni les logs de la CI ni l'onglet Issues : son seul retour sur
-« mon dépôt est-il passé ? » est le journal affiché à l'écran. Ce journal est donc le
-canal d'erreur du projet, pas un simple historique : un fichier refusé n'a aucun
-autre endroit où se dire.
+The coordinator reads neither the CI logs nor the Issues tab: their only feedback on "did
+my upload go through?" is the journal displayed on screen. That journal is therefore the
+project's error channel, not a mere history: a rejected file has nowhere else to be
+reported.
 
-**Un journal par pièce** (`plays/<id>/data/history.json`, affiché par l'Avancement de
-cette pièce) : une pièce ignore les dépôts des autres, comme elle ignore leurs
-répliques et leurs clips. **Plus un journal racine** (`data/history.json`, affiché par
-la page de gestion des pièces) pour ce qu'aucune pièce ne réclame : un fichier posé à
-la racine d'`uploads/` sans identifiant lisible, une zone de dépôt dont le nom n'est
-pas un identifiant valide. Sans lui, ces fichiers-là disparaîtraient sans un mot, ce
-qui est exactement ce qu'un canal d'erreur ne doit jamais faire.
+**One journal per play** (`plays/<id>/data/history.json`, rendered by that play's
+Dashboard): a play ignores the other plays' uploads, as it ignores their lines and
+clips. **Plus a root journal** (`data/history.json`, rendered by the play management
+page) for whatever no play claims: a file dropped at the root of `uploads/` with no
+readable id, an upload zone whose name is not a valid id. Without it, those files would
+vanish without a word, which is exactly what an error channel must never do.
 
-Entrée : uploads_result.json (éphémère, écrit par process_uploads.py), le sort de
-chaque fichier déposé dans ce run, déjà rangé par pièce. Le journal ne consigne donc
-QUE les dépôts : c'est le workflow uploads.yml qui l'écrit, jamais celui qui
-reconstruit le site.
+Input: uploads_result.json (ephemeral, written by process_uploads.py), the outcome of
+every file uploaded in this run, already keyed by play. So the journal logs ONLY
+uploads: the uploads.yml workflow is what writes it, never the one that rebuilds the
+site.
 
-Rien n'est consigné pour un run en échec : il ne commite pas, donc il ne peut
-rien écrire ici. C'est assumé, et c'est même le détecteur de panne : la date de
-la dernière entrée cesse d'avancer.
+Nothing is logged for a failed run: it does not commit, so it cannot write anything
+here. That is accepted, and is even the failure detector: the last entry's date stops
+advancing.
 
-Le journal d'une pièce est lu par build_manifest.py, qui le recopie dans le manifest
-de la pièce (seul fichier lu par ses pages) ; celui de la racine est lu par
-build_plays_index.py, et la page de gestion le sert depuis l'index.
+A play's journal is read by build_manifest.py, which copies it into the play's manifest
+(the only file its pages read); the root one is read by build_plays_index.py, and the
+management page serves it from the index.
 """
 
 from __future__ import annotations
@@ -37,17 +36,16 @@ from common import REPO_ROOT, is_play_id, load_json, play_data_dir, utc_stamp, w
 ROOT_HISTORY_PATH = REPO_ROOT / "data" / "history.json"
 RESULT_PATH = REPO_ROOT / "uploads_result.json"
 
-# Le journal est commité à chaque dépôt : il est plafonné, sinon il grossit sans
-# fin. Une trentaine d'entrées couvre largement ce que le respo consulte.
+# The journal is committed on every upload: it is capped, or it would grow without end.
+# Around thirty entries covers far more than what the coordinator consults.
 MAX_RUNS = 30
 
 
 def add_run(history: dict, files: list, at: str) -> dict:
-    """Journal + résultat de ce dépôt -> nouveau journal (fonction pure).
+    """Journal plus this upload's result gives a new journal (pure function).
 
-    Les entrées sont rangées de la plus récente à la plus ancienne : c'est
-    l'ordre d'affichage, et le plafond se lit alors comme « on garde les
-    MAX_RUNS dernières »."""
+    Entries are ordered newest to oldest: that is the display order, and the cap then
+    reads as "keep the last MAX_RUNS"."""
     runs = history.get("runs")
     if not isinstance(runs, list):
         runs = []
@@ -70,32 +68,32 @@ def main() -> None:
     unrouted = result.get("unrouted")
     unrouted = unrouted if isinstance(unrouted, list) else []
 
-    # Un seul horodatage pour tout le run : deux fichiers déposés ensemble sont un
-    # seul dépôt, même quand ils concernent deux pièces.
+    # One timestamp for the whole run: two files uploaded together are a single
+    # upload, even when they concern two plays.
     at = utc_stamp()
     written = 0
     for play_id, files in sorted(by_play.items()):
         if not isinstance(files, list) or not files:
             continue
-        # Validé AVANT de servir à construire un chemin, comme partout ailleurs dans
-        # le projet. `uploads_result.json` est écrit par l'étape précédente du même
-        # job, donc la valeur est sûre en pratique ; la règle ne se relâche pas pour
-        # autant, c'est elle qui rend la concaténation sûre plutôt qu'un raisonnement
-        # sur l'appelant du jour.
+        # Validated BEFORE being used to build a path, as everywhere else in the
+        # project. `uploads_result.json` is written by the previous step of the same
+        # job, so the value is safe in practice; the rule does not relax for that.
+        # It is the rule that makes the concatenation safe, not a piece of reasoning
+        # about today's caller.
         if not is_play_id(play_id):
-            print(f"Journal : identifiant de pièce invalide, ignoré ({play_id!r})", file=sys.stderr)
+            print(f"Journal: invalid play id, ignored ({play_id!r})", file=sys.stderr)
             continue
         append(play_data_dir(play_id) / "history.json", files, at)
         written += 1
-        print(f"Journal de « {play_id} » : 1 entrée ajoutée ({len(files)} fichier(s))")
+        print(f"Journal for {play_id!r}: 1 entry added ({len(files)} file(s))")
 
     if unrouted:
         append(ROOT_HISTORY_PATH, unrouted, at)
         written += 1
-        print(f"Journal racine : 1 entrée ajoutée ({len(unrouted)} fichier(s) non routable(s))")
+        print(f"Root journal: 1 entry added ({len(unrouted)} unroutable file(s))")
 
     if written == 0:
-        print("Journal : rien à consigner (aucun fichier déposé)")
+        print("Journal: nothing to log (no file uploaded)")
 
 
 if __name__ == "__main__":

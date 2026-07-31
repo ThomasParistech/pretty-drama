@@ -4,26 +4,26 @@ import { downloadBlob, githubUploadUrl } from "../shared/data.js";
 import { LOCALE, t } from "../shared/locale.js";
 import { mintPlayId, newPlayScript } from "../shared/plays.js";
 
-// Créer une pièce, depuis le site et sans écrire une ligne de JSON.
+// Creating a play, from the site and without writing a line of JSON.
 //
-// Le site est statique : il ne peut rien commiter, donc une pièce ne peut naître que
-// d'un DÉPÔT, comme tout ce qui entre dans ce dépôt. Le geste est donc en deux temps,
-// et la phrase de doc les annonce tous les deux : on télécharge le script de départ,
-// on le dépose. La pièce apparaît quand l'Action a tourné.
+// The site is static: it can commit nothing, so a play can only be born from an
+// UPLOAD, like everything that enters this repo. The gesture therefore has two
+// stages, and the doc sentence announces both of them: one downloads the starting
+// script, one uploads it. The play appears once the Action has run.
 //
-// Le fichier part vers la RACINE d'`uploads/` et non vers `uploads/<id>/`, parce que
-// c'est le seul cas où le dossier ne peut pas encore router : il n'existe pas. C'est
-// l'identifiant inscrit dans le fichier qui décide, et c'est le seul endroit du
-// projet où le contenu route un dépôt (cf. `claimed_play_id` dans
-// scripts/process_uploads.py). Une fois la pièce née, l'Action lui crée sa propre
-// zone de dépôt, et tous ses dépôts suivants passent par elle.
+// The file goes to the ROOT of `uploads/` and not to `uploads/<id>/`, because this is
+// the only case where the folder cannot route yet: it does not exist. It is the id
+// written inside the file that decides, and it is the only place in the project where
+// the content routes an upload (cf. `claimed_play_id` in
+// scripts/process_uploads.py). Once the play is born, the Action creates its own
+// upload folder for it, and all its later uploads go through that one.
 //
-// L'identifiant est minté ICI, une fois, et ne changera jamais : il nomme le dossier
-// de la pièce et son adresse sur le site. Renommer la pièce plus tard changera son
-// titre, pas son adresse.
+// The id is minted HERE, once, and will never change: it names the play's folder and
+// its address on the site. Renaming the play later will change its title, not its
+// address.
 
-// L'`id` que le champ cite en `aria-describedby` quand il est refusé. Une constante
-// de module : il n'y a qu'un seul formulaire de création par document.
+// The `id` the field cites in `aria-describedby` when it is refused. A module
+// constant: there is only ever one creation form per document.
 const ERROR_ID = "new-play-error";
 
 export default function NewPlay({ taken }) {
@@ -40,30 +40,30 @@ export default function NewPlay({ taken }) {
     }
     const id = mintPlayId(trimmed);
     if (!id) {
-      // Un titre tout en ponctuation ne laisse aucune adresse : mieux vaut le dire
-      // que fabriquer un dossier nommé « piece-1 », qui vivrait des années dans
-      // l'URL de la troupe.
+      // A title made entirely of punctuation leaves no address: better to say so
+      // than to fabricate a folder named "play-1", which would live for years in
+      // the troupe's URL.
       setError(t("manage.new.badTitle"));
       return;
     }
-    // Deux pièces au même identifiant se marcheraient dessus (même dossier, même
-    // zone de dépôt) ; deux pièces au même titre seraient de surcroît impossibles à
-    // distinguer dans le sélecteur. On demande donc un autre titre plutôt que de
-    // suffixer un numéro derrière le dos du responsable.
+    // Two plays with the same id would step on each other (same folder, same upload
+    // folder); two plays with the same title would furthermore be impossible to tell
+    // apart in the chooser. So we ask for another title rather than suffixing a
+    // number behind the coordinator's back.
     if (taken.some((play) => play.id === id)) {
       setError(t("manage.new.taken"));
       return;
     }
     setError(null);
-    // La langue du LECTEUR comme langue de la pièce : c'est le meilleur pari (une
-    // troupe francophone écrit en français), et le plan du rail la corrige d'un clic
-    // si besoin. C'est bien la langue du DOCUMENT qu'on pose là, pas celle de
-    // l'interface, les deux axes ne se confondant pas ailleurs sur le site.
+    // The READER's language as the play's language: it is the best bet (a
+    // French-speaking troupe writes in French), and the rail's outline corrects it in
+    // one click if need be. What is set here is indeed the DOCUMENT's language, not
+    // the interface's, the two axes never being conflated elsewhere on the site.
     const script = newPlayScript(id, trimmed, LOCALE);
     const blob = new Blob([JSON.stringify(script, null, 2)], { type: "application/json" });
-    // Le nom du fichier porte l'identifiant, qui n'est pas un mot à traduire : il se
-    // relit dans un dossier de téléchargements, et l'Action ne le lit jamais (le type
-    // d'un dépôt vient de sa seule extension).
+    // The file name carries the id, which is not a word to translate: it can be read
+    // back in a downloads folder, and the Action never reads it (an upload's type
+    // comes from its extension alone).
     downloadBlob(blob, `${id}.json`);
     setDownloaded(true);
   };
@@ -72,10 +72,10 @@ export default function NewPlay({ taken }) {
     <section className="chooser-new card">
       <h2>{t("manage.new.title")}</h2>
       <p className="chooser-new-hint">{t("manage.new.hint")}</p>
-      {/* Un vrai `<form>` et pas une rangée de `div` : Entrée dans le champ soumet,
-          ce qui est le geste naturel après avoir tapé un titre et le seul chemin
-          clavier direct vers l'action. Même forme que le formulaire d'ajout d'un
-          personnage dans le rail de l'Édition, qui est le précédent du site. */}
+      {/* A real `<form>` and not a row of `div`s: Enter in the field submits, which is
+          the natural gesture after typing a title and the only direct keyboard path to
+          the action. Same shape as the character-adding form in the Editing page's
+          rail, which is the site's precedent. */}
       <form
         className="chooser-new-row"
         onSubmit={(e) => {
@@ -92,8 +92,9 @@ export default function NewPlay({ taken }) {
             aria-describedby={error ? ERROR_ID : undefined}
             onChange={(e) => {
               setTitle(e.target.value);
-              // Le message part dès qu'on retouche le titre : il décrivait la valeur
-              // d'avant, et le garder ferait lire un refus qui n'a plus cours.
+              // The message goes away as soon as the title is touched again: it
+              // described the previous value, and keeping it would make one read a
+              // refusal that no longer applies.
               setError(null);
               setDownloaded(false);
             }}
@@ -103,17 +104,19 @@ export default function NewPlay({ taken }) {
           <DownloadIcon /> {t("manage.new.download")}
         </button>
       </form>
-      {/* `role="alert"` parce que ce message n'apparaît qu'APRÈS un clic, et qu'un
-          lecteur d'écran resté sur le bouton ne le verrait jamais passer : c'est le
-          seul refus de la page, et il porte la seule chose à corriger. */}
+      {/* `role="alert"` because this message only appears AFTER a click, and a screen
+          reader left on the button would never see it go by: it is the page's only
+          refusal, and it carries the only thing to fix. */}
       {error && (
         <p className="chooser-new-error" id={ERROR_ID} role="alert">
-          <WarnIcon /> {error}
+          <WarnIcon />
+          {error}
         </p>
       )}
-      {/* Le second temps du geste n'apparaît qu'une fois le premier fait : proposer
-          de déposer un fichier qu'on n'a pas encore téléchargé ne mène nulle part.
-          Le lien est masqué hors github.io, où l'adresse du dépôt est indevinable. */}
+      {/* The second stage of the gesture only appears once the first is done: offering
+          to upload a file one has not downloaded yet leads nowhere.
+          The link is hidden outside github.io, where the upload address cannot be
+          guessed. */}
       {downloaded && !error && (
         <p className="chooser-new-done">
           {t("manage.new.done")}{" "}

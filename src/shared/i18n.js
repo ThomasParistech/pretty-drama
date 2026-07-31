@@ -200,12 +200,12 @@ export function makeFormats(locale) {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   });
-  // Composants explicites plutôt que `dateStyle`/`timeStyle: "short"`, et c'est
-  // une règle du journal, pas une préférence : « un journal se relit des mois
-  // plus tard », donc l'année s'écrit en entier. Le style court la rendait sur
-  // DEUX chiffres en anglais (« 7/27/26 »). L'heure reste en 2 chiffres et le
-  // séparateur date/heure appartient à la locale, ce qui est tout l'intérêt
-  // (l'ancien code collait un « à » français à la main).
+  // Explicit components rather than `dateStyle`/`timeStyle: "short"`, and this is
+  // a rule of the upload log, not a preference: "a log is read back months
+  // later", so the year is written out in full. The short style rendered it on
+  // TWO digits in English ("7/27/26"). The hour stays 2-digit, and the date/time
+  // separator belongs to the locale, which is the whole point (the old code glued
+  // a French "à" on by hand).
   const dateTime = new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "2-digit",
@@ -214,11 +214,11 @@ export function makeFormats(locale) {
     minute: "2-digit",
   });
   const marks = QUOTES[locale] ?? QUOTES[DEFAULT_LOCALE];
-  // Le séparateur de milliers, pour les nombres qu'un composant écrit SEUL, hors
-  // de toute phrase : le total au centre de l'anneau et les décomptes de la
-  // légende de la Répartition. Ceux qui vivent dans une phrase n'en ont pas
-  // besoin, `makeT` formatant déjà tout paramètre numérique ; c'est le même
-  // formateur des deux côtés, donc les deux ne peuvent pas se désaccorder.
+  // The thousands separator, for the numbers a component writes ALONE, outside
+  // any sentence: the total at the centre of the donut and the counts in the
+  // Speaking share legend. The ones that live inside a sentence do not need it,
+  // `makeT` already formatting every numeric parameter; it is the same formatter
+  // on both sides, so the two cannot disagree.
   const number = new Intl.NumberFormat(locale);
 
   return {

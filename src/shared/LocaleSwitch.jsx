@@ -53,9 +53,9 @@ export default function LocaleSwitch() {
             className="locale-switch-current"
             lang={locale}
             aria-current="true"
-            // Le drapeau étant `aria-hidden`, c'est ce couple qui porte le nom
-            // de la langue : `role="img"` est ce qui rend un `aria-label`
-            // valable sur un `<span>` (motif du sceau et des comptes du plan).
+            // The flag being `aria-hidden`, it is this pair that carries the
+            // language name: `role="img"` is what makes an `aria-label` valid
+            // on a `<span>` (the pattern of the seal and of the plan's counts).
             role="img"
             aria-label={NAMES[locale]}
             title={NAMES[locale]}

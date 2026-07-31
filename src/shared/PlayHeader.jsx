@@ -8,48 +8,46 @@ import { pageDescKey } from "./pages.js";
 // and dashboard pages: page mark and play title on one row (plus optional action
 // buttons on the right); a folded/unfolded area below, holding the link back
 // home and, on the pages that have some, their settings (children).
-// Toujours pas de libellé de page en toutes lettres (il encombrait la barre
-// sur mobile) : c'est le sceau coloré qui dit sur quelle page on est.
+// Still no page label spelled out (it cluttered the bar on mobile): it is the
+// coloured seal that says which page you are on.
 //
-// **Le mot « PrettyDrama » n'est plus dans la rangée du haut.** Il vit
-// maintenant à côté du logo, en pied du bandeau déplié : la rangée du haut est
-// la seule ligne toujours visible, et sur mobile la marque y mangeait la moitié
-// de la largeur du titre de la pièce, qui se coupait en « … ». Le titre de la
-// pièce est la seule chose que cette rangée doit dire (le sceau dit la page),
-// et le nom du site se lit très bien une ligne plus bas, une fois déplié, là où
-// il est aussi la destination du lien.
+// **The word "PrettyDrama" is no longer in the top row.** It now lives next to
+// the logo, in the foot of the unfolded header: the top row is the only line
+// always visible, and on mobile the brand ate half the width of the play title
+// there, which got cut off with an "…". The play title is the only thing this
+// row must say (the seal says the page), and the site name reads perfectly well
+// one line below, once unfolded, where it is also the destination of the link.
 //
-// Le retour à l'accueil vit donc dans le bandeau déplié
-// (`.play-header-home` : logo aux deux masques + le mot). Sur mobile, le pouce
-// vise le haut de la barre pour la replier et tombait sur la marque, donc le
-// geste le plus courant de la page menait au menu principal, en perdant le
-// personnage choisi et, sur l'Enregistrement, les prises non exportées. Tout ce
-// que le doigt peut atteindre dans la rangée replie maintenant le bandeau ;
-// sortir de la page demande de le déplier d'abord.
-// Le sceau de la page reste hors du bouton (il porte son role/aria-label, qui
-// brouillerait le nom accessible du bouton) : il n'a jamais rien fait au clic,
-// c'est la seule zone de la rangée qui reste inerte.
+// The link back home therefore lives in the unfolded header
+// (`.play-header-home`: two-masks logo + the word). On mobile, the thumb aims at
+// the top of the bar to fold it and used to land on the brand, so the most
+// common gesture of the page led to the main menu, losing the chosen character
+// and, on the Recording page, the takes not yet exported. Everything the finger
+// can reach in the row now folds the header; leaving the page requires
+// unfolding it first.
+// The page seal stays outside the button (it carries its role/aria-label, which
+// would blur the accessible name of the button): it has never done anything on
+// click, it is the only zone of the row that stays inert.
 //
-// Le bandeau se replie sur les CINQ pages, y compris l'Avancement, qui n'a
-// aucun réglage : le repli n'ouvre plus sur du vide puisqu'il porte désormais
-// le lien de retour, et une page où il ne se replierait pas serait la seule
-// à garder son bandeau ouvert sous le pouce.
+// The header folds on ALL FIVE pages, including the Progress page, which has no
+// settings at all: folding no longer opens onto emptiness since it now carries
+// the link back home, and a page where it did not fold would be the only one to
+// keep its header open under the thumb.
 //
-// **La doc de la page se rend ici, pas dans les pages.** Le premier paragraphe
-// est le `desc` de `pages.js`, mot pour mot celui de la carte de l'accueil : la
-// promesse et l'arrivée doivent décrire la même page, et une phrase recopiée
-// dans deux fichiers finit par dériver. Le second (`hint`, facultatif) est ce
-// que le bandeau ajoute : les précisions qui n'auraient aucun sens sur une
-// carte, quand on choisit encore où aller. Deux paragraphes au total, jamais
-// trois : c'est la place que laisse un bandeau au-dessus du contenu.
-// Les réglages sont rognés en permanence (`overflow: hidden` sur
-// `.play-header-settings`, theme.css). Ce composant a porté un état `animating`
-// et un minuteur de 340 ms pour lever ce rognage dès que le bandeau était ouvert
-// et immobile, et cela n'avait qu'une raison : le popover de couleur d'une puce
-// de personnage devait pouvoir dépasser du bandeau de l'éditeur. Les puces
-// vivent maintenant dans le rail de l'Édition, donc plus aucune des cinq pages
-// n'a de contenu qui dépasse de ses réglages, et aucune ne fait plus tourner de
-// minuteur à chaque repli.
+// **The page's doc is rendered here, not in the pages.** The first paragraph is
+// the `desc` from `pages.js`, word for word the one on the home card: the
+// promise and the arrival must describe the same page, and a sentence copied
+// into two files ends up drifting. The second one (`hint`, optional) is what the
+// header adds: the details that would make no sense on a card, when you are
+// still choosing where to go. Two paragraphs in all, never three: that is the
+// room a header leaves above the content.
+// The settings are clipped permanently (`overflow: hidden` on
+// `.play-header-settings`, theme.css). This component used to carry an
+// `animating` state and a 340 ms timer to lift that clipping as soon as the
+// header was open and still, and that had only one reason: the colour popover of
+// a character chip had to be able to overflow the editor's header. The chips now
+// live in the Editing rail, so none of the five pages has any content
+// overflowing its settings, and none runs a timer on every fold any more.
 export default function PlayHeader({ page, title, actions, hint, children }) {
   const [open, setOpen] = useState(true);
 
@@ -57,9 +55,9 @@ export default function PlayHeader({ page, title, actions, hint, children }) {
     <header className={`play-header page-${page} ${open ? "open" : ""}`}>
       <div className="play-header-row">
         <PageMark page={page} />
-        {/* Infobulle en un seul libellé, et pas « les réglages » : le bandeau
-            de l'Avancement ne contient qu'une phrase et le logo de retour, donc
-            une infobulle par contenu se désaccorderait au premier ajout. */}
+        {/* Tooltip in a single label, and not "the settings": the Progress
+            header contains only a sentence and the logo back home, so one
+            tooltip per content would fall out of step at the first addition. */}
         <button
           className="play-header-toggle"
           title={t("common.headerToggle")}
@@ -67,40 +65,40 @@ export default function PlayHeader({ page, title, actions, hint, children }) {
           onClick={() => setOpen((o) => !o)}
         >
           <span className="play-header-title">{title}</span>
-          {/* Un seul chevron qui pivote (et non ▲/▼ échangés) : le repli est
-              animé, la flèche doit suivre le même mouvement. */}
+          {/* A single chevron that pivots (and not ▲/▼ swapped): the fold is
+              animated, the arrow must follow the same movement. */}
           <span className="play-header-chevron" aria-hidden="true">
             ▼
           </span>
         </button>
         {actions}
       </div>
-      {/* Les réglages restent montés : c'est ce qui permet d'animer le repli
-          (grille 1fr → 0fr). Fermés, ils sont `visibility: hidden`, donc hors
-          du parcours au clavier. */}
+      {/* The settings stay mounted: that is what makes the fold animatable
+          (1fr → 0fr grid). Closed, they are `visibility: hidden`, hence out of
+          the keyboard path. */}
       <div className="play-header-settings">
         <div className="play-header-settings-inner">
-          {/* La phrase compacte ouvre TOUJOURS le bandeau déplié, juste sous le
-              titre de la pièce et au-dessus des réglages : à quoi sert la page
-              se lit avant qu'on y touche, et elle est ainsi au même endroit sur
-              les cinq pages (une doc qui change de place d'une page à l'autre
-              se cherche à chaque fois). */}
+          {/* The compact sentence ALWAYS opens the unfolded header, right under
+              the play title and above the settings: what the page is for reads
+              before you touch it, and it is thus in the same place on the five
+              pages (a doc that moves from one page to the next has to be
+              hunted for every time). */}
           <p className="header-hint">{t(pageDescKey(page))}</p>
           {children}
-          {/* Les précisions, elles, restent en pied : on les relit une fois,
-              elles ne doivent pas éloigner les réglages du titre. Même classe et
-              donc même style que la phrase compacte : c'est la même voix, à un
-              cran de détail près, et c'est la place qui les distingue. (Une
-              classe `header-hint-more` a existé ici ; rien ne la stylait, elle ne
-              promettait qu'une nuance que le dessin refuse.) */}
+          {/* The details, for their part, stay in the foot: you read them once,
+              they must not push the settings away from the title. Same class and
+              therefore same style as the compact sentence: it is the same voice,
+              one notch of detail apart, and it is the place that tells them
+              apart. (A `header-hint-more` class existed here; nothing styled it,
+              it only promised a nuance the design refuses.) */}
           {hint && <p className="header-hint">{hint}</p>}
-          {/* En pied du bandeau déplié et centré : une sortie de page ne se met
-              pas au-dessus des réglages de la page, et centrée elle ne se
-              confond avec aucune des colonnes de gauche. C'est ici que le nom du
-              site se lit, plus dans la rangée du haut, où il rognait le titre de
-              la pièce sur mobile. Le lien lui-même (logo + mot, filets compris)
-              vit dans `HomeLink`, partagé avec `PageHeader` pour que la marque
-              soit au même endroit pendant le chargement et après. */}
+          {/* In the foot of the unfolded header and centred: a way out of the
+              page is not put above the page's settings, and centred it is not
+              confused with any of the left-hand columns. This is where the site
+              name reads, no longer in the top row, where it cropped the play
+              title on mobile. The link itself (logo + word, rules included)
+              lives in `HomeLink`, shared with `PageHeader` so that the brand is
+              in the same place during loading and after. */}
           <HomeLink page={page} />
         </div>
       </div>

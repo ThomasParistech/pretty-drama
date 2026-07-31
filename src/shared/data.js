@@ -1,21 +1,21 @@
 // Data loading shared by all pages.
 //
-// Les pages d'une pièce lisent UNIQUEMENT `data/manifest.json` (+ les mp3 de
-// `clips/`), sauf l'Édition, qui lit aussi `data/script.json` (la source de vérité
-// qu'elle produit). Ces chemins sont RELATIFS, et ils le restent depuis que le dépôt
-// héberge plusieurs pièces : les pages d'une pièce vivent dans le dossier de la
-// pièce (`plays/<id>/rehearsal.html`), donc `data/manifest.json` y désigne le
-// manifest de CETTE pièce, sans qu'aucune page ait à savoir laquelle.
+// The pages of a play read ONLY `data/manifest.json` (plus the mp3s in `clips/`),
+// except Editing, which also reads `data/script.json` (the source of truth it
+// produces). These paths are RELATIVE, and they have stayed that way since the
+// repository started hosting several plays: the pages of a play live in the play's
+// own folder (`plays/<id>/rehearsal.html`), so `data/manifest.json` there names
+// THAT play's manifest, without any page having to know which one.
 //
-// Les deux pages RACINE (sélecteur de pièce et gestion des pièces) lisent
-// `data/plays.json`, le seul fichier au-dessus des pièces.
+// The two ROOT pages (the play chooser and the play management page) read
+// `data/plays.json`, the only file living above the plays.
 
 // Distinguishes "file does not exist" (404 → legitimate empty start) from
 // "file exists but is unreadable" (parse error → must NOT be treated as
 // empty, or the user could overwrite real data).
 export class HttpError extends Error {
   constructor(status, url) {
-    super(`HTTP ${status} sur ${url}`);
+    super(`HTTP ${status} on ${url}`);
     this.status = status;
   }
 }
@@ -26,7 +26,7 @@ export async function fetchJson(relativeUrl) {
   try {
     return await res.json();
   } catch {
-    throw new Error(`Fichier illisible (JSON invalide) : ${relativeUrl}`);
+    throw new Error(`Unreadable file (invalid JSON): ${relativeUrl}`);
   }
 }
 
@@ -38,16 +38,18 @@ export function fetchScript() {
   return fetchJson("data/script.json");
 }
 
-// L'index des pièces, lu par les deux pages racine (et par elles seules : une pièce
-// ignore les autres). Le fichier est dérivé, écrit par scripts/build_plays_index.py.
+// The index of plays, read by the two root pages (and by them alone: a play knows
+// nothing of the others). The file is derived, written by
+// scripts/build_plays_index.py.
 export function fetchPlaysIndex() {
   return fetchJson("data/plays.json");
 }
 
-// Le journal des dépôts qu'aucune pièce n'a réclamés, affiché par la page de gestion.
-// ABSENT est le cas NORMAL, et c'est même le cas heureux : ce fichier ne naît qu'au
-// premier dépôt non routable. Un 404 rend donc un journal vide plutôt qu'une erreur,
-// là où les autres lectures du site traitent un 404 comme un vrai problème.
+// The log of the uploads no play has claimed, shown by the management page.
+// ABSENT is the NORMAL case, and it is even the happy one: this file is only born
+// with the first unroutable upload. A 404 therefore returns an empty log rather
+// than an error, where every other read on the site treats a 404 as a real
+// problem.
 export async function fetchUnroutedHistory() {
   try {
     return await fetchJson("data/history.json");
@@ -64,9 +66,9 @@ export async function fetchUnroutedHistory() {
 // keeps the pure modules testable without a DOM, which is the whole test
 // strategy of this project.
 
-// Numérotation « (n/total) » de mes répliques dans la scène courante,
-// partagée par les pages Répétition et Enregistrement : Map lineId -> n
-// (1-based) ; `size` donne le total.
+// The "(n/total)" numbering of my lines in the current scene, shared by the
+// Rehearsal and Recording pages: Map lineId -> n (1-based); `size` gives the
+// total.
 export function myLineNumbers(lines, characterId) {
   const numbers = new Map();
   if (characterId === "") return numbers;
@@ -77,15 +79,15 @@ export function myLineNumbers(lines, characterId) {
   return numbers;
 }
 
-// Le suffixe « (3/12) » collé au nom du personnage sur MES cartes, rendu par les
-// deux mêmes pages. Il vit ici, à côté de la Map qui le calcule, parce que le
-// gabarit était écrit deux fois dans deux JSX (parenthèses et barre comprises),
-// donc à deux mots d'une divergence silencieuse côté français.
-// `t` arrive en ARGUMENT et n'est pas importé : ce module est couvert par
-// `node --test`, et `locale.js` lit l'URL, le stockage et le navigateur dès son
-// import (même règle que `stats.js`).
-// Rend la chaîne vide quand la réplique n'est pas de moi, donc l'appelant n'a
-// aucun test à faire de son côté.
+// The " (3/12)" suffix stuck to the character's name on MY cards, rendered by
+// those same two pages. It lives here, next to the Map that computes it, because
+// the template was written twice in two JSX files (brackets and slash included),
+// so it was two words away from drifting silently on the French side.
+// `t` arrives as an ARGUMENT and is not imported: this module is covered by
+// `node --test`, and `locale.js` reads the URL, the storage and the navigator as
+// soon as it is imported (same rule as `stats.js`).
+// Returns the empty string when the line is not mine, so the caller has no test
+// to make on its own side.
 export function myLineNumber(t, numbers, lineId) {
   const n = numbers.get(lineId);
   return n == null ? "" : t("common.myLineNumber", { n, total: numbers.size });
@@ -129,23 +131,24 @@ export function githubRepoUrl() {
   if (hostname.endsWith(suffix)) {
     owner = hostname.slice(0, -suffix.length);
     const first = pathname.split("/").filter(Boolean)[0];
-    // Site racine (`owner.github.io`) : les pages vivent à la racine, donc le
-    // premier segment n'est pas un dépôt ; ce dépôt-là porte le nom du domaine.
-    // Sans ce cas, le bouton de dépôt pointait vers
-    // github.com/<owner>/dashboard.html, soit un 404 sur le geste quotidien du respo.
+    // Root site (`owner.github.io`): the pages live at the root, so the first
+    // segment is not a repository; that repository is named after the domain.
+    // Without this case, the upload button pointed at
+    // github.com/<owner>/dashboard.html, i.e. a 404 on the coordinator's daily
+    // gesture.
     //
-    // Trois formes de premier segment disent « site racine » : rien du tout
-    // (l'adresse nue), un nom de fichier (« dashboard.html »), et `plays` depuis que
-    // les pages d'une pièce vivent deux niveaux plus bas. Ce dernier cas est le
-    // seul qui ne se voie pas à l'œil : sur un site racine, l'Avancement d'une
-    // pièce est à `/plays/<id>/dashboard.html`, donc son premier segment ressemble
-    // à un nom de dépôt et le bouton visait `github.com/<owner>/plays`.
+    // Three shapes of first segment say "root site": nothing at all (the bare
+    // address), a file name ("dashboard.html"), and `plays` since the pages of a
+    // play live two levels further down. That last case is the only one that is
+    // not visible to the eye: on a root site, a play's Progress page is at
+    // `/plays/<id>/dashboard.html`, so its first segment looks like a repository
+    // name and the button aimed at `github.com/<owner>/plays`.
     //
-    // Limite connue et acceptée : une troupe dont le DÉPÔT s'appelle littéralement
-    // `plays` verrait ses liens GitHub pointer à côté. La lever demanderait de
-    // connaître la profondeur de la page courante, donc de la faire descendre en
-    // argument depuis chacun de ses appelants, alors que le seul dégât est un lien
-    // qui rend un 404 sur un dépôt qu'aucune troupe n'a de raison de nommer ainsi.
+    // Known and accepted limit: a troupe whose REPOSITORY is literally called
+    // `plays` would see its GitHub links point somewhere else. Lifting it would
+    // mean knowing the depth of the current page, hence passing it down as an
+    // argument from every one of its callers, when the only damage is a link that
+    // 404s on a repository no troupe has any reason to name that way.
     repo = !first || first.endsWith(".html") || first === "plays" ? hostname : first;
   } else if (import.meta.env.DEV) {
     // Local dev is not on github.io, so we can't know the real repo. Point at
@@ -158,45 +161,63 @@ export function githubRepoUrl() {
   return `https://github.com/${owner}/${repo}`;
 }
 
-// La page d'envoi de GitHub sur la zone de dépôt d'une pièce, `uploads/<id>/`, ou
-// sur la RACINE d'`uploads/` quand aucune pièce n'est nommée.
+// The branch these two URLs name, written once. `main`, which is the default
+// branch of the repository the README has troupes fork, hence of their fork.
 //
-// **Une zone de dépôt par pièce**, et c'est le dossier qui route le fichier vers sa
-// pièce, jamais son contenu : un ZIP abîmé, donc illisible, atterrit quand même dans
-// le journal de sa pièce. Le respo ne tape jamais ce chemin, il clique le bouton de
-// la pièce où il travaille. La branche est `master`, comme dans les workflows.
+// It used to say `master`, and that was measured to be broken: GitHub only serves
+// `/upload/<branch>/<path>` for a branch that REALLY exists, and it fails by
+// silently dropping both the upload form and the path, landing on the repository's
+// home page (verified on this repository and on two unrelated ones). `HEAD` fails
+// the same way. The `/tree/` view, for its part, does alias `master` to the default
+// branch, which is exactly why the wrong branch went unnoticed: the folder link
+// worked, and only the upload button, the coordinator's daily gesture and the sole
+// channel by which anything enters this repository, went nowhere.
 //
-// Sans identifiant, l'URL vise la racine, qui est le canal de CRÉATION : un script
-// qui nomme une pièce encore inexistante. C'est ce que propose la page de gestion.
+// The workflows accept `[main, master]` and stay that way: they read the branch
+// they were pushed on, they do not name one. A troupe whose fork is still on
+// `master` is the one case this constant gets wrong, and the fix is one word here.
+const BRANCH = "main";
+
+// GitHub's upload page on a play's upload area, `uploads/<id>/`, or on the ROOT of
+// `uploads/` when no play is named.
+//
+// **One upload area per play**, and it is the FOLDER that routes the file to its
+// play, never its content: a damaged ZIP, hence an unreadable one, still lands in
+// its play's log. The coordinator never types this path, they click the button of
+// the play they are working on.
+//
+// With no identifier, the URL aims at the root, which is the CREATION channel: a
+// script naming a play that does not exist yet. That is what the management page
+// offers.
 export function githubUploadUrl(playId) {
   const repo = githubRepoUrl();
   if (!repo) return null;
-  return `${repo}/upload/master/uploads${playId ? `/${playId}` : ""}`;
+  return `${repo}/upload/${BRANCH}/uploads${playId ? `/${playId}` : ""}`;
 }
 
-// Le dossier d'une pièce sur github.com, pour le seul geste que le site ne peut pas
-// porter : supprimer une pièce, qui demande un commit. La page de gestion y renvoie
-// plutôt que de faire semblant.
+// A play's folder on github.com, for the one gesture the site cannot carry:
+// deleting a play, which requires a commit. The management page links there rather
+// than pretend.
 export function githubPlayFolderUrl(playId) {
   const repo = githubRepoUrl();
   if (!repo) return null;
-  return `${repo}/tree/master/plays/${playId}`;
+  return `${repo}/tree/${BRANCH}/plays/${playId}`;
 }
 
 // "Serge" -> "serge", "Éléonore d'Aquitaine" -> "eleonore-d-aquitaine"
-// Ne nomme jamais rien d'identifiant : uniquement des fichiers téléchargés, pour
-// qu'ils se relisent dans un dossier de téléchargements. Deux appelants, le ZIP
-// des prises (noms de personnages) et le PDF de la pièce (son titre).
+// Never names anything that serves as an identifier: downloaded files only, so
+// that they read back in a downloads folder. Two callers, the ZIP of the takes
+// (character names) and the play's PDF (its title).
 //
-// `fallback` est un paramètre OBLIGATOIRE, et il n'a plus de valeur par défaut :
-// le repli finit dans le nom du fichier obtenu, donc c'est un texte d'interface
-// (un acteur anglophone ne reçoit pas « personnage.zip »), et le défaut français
-// qui vivait ici était le dernier mot du site que sa locale ne pouvait pas
-// atteindre. Il est de surcroît propre à l'appelant : « personnage.pdf » pour la
-// pièce serait un mot de travers. Le TEST, lui, reste ici et pas chez
-// l'appelant : une chaîne peut être non vide et ne rien laisser au slug (un
-// titre tout en ponctuation, « ??? »), donc vérifier l'entrée avant d'appeler ne
-// suffit pas. Seul le résultat sait s'il est vide.
+// `fallback` is a MANDATORY parameter, and it no longer has a default value: the
+// fallback ends up in the name of the file you get, so it is interface text (an
+// English-speaking actor does not receive "personnage.zip"), and the French
+// default that used to live here was the last word of the site its locale could
+// not reach. It is besides specific to the caller: "personnage.pdf" for the play
+// would be the wrong word. The TEST, on the other hand, stays here and not at the
+// caller: a string can be non-empty and still leave nothing to the slug (a title
+// made entirely of punctuation, "???"), so checking the input before calling is
+// not enough. Only the result knows whether it is empty.
 export function slugify(name, fallback) {
   return (
     name
@@ -208,10 +229,10 @@ export function slugify(name, fallback) {
   );
 }
 
-// Citation d'une réplique dans une modale de confirmation (`.confirm-quote`) :
-// une tirade y tiendrait toute la hauteur de l'écran. Partagé par l'éditeur
-// (supprimer la réplique) et l'enregistrement (supprimer la prise), qui
-// citent la même chose au même endroit.
+// Quoting a line inside a confirmation modal (`.confirm-quote`): a long speech
+// would fill the whole height of the screen there. Shared by the editor (deleting
+// the line) and the recorder (deleting the take), which quote the same thing in
+// the same place.
 export const EXCERPT_MAX = 140;
 
 export function excerpt(text) {

@@ -3,10 +3,10 @@ import mountPage from "../shared/mountPage.jsx";
 import App from "./App.jsx";
 import { RESPO_CARDS } from "../shared/pages.js";
 
-// Accueil complet du responsable (respo.html) : même page qu'index.html, avec les
-// cinq cartes au lieu des trois des acteurs.
-// `page="dashboard"` ne dit pas quelle page on est mais de quel CÔTÉ on est : c'est
-// ce qui fait remonter « changer de pièce » vers la gestion des pièces du responsable
-// et non vers le sélecteur de la troupe (`chooserHref` partage le même partage que
-// `homeHref`, cf. RESPO_ONLY).
+// The coordinator's full home page (respo.html): same page as index.html, with the five
+// cards instead of the actors' three.
+// `page="dashboard"` does not say which page one is on but which SIDE one is on: it
+// is what makes "change play" go up to the coordinator's play management page and not to
+// the troupe's chooser (`chooserHref` follows the same split as `homeHref`, cf.
+// RESPO_ONLY).
 mountPage("page.respo.label", <App cards={RESPO_CARDS} page="dashboard" />);

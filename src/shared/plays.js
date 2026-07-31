@@ -1,65 +1,63 @@
-// L'identité d'une pièce : l'identifiant qui nomme son dossier.
+// The identity of a play: the identifier that names its folder.
 //
-// Une pièce vit dans `plays/<id>/` (ses pages, ses données, ses clips) et sa zone
-// de dépôt est `uploads/<id>/`, donc cet identifiant est à la fois un nom de
-// dossier et un segment d'URL, que la troupe lit dans sa barre d'adresse : d'où un
-// slug tiré du titre plutôt qu'un UUID comme pour les répliques, qui ne nomment
-// que des fichiers mp3.
+// A play lives in `plays/<id>/` (its pages, its data, its clips) and its upload
+// area is `uploads/<id>/`, so this identifier is at once a folder name and a URL
+// segment, which the troupe reads in its address bar: hence a slug derived from
+// the title rather than a UUID as for the lines, which only ever name mp3 files.
 //
-// Il est minté UNE fois, à la création de la pièce, et ne change JAMAIS ensuite,
-// sur le motif qui interdit de recycler un id de réplique : renommer la pièce
-// change son titre, pas son dossier. Le faire suivre casserait les liens déjà
-// donnés aux acteurs, et laisserait derrière lui un dossier de clips que plus rien
-// ne réclame.
+// It is minted ONCE, when the play is created, and NEVER changes afterwards, for
+// the reason that forbids recycling a line id: renaming the play changes its
+// title, not its folder. Making it follow along would break the links already
+// handed to the cast, and would leave behind a folder of clips nothing claims any
+// more.
 //
-// Module PUR (aucun DOM, aucun stockage, aucun `window`) : il est couvert par
-// `node --test` et importé aussi bien par le reducer de l'Édition que par la page
-// de gestion des pièces.
+// A PURE module (no DOM, no storage, no `window`): it is covered by `node --test`
+// and imported both by the Editing reducer and by the play management page.
 
 import { slugify } from "./data.js";
 
-// Miroir de PLAY_ID_PATTERN dans scripts/common.py, à garder synchrone : un garde
-// de scripts/tests/test_contracts.py compare les deux expressions au caractère
-// près, comme il le fait pour les ids de répliques.
+// Mirror of PLAY_ID_PATTERN in scripts/common.py, to be kept in sync: a guard in
+// scripts/tests/test_contracts.py compares the two expressions character for
+// character, as it does for line ids.
 //
-// Minuscules, chiffres et tirets, jamais un tiret en tête : c'est exactement ce
-// que `slugify` (src/shared/data.js) produit, et un nom de dossier qui commence
-// par un tiret se lit comme une option en ligne de commande. Borné à 64
-// caractères comme un id de réplique, pour la même raison : il nomme un chemin.
+// Lowercase, digits and hyphens, never a leading hyphen: that is exactly what
+// `slugify` (src/shared/data.js) produces, and a folder name starting with a
+// hyphen reads like a command-line option. Bounded to 64 characters like a line
+// id, for the same reason: it names a path.
 export const SAFE_PLAY_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
 export function isPlayId(value) {
   return typeof value === "string" && SAFE_PLAY_ID.test(value);
 }
 
-// La borne du motif ci-dessus, écrite une fois : `mintPlayId` doit tronquer à la
-// même longueur, sinon un titre à rallonge produirait un identifiant que le site
-// vient de fabriquer et que l'Action refuserait.
+// The bound of the pattern above, written once: `mintPlayId` must truncate to the
+// same length, otherwise an overlong title would produce an identifier the site
+// has just minted and the Action would refuse.
 export const MAX_PLAY_ID_LENGTH = 64;
 
-// L'identifiant d'une pièce à créer, dérivé de son titre.
+// The identifier of a play about to be created, derived from its title.
 //
-// `slugify` est le seul fabricant de slug du projet (src/shared/data.js) : il est
-// déjà ce qui nomme le ZIP des prises et le PDF de la pièce, et sa sortie
-// (minuscules, chiffres, tirets, sans tiret aux extrémités) est exactement ce que
-// SAFE_PLAY_ID accepte. Il ne reste qu'à borner la longueur, la troncature pouvant
-// laisser un tiret en fin de chaîne.
+// `slugify` is the project's only slug maker (src/shared/data.js): it is already
+// what names the ZIP of the takes and the play's PDF, and its output (lowercase,
+// digits, hyphens, no hyphen at either end) is exactly what SAFE_PLAY_ID accepts.
+// All that is left is bounding the length, truncation being able to leave a
+// trailing hyphen.
 //
-// Rend la chaîne vide quand le titre ne laisse rien (vide, ou tout en ponctuation) :
-// l'appelant demande alors un autre titre plutôt que de fabriquer un dossier nommé
-// « piece-1 » qui ne dirait rien à personne.
+// Returns the empty string when the title leaves nothing (empty, or all
+// punctuation): the caller then asks for another title rather than build a folder
+// named "piece-1" that would mean nothing to anyone.
 export function mintPlayId(title) {
   const base = slugify(typeof title === "string" ? title : "", "");
   return base.slice(0, MAX_PLAY_ID_LENGTH).replace(/-+$/g, "");
 }
 
-// La pièce vide que la page de gestion fait télécharger pour en créer une.
+// The empty play the management page makes you download in order to create one.
 //
-// Miroir d'`EMPTY_SCRIPT` (src/editor/reducer.js), et un test les tient en accord :
-// c'est le même document, l'un servant de repli à l'éditeur et l'autre de graine à
-// une pièce neuve. L'acte et la scène vides ne sont pas décoratifs, c'est le
-// plancher de structure que l'éditeur pose lui aussi, parce qu'il faut bien une
-// scène où écrire la première réplique.
+// Mirror of `EMPTY_SCRIPT` (src/editor/reducer.js), and a test holds the two in
+// agreement: it is the same document, one serving as the editor's fallback and the
+// other as the seed of a brand new play. The empty act and scene are not
+// decorative, they are the structural floor the editor lays down too, because
+// there has to be a scene to write the first line in.
 export function newPlayScript(id, title, language) {
   return { id, title, language, characters: [], acts: [{ scenes: [{ lines: [] }] }] };
 }

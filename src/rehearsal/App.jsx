@@ -20,12 +20,12 @@ import { pageLabelKey } from "../shared/pages.js";
 import useTts from "./useTts.js";
 import "./rehearsal.css";
 
-// Petite respiration entre deux répliques enchaînées par la synthèse vocale :
-// les mp3 réels portent un léger silence en tête/queue, la TTS non, d'où un
-// enchaînement trop abrupt sans ce délai.
+// A small breath between two lines chained by the speech synthesiser: the real
+// mp3s carry a slight silence at their head and tail, TTS does not, hence a
+// transition that is too abrupt without this delay.
 const TTS_GAP_MS = 80;
 
-// Rehearsal player — React port of the v1 UX:
+// Rehearsal player, a React port of the v1 UX:
 //  - act / scene / character selectors, plus the four toggles of `.checks-row`
 //    (mute my voice, hide my text, beep, start one line early); muting and text
 //    hiding are two separate settings in v2, unlike v1 which conflated them
@@ -40,7 +40,7 @@ export default function App() {
   const [actIndex, setActIndex] = useState(0);
   const [sceneIndex, setSceneIndex] = useState(0);
   const [index, setIndex] = useState(0);
-  const [characterId, setCharacterId] = useState(""); // "" = écoute seule
+  const [characterId, setCharacterId] = useState(""); // "" = listening only
   const [isPlaying, setIsPlaying] = useState(false);
   const [muet, setMuet] = useState(false); // skip audio of MY lines: I say them
   const [hideText, setHideText] = useState(false); // blur MY lines' text
@@ -48,10 +48,10 @@ export default function App() {
   const [avant, setAvant] = useState(true);
   const [overlay, setOverlay] = useState(false);
 
-  // La langue de la PIÈCE et non celle de l'interface : cette voix remplace un
-  // acteur qui dit sa réplique, donc elle doit prononcer le texte dans la langue
-  // où il est écrit. `manifest` peut être nul le temps du chargement, et `useTts`
-  // retombe alors sur le français.
+  // The PLAY's language and not the interface's: this voice stands in for an actor
+  // saying their line, so it must pronounce the text in the language it is written
+  // in. `manifest` may be null while loading, and `useTts` then falls back on
+  // French.
   const tts = useTts(manifest?.language);
 
   // Imperative playback machinery (kept out of React state to avoid stale
@@ -139,7 +139,7 @@ export default function App() {
         playAt(i + 1);
       }
     };
-    // Advance après une courte respiration (voix de synthèse : cf. TTS_GAP_MS).
+    // Advance after a short breath (speech synthesis: cf. TTS_GAP_MS).
     const advanceAfterGap = () => {
       if (token !== tokenRef.current || !playingRef.current) return;
       waitTimerRef.current = setTimeout(advance, TTS_GAP_MS);
@@ -186,8 +186,8 @@ export default function App() {
         const Ctx = window.AudioContext || window.webkitAudioContext;
         if (Ctx) audioCtxRef.current = new Ctx();
       }
-      // Idem pour la synthèse vocale : l'amorcer dans le geste pour que les
-      // répliques TTS lancées ensuite par callback ne restent pas muettes.
+      // Same for the speech synthesiser: prime it inside the gesture so that the
+      // TTS lines started later from a callback do not stay silent.
       tts.unlock();
       setPlaying(true);
       playAt(index);
@@ -210,11 +210,10 @@ export default function App() {
     return lines.map((l, i) => (l.characterId === characterId ? i : -1)).filter((i) => i !== -1);
   }, [lines, characterId]);
 
-  // « Nom (n/total) » sur mes cartes — numérotation partagée avec la page
-  // Enregistrement.
+  // "Name (n/total)" on my cards: numbering shared with the Recording page.
   const myNumbers = useMemo(() => myLineNumbers(lines, characterId), [lines, characterId]);
 
-  // "My lines" jump targets — with "Avant" checked, land on the cue line
+  // "My lines" jump targets: with "Avant" checked, land on the cue line
   // just before each of my lines instead of on the line itself.
   const myTargets = useMemo(() => {
     if (!avant) return myLineIndices;
@@ -253,12 +252,12 @@ export default function App() {
   if (!manifest) {
     return <PageState page="rehearsal" />;
   }
-  // Écran définitif, le troisième du site : on y reste jusqu'à ce que le respo
-  // saisisse la pièce, rien ne se chargera de plus sur cet appareil. Il vient
-  // après le manifest, donc il connaît le titre et le dit, comme les cinq
-  // bandeaux. Les deux états au-dessus, eux, ne nomment rien : la pièce n'est pas
-  // encore connue, et `PageHeader` ne rend pas de titre sans titre (jamais un
-  // libellé de page à la place, il se ferait recouvrir).
+  // A final screen, the site's third one: one stays on it until the coordinator enters
+  // the play, nothing more will load on this device. It comes after the manifest,
+  // so it knows the title and says it, like the five headers. The two states above,
+  // on the other hand, name nothing: the play is not known yet, and `PageHeader`
+  // renders no title when there is no title (never a page label in its place, it
+  // would get covered).
   if (lines.length === 0 && acts.every((a) => a.scenes.every((s) => s.lines.length === 0))) {
     return (
       <PageState
@@ -271,9 +270,9 @@ export default function App() {
 
   return (
     <div className="rehearsal-page">
-      {/* Pas de `hint` ici : les quatre cases à cocher juste en dessous portent
-          des libellés explicites, une phrase qui les redirait ne servait qu'à
-          repousser les réglages. */}
+      {/* No `hint` here: the four checkboxes just below carry explicit labels, and
+          a sentence repeating them only served to push the settings further
+          down. */}
       <PlayHeader page="rehearsal" title={manifest.title || t("common.untitledPlay")}>
         <div className="selects-row">
           <select
@@ -300,9 +299,9 @@ export default function App() {
               return (
                 <option key={i} value={i}>
                   {sceneLabel(t, i)}
-                  {/* Le décompte est interpolé depuis `common.lineCount` : le
-                      pluriel ne se règle qu'à un endroit, cette clé-ci ne dit
-                      plus que la parenthèse. */}
+                  {/* The count is interpolated from `common.lineCount`: the plural
+                      is settled in one place only, and this key now says nothing
+                      but the parentheses. */}
                   {count != null
                     ? t("rehearsal.sceneLines", { lines: t("common.lineCount", { count }) })
                     : ""}

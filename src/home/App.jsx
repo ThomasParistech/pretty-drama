@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { fetchManifest } from "../shared/data.js";
-import LocaleSwitch from "../shared/LocaleSwitch.jsx";
+import HomeFooter from "../shared/HomeFooter.jsx";
+import HomeHero from "../shared/HomeHero.jsx";
 import PageMark from "../shared/PageMark.jsx";
-import T from "../shared/T.jsx";
 import { t } from "../shared/locale.js";
 import { ACTOR_CARDS, PAGES, chooserHref, pageDescKey, pageLabelKey } from "../shared/pages.js";
 import "./home.css";
 
-// Les deux accueils partagent tout sauf leur liste de cartes : `index.html`
-// (les trois pages de la troupe) et `respo.html` (les cinq), cf.
+// The two home pages share everything except their list of cards: `index.html`
+// (the troupe's three pages) and `respo.html` (all five), cf.
 // src/shared/pages.js.
 export default function App({ cards = ACTOR_CARDS, page = "home" }) {
   const [title, setTitle] = useState(null);
@@ -21,26 +21,21 @@ export default function App({ cards = ACTOR_CARDS, page = "home" }) {
 
   return (
     <div className="home page-home">
-      <header className="home-hero">
-        <div className="home-brand">
-          {/* Décoratif : le mot « PrettyDrama » est juste à côté. */}
-          <PageMark page="home" className="home-brand-mark" label="" />
-          PrettyDrama
-        </div>
-        {title && <h1 className="home-play-title">{title}</h1>}
-      </header>
+      {/* No title as long as the manifest has not arrived, and none either if it never
+          does: an empty heading would hold its place in the hero for nothing. */}
+      <HomeHero>{title && <h1 className="home-play-title">{title}</h1>}</HomeHero>
 
-      {/* Les sceaux en rangées : l'accueil sert aussi de légende, on y apprend
-          quel dessin va avec quelle page. Les trois pages de la troupe partagent
-          le même sceau (le bordeaux sur sable de la marque), donc c'est l'icône
-          qui les distingue, et seuls les deux modes du responsable ont leur
-          couleur propre. */}
+      {/* The seals in rows: the home page also serves as a legend, one learns
+          there which drawing goes with which page. The troupe's three pages share
+          the same seal (the brand's burgundy on sand), so it is the icon that
+          tells them apart, and only the coordinator's two modes have their own
+          colour. */}
       <main className="home-grid">
         {cards.map((key) => {
           const p = PAGES[key];
           return (
             <a key={key} className={`home-card card lift-hover page-${key}`} href={p.href}>
-              {/* Décoratif : le libellé de la page suit immédiatement. */}
+              {/* Decorative: the page's label follows immediately. */}
               <PageMark page={key} className="home-card-mark" label="" />
               <span className="home-card-title">{t(pageLabelKey(key))}</span>
               <span className="home-card-desc">{t(pageDescKey(key))}</span>
@@ -49,35 +44,18 @@ export default function App({ cards = ACTOR_CARDS, page = "home" }) {
         })}
       </main>
 
-      {/* The language switch lives HERE and nowhere else: a language is a site
-          setting, so it is chosen on the way in, and the shared play header has no
-          room for it (cf. LocaleSwitch.jsx). Both home pages carry it, so the two
-          audiences each have it at hand. */}
-      <footer className="home-footer">
-        {/* Le SEUL lien du site qui sorte d'une pièce, et le seul endroit qui
-            connaisse la profondeur d'une page (`chooserHref`). Il vit au pied de
-            l'accueil de la pièce et nulle part ailleurs : on change de pièce en
-            repassant par l'entrée, comme on y change de langue. Les cinq autres
-            pages n'en portent pas, leur bandeau ramenant déjà ici. */}
+      <HomeFooter>
+        {/* The ONLY link on the site that leaves a play, and the only place that
+            knows a page's depth (`chooserHref`). It lives at the foot of the play's
+            home page and nowhere else: one changes play by going back through the
+            entrance, just as one changes language there. The five other pages do
+            not carry it, their header already bringing one back here. This is also
+            the whole of what a play's home page adds to the shared foot, which is why
+            it is what `HomeFooter` takes as children. */}
         <p className="home-change-play">
           <a href={chooserHref(page)}>{t("home.changePlay")}</a>
         </p>
-        <T
-          k="home.footer"
-          p={{
-            link: (
-              <a
-                href="https://github.com/ThomasParistech/prettydrama-voices"
-                target="_blank"
-                rel="noreferrer"
-              >
-                PrettyDrama
-              </a>
-            ),
-          }}
-        />
-        <LocaleSwitch />
-      </footer>
+      </HomeFooter>
     </div>
   );
 }

@@ -2,15 +2,15 @@ import React from "react";
 import PageHeader from "./PageHeader.jsx";
 import { t } from "./locale.js";
 
-// Écran plein-page d'attente ou de blocage (manifest/script pas encore
-// chargé, erreur, navigateur incompatible…), partagé par toutes les pages :
-// bandeau de marque + un mot dans une carte (`.page-notice`, theme.css).
-// LES DEUX ÉTATS prennent la carte, l'attente comme le message : ce sont deux
-// moments du même écran, et le second succède presque toujours au premier, donc
-// une carte qui n'arriverait qu'ensuite se lirait comme un changement de page.
-// `.loading-state` ne fait plus qu'adoucir l'encre par-dessus.
-// `error` peut être une chaîne ou du JSX ; `className` s'ajoute à la carte
-// (ex. "load-error" côté éditeur, qui l'élargit pour ses paragraphes).
+// Full-page waiting or blocking screen (manifest/script not loaded yet, error,
+// incompatible browser…), shared by every page: brand header + a word in a card
+// (`.page-notice`, theme.css).
+// BOTH STATES take the card, the waiting one as much as the message: they are
+// two moments of the same screen, and the second almost always follows the
+// first, so a card that only arrived afterwards would read as a page change.
+// `.loading-state` now only softens the ink on top of it.
+// `error` may be a string or JSX; `className` adds to the card (e.g.
+// "load-error" on the editor side, which widens it for its paragraphs).
 export default function PageState({
   page,
   title,

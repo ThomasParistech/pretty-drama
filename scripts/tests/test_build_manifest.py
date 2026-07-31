@@ -1,6 +1,6 @@
-"""Status computation tests: ok / perime / manquant + orphan clips, plus la
-recopie du journal des dépôts (manifest.json est le seul fichier lu par les
-pages : ce que build_manifest n'y met pas n'existe pas pour le front)."""
+"""Status computation tests: ok / perime / manquant + orphan clips, plus the
+copying of the upload journal (manifest.json is the only file the pages read:
+what build_manifest does not put in it does not exist for the front end)."""
 
 import json
 import sys
@@ -98,41 +98,42 @@ class TestBuildManifest(unittest.TestCase):
         self.assertEqual(manifest["lines"][0]["status"], "ok")
 
     def test_acts_structure_enriched(self):
-        # Des RANGS et pas des libellés : les actes et les scènes n'ont plus de
-        # titre, et c'est le front qui les met en mots, dans la langue du lecteur.
-        # Le manifest ne doit donc plus porter un seul mot de français ici.
+        # RANKS and not labels: acts and scenes no longer have a title, and it is
+        # the front end that puts them into words, in the reader's language. The
+        # manifest must therefore no longer carry a single French word here.
         line = self.manifest["acts"][0]["scenes"][0]["lines"][0]
         self.assertEqual(line["actIndex"], 0)
         self.assertEqual(line["sceneIndex"], 0)
         self.assertIn("status", line)
 
     def test_acts_and_scenes_carry_no_title(self):
-        # Le garde du choix : un titre recopié ici redeviendrait une donnée dans
-        # une langue, et il repartirait vers le PDF et les colonnes de l'Avancement.
+        # The guard on that choice: a title copied here would become data in a
+        # language again, and it would travel on to the PDF and to the Dashboard
+        # columns.
         for act in self.manifest["acts"]:
             self.assertNotIn("title", act)
             for scene in act["scenes"]:
                 self.assertNotIn("title", scene)
 
     def test_the_play_id_reaches_the_manifest(self):
-        # C'est ce qui permet à la page Enregistrement d'inscrire sa pièce dans le
-        # ZIP qu'elle produit, donc à l'Action de refuser un ZIP déposé dans la zone
-        # d'une autre pièce.
+        # This is what lets the Recording page write its play into the ZIP it
+        # produces, hence what lets the Action refuse a ZIP uploaded into another
+        # play's zone.
         self.assertEqual(build_manifest({"id": "le-malade", "acts": []}, {})["id"], "le-malade")
 
     def test_a_malformed_play_id_becomes_empty_rather_than_a_path(self):
-        # Exception assumée à la tolérance de ce lecteur : cette valeur devient un
-        # CHEMIN (`plays/<id>/`), donc elle est validée ici comme elle l'est côté
-        # navigateur. Vide, elle ne dit rien et ne route rien.
+        # A deliberate exception to this reader's tolerance: this value becomes a
+        # PATH (`plays/<id>/`), so it is validated here just as it is on the
+        # browser side. Empty, it says nothing and routes nothing.
         for bad in ("../evil", "Le-Malade", "le malade", "-malade", "x" * 65, 42, None):
             self.assertEqual(build_manifest({"id": bad, "acts": []}, {})["id"], "")
         self.assertEqual(build_manifest({"acts": []}, {})["id"], "")
 
     def test_the_play_language_reaches_the_manifest(self):
-        # Le PDF et la voix de synthèse de la Répétition en dépendent.
+        # The PDF and the Rehearsal page's speech synthesis depend on it.
         self.assertEqual(self.manifest["language"], "fr")
         self.assertEqual(build_manifest({"language": "en", "acts": []}, {})["language"], "en")
-        # Une langue absente ou inconnue vaut le français, comme côté JS.
+        # A missing or unknown language means French, as on the JS side.
         self.assertEqual(build_manifest({"acts": []}, {})["language"], "fr")
         self.assertEqual(build_manifest({"language": "kl", "acts": []}, {})["language"], "fr")
 
@@ -155,13 +156,13 @@ class TestMalformedScriptTolerance(unittest.TestCase):
         self.assertEqual([c["name"] for c in manifest["characters"]], ["Napo"])
 
     def test_a_character_without_a_real_name_is_dropped_like_in_the_editor(self):
-        """Miroir de `c.name.trim()` (sanitizeScript, éditeur) : les deux lecteurs
-        doivent laisser tomber les mêmes entrées.
+        """Mirror of `c.name.trim()` (sanitizeScript, editor): both readers must
+        drop the same entries.
 
-        Gardé ici, un personnage anonyme mettait une ligne sans nom dans la grille
-        de l'Avancement et un bouton sans libellé dans la légende de la
-        Répartition, alors que l'Édition montrait ses répliques non attribuées.
-        Écarté, ses répliques retombent sur le « ? » commun."""
+        Kept here, an anonymous character put a nameless row in the Dashboard grid
+        and a button with no label in the Speaking share legend, while the Editing
+        page showed its lines as unattributed. Dropped, its lines fall back on the
+        shared "?"."""
         script = {
             "characters": [{"id": SERGE, "name": "  "}, {"id": NAPO, "name": ""}],
             "acts": [{"scenes": [{"lines": [{"id": "l1", "characterId": SERGE, "text": "Bon."}]}]}],
@@ -171,10 +172,10 @@ class TestMalformedScriptTolerance(unittest.TestCase):
         self.assertEqual(manifest["lines"][0]["character"], "?")
 
     def test_character_color_reaches_the_manifest(self):
-        """Sans elle, la page Répartition n'a rien pour colorer ses camemberts.
+        """Without it, the Speaking share page has nothing to colour its pies with.
 
-        Recopiée verbatim (en minuscules), jamais réparée : le comblement d'une
-        couleur absente n'a qu'une implémentation, en JS.
+        Copied verbatim (lowercased), never repaired: filling in a missing colour
+        has only one implementation, in JS.
         """
         script = {
             "characters": [{"id": SERGE, "name": "Serge", "color": "#1F77B4"}],
@@ -184,14 +185,14 @@ class TestMalformedScriptTolerance(unittest.TestCase):
         self.assertEqual(manifest["characters"][0]["color"], "#1f77b4")
 
     def test_malformed_color_is_omitted_and_the_character_stays(self):
-        """Un script hand-édité ne doit ni planter le workflow ni faire partir une
-        valeur inattendue dans un attribut `style` du navigateur. Le champ est
-        omis, donc le front la comble comme il comble une couleur absente."""
+        """A hand-edited script must neither crash the workflow nor send an
+        unexpected value into a browser `style` attribute. The field is omitted, so
+        the front end fills it in as it fills in a missing colour."""
         for bad in ("bleu", "#12345", "#1234567", 255, None, "", "oklch(0.58 0.14 255)", []):
             script = {"characters": [{"id": SERGE, "name": "Serge", "color": bad}], "acts": []}
             character = build_manifest(script, {})["characters"][0]
-            self.assertEqual(character["name"], "Serge", f"couleur : {bad!r}")
-            self.assertNotIn("color", character, f"couleur : {bad!r}")
+            self.assertEqual(character["name"], "Serge", f"colour: {bad!r}")
+            self.assertNotIn("color", character, f"colour: {bad!r}")
 
     def test_line_missing_id_is_dropped_others_kept(self):
         script = {
@@ -237,9 +238,9 @@ class TestMalformedScriptTolerance(unittest.TestCase):
         self.assertEqual(statuses[L2], "manquant")
 
     def test_sanitize_preserves_valid_script(self):
-        # Comparé aux répliques et non aux actes entiers : `sanitize_script`
-        # retire maintenant les titres d'acte et de scène (le libellé est dérivé
-        # du rang), donc les actes ne sont plus rendus tels quels.
+        # Compared on the lines and not on whole acts: `sanitize_script` now
+        # strips act and scene titles (the label is derived from the rank), so
+        # acts are no longer returned as they came.
         sane = sanitize_script(SCRIPT)
         self.assertEqual(
             [[[l for l in sc["lines"]] for sc in a["scenes"]] for a in sane["acts"]],
@@ -247,8 +248,8 @@ class TestMalformedScriptTolerance(unittest.TestCase):
         )
 
     def test_sanitize_drops_a_leftover_act_or_scene_title(self):
-        # Un script.json d'avant en porte : il est ignoré et non recopié, sinon le
-        # format garderait deux façons de nommer une scène.
+        # An older script.json carries some: it is ignored and not copied, or the
+        # format would keep two ways of naming a scene.
         sane = sanitize_script(
             {"acts": [{"title": "Prologue", "scenes": [{"title": "Ouverture", "lines": []}]}]}
         )
@@ -257,27 +258,27 @@ class TestMalformedScriptTolerance(unittest.TestCase):
 
 
 class TestHistoryPassthrough(unittest.TestCase):
-    """Le journal traverse le manifest sans être retouché : c'est update_history
-    qui le tient, build_manifest ne fait que le porter jusqu'aux pages."""
+    """The journal goes through the manifest untouched: update_history is what
+    maintains it, build_manifest only carries it to the pages."""
 
     def test_runs_are_copied_verbatim(self):
         manifest = build_manifest(SCRIPT, CLIPS, EXAMPLE_RUNS)
         self.assertEqual(manifest["history"], EXAMPLE_RUNS)
 
     def test_history_is_always_present_even_without_a_journal(self):
-        # Sans la clé, `manifest.history` serait undefined côté front ; le
-        # dashboard tolère les deux, mais le contrat reste « toujours un tableau ».
+        # Without the key, `manifest.history` would be undefined on the front end;
+        # the dashboard tolerates both, but the contract stays "always an array".
         self.assertEqual(build_manifest(SCRIPT, CLIPS)["history"], [])
 
     def test_a_malformed_journal_degrades_to_empty(self):
-        # history.json est écrit par l'Action, mais il vit dans data/ à côté d'un
-        # script.json éditable à la main : un journal abîmé ne casse pas le build.
+        # history.json is written by the Action, but it lives in data/ next to a
+        # hand-editable script.json: a damaged journal does not break the build.
         for bad in (None, {}, "nope", 42, {"runs": []}):
             self.assertEqual(build_manifest(SCRIPT, CLIPS, bad)["history"], [])
 
     def test_no_run_timestamp_is_added_to_the_manifest(self):
-        # Un champ réécrit à chaque exécution ferait différer manifest.json à
-        # tous les pushes, donc un commit robot chaque fois.
+        # A field rewritten on every run would make manifest.json differ on every
+        # push, hence a robot commit every time.
         self.assertNotIn("generatedAt", build_manifest(SCRIPT, CLIPS))
 
 

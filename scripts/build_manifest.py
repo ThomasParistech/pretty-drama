@@ -1,15 +1,15 @@
-"""Build plays/<id>/data/manifest.json — the single file the app pages read.
+"""Build plays/<id>/data/manifest.json: the single file the app pages read.
 
-Un manifest PAR PIÈCE, dans le dossier de la pièce : les pages d'une pièce vivent
-elles aussi dans ce dossier, donc elles lisent `data/manifest.json` en chemin
-relatif, exactement comme du temps où le site n'en connaissait qu'une. C'est ce qui
-fait qu'aucune page n'a besoin de savoir dans quelle pièce elle tourne.
+One manifest PER PLAY, in the play's folder: a play's pages live in that folder
+too, so they read `data/manifest.json` as a relative path, exactly as back when the
+site knew only one play. That is what makes it unnecessary for any page to know
+which play it is running in.
 
 Stateless join of the play's data/script.json (source of truth, produced by the
 editor) and data/clips.json (state of processed clips, maintained by
-process_uploads). Y est recopié le journal des derniers dépôts de CETTE pièce
-(data/history.json, tenu par update_history.py) : les pages ne lisent que ce
-fichier, donc c'est ici que tout ce qu'elles affichent est assemblé.
+process_uploads). Copied in here too is the journal of THIS play's latest uploads
+(data/history.json, kept by update_history.py): the pages read only this file, so
+this is where everything they display gets assembled.
 
 Status per line (spec §6):
  - clip exists and normalized text matches  -> "ok"
@@ -21,13 +21,12 @@ manifest: the mp3 may linger in clips/ but is never served to the app.
 
 script.json is hand-uploadable (and hand-editable) on github.com, so this
 script must tolerate the same malformed entries the editor's sanitizeScript
-tolerates — a missing key must never crash the whole workflow run.
+tolerates: a missing key must never crash the whole workflow run.
 """
 
 import json
 import re
 import sys
-from pathlib import Path
 
 from common import is_play_id, load_json, play_data_dir, play_ids, write_json
 from normalize import normalize_text
@@ -37,19 +36,19 @@ def _is_id(value) -> bool:
     return isinstance(value, str) and len(value) > 0
 
 
-# Couleur de personnage telle que l'éditeur l'écrit : un hex de la palette
-# partagée (src/shared/characterColors.js). On valide la FORME et pas
-# l'appartenance à la palette : la liste des vingt couleurs n'a qu'une
-# implémentation, en JS, et la recopier ici en ferait une seconde à tenir
-# synchrone. Ce garde-fou suffit à ce qu'aucune valeur inattendue ne parte dans
-# un attribut `style` du navigateur ; le front comble de son côté ce qui manque.
-# Un test de contrat vérifie que la palette JS passe bien cette expression.
+# A character colour as the editor writes it: a hex from the shared palette
+# (src/shared/characterColors.js). We validate the FORM and not the membership of
+# the palette: the list of twenty colours has only one implementation, in JS, and
+# copying it here would make a second one to keep in sync. This guard rail is
+# enough for no unexpected value to end up in a browser `style` attribute; the
+# front fills in what is missing on its side.
+# A contract test checks that the JS palette does pass this expression.
 COLOR_PATTERN = re.compile(r"#[0-9a-fA-F]{6}\Z")
 
-# Les langues que l'éditeur sait écrire dans `language`, et le repli. Miroir de
-# LOCALES / DEFAULT_LOCALE dans src/shared/i18n.js : les faire diverger ferait
-# retomber au français une pièce que le front sait pourtant écrire, et un garde de
-# scripts/tests/test_contracts.py compare les deux listes.
+# The languages the editor knows how to write in `language`, and the fallback.
+# Mirror of LOCALES / DEFAULT_LOCALE in src/shared/i18n.js: letting them diverge
+# would fall back to French for a play the front can nonetheless write, and a guard
+# in scripts/tests/test_contracts.py compares the two lists.
 LANGUAGES = ("fr", "en")
 DEFAULT_LANGUAGE = "fr"
 
@@ -64,24 +63,22 @@ def sanitize_script(raw: dict) -> dict:
     instead of crashing on them (the two consumers must agree on tolerance)."""
     if not isinstance(raw, dict):
         raw = {}
-    # La couleur voyage jusqu'au manifest, sinon la page Répartition n'a rien
-    # pour colorer ses camemberts. Elle est RECOPIÉE et jamais réparée : le
-    # comblement d'une couleur absente n'a qu'une implémentation, en JS
-    # (`assignColors`), et deux comblements indépendants finiraient par ne plus
-    # tomber d'accord sur les mêmes couleurs, donc l'Édition et la Répartition
-    # montreraient deux distributions différentes. Le champ est simplement omis
-    # quand il manque ou qu'il est mal formé.
+    # The colour travels all the way to the manifest, otherwise the Speaking share
+    # page has nothing to colour its pie charts with. It is COPIED and never repaired:
+    # filling in a missing colour has only one implementation, in JS
+    # (`assignColors`), and two independent fillings would end up no longer agreeing
+    # on the same colours, so Editing and Speaking share would show two
+    # different casts. The field is simply omitted when it is missing or malformed.
     characters = []
     for c in raw.get("characters") or []:
-        # Le nom doit être NON VIDE, comme côté éditeur (`c.name.trim()` dans
-        # sanitizeScript) : les deux miroirs doivent laisser tomber les mêmes
-        # entrées. Un personnage sans nom ne peut pas venir de l'éditeur (ADD_ et
-        # RENAME_CHARACTER refusent tous deux un nom vide), donc c'est une édition
-        # à la main dans le dépôt ; le garder ici mettait une ligne anonyme dans la
-        # grille de l'Avancement, un bouton sans libellé dans la légende de la
-        # Répartition et un « : » nu dans le PDF, là où l'Édition, elle, montrait
-        # ses répliques comme non attribuées. Écarté, ses répliques retombent sur
-        # le « ? » de build_manifest, ce que l'éditeur montre déjà.
+        # The name must be NON EMPTY, as on the editor side (`c.name.trim()` in
+        # sanitizeScript): the two mirrors must drop the same entries. A character
+        # with no name cannot come from the editor (ADD_ and RENAME_CHARACTER both
+        # refuse an empty name), so it is a hand edit in the repo; keeping it here
+        # put an anonymous row in the Progress grid, a button with no label in the
+        # Speaking share legend and a bare ":" in the PDF, where Editing, for its
+        # part, showed its lines as unattributed. Dropped, its lines fall back on
+        # build_manifest's "?", which is what the editor already shows.
         if not (
             isinstance(c, dict)
             and _is_id(c.get("id"))
@@ -113,23 +110,23 @@ def sanitize_script(raw: dict) -> dict:
                         "text": line["text"] if isinstance(line.get("text"), str) else "",
                     }
                 )
-            # Ni acte ni scène ne porte de titre : leur libellé est DÉRIVÉ de
-            # leur rang (miroir de src/shared/structureLabels.js). Un `title`
-            # laissé par un fichier d'avant est donc ignoré, pas recopié.
+            # Neither an act nor a scene carries a title: their label is DERIVED
+            # from their rank (mirror of src/shared/structureLabels.js). A `title`
+            # left behind by an older file is therefore ignored, not copied.
             scenes.append({"lines": lines})
         acts.append({"scenes": scenes})
     return {
-        # L'identifiant de la pièce, celui qui nomme son dossier (`plays/<id>/`) et
-        # sa zone de dépôt. Validé ici comme il l'est côté navigateur, et c'est une
-        # exception assumée à la tolérance de ce lecteur : tout le reste de cette
-        # fonction accepte ce qu'elle peut lire, alors que cette valeur-là devient
-        # un CHEMIN. Absent ou mal formé, il vaut la chaîne vide, et c'est
-        # `process_uploads` qui refusera alors le dépôt plutôt que de deviner.
+        # The play's id, the one that names its folder (`plays/<id>/`) and its
+        # upload zone. Validated here as it is on the browser side, and that is an
+        # accepted exception to this reader's tolerance: everything else in this
+        # function accepts what it can read, whereas that value becomes a PATH.
+        # Absent or malformed, it is the empty string, and it is then
+        # `process_uploads` that will refuse the upload rather than guess.
         "id": raw["id"] if is_play_id(raw.get("id")) else "",
         "title": raw.get("title") if isinstance(raw.get("title"), str) else "",
-        # La langue dans laquelle la pièce est ÉCRITE, pas celle de l'interface du
-        # lecteur. Elle sert au PDF (intertitres et césure) et à la voix de
-        # synthèse de la Répétition. Absente ou inconnue, elle vaut le français.
+        # The language the play is WRITTEN in, not that of the reader's interface.
+        # It serves the PDF (headings and hyphenation) and Rehearsal's speech
+        # synthesis. Absent or unknown, it is French.
         "language": raw["language"] if raw.get("language") in LANGUAGES else DEFAULT_LANGUAGE,
         "characters": characters,
         "acts": acts,
@@ -141,7 +138,7 @@ def compute_status(line: dict, clips: dict) -> str:
     if not isinstance(recorded_text, str):
         return "manquant"
     # Both sides are RAW text (current script vs text at recording time);
-    # normalization happens here and only here — single implementation, no
+    # normalization happens here and only here, single implementation, no
     # cross-language mismatch possible.
     if normalize_text(line["text"]) == normalize_text(recorded_text):
         return "ok"
@@ -165,9 +162,9 @@ def build_manifest(script: dict, clips: dict, history=None) -> dict:
             "text": line["text"],
             "status": status,
             "clip": f"clips/{line['id']}.mp3" if status != "manquant" else None,
-            # Des RANGS et pas des libellés : c'est le front qui les met en mots,
-            # dans la langue du lecteur (src/shared/structureLabels.js). Le
-            # manifest reste ainsi sans un mot de français.
+            # RANKS and not labels: it is the front that puts them into words, in
+            # the reader's language (src/shared/structureLabels.js). The manifest
+            # thus stays without a single word of French.
             "actIndex": act_index,
             "sceneIndex": scene_index,
         }
@@ -183,18 +180,18 @@ def build_manifest(script: dict, clips: dict, history=None) -> dict:
         acts.append({"scenes": scenes})
 
     return {
-        # Recopié pour que les pages sachent DANS quelle pièce elles tournent sans
-        # avoir à lire leur propre URL : la page Enregistrement l'écrit dans le ZIP
-        # qu'elle produit, ce qui est ce qui permet à l'Action de refuser un ZIP
-        # déposé dans la zone d'une autre pièce.
+        # Copied so that the pages know WHICH play they are running in without
+        # having to read their own URL: the Recording page writes it into the
+        # ZIP it produces, which is what lets the Action refuse a ZIP dropped in
+        # another play's zone.
         "id": script["id"],
         "title": script["title"],
         "language": script["language"],
-        # Journal des derniers dépôts, affiché par la page Avancement : sans lui
-        # le respo n'a aucun retour sur ce qu'est devenu son fichier. Pas
-        # d'horodatage du run ici : un champ réécrit à chaque exécution ferait
-        # différer manifest.json à tous les pushes, donc un commit robot à
-        # chaque fois (c'est ce qui a coûté sa place au statut du README).
+        # Journal of the latest uploads, displayed by the Progress page: without
+        # it the coordinator has no feedback at all on what became of their file. No run
+        # timestamp here: a field rewritten on every execution would make
+        # manifest.json differ on every push, therefore a robot commit every time
+        # (that is what cost the README status its place).
         "history": history,
         "characters": script["characters"],
         "acts": acts,
@@ -203,64 +200,65 @@ def build_manifest(script: dict, clips: dict, history=None) -> dict:
 
 
 def build_one(play_id: str) -> bool:
-    """Écrit le manifest d'UNE pièce. Rend False quand elle a été sautée.
+    """Write ONE play's manifest. Returns False when it was skipped.
 
-    Une pièce sautée est une pièce dont le `script.json` ne se lit pas, et son
-    manifest est alors laissé TEL QUEL : le reconstruire vide effacerait la pièce de
-    tout le site (grille, répétition, PDF) sur une erreur de syntaxe, alors que le
-    fichier de la veille est encore là et reste juste. Le run finit en échec, ce qui
-    est le seul signal dont la CI dispose, et les autres pièces sont construites
-    quand même : le silo vaut aussi pour les pannes.
+    A skipped play is a play whose `script.json` will not read, and its manifest is
+    then left AS IS: rebuilding it empty would erase the play from the whole site
+    (grid, rehearsal, PDF) over a syntax error, whereas yesterday's file is still
+    there and remains correct. The run ends in failure, which is the only signal the
+    CI has, and the other plays are built all the same: the silo holds for breakdowns
+    too.
     """
     data = play_data_dir(play_id)
     try:
         script = json.loads((data / "script.json").read_text(encoding="utf-8"))
     except FileNotFoundError:
-        # Un dossier de pièce SANS script : c'est ce que laisse un dépôt de création
-        # refusé (le fichier est parti, le journal a été écrit). On publie un
-        # manifest vide plutôt que rien, pour que l'Avancement de cette pièce
-        # s'ouvre et montre le journal qui dit pourquoi elle est vide.
+        # A play folder WITHOUT a script: that is what a refused creation upload
+        # leaves behind (the file is gone, the journal was written). We publish an
+        # empty manifest rather than nothing, so that this play's Progress page opens
+        # and shows the journal that says why it is empty.
         script = {}
     except json.JSONDecodeError as exc:
         print(
-            f"plays/{play_id}/data/script.json n'est pas un JSON valide ({exc}) : "
-            "restaurez sa version précédente depuis l'historique GitHub ou "
-            "re-téléchargez-le depuis la page Édition. Le manifest de cette pièce "
-            "est laissé tel quel.",
+            f"plays/{play_id}/data/script.json is not valid JSON ({exc}): "
+            "restore its previous version from the GitHub history or "
+            "download it again from the Editing page. This play's manifest "
+            "is left as is.",
             file=sys.stderr,
         )
         return False
-    # clips.json est écrit par la machine ; abîmé, on repart de zéro plutôt que de
-    # bloquer le site (les statuts retombent à « manquant » jusqu'au prochain dépôt).
+    # clips.json is written by the machine; damaged, we start over from scratch
+    # rather than block the site (statuses fall back to "manquant" until the next
+    # upload).
     clips = load_json(
         data / "clips.json",
         {},
-        f"plays/{play_id}/data/clips.json illisible — ignoré (statuts recalculés sans lui)",
+        f"plays/{play_id}/data/clips.json unreadable: ignored (statuses recomputed without it)",
     )
-    # Le journal n'est qu'un confort d'affichage : jamais un motif d'échec.
+    # The journal is only a display convenience: never a reason to fail.
     history = load_json(
-        data / "history.json", {}, f"plays/{play_id}/data/history.json illisible — journal ignoré"
+        data / "history.json", {}, f"plays/{play_id}/data/history.json unreadable: journal ignored"
     )
     runs = history.get("runs") if isinstance(history, dict) else None
     manifest = build_manifest(script, clips, runs)
     write_json(data / "manifest.json", manifest)
     total = len(manifest["lines"])
     ok = sum(1 for l in manifest["lines"] if l["status"] == "ok")
-    print(f"plays/{play_id}/data/manifest.json : {total} répliques, {ok} enregistrées")
+    print(f"plays/{play_id}/data/manifest.json: {total} lines, {ok} recorded")
     return True
 
 
 def main() -> None:
     ids = play_ids()
     if not ids:
-        # Pas une erreur : un dépôt fraîchement forké n'a pas encore de pièce, et le
-        # site doit se construire quand même pour offrir la page qui en crée une.
-        print("aucune pièce dans plays/ : rien à construire")
+        # Not an error: a freshly forked repo has no play yet, and the site must
+        # build all the same in order to offer the page that creates one.
+        print("no play in plays/: nothing to build")
         return
-    # La LISTE est délibérée, et ce n'est pas un oubli à « simplifier » en
-    # générateur : `all()` s'arrête au premier faux, donc une pièce au script
-    # illisible empêcherait la construction de toutes celles qui la suivent dans
-    # l'alphabet. On les construit toutes, puis on échoue s'il en manque une.
+    # The LIST is deliberate, and it is not an oversight to be "simplified" into a
+    # generator: `all()` stops at the first false value, so one play with an
+    # unreadable script would prevent the building of every play that follows it in
+    # the alphabet. We build them all, then fail if one is missing.
     if not all([build_one(play_id) for play_id in ids]):
         sys.exit(1)
 

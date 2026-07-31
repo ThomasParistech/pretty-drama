@@ -1,83 +1,83 @@
-/* Shared design system — warm paper palette inspired by PrettyDrama v1 */
+/* Shared design system: warm paper palette inspired by PrettyDrama v1 */
 
 :root {
   --paper: #faf6ef;
   --paper-dark: #f1eadd;
   --card: #ffffff;
-  --card-active: #fffdf8; /* carte de dialogue courante : un souffle de crème */
+  --card-active: #fffdf8; /* current dialogue card: a breath of cream */
   --ink: #2b2420;
   --ink-soft: #6b5f56;
   --accent: #8b2635;
-  --accent-dark: #6f1e2a; /* hover des boutons pleins accent */
+  --accent-dark: #6f1e2a; /* hover of the solid accent buttons */
   --accent-soft: #f6e8ea;
   --gold: #b98a2f;
   --border: #e3dbcd;
   --ok: #2e7d32;
   --ok-soft: #e6f3e6;
-  --warn: #a84f00; /* AA (≥ 4.5:1) sur --warn-soft et sur blanc */
+  --warn: #a84f00; /* AA (>= 4.5:1) on --warn-soft and on white */
   --warn-soft: #fdeede;
   --radius: 10px;
   --shadow: 0 2px 8px rgba(43, 36, 32, 0.08);
-  /* Survol d'une carte cliquable (cartes de l'accueil, bouton de dépôt de
-     l'Avancement) : le même léger soulèvement partout, il était écrit deux
-     fois avec deux valeurs voisines. */
+  /* Hover of a clickable card (the home page cards, the upload button of the
+     Progress page): the same slight lift everywhere, it used to be written twice
+     with two neighbouring values. */
   --shadow-hover: 0 6px 18px rgba(43, 36, 32, 0.16);
-  /* Ombre d'un calque qui FLOTTE au-dessus de la page, et pas d'une carte posée
-     dessus : le modal de confirmation et la pop-up « À vous… » de la Répétition.
-     Elle est plus large et plus dense que `--shadow` parce que ces deux objets
-     n'ont pas de place dans le flux, et c'est l'ombre qui dit qu'ils sont
-     au-dessus. Elle était écrite deux fois avec deux valeurs voisines
-     (0 12px 40px / 0.35 contre 0 10px 40px / 0.25) ; on garde celle du modal, le
-     plus fréquent des deux et le seul partagé par deux pages. */
+  /* Shadow of a layer that FLOATS above the page, and not of a card laid on it:
+     the confirmation modal and the "Your turn…" pop-up of the Rehearsal page.
+     It is wider and denser than `--shadow` because these two objects have no place
+     in the flow, and it is the shadow that says they are above. It used to be
+     written twice with two neighbouring values (0 12px 40px / 0.35 against
+     0 10px 40px / 0.25); we keep the one of the modal, the more frequent of the
+     two and the only one shared by two pages. */
   --shadow-float: 0 10px 40px rgba(0, 0, 0, 0.25);
-  /* Bague de focus des éléments qui n'en ont pas une par défaut (slider,
-     cartes, liens-cartes) : une seule source pour le triple 2px/accent/2px,
-     qui était recopié dans trois CSS de page. */
+  /* Focus ring of the elements that do not have one by default (slider, cards,
+     card-links): a single source for the trio 2px/accent/2px, which used to be
+     copied into three page CSS files. */
   --focus-ring: 2px solid var(--accent);
   --focus-ring-offset: 2px;
-  /* Gouttière des cartes pleine page (`.page-notice` et le `.load-error` qui
-     l'élargit) : elles se centrent en `margin: auto`, donc leur seul garde-fou
-     sur un téléphone étroit est ce retrait, à tenir identique des deux côtés. */
+  /* Gutter of the full-page cards (`.page-notice` and the `.load-error` that
+     widens it): they centre themselves with `margin: auto`, so their only
+     safeguard on a narrow phone is this inset, to be kept identical on both
+     sides. */
   --notice-gutter: 32px;
   --font-ui: "Inter", system-ui, sans-serif;
   --font-serif: "Cormorant Garamond", Georgia, serif;
-  /* Bandeau partagé (PlayHeader/PageHeader) : ces tokens ne doivent JAMAIS
-     être re-skinnés par une page — la marque et le titre rendent
-     identiquement sur toutes les pages, re-skin « Rail » compris.
-     --header-shadow est réservé pour la même raison que les deux autres : le
-     bandeau est collant, son ombre est ce qui le détache du contenu qui défile
-     dessous. Il tirait cette ombre de --shadow, que le :root local de
-     l'éditeur écrase en `none` pour ses propres panneaux : le bandeau y
-     rendait donc à plat, seul de tout le site. */
+  /* Shared header (PlayHeader/PageHeader): these tokens must NEVER be re-skinned
+     by a page; the brand and the title render identically on every page, the
+     "Rail" re-skin included.
+     --header-shadow is reserved for the same reason as the other two: the header
+     is sticky, its shadow is what detaches it from the content scrolling
+     underneath. It used to take that shadow from --shadow, which the editor's
+     local :root overwrites with `none` for its own panels: the header therefore
+     rendered flat there, alone on the whole site. */
   --header-accent: #8b2635;
   --header-serif: "Cormorant Garamond", Georgia, serif;
   --header-shadow: 0 2px 8px rgba(43, 36, 32, 0.08);
-  /* Repli du bandeau : sortie franche puis freinage long, pour que le contenu
-     semble se poser plutôt que s'arrêter net. */
+  /* Collapsing of the header: a frank start then a long braking, so that the
+     content seems to settle rather than to stop dead. */
   --ease-header: cubic-bezier(0.22, 0.61, 0.24, 1);
 }
 
-/* ---- Signature de page (« sceau ») ----
-   Chaque page a sa couleur : elle teinte la pastille du bandeau, pour qu'on
-   sache où on est sans lire un libellé. (Elle teintait aussi un filet de 3 px
-   en haut de page : retiré, il barrait chaque écran d'un trait dont on n'avait
-   pas besoin deux fois.)
-   Ce bloc est LA source de vérité de ces couleurs ; les favicons des .html
-   les redupliquent (une balise <link> ne peut pas lire une variable CSS).
-   Hex littéraux et non var(--accent) & co. : sinon le re-skin « Rail » de
-   l'éditeur déplacerait la couleur du sceau. Chaque teinte fait ≥ 4.5:1 sur
-   blanc comme sur son fond clair. */
-/* Les pages de la troupe (la marque, Répétition, Enregistrement, Répartition)
-   portent EXACTEMENT le même sceau : même encre, même pastille. Elles avaient
-   chacune sa nuance, un bordeaux ici, un bordeaux légèrement autre là, une terre
-   à côté : assez proches pour qu'on n'y lise pas une distinction, assez
-   différentes pour qu'on les croie ratées. Ce sont les icônes (les masques, les
-   bulles, le micro, le camembert) qui disent où on est. Vin sur sable est
-   l'accord du fichier de design d'origine (design/drama-token.svg), c'est donc
-   lui qu'on étend à toutes.
-   Seuls les deux modes du responsable gardent leur couleur propre : elles ne
-   séparent plus deux pages voisines, elles marquent un autre territoire. La
-   Répartition n'en est pas un, elle s'ouvre à toute la troupe. */
+/* ---- Page signature (the "seal") ----
+   Each page has its colour: it tints the disc of the header, so that one knows
+   where one is without reading a label. (It also used to tint a 3 px rule at the
+   top of the page: removed, it barred every screen with a stroke that was not
+   needed twice.)
+   This block is THE source of truth of these colours; the favicons of the .html
+   files duplicate them (a <link> tag cannot read a CSS variable).
+   Literal hex values and not var(--accent) & co.: otherwise the editor's "Rail"
+   re-skin would shift the colour of the seal. Each tint holds >= 4.5:1 on white as
+   well as on its light background. */
+/* The pages of the troupe (the brand, Rehearsal, Recording, Speaking share) carry
+   EXACTLY the same seal: same ink, same disc. They each used to have their own
+   shade, a burgundy here, a slightly other burgundy there, an earth tone next to
+   them: close enough not to read as a distinction, different enough to look like
+   mistakes. It is the icons (the masks, the speech bubbles, the mic, the pie
+   chart) that say where one is. Wine on sand is the pairing of the original design
+   file (design/drama-token.svg), so that is the one we extend to all of them.
+   Only the two modes of the coordinator keep their own colour: they no longer
+   separate two neighbouring pages, they mark another territory. Speaking share is
+   not one of them, it is open to the whole troupe. */
 .page-home,
 .page-rehearsal,
 .page-recorder,
@@ -86,11 +86,11 @@
   --page-mark-soft: #f5eeda;
 }
 .page-dashboard {
-  --page-mark: #2e7d32; /* le vert de la complétion */
+  --page-mark: #2e7d32; /* the green of completion */
   --page-mark-soft: #e6f3e6;
 }
 .page-editor {
-  --page-mark: #7a5cc0; /* l'accent « Rail » de l'éditeur */
+  --page-mark: #7a5cc0; /* the "Rail" accent of the editor */
   --page-mark-soft: #f2eefb;
 }
 
@@ -104,30 +104,30 @@
   border-radius: 50%;
   background: var(--page-mark-soft);
   color: var(--page-mark);
-  font-size: 20px; /* l'icône se dimensionne dessus (1em) */
+  font-size: 20px; /* the icon sizes itself on it (1em) */
 }
 
-/* Le triangle d'avertissement de `WarnIcon`, glissé en tête de phrase : il
-   suit la taille et la couleur du texte (1em, currentColor), et on l'assoit
-   sur la ligne de base au lieu du bas de la boîte. Marge à droite plutôt qu'une
-   espace dans le JSX : une espace insécable se casserait au retour à la ligne
-   et laisserait le triangle seul en fin de ligne. */
+/* The warning triangle of `WarnIcon`, slipped in at the head of a sentence: it
+   follows the size and the colour of the text (1em, currentColor), and we sit it on
+   the baseline instead of the bottom of the box. A right margin rather than a space
+   in the JSX: a non-breaking space would break at the line wrap and would leave the
+   triangle alone at the end of the line. */
 .warn-icon {
   vertical-align: -0.15em;
   margin-right: 0.35em;
 }
 
-/* Les drapeaux des deux sélecteurs de langue (`FlagIcon`), le pied des accueils
-   et la section « Structure » de l'Édition. Une seule règle pour les deux, comme
-   les cases à cocher et `.confirm-quote` : deux pages qui montrent le même objet
-   doivent le montrer pareil.
-   Ce n'est pas une icône du site, donc rien ici ne suit la font-size ni
-   `currentColor` : un drapeau est une image, à taille fixe et en couleurs
-   propres. 24x16 (le 3:2 de la boîte) est la taille où le tricolore reste trois
-   bandes franches et où l'Union Jack garde ses diagonales.
-   Le filet est un `box-shadow` extérieur et pas une `border` : en `border-box`
-   il rognerait un pixel de dessin sur chaque bord, et un `inset` passerait sous
-   le contenu SVG, qui se peint par-dessus le fond. */
+/* The flags of the two language switches (`FlagIcon`), the foot of the home pages
+   and the "Structure" section of Editing. A single rule for both, like the
+   checkboxes and `.confirm-quote`: two pages that show the same object must show it
+   the same way.
+   This is not an icon of the site, so nothing here follows the font-size nor
+   `currentColor`: a flag is an image, at a fixed size and in its own colours. 24x16
+   (the 3:2 of the box) is the size at which the tricolour stays three frank bands
+   and at which the Union Jack keeps its diagonals.
+   The rule is an outer `box-shadow` and not a `border`: in `border-box` it would
+   crop a pixel of drawing on each edge, and an `inset` one would pass under the SVG
+   content, which paints itself over the background. */
 .flag-icon {
   display: block;
   width: 24px;
@@ -178,19 +178,19 @@ select {
 
 /* ---- Common components ---- */
 
-/* Même géométrie que `.play-header` : une rangée du haut, puis le pied qui porte
-   la marque et le retour à l'accueil (cf. HomeLink.jsx). Ces écrans sont
-   l'attente des cinq pages à bandeau de pièce, la marque ne peut pas être à un
-   endroit ici et à un autre là : elle sauterait à l'arrivée du manifest. D'où
-   aussi le passage en colonne et les mêmes valeurs de rembourrage que
-   `.play-header-row` + `.play-header-settings-inner`. */
+/* The same geometry as `.play-header`: a top row, then the foot that carries the
+   brand and the way back to the home page (see HomeLink.jsx). These screens are the
+   waiting state of the five pages with a play header, the brand cannot be in one
+   place here and in another there: it would jump when the manifest arrives. Hence
+   also the switch to a column and the same padding values as `.play-header-row` +
+   `.play-header-settings-inner`. */
 .page-header {
   background: var(--card);
   border-bottom: 1px solid var(--border);
-  /* La même ombre que `.play-header`, pour la même raison : les deux bandeaux
-     sont collants, et celui-ci est l'attente de celui-là. Sans elle, le bandeau
-     GAGNAIT son ombre à l'arrivée du manifest, exactement comme la marque
-     sautait de la rangée du haut au pied avant `HomeLink`. */
+  /* The same shadow as `.play-header`, for the same reason: both headers are
+     sticky, and this one is the waiting state of that one. Without it, the header
+     GAINED its shadow when the manifest arrived, exactly as the brand used to jump
+     from the top row to the foot before `HomeLink`. */
   box-shadow: var(--header-shadow);
   padding: 10px 18px 14px;
   display: flex;
@@ -208,14 +208,13 @@ select {
   flex-wrap: wrap;
 }
 
-/* Le titre de CE bandeau vit dans la règle partagée de `.play-header-title`
-   (plus bas) : depuis que les écrans définitifs nomment la pièce, les deux
-   bandeaux écrivent la même chaîne au même endroit, et la rendaient
-   différemment (15 px gris dans la font UI ici, serif 20 px là). Le titre
-   changeait donc de corps, de graisse, de couleur ET de fonte à l'arrivée du
-   manifest, et sur l'Édition il prenait au passage l'IBM Plex du re-skin
-   local, alors que `--header-serif` existe précisément pour qu'un bandeau
-   partagé rende pareil partout. */
+/* The title of THIS header lives in the shared rule of `.play-header-title`
+   (further down): ever since the final screens name the play, both headers write the
+   same string in the same place, and they used to render it differently (15 px grey
+   in the UI font here, 20 px serif there). The title therefore changed size, weight,
+   colour AND typeface when the manifest arrived, and on Editing it took the IBM
+   Plex of the local re-skin along the way, whereas `--header-serif` exists precisely
+   so that a shared header renders the same everywhere. */
 
 .spacer {
   flex: 1;
@@ -278,30 +277,30 @@ textarea {
   background: #fff;
 }
 
-/* Un champ éteint. **Le fond blanc de la règle au-dessus défait le grisé du
-   navigateur**, donc sans cette règle un select désactivé se lit exactement comme
-   un select actif : c'est le cas de celui des scènes sur la Répartition, éteint
-   quand la portée est la pièce entière, et il n'avait l'air que de proposer un
-   choix qui ne s'ouvrait jamais.
-   Le traitement n'est PAS l'`opacity: 0.45` de `.btn:disabled`, et l'écart est
-   voulu : un bouton porte son libellé, donc l'estomper suffit à l'éteindre, alors
-   que ce champ-là est VIDE quand il est désactivé (cf. stats/App.jsx). Il ne
-   reste qu'un cadre et une flèche : à 45 % d'opacité, un filet de 1 px sur du
-   crème disparaît presque, et la rangée n'a plus l'air d'avoir un troisième champ
-   éteint mais d'en avoir perdu un. Un aplat, lui, garde la boîte visible et dit
-   « pas de choix ici » sans un mot. L'encre douce va avec, pour les champs
-   désactivés qui, eux, gardent un libellé.
-   Sélecteur d'élément et vécu ici plutôt que dans la page, comme les cases à
-   cocher juste en dessous : l'aspect d'un champ partagé par cinq bandeaux ne
-   s'écrit pas dans le CSS de la seule page qui s'en sert aujourd'hui. */
+/* A field that is switched off. **The white background of the rule above undoes the
+   browser's greying**, so without this rule a disabled select reads exactly like an
+   active select: that is the case of the scene one on the Speaking share page, switched
+   off when the scope is the whole play, and it only looked like it was offering a
+   choice that never opened.
+   The treatment is NOT the `opacity: 0.45` of `.btn:disabled`, and the difference is
+   deliberate: a button carries its label, so dimming it is enough to switch it off,
+   whereas this field is EMPTY when it is disabled (see stats/App.jsx). All that is
+   left is a frame and an arrow: at 45 % opacity, a 1 px rule on cream almost
+   disappears, and the row no longer looks like it has a third field switched off but
+   like it has lost one. A flat fill, on the other hand, keeps the box visible and says
+   "no choice here" without a word. The soft ink goes with it, for the disabled fields
+   which do keep a label.
+   An element selector, and living here rather than in the page, like the checkboxes
+   just below: the look of a field shared by five headers is not written in the CSS of
+   the only page that uses it today. */
 select:disabled {
   background: var(--paper-dark);
   color: var(--ink-soft);
   cursor: not-allowed;
 }
 
-/* Dérivé de --accent (et non un rgba en dur) : une page re-skinnée emporte sa
-   bague de focus avec son accent, sans avoir à recopier la règle. */
+/* Derived from --accent (and not a hard-coded rgba): a re-skinned page carries its
+   focus ring along with its accent, without having to copy the rule. */
 select:focus,
 input:focus,
 textarea:focus {
@@ -309,14 +308,14 @@ textarea:focus {
   outline-offset: 1px;
 }
 
-/* Cases à cocher à l'accent de la page (bordeaux ici, violet dans l'éditeur
-   re-skinné) plutôt qu'au bleu du système. Sélecteur d'élément et pas de classe,
-   et ici et pas dans une page : deux pages en ont maintenant (les quatre
-   réglages de la Répétition, les deux options de la Recherche) et elles les
-   veulent identiques. Précédent nommé : `.confirm-quote`, descendue ici le jour
-   où l'Enregistrement a cité une réplique à son tour.
-   La zone de clic agrandie sous 800 px reste, elle, locale à la Répétition :
-   elle est justifiée par le pouce, et l'Édition ne s'ouvre pas au doigt. */
+/* Checkboxes in the accent of the page (burgundy here, purple in the re-skinned
+   editor) rather than in the system blue. An element selector and not a class, and
+   here and not in a page: two pages now have some (the four settings of the Rehearsal
+   page, the two options of the Search) and they want them identical. Named precedent:
+   `.confirm-quote`, moved down here the day the Recording page quoted a line in its
+   turn.
+   The enlarged click area below 800 px, for its part, stays local to the Rehearsal
+   page: it is justified by the thumb, and Editing does not open under a finger. */
 input[type="checkbox"] {
   accent-color: var(--accent);
   width: 16px;
@@ -324,18 +323,19 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-/* L'étiquette qui porte une case : la case et son texte sur une ligne, et TOUTE
-   l'étiquette est la cible du clic. Même raison que la règle au-dessus, et même
-   histoire : les deux rangées du site (les quatre réglages de la Répétition, les
-   deux options de la Recherche) l'écrivaient chacune de son côté et avaient déjà
-   divergé d'un pixel de gouttière (6 contre 7), écart que personne ne nomme mais
-   qu'on remarque en passant d'une page à l'autre. 6 px, la valeur de la Répétition,
-   qui est la rangée que la troupe voit.
-   `user-select: none` avec, et pas seulement pour le confort : sans lui, cliquer
-   deux fois de suite sur l'étiquette pour rebasculer la case surligne son libellé.
-   Ce qui reste local est le corps du texte, la couleur et la gouttière de la
-   RANGÉE, qui n'ont rien à voir d'une page à l'autre, plus la zone tactile de
-   32 px sous 800 px, propre à la Répétition (l'Édition ne s'ouvre pas au doigt). */
+/* The label that carries a checkbox: the box and its text on one line, and the
+   WHOLE label is the click target. The same reason as the rule above, and the same
+   story: the two rows of the site (the four settings of the Rehearsal page, the two
+   options of the Search) each wrote it on their own side and had already diverged by
+   one pixel of gutter (6 against 7), a difference nobody names but which one notices
+   when going from one page to the other. 6 px, the value of the Rehearsal page, which
+   is the row the troupe sees.
+   `user-select: none` along with it, and not only for comfort: without it, clicking
+   twice in a row on the label to toggle the box back highlights its text.
+   What stays local is the size of the text, the colour and the gutter of the ROW,
+   which have nothing to do with each other from one page to the next, plus the 32 px
+   touch target below 800 px, specific to the Rehearsal page (Editing does not open
+   under a finger). */
 .checks-row label,
 .search-options label {
   display: flex;
@@ -345,23 +345,21 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-/* Enveloppe qui porte l'infobulle d'un bouton qui s'ÉTEINT : un contrôle
-   `disabled` ne reçoit aucun événement souris (Chrome, Safari), donc son propre
-   `title` ne s'affiche jamais, et l'explication n'arrive pas au moment où elle
-   sert, c'est-à-dire précisément quand le bouton dort. Le nom accessible reste
-   sur le bouton (son `aria-label`, qui ne dépend pas de son état) ; seule
-   l'infobulle monte ici.
-   Purement structurelle : elle épouse son bouton et ne doit rien changer à la
-   rangée qui la contient. Deux pages l'emploient, l'Édition (annuler, rétablir,
-   télécharger) et l'Enregistrement (les quatre boutons de la barre basse), d'où
-   sa place ici. */
+/* Wrapper that carries the tooltip of a button that SWITCHES OFF: a `disabled`
+   control receives no mouse event (Chrome, Safari), so its own `title` never shows,
+   and the explanation does not arrive at the moment when it is useful, that is
+   precisely when the button is asleep. The accessible name stays on the button (its
+   `aria-label`, which does not depend on its state); only the tooltip moves up here.
+   Purely structural: it hugs its button and must change nothing in the row that
+   contains it. Two pages use it, Editing (undo, redo, download) and the Recording
+   page (the four buttons of the bottom bar), hence its place here. */
 .btn-tip {
   display: inline-flex;
 }
 
-/* ---- Collapsible play header (shared between Répétition, Enregistrement et
-   Éditeur) : sceau de page + titre de la pièce, puis les sélecteurs
-   d'acte/scène/personnage, et la marque en pied du bandeau déplié. ---- */
+/* ---- Collapsible play header (shared between Rehearsal, Recording and the
+   Editor): page seal + title of the play, then the act/scene/character selects,
+   and the brand at the foot of the expanded header. ---- */
 
 .play-header {
   position: sticky;
@@ -375,33 +373,33 @@ input[type="checkbox"] {
 .play-header-row {
   display: flex;
   align-items: center;
-  flex-wrap: wrap; /* actions/pastilles passent à la ligne sur mobile au lieu de déborder */
+  flex-wrap: wrap; /* actions/discs wrap on mobile instead of overflowing */
   gap: 12px;
   padding: 10px 18px;
 }
 
-/* La rangée du haut ne bouge JAMAIS : ni sa hauteur, ni le sceau, ni le corps
-   du titre. Le repli n'enlève que les réglages du dessous ; le titre reste
-   centré dans une barre au padding symétrique. */
+/* The top row NEVER moves: neither its height, nor the seal, nor the size of the
+   title. Collapsing only removes the settings below it; the title stays centred in a
+   bar with symmetrical padding. */
 
-/* Le bouton de repli avale TOUTE la rangée sauf le sceau : le titre de la pièce
-   est dedans, et lui seul (le mot « PrettyDrama » est descendu en pied du
-   bandeau, avec le logo : dans la seule rangée toujours visible, il prenait la
-   place que le titre de la pièce coupait en « … » sur mobile). Sur mobile,
-   viser le haut de la barre pour la replier tombait sur le lien de la marque et
-   renvoyait au menu principal ; le lien est descendu dans les réglages
+/* The collapse button swallows the WHOLE row except the seal: the title of the play
+   is inside it, and it alone (the word "PrettyDrama" moved down to the foot of the
+   header, with the logo: in the only row that is always visible, it was taking the
+   room that the title of the play was then cutting into "…" on mobile). On mobile,
+   aiming at the top of the bar to collapse it landed on the link of the brand and
+   sent one back to the main menu; the link moved down into the settings
    (`.play-header-home`). */
 .play-header-toggle {
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
-  /* `stretch` et pas la hauteur naturelle du titre : le bouton doit faire toute
-     la hauteur de la rangée, que le sceau fixe déjà à 36 px. Sans lui il ne
-     mesurait que ses 28 px de titre, et `align-items: center` sur la rangée
-     laissait quatre pixels morts de part et d'autre, en haut de la barre,
-     exactement là où le pouce vise pour replier. Rien ne bouge à l'écran : le
-     fond est transparent et le contenu reste centré. */
+  /* `stretch` and not the natural height of the title: the button must be the full
+     height of the row, which the seal already fixes at 36 px. Without it, it only
+     measured its 28 px of title, and `align-items: center` on the row left four dead
+     pixels on either side, at the top of the bar, exactly where the thumb aims to
+     collapse it. Nothing moves on screen: the background is transparent and the
+     content stays centred. */
   align-self: stretch;
   gap: 10px;
   background: none;
@@ -410,31 +408,29 @@ input[type="checkbox"] {
   text-align: left;
 }
 
-/* Deux lignes au maximum, puis l'ellipse : un titre de pièce qui ne tient pas
-   sur la largeur du téléphone se lisait « Les Fourberies de Sca… », et il n'est
-   récupérable nulle part (le survol de la rangée donne l'infobulle du repli, et
-   sur mobile il n'y a pas de survol). Le plafond des deux lignes vaut dans les
-   DEUX états du repli, comme le reste de la rangée du haut : le pouce replie la
-   barre plusieurs fois par répétition, et un titre qui changerait de nombre de
-   lignes à chaque appui claquerait, le saut de ligne n'étant pas interpolable
-   là où les réglages glissent sur 0.26 s. Un titre long fait donc grandir la
-   barre une fois pour toutes, pas à chaque geste.
-   `line-height: 1.2` en fait le prix : le 1.5 hérité du corps donnerait 60 px
-   de titre sur deux lignes, alors qu'à 1.2 une ligne mesure 24 px et passe sous
-   les 30 px du sceau, qui fixe déjà la hauteur de la rangée. Un titre court ne
-   change donc rien du tout, un titre long ajoute 18 px.
-   Piste écartée : rétrécir le corps du titre (sur mobile, ou au repli). Elle
-   achète deux ou trois caractères, elle donne deux tailles typographiques à la
-   même chaîne sur le même écran, et un `font-size` en transition sur une serif
-   se lit comme un défaut de zoom (reflow subpixel de toute la ligne).
-   Le trio `-webkit-` est l'idiome rendu partout (Firefox 68+, et c'est lui que
-   la propriété standard `line-clamp` définit) ; il remplace `text-overflow`,
-   qui n'agit pas dans une boîte `-webkit-box` : c'est le clamp qui pose son
-   ellipse en fin de deuxième ligne.
-   Une seule règle pour les DEUX bandeaux, et pas deux qui se ressemblent : ils
-   écrivent la même chaîne au même endroit, l'un pendant que l'autre charge, donc
-   la moindre divergence se voit comme un saut. Même motif que le `HomeLink`
-   unique du pied. */
+/* Two lines at most, then the ellipsis: a play title that does not fit the width of
+   the phone used to read "The Tricks of Sca…", and it is recoverable nowhere (hovering
+   the row gives the tooltip of the collapse, and on mobile there is no hover). The cap
+   of two lines holds in BOTH states of the collapse, like the rest of the top row: the
+   thumb collapses the bar several times per rehearsal, and a title that changed its
+   number of lines at each press would snap, a line break not being interpolable where
+   the settings glide over 0.26 s. A long title therefore makes the bar grow once and
+   for all, not at each gesture.
+   `line-height: 1.2` is the price of it: the 1.5 inherited from the body would give
+   60 px of title over two lines, whereas at 1.2 a line measures 24 px and stays under
+   the 30 px of the seal, which already fixes the height of the row. A short title
+   therefore changes nothing at all, a long title adds 18 px.
+   Path set aside: shrinking the size of the title (on mobile, or when collapsed). It
+   buys two or three characters, it gives two typographic sizes to the same string on
+   the same screen, and a `font-size` in transition on a serif reads as a zoom glitch
+   (subpixel reflow of the whole line).
+   The `-webkit-` trio is the idiom rendered everywhere (Firefox 68+, and it is the one
+   the standard `line-clamp` property defines); it replaces `text-overflow`, which has
+   no effect in a `-webkit-box` box: it is the clamp that puts its ellipsis at the end
+   of the second line.
+   A single rule for BOTH headers, and not two that look alike: they write the same
+   string in the same place, one while the other loads, so the slightest divergence
+   shows as a jump. The same reason as the single `HomeLink` of the foot. */
 .play-header-title,
 .page-header .page-title {
   min-width: 0;
@@ -449,10 +445,10 @@ input[type="checkbox"] {
   -webkit-line-clamp: 2;
 }
 
-/* Seul le bandeau de pièce mange la largeur restante : sa rangée n'a pas de
-   `.spacer`, c'est le bouton de repli qui suit le titre. Celle de `PageHeader`
-   en a un, et deux `flex: 1` dans la même rangée se partageraient la place, ce
-   qui couperait le titre à mi-barre. */
+/* Only the play header eats the remaining width: its row has no `.spacer`, it is the
+   collapse button that follows the title. The row of `PageHeader` has one, and two
+   `flex: 1` in the same row would share the space, which would cut the title halfway
+   along the bar. */
 .play-header-title {
   flex: 1;
 }
@@ -460,7 +456,7 @@ input[type="checkbox"] {
 .play-header-chevron {
   color: var(--ink-soft);
   font-size: 12px;
-  transform: rotate(-180deg); /* fermé : la flèche pointe vers le haut */
+  transform: rotate(-180deg); /* closed: the arrow points upwards */
   transition: transform 0.26s var(--ease-header);
 }
 
@@ -468,34 +464,33 @@ input[type="checkbox"] {
   transform: rotate(0deg);
 }
 
-/* Repli animé : la grille à une seule ligne passe de la hauteur du contenu à
-   zéro, ce qui est interpolable, contrairement à `height: auto`.
-   `minmax(0, …)` et pas `0fr`/`1fr` tout court : le minimum d'une piste `fr`
-   vaut `auto`, donc la contribution min-content de son contenu, et une piste
-   « à zéro » restait haute des 14 px de padding bas des réglages, ce qui
-   laissait une ligne vide sous le titre une fois le bandeau fermé.
-   `visibility` (discrète : appliquée en fin de transition à la fermeture, dès
-   le début à l'ouverture) sort les selects du parcours clavier une fois fermés,
-   sans les démonter. */
+/* Animated collapse: the single-row grid goes from the height of the content to
+   zero, which is interpolable, unlike `height: auto`.
+   `minmax(0, …)` and not plain `0fr`/`1fr`: the minimum of an `fr` track is `auto`,
+   hence the min-content contribution of its content, and a track "at zero" stayed as
+   tall as the 14 px of bottom padding of the settings, which left an empty line under
+   the title once the header was closed.
+   `visibility` (a discrete property: applied at the end of the transition when
+   closing, right at the start when opening) takes the selects out of the keyboard path
+   once closed, without unmounting them. */
 .play-header-settings {
   display: grid;
   grid-template-rows: minmax(0, 0fr);
   visibility: hidden;
-  /* Le rognage vit ICI, sur la grille, et pas sur son enfant : en `border-box`,
-     un enfant de hauteur 0 garde quand même ses 14 px de padding bas, qui
-     débordaient sous le bandeau fermé et l'épaississaient sans raison visible.
-     Il est actif EN PERMANENCE. Il ne l'était pas : une classe `animating`,
-     posée par le composant et retirée par un minuteur de 340 ms, le levait dès
-     que le bandeau était ouvert et immobile, pour une seule et unique raison,
-     le popover de couleur d'une puce de personnage, qui devait pouvoir dépasser
-     du bandeau de l'éditeur. Les puces vivent maintenant dans le rail de
-     l'Édition et leur palette se pose dans son flux, donc plus aucune des
-     cinq pages n'a de contenu qui dépasse de ses réglages, et cinq pages
-     n'ont plus à faire tourner un minuteur à chaque repli pour personne. La
-     doctrine qui allait avec n'a plus d'objet, mais elle se note au cas où un
-     futur contenu débordant ferait revenir la question : c'était un minuteur et
-     pas un `transitionend`, parce qu'à mouvement réduit l'événement ne vient
-     jamais et le bandeau resterait rogné. */
+  /* The clipping lives HERE, on the grid, and not on its child: in `border-box`, a
+     child of height 0 still keeps its 14 px of bottom padding, which overflowed
+     below the closed header and thickened it for no visible reason.
+     It is active PERMANENTLY. It was not: an `animating` class, set by the component
+     and removed by a 340 ms timer, lifted it as soon as the header was open and
+     still, for one single reason, the colour popover of a character chip, which had
+     to be able to overflow the header of the editor. The chips now live in the rail
+     of Editing and their palette settles in its flow, so not one of the five
+     pages has content that overflows its settings any more, and five pages no longer
+     have to run a timer at each collapse for nobody. The doctrine that went with it
+     no longer has an object, but it is noted here in case some future overflowing
+     content brought the question back: it was a timer and not a `transitionend`,
+     because with reduced motion the event never comes and the header would stay
+     clipped. */
   overflow: hidden;
   transition: grid-template-rows 0.26s var(--ease-header), visibility 0.26s;
 }
@@ -517,21 +512,21 @@ input[type="checkbox"] {
 
 .play-header.open .play-header-settings-inner {
   opacity: 1;
-  transition-delay: 0.06s; /* le contenu apparaît quand la place est faite */
+  transition-delay: 0.06s; /* the content appears once the room has been made */
 }
 
-/* Le retour à l'accueil, seul lien sortant des pages à bandeau : il ne peut se
-   toucher qu'une fois le bandeau déplié, donc jamais par mégarde en le
-   repliant. Le logo aux deux masques et le mot « PrettyDrama » à sa droite font
-   le bouton ensemble : c'est ici que le nom du site se lit, la rangée du haut
-   n'ayant plus qu'à dire le titre de la pièce. En pied du bandeau et centré :
-   une sortie de page ne se met pas au-dessus des réglages, et centré le bouton
-   ne prétend appartenir à aucune des colonnes de gauche. */
-/* Le pied du bandeau : deux filets qui s'effacent vers l'extérieur, la marque au
-   milieu. Seule et centrée, elle avait l'air d'une pastille tombée là ;
-   encadrée, elle ferme le bandeau comme un cul-de-lampe ferme une page. Filets
-   courts et dégradés plutôt qu'une règle pleine d'un bord à l'autre : sous des
-   réglages déjà chargés, un trait franc de plus aurait pesé. */
+/* The way back to the home page, the only outgoing link of the pages with a header:
+   it can only be touched once the header is expanded, hence never by accident while
+   collapsing it. The two-masks logo and the word "PrettyDrama" to its right make the
+   button together: this is where the name of the site is read, the top row now only
+   having to say the title of the play. At the foot of the header and centred: a way out
+   of the page is not put above the settings, and centred the button does not claim to
+   belong to any of the columns on the left. */
+/* The foot of the header: two rules that fade away outwards, the brand in the middle.
+   Alone and centred, it looked like a disc that had fallen there; framed, it closes the
+   header the way a tailpiece closes a page. Short, graduated rules rather than a full
+   line from edge to edge: under settings that are already busy, one more frank stroke
+   would have weighed too much. */
 .play-header-foot {
   display: flex;
   align-items: center;
@@ -554,24 +549,25 @@ input[type="checkbox"] {
 }
 
 .play-header-home {
-  position: relative; /* ancre la lueur du survol, cf. ::before */
+  position: relative; /* anchors the glow of the hover, see ::before */
   display: inline-flex;
   align-items: center;
   gap: 10px;
   text-decoration: none;
-  /* Plus rien ne peint ce bord (le survol est une nappe de lumière, pas un
-     fond) : il ne reste que pour donner sa forme d'ovale à la bague de focus. */
+  /* Nothing paints this edge any more (the hover is a wash of light, not a
+     background): it only remains in order to give its oval shape to the focus
+     ring. */
   border-radius: 999px;
-  /* Le rembourrage porte la cible tactile à 48 px de haut alors que la pastille
-     n'en montre que 36. Plus de marge à droite du mot qu'à gauche du logo : le
-     rond a déjà son propre blanc tournant, le mot n'en a aucun. */
+  /* The padding brings the touch target to 48 px high whereas the disc only shows
+     36 of them. More margin to the right of the word than to the left of the logo:
+     the circle already has its own surrounding white, the word has none. */
   padding: 6px 16px 6px 6px;
   transition: transform 0.18s;
 }
 
-/* Le nom du site, dans la serif réservée au bandeau et à l'encre de la marque :
-   exactement ce qu'il rendait dans la rangée du haut, au même corps (le pied du
-   bandeau n'est pas un pied de page, c'est la signature du site). */
+/* The name of the site, in the serif reserved for the header and in the ink of the
+   brand: exactly what it rendered in the top row, at the same size (the foot of the
+   header is not a page footer, it is the signature of the site). */
 .play-header-home-word {
   font-family: var(--header-serif);
   font-size: 20px;
@@ -580,58 +576,56 @@ input[type="checkbox"] {
   white-space: nowrap;
 }
 
-/* Les deux masques, comme dans le hero de l'accueil. Pastille de la MÊME taille
-   que le sceau de la page (donc 36 px, et 30 px sous 800 px comme lui) : le
-   bandeau ne porte que ces deux ronds, une taille chacun se lisait comme un
-   décalage. Le dessin, lui, est poussé plus près du bord de sa pastille que
-   dans un sceau de page (26 px au lieu de 20) : à 20 px les deux visages se
-   touchent, et le logo n'est plus qu'une tache. */
+/* The two masks, as in the hero of the home page. A disc of the SAME size as the seal
+   of the page (hence 36 px, and 30 px below 800 px like it): the header carries only
+   these two circles, one size each read as a misalignment. The drawing, for its part,
+   is pushed closer to the edge of its disc than in a page seal (26 px instead of 20):
+   at 20 px the two faces touch, and the logo is no more than a blot. */
 .play-header-home-mark {
   font-size: 26px;
 }
 
-/* Le survol du lien : le **crème du sceau de la marque s'étend et englobe le
-   bloc entier** (logo + mot), sans jamais dessiner de bord. C'est le sable de la
-   pastille des masques qui déborde d'elle et enveloppe le nom du site : les deux
-   ne font plus qu'un seul objet posé sur un fond chaud, au lieu d'un rond crème
-   suivi d'un mot.
-   Trois essais gardés ici parce qu'ils sont tentants :
-   (1) un filet à la couleur de marque autour de la pastille du logo, comme celui
-   des cartes de l'accueil et du bouton de dépôt. Sauf que là-bas le filet existe
-   déjà au repos (c'est la bordure de la carte, le survol ne fait que la teinter) :
-   ici il apparaissait de nulle part et cernait les masques comme une cible. En
-   plus il n'allumait que le rond, laissant le mot éteint à côté, et le bouton se
-   lisait comme deux objets dont un seul répondait. D'où la règle : ce qui répond
-   au survol, c'est l'OVALE ENTIER, logo et mot ensemble.
-   (2) un fond teinté + des `box-shadow` flous sur cet ovale. Un fond s'arrête net
-   au bord de sa boîte, et une ombre portée redessine la silhouette : dans les
-   deux cas une arête apparaissait, exactement ce qu'on ne veut pas.
-   (3) la même nappe qu'ici, mais dans le vin de la marque : ça faisait une lueur
-   rouge autour du logo, une alerte plutôt qu'un accueil. La couleur qui doit
-   s'étendre est celle du FOND du sceau (le sable), pas celle de son encre.
-   D'où un dégradé radial du crème vers le transparent, qui atteint la
-   transparence AVANT le bord de son propre calque (`closest-side`, dernier arrêt
-   transparent), et un calque plus grand que l'ovale (les `inset` négatifs) pour
-   que la nappe finisse de s'éteindre dehors : plus rien ne se termine sur une
-   ligne, le crème naît au centre et se perd dans le blanc du bandeau. Les arrêts
-   intermédiaires servent la même cause : deux arrêts seuls laissent une frange
-   visible là où la pente est la plus raide.
-   Plein crème au centre, là où le vin devait rester sous les 20 % : le sable est
-   assez proche du blanc du bandeau pour le supporter. Ce lien est la seule sortie
-   de page des cinq bandeaux et n'a aucun mot d'action pour se signaler, donc la
-   nappe doit se voir ; c'est sa largeur et sa pente douce, pas sa pâleur, qui
-   l'empêchent de se montrer. Elle apparaît en 0.26 s, plus lentement que le pas
-   d'un pixel de l'ovale (0.18 s) : le fond monte au lieu de s'allumer d'un coup.
-   La couleur vient de `--page-mark-soft`, que la classe `page-home` posée sur le
-   lien lui-même (cf. PlayHeader.jsx) ramène au sable de la marque : ni hex
-   recopié ici, ni token de plus, et sur les pages du responsable la nappe reste
-   crème au lieu de prendre le vert ou le violet du bandeau.
-   `z-index: -1` passe la nappe SOUS le logo et le mot (sans quoi ce calque
-   absolu couvrirait les masques) mais pas sous le bandeau : le `.play-header`
-   collant crée le contexte d'empilement, l'ovale n'en crée pas
-   (`position: relative` sans `z-index`), donc la nappe se peint entre le fond du
-   bandeau et son contenu. `pointer-events: none` garde la cible du clic sur
-   l'ovale, que les `inset` négatifs auraient élargie. */
+/* The hover of the link: the **cream of the brand's seal spreads out and takes in the
+   whole block** (logo + word), without ever drawing an edge. It is the sand of the
+   masks' disc that overflows it and wraps the name of the site: the two are now a
+   single object laid on a warm background, instead of a cream circle followed by a
+   word.
+   Three attempts kept here because they are tempting:
+   (1) a rule in the brand colour around the disc of the logo, like the one on the
+   home page cards and on the upload button. Except that over there the rule already
+   exists at rest (it is the border of the card, the hover only tints it): here it
+   appeared out of nowhere and ringed the masks like a target. On top of that it only
+   lit the circle, leaving the word unlit beside it, and the button read as two objects
+   of which only one responded. Hence the rule: what responds to the hover is the WHOLE
+   OVAL, logo and word together.
+   (2) a tinted background + blurred `box-shadow` on that oval. A background stops dead
+   at the edge of its box, and a drop shadow redraws the silhouette: in both cases an
+   edge appeared, exactly what we do not want.
+   (3) the same wash as here, but in the wine of the brand: that made a red glow around
+   the logo, an alert rather than a welcome. The colour that must spread out is the one
+   of the seal's BACKGROUND (the sand), not the one of its ink.
+   Hence a radial gradient from cream to transparent, which reaches transparency BEFORE
+   the edge of its own layer (`closest-side`, last stop transparent), and a layer bigger
+   than the oval (the negative `inset`) so that the wash finishes fading outside:
+   nothing ends on a line any more, the cream is born at the centre and gets lost in the
+   white of the header. The intermediate stops serve the same cause: two stops alone
+   leave a visible fringe where the slope is steepest.
+   Full cream at the centre, where the wine had to stay under 20 %: the sand is close
+   enough to the white of the header to bear it. This link is the only way out of the
+   page on the five headers and it has no action word to announce itself, so the wash
+   must be seen; it is its width and its gentle slope, not its paleness, that keep it
+   from showing off. It appears over 0.26 s, more slowly than the one-pixel step of the
+   oval (0.18 s): the background rises instead of lighting up all at once.
+   The colour comes from `--page-mark-soft`, which the `page-home` class set on the link
+   itself (see PlayHeader.jsx) brings back to the sand of the brand: no hex copied here,
+   no extra token, and on the coordinator's pages the wash stays cream instead of taking
+   the green or the purple of the header.
+   `z-index: -1` puts the wash UNDER the logo and the word (without which this absolute
+   layer would cover the masks) but not under the header: the sticky `.play-header`
+   creates the stacking context, the oval creates none (`position: relative` without
+   `z-index`), so the wash paints itself between the background of the header and its
+   content. `pointer-events: none` keeps the click target on the oval, which the
+   negative `inset` would have widened. */
 .play-header-home::before {
   content: "";
   position: absolute;
@@ -654,21 +648,20 @@ input[type="checkbox"] {
   opacity: 1;
 }
 
-/* Le pas d'un pixel vers le haut, celui du bouton de dépôt de l'Avancement :
-   c'est ce qui reste du survol partagé, la nappe de crème remplaçant son filet
-   et son ombre. (Les cartes de l'accueil, elles, montent de 3 px : elles sont
-   les seules à ne rien avoir autour, un pas plus franc s'y lit sans peser.)
-   Deux pistes écartées pour la pastille du logo : l'inverser (fond
-   vin, dessin sable) noie les masques, qui peignent leurs deux visages en
-   `--page-mark-soft`, et il ne reste qu'une tache pâle ; l'agrandir la redessine
-   à une taille qu'elle ne supporte pas. */
+/* The one-pixel step upwards, the one of the upload button of the Progress page: it
+   is what remains of the shared hover, the wash of cream replacing its rule and its
+   shadow. (The home page cards, for their part, rise by 3 px: they are the only ones
+   with nothing around them, a franker step reads there without weighing.)
+   Two paths set aside for the disc of the logo: inverting it (wine background, sand
+   drawing) drowns the masks, which paint their two faces in `--page-mark-soft`, and all
+   that is left is a pale blot; enlarging it redraws it at a size it cannot bear. */
 .play-header-home:hover {
   transform: translateY(-1px);
 }
 
-/* Même géométrie de bague que `--focus-ring` (2 px, décalée de 2 px), mais
-   bâtie sur `--header-accent` : la bague partagée dérive de `--accent`, que
-   l'éditeur re-skinne en violet, et le bandeau doit rendre pareil partout. */
+/* The same ring geometry as `--focus-ring` (2 px, offset by 2 px), but built on
+   `--header-accent`: the shared ring derives from `--accent`, which the editor re-skins
+   in purple, and the header must render the same everywhere. */
 .play-header-home:focus-visible {
   outline: 2px solid var(--header-accent);
   outline-offset: 2px;
@@ -685,9 +678,9 @@ input[type="checkbox"] {
   min-width: 130px;
 }
 
-/* Personnage sur sa propre ligne (commun Répétition/Enregistrement) ; en
-   Répétition les cases à cocher viennent se ranger juste à côté (.checks-row,
-   local à la page), et passent sous le select quand la largeur manque. */
+/* Character on its own line (common to Rehearsal and Recording); on the Rehearsal page
+   the checkboxes line up right next to it (.checks-row, local to the page), and pass
+   under the select when there is not enough width. */
 .character-row {
   display: flex;
   align-items: center;
@@ -699,12 +692,20 @@ input[type="checkbox"] {
   min-width: 160px;
 }
 
-/* La doc du bandeau, sur les cinq pages : rendue par PlayHeader, jamais par
-   les pages. Deux paragraphes qui encadrent les réglages : le `desc` compact de
-   pages.js (le même que la carte de l'accueil) en tête du bandeau déplié, les
-   précisions propres au bandeau en pied. Une seule classe pour les deux, donc un
-   seul style : c'est la même voix, à un cran de détail près, et c'est leur place
-   qui les distingue. */
+/* The documentation of the header, on the five pages: rendered by PlayHeader, never by
+   the pages. Two paragraphs that frame the settings: the compact `desc` from pages.js
+   (the same one as the home page card) at the top of the expanded header, the details
+   specific to the header at its foot. A single class for both, hence a single style: it
+   is the same voice, give or take one notch of detail, and it is their place that tells
+   them apart.
+   The pair `13.5px` + `--ink-soft` is the site's secondary text, and it is written out
+   again in a handful of page rules (`.load-info`, `.character-empty`,
+   `.scene-empty-hint`, the hints of the chooser). It is deliberately NOT hoisted into a
+   `.hint-text` utility: everything this file shares is a named OBJECT (`.dialogue-card`,
+   `.page-notice`, `.btn-tip`, `.lift-hover`), never a size and a colour to be sprinkled
+   from the JSX, and each of those rules carries its own margin, which is the part that
+   actually differs. Two declarations repeated cost less than a class the markup has to
+   remember. */
 .header-hint {
   font-size: 13.5px;
   color: var(--ink-soft);
@@ -716,7 +717,7 @@ input[type="checkbox"] {
 .dialogue-container {
   max-width: 760px;
   margin: 0 auto;
-  /* Le padding bas dégage la barre de contrôle fixe (commun aux deux pages). */
+  /* The bottom padding clears the fixed control bar (common to both pages). */
   padding: 16px 16px 140px;
   display: flex;
   flex-direction: column;
@@ -735,10 +736,10 @@ input[type="checkbox"] {
 }
 
 .progress-container {
-  /* Zone tactile de 40 px ; la piste visible (6 px) est dessinée par
-     ::before, centrée verticalement, pour porter son propre arrondi — un
-     border-radius sur le conteneur clippé au content-box resterait invisible.
-     Les marges négatives annulent la hauteur pour ne rien décaler. */
+  /* A 40 px touch target; the visible track (6 px) is drawn by ::before, centred
+     vertically, so that it carries its own rounding: a border-radius on the
+     container clipped to the content-box would stay invisible.
+     The negative margins cancel the height so that nothing is shifted. */
   height: 40px;
   margin: -13px 0 -3px;
   cursor: pointer;
@@ -788,15 +789,14 @@ input[type="checkbox"] {
   pointer-events: none;
 }
 
-/* Pendant qu'on TIRE le curseur, plus aucun lissé : le pouce et le remplissage
-   se posent au pointeur, au pixel. Le précédent nommé est la poignée de largeur
-   du rail de l'Édition (classe `resizing`) et la leçon est la même : une
-   transition de 0,15 s pendant un glissement fait poursuivre le curseur avec un
-   retard, ce qui se lit comme une latence de la page. Elle reste pour les sauts
-   discrets, qui sont sa raison d'être (clic sur la piste, flèches de la barre
-   basse, clavier, lecture qui avance). Même cause côté liste, où le recentrage
-   de la carte active échange le `smooth` du navigateur contre un suivi rapide
-   le temps du glissement (`setSeekDragging`, `useScrollToActiveCard.js`). */
+/* While the cursor is being DRAGGED, no more smoothing: the thumb and the fill settle
+   on the pointer, to the pixel. The named precedent is the width handle of Editing's
+   rail (class `resizing`) and the lesson is the same: a 0.15 s transition during a drag
+   makes it chase the cursor with a lag, which reads as a latency of the page. It stays
+   for the discrete jumps, which are its reason for being (click on the track, arrows of
+   the bottom bar, keyboard, playback moving on). The same cause on the list side, where
+   the recentring of the active card swaps the browser's `smooth` for a fast follow for
+   the duration of the drag (`setSeekDragging`, `useScrollToActiveCard.js`). */
 .progress-container.dragging .progress-fill,
 .progress-container.dragging .progress-thumb {
   transition: none;
@@ -851,9 +851,9 @@ input[type="checkbox"] {
   border-color: var(--accent-dark);
 }
 
-/* Sauts « ma réplique » (communs Répétition/Enregistrement) : teintés de
-   l'accent qui surligne mes répliques (.dialogue-card.mine), pour lier
-   visuellement les boutons à mes cartes. */
+/* The "my line" jumps (common to Rehearsal and Recording): tinted with the accent that
+   highlights my lines (.dialogue-card.mine), to link the buttons visually to my
+   cards. */
 .ctrl-btn.my-jump {
   color: var(--accent);
   background: var(--accent-soft);
@@ -865,7 +865,7 @@ input[type="checkbox"] {
   color: #fff;
 }
 
-/* ---- Dialogue cards (shared look between Répétition & Enregistrement) ---- */
+/* ---- Dialogue cards (shared look between Rehearsal & Recording) ---- */
 
 .dialogue-card:focus-visible {
   outline: var(--focus-ring);
@@ -877,14 +877,14 @@ input[type="checkbox"] {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 12px 16px;
-  /* Même teinte que le filet des autres côtés : un bord transparent laissait
-     une bande blanche « ouverte » sur les répliques sans état. */
+  /* The same tint as the rule on the other sides: a transparent edge left an "open"
+     white band on the lines with no state. */
   border-left: 4px solid var(--border);
   transition: border-color 0.15s, background 0.15s;
 }
 
-/* « Mes répliques » : même palette rose/doré sur Répétition et Enregistrement.
-   Les pages posent .mine à côté de leur classe sémantique (.muted / .own). */
+/* "My lines": the same pink/gold palette on Rehearsal and on Recording.
+   The pages set .mine next to their semantic class (.muted / .own). */
 .dialogue-card.mine {
   background: var(--accent-soft);
   border-left-color: var(--gold);
@@ -893,17 +893,17 @@ input[type="checkbox"] {
 .dialogue-card.active {
   border-color: var(--accent);
   border-left-color: var(--accent);
-  /* Dérivé de --accent (comme le halo d'enregistrement de recorder.css) et pas
-     le même bordeaux figé en rgba : un composant partagé ne fixe pas une
-     couleur qu'une page peut re-skinner. */
+  /* Derived from --accent (like the recording halo of recorder.css) and not the same
+     burgundy frozen as an rgba: a shared component does not fix a colour that a page
+     can re-skin. */
   box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
-/* La carte courante s'éclaircit d'un souffle sur le blanc des autres : la
-   bordure seule se perd dans une longue liste. Commun aux deux pages (la
-   Répétition l'avait pour elle seule, en dur, et l'Enregistrement s'en passait).
-   `:not(.mine)` et pas un simple `.active` : sur mes propres répliques la
-   palette rose/dorée doit rester, et `.active` la suit dans la cascade. */
+/* The current card lightens by a breath against the white of the others: the border
+   alone gets lost in a long list. Common to both pages (the Rehearsal page had it for
+   itself alone, hard-coded, and the Recording page did without it).
+   `:not(.mine)` and not a plain `.active`: on my own lines the pink/gold palette must
+   stay, and `.active` comes after it in the cascade. */
 .dialogue-card.active:not(.mine) {
   background: var(--card-active);
 }
@@ -921,8 +921,8 @@ input[type="checkbox"] {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  /* Les autres personnages restent en gris doux ; seul le personnage
-     sélectionné (.mine) prend la couleur du thème (comme v1). */
+  /* The other characters stay in soft grey; only the selected character (.mine) takes
+     the colour of the theme (as in v1). */
   color: var(--ink-soft);
 }
 
@@ -946,57 +946,54 @@ input[type="checkbox"] {
   padding: 20px;
 }
 
-/* Coquille de la hauteur de la fenêtre : le bandeau reste dans le flux en haut,
-   et SEUL le contenu au-dessous défile. Deux pages en ont besoin, l'Édition (le
-   rail, donc la liste des correspondances, doit rester sous les yeux pendant
-   qu'on parcourt les répliques) et la Répartition (sa barre de légende doit
-   rester sous le bandeau alors que la mosaïque fait plusieurs écrans), et elle
-   était écrite deux fois, les commentaires des deux fichiers se citant l'un
-   l'autre.
-   Le motif est le même des deux côtés, et c'est ce qui la rend partageable :
-   coller une barre SOUS le bandeau demanderait sinon de connaître la hauteur de
-   celui-ci, qui est un inconnu ANIMÉ (titre sur deux lignes, deux paragraphes de
-   doc, repli sur 0,26 s), donc de la mesurer en JS, de la remesurer à chaque
-   repli, et la barre traînerait un quart de seconde derrière l'animation. Ici
-   rien n'est mesuré et `PlayHeader` n'est pas touché : son `position: sticky`
-   dans un ancêtre qui ne défile pas se comporte comme `relative`, il tient le
-   haut parce qu'il EST en haut.
-   `--shell-height` est le seul écart réel entre les deux consommateurs, et il
-   n'est pas cosmétique : la Répartition prend `100dvh` parce qu'elle est dans les
-   cartes des acteurs, donc au téléphone, où une barre d'adresse qui se rétracte
-   change vraiment la hauteur utile ; l'Édition garde `100vh`, elle ne s'ouvre
-   qu'à la souris (cf. useTouchPointer.js). Le défaut est `100dvh`, le cas du
-   téléphone : une page qui oublierait de le poser vaut mieux trop court que trop
-   long.
-   À poser sur un élément de la page et JAMAIS sur `body` : les écrans pleine
-   page de `PageState` gardent le défilement normal, leur carte pouvant dépasser
-   d'une fenêtre basse. */
+/* A shell the height of the window: the header stays in the flow at the top, and ONLY
+   the content below it scrolls. Two pages need it, Editing (the rail, hence the list
+   of matches, must stay before the eyes while one goes through the lines) and
+   Speaking share (its legend bar must stay under the header while the mosaic is several
+   screens long), and it used to be written twice, the comments of the two files quoting
+   each other.
+   The reason is the same on both sides, and that is what makes it shareable: sticking a
+   bar UNDER the header would otherwise require knowing the height of that header, which
+   is an ANIMATED unknown (a title on two lines, two paragraphs of documentation, a
+   collapse over 0.26 s), hence measuring it in JS, remeasuring it at each collapse, and
+   the bar would trail a quarter of a second behind the animation. Here nothing is
+   measured and `PlayHeader` is not touched: its `position: sticky` inside an ancestor
+   that does not scroll behaves like `relative`, it holds the top because it IS at the
+   top.
+   `--shell-height` is the only real difference between the two consumers, and it is not
+   cosmetic: Speaking share takes `100dvh` because it is among the actors' cards, hence on
+   the phone, where an address bar that retracts really does change the usable height;
+   Editing keeps `100vh`, it only opens with a mouse (see useTouchPointer.js). The
+   default is `100dvh`, the phone case: a page that forgot to set it had better be too
+   short than too long.
+   To be set on an element of the page and NEVER on `body`: the full-page screens of
+   `PageState` keep normal scrolling, their card being able to overflow a short
+   window. */
 .page-shell {
   height: var(--shell-height, 100dvh);
   display: flex;
   flex-direction: column;
 }
 
-/* La zone défilante de `.page-shell`. `min-height: 0` est la tuyauterie qui la
-   fait marcher : sans lui, le minimum automatique d'un élément flex vaut sa
-   hauteur de contenu, donc la zone pousse la coquille au-delà de la fenêtre au
-   lieu de défiler (même piège que `.play-header-settings-inner` et
-   `.editor-rail-body`). Le défilement horizontal reste interdit : c'est la
-   hauteur qu'on borne, jamais la largeur. */
+/* The scrolling area of `.page-shell`. `min-height: 0` is the plumbing that makes it
+   work: without it, the automatic minimum of a flex item is its content height, so the
+   area pushes the shell beyond the window instead of scrolling (the same trap as
+   `.play-header-settings-inner` and `.editor-rail-body`). Horizontal scrolling stays
+   forbidden: it is the height that is bounded, never the width. */
 .page-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
 }
 
-/* Un nom qui ne doit pas pousser ses voisins hors de leur boîte : il prend la
-   place et se coupe en « … ». Quatre porteurs, tous le même objet (le nom d'un
-   personnage ou d'un objet de la pièce dans une rangée serrée), et le triplet
-   était recopié dans quatre CSS de page, chacun renvoyant en commentaire à celui
-   de l'Avancement. Ce qui reste local est ce qui varie vraiment : la largeur
-   maximale, le `flex`, le remplissage.
-   Toujours doublé d'un `title` chez l'appelant, sinon un nom coupé devient un
-   nom qu'on ne peut plus lire du tout. */
+/* A name that must not push its neighbours out of their box: it takes the room it has
+   and cuts itself off with "…". Four carriers, all the same object (the name of a
+   character or of an object of the play in a tight row), and the trio used to be copied
+   into four page CSS files, each one pointing in a comment to the one of the Progress
+   page. What stays local is what really varies: the maximum width, the `flex`, the
+   padding.
+   Always doubled with a `title` at the call site, otherwise a cut name becomes a name
+   that can no longer be read at all. */
 .truncate {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1010,23 +1007,23 @@ input[type="checkbox"] {
   box-shadow: var(--shadow);
 }
 
-/* Le geste de survol commun à toutes les surfaces cliquables du site : la
-   surface se soulève d'un pas et prend l'ombre haute. Il était recopié sur les
-   cartes des deux accueils, sur le bouton de dépôt et sur le bouton du PDF, dans
-   trois fichiers pour deux déclarations, alors que le projet le décrit partout
-   comme UN geste. Une divergence d'un pixel entre deux surfaces voisines ne se
-   nomme pas, elle se remarque juste.
-   `--lift` pour le pas, parce qu'il dépend de la taille de la surface et non du
-   geste : une carte d'accueil est haute et se lève de 3 px, un bouton ou une
-   barre d'une ligne de 1 px (le défaut). C'est le seul écart légitime.
-   La `transition` reste chez chaque surface, et n'est pas remontée ici exprès :
-   `transition` est UNE propriété, donc une déclaration locale (le bouton du PDF
-   fait aussi glisser son fond) écraserait celle d'ici au lieu de s'y ajouter, et
-   le soulèvement apparaîtrait d'un coup. Contrepartie à tenir : toute surface qui
-   prend cette classe doit lister `transform` et `box-shadow` dans SA transition.
-   Ne convient pas au retour à l'accueil du bandeau (`.play-header-home`) : il
-   garde le pas d'un pixel mais remplace l'ombre par la nappe crème du sceau,
-   c'est donc un autre geste, pas celui-ci mal réglé. */
+/* The hover gesture common to all clickable surfaces of the site: the surface lifts by
+   one step and takes the high shadow. It used to be copied onto the cards of both home
+   pages, onto the upload button and onto the PDF button, in three files for two
+   declarations, whereas the project describes it everywhere as ONE gesture. A
+   divergence of one pixel between two neighbouring surfaces does not get named, it just
+   gets noticed.
+   `--lift` for the step, because it depends on the size of the surface and not on the
+   gesture: a home page card is tall and rises by 3 px, a button or a one-line bar by
+   1 px (the default). That is the only legitimate difference.
+   The `transition` stays with each surface, and is deliberately not moved up here:
+   `transition` is ONE property, so a local declaration (the PDF button also transitions
+   its background) would overwrite the one here instead of adding to it, and the lift
+   would appear all at once. A counterpart to uphold: any surface that takes this class
+   must list `transform` and `box-shadow` in ITS transition.
+   Not suitable for the way back to the home page from the header
+   (`.play-header-home`): it keeps the one-pixel step but replaces the shadow with the
+   cream wash of the seal, so it is another gesture, not this one badly tuned. */
 .lift-hover:hover {
   transform: translateY(var(--lift, -1px));
   box-shadow: var(--shadow-hover);
@@ -1039,23 +1036,23 @@ input[type="checkbox"] {
   font-size: 17px;
 }
 
-/* Message pleine page de `PageState` : il vit dans une carte blanche, comme
-   TOUT ce qui porte du contenu sur ce site (cartes de l'accueil, encart « Qui
-   jouez-vous ? », panneaux de l'Avancement, cartes de dialogue). En texte nu sur
-   le crème, ces écrans étaient les seuls du site à ne rien poser sur le papier :
-   on lisait une page à moitié chargée plutôt qu'une réponse.
-   **Les DEUX états la prennent**, le message (navigateur incapable
-   d'enregistrer, manifest illisible, Édition ouverte au doigt) et le chargement :
-   ce sont deux moments du même écran, et l'un succédant souvent à l'autre, une
-   carte qui n'apparaîtrait qu'au second se lirait comme un changement de page.
-   Le mot reste au centre et court (une phrase, pas un paragraphe), donc pas de
-   titre : la carte et le sceau du bandeau situent déjà l'écran.
-   `min()` plutôt qu'une marge latérale : `margin: auto` centre, et il faut
-   quand même une gouttière sur un téléphone étroit. La gouttière est un token
-   parce que la carte de l'éditeur relève son plafond sans changer le bord
-   (`.load-error`), et deux `calc()` recopiés dériveraient.
-   L'ombre suit `--shadow`, donc l'éditeur (qui le met à `none`) rend la carte
-   à plat : c'est sa direction « Rail », et ses propres panneaux sont plats. */
+/* Full-page message of `PageState`: it lives in a white card, like EVERYTHING that
+   carries content on this site (the home page cards, the "Who are you playing?" intro
+   card, the panels of the Progress page, the dialogue cards). As bare text on the cream,
+   these screens were the only ones on the site to lay nothing on the paper: one read a
+   half-loaded page rather than an answer.
+   **BOTH states take it**, the message (browser unable to record, unreadable manifest,
+   Editor opened under a finger) and the loading: they are two moments of the same
+   screen, and since one often follows the other, a card that only appeared at the second
+   would read as a change of page.
+   The wording stays centred and short (one sentence, not a paragraph), hence no title:
+   the card and the seal of the header already situate the screen.
+   `min()` rather than a side margin: `margin: auto` centres, and a gutter is still
+   needed on a narrow phone. The gutter is a token because the editor's card raises its
+   ceiling without changing the edge (`.load-error`), and two copied `calc()` would
+   drift.
+   The shadow follows `--shadow`, so the editor (which sets it to `none`) renders the
+   card flat: that is its "Rail" direction, and its own panels are flat. */
 .page-notice {
   max-width: min(480px, calc(100% - var(--notice-gutter)));
   margin: 40px auto;
@@ -1070,14 +1067,14 @@ input[type="checkbox"] {
   line-height: 1.55;
 }
 
-/* Le triangle prend la couleur d'avertissement du thème : sur une carte
-   blanche, l'encre seule ne disait pas qu'il y a quelque chose à savoir. */
+/* The triangle takes the warning colour of the theme: on a white card, the ink alone
+   did not say that there is something to know. */
 .page-notice .warn-icon {
   color: var(--warn);
 }
 
-/* L'attente, dans la même carte : seule l'encre s'adoucit, et le texte respire
-   un peu plus haut qu'un message qui, lui, se lit une fois et se referme. */
+/* The waiting state, in the same card: only the ink softens, and the text breathes a
+   little more than a message which, for its part, is read once and then closes. */
 .page-notice.loading-state {
   color: var(--ink-soft);
   padding: 40px 26px;
@@ -1120,12 +1117,11 @@ input[type="checkbox"] {
   flex-wrap: wrap;
 }
 
-/* Modales de confirmation (ConfirmModal) : la réplique visée est citée en
-   serif, comme dans les cartes de dialogue, pour qu'on la reconnaisse. Vit
-   ici et plus dans editor.css depuis que la page Enregistrement cite aussi la
-   réplique (suppression d'une prise) : le modal est partagé, sa citation
-   aussi. Le filet suit --border (re-skinné par l'éditeur), donc la teinte
-   reste celle de la page. */
+/* Confirmation modals (ConfirmModal): the line concerned is quoted in serif, as in the
+   dialogue cards, so that it is recognised. Lives here and no longer in editor.css ever
+   since the Recording page also quotes the line (deletion of a take): the modal is
+   shared, so is its quotation. The rule follows --border (re-skinned by the editor), so
+   the tint stays the one of the page. */
 .confirm-quote {
   font-family: var(--font-serif);
   font-size: 16px;
@@ -1138,24 +1134,22 @@ input[type="checkbox"] {
 }
 
 /* ---- Mobile ----
-   La rangée du bandeau est serrée à 375px (sceau + marque + titre de pièce +
-   chevron, plus les actions de l'éditeur) : on récupère de la largeur sur le
-   sceau puis sur les marges, jamais sur le titre de la pièce. */
+   The row of the header is tight at 375px (seal + brand + play title + chevron, plus
+   the actions of the editor): we take width back from the seal then from the margins,
+   never from the title of the play. */
 
-/* Visé sur les deux bandeaux, et surtout PAS sur `.page-mark` tout court : les
-   masques de l'accueil ne se lisent qu'à partir d'environ 34 px et tomberaient
-   ici à 17 px, taille à laquelle les deux visages se touchent. Ça marchait par
-   accident (`.home-brand-mark` a la même spécificité et arrive après dans la
-   cascade, mais seulement parce que main.jsx importe theme.css avant home.css :
-   inverser ces deux imports rapetissait la marque). Aucun autre porteur de
-   sceau n'est dans un bandeau, donc le rendu est inchangé.
-   La pastille du retour à l'accueil, elle, est bien dans un bandeau et suit
-   volontairement la règle : elle doit rester de la taille EXACTE du sceau de la
-   page, seul autre rond du bandeau. Seul son dessin garde l'avance qu'il a en
-   grand (les masques remplissent environ trois quarts de la pastille, un sceau
-   de page un peu plus de la moitié) : la ligne suivante la lui rend, sinon la
-   règle ci-dessus le ramènerait à 17 px, taille à laquelle les deux visages se
-   touchent. */
+/* Aimed at both headers, and above all NOT at plain `.page-mark`: the masks of the home
+   page only read from about 34 px up and would drop here to 17 px, a size at which the
+   two faces touch. It used to work by accident (`.home-brand-mark` has the same
+   specificity and comes later in the cascade, but only because main.jsx imports
+   theme.css before home.css: swapping those two imports shrank the brand). No other
+   carrier of a seal is inside a header, so the rendering is unchanged.
+   The disc of the way back to the home page, for its part, really is inside a header and
+   deliberately follows the rule: it must stay the EXACT size of the seal of the page, the
+   only other circle of the header. Only its drawing keeps the lead it has at a large
+   size (the masks fill about three quarters of the disc, a page seal a little more than
+   half): the next line gives it back to it, otherwise the rule above would bring it down
+   to 17 px, a size at which the two faces touch. */
 @media (max-width: 800px) {
   .page-header .page-mark,
   .play-header .page-mark {
@@ -1164,24 +1158,24 @@ input[type="checkbox"] {
     font-size: 17px;
   }
 
-  /* Visé par le lien de retour et non par un bandeau : `HomeLink` est le même
-     objet dans les deux, et la règle ci-dessus l'a déjà ramené à 30 px de
-     pastille (il porte `page-mark`). Il ne reste qu'à lui rendre son dessin, qui
-     occupe les trois quarts du rond là où un sceau de page en occupe la moitié. */
+  /* Aimed at the way-back link and not at a header: `HomeLink` is the same object in
+     both, and the rule above has already brought it down to a 30 px disc (it carries
+     `page-mark`). All that remains is to give it back its drawing, which takes up three
+     quarters of the circle where a page seal takes up half of it. */
   .play-header-home .play-header-home-mark {
     font-size: 22px;
   }
 }
 
-/* Sur un téléphone étroit, les 18 px de gouttière du bandeau prennent trop sur la
-   largeur du titre. Les TROIS porteurs de cette gouttière y passent, jamais deux :
-   la rangée du haut, le bloc des réglages sous elle (phrase de doc, selects,
-   `hint`, retour à l'accueil) et le bandeau d'attente, qui pose la sienne d'un
-   seul tenant. Sans `.play-header-settings-inner`, le sceau et le titre se
-   décalaient de 6 px vers la gauche par rapport à tout ce qui les suit sur les
-   cinq pages à bandeau de pièce, et le contenu de l'écran d'attente (aligné, lui)
-   glissait de 6 px à l'arrivée du manifest. C'est le même accord que le
-   commentaire de `.page-header` promet plus haut. */
+/* On a narrow phone, the 18 px of gutter of the header take too much from the width of
+   the title. ALL THREE carriers of that gutter go through this, never two: the top row,
+   the block of settings under it (documentation sentence, selects, `hint`, way back to
+   the home page) and the waiting header, which sets its own in one piece. Without
+   `.play-header-settings-inner`, the seal and the title were shifted 6 px to the left
+   relative to everything that follows them on the five pages with a play header, and the
+   content of the waiting screen (aligned, itself) slid by 6 px when the manifest
+   arrived. This is the same agreement that the comment on `.page-header` promises
+   above. */
 @media (max-width: 420px) {
   .page-header,
   .play-header-row,
@@ -1191,8 +1185,8 @@ input[type="checkbox"] {
   }
 }
 
-/* ---- Mouvement réduit ----
-   Le repli du bandeau reste fonctionnel, il devient instantané. */
+/* ---- Reduced motion ----
+   The collapsing of the header stays functional, it becomes instantaneous. */
 @media (prefers-reduced-motion: reduce) {
   .play-header-settings,
   .play-header-settings-inner,

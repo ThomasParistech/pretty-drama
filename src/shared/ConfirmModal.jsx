@@ -11,8 +11,8 @@ import { t } from "./locale.js";
 // fixed-position backdrop and trap it inside the row.
 //
 // `primaryLabel`/`onPrimary` add an optional safe way out next to the
-// destructive one (« Télécharger puis quitter » face à « Quitter quand
-// même ») ; it then takes the focus, being the one to offer by default.
+// destructive one ("Download, then leave" facing "Leave anyway"); it then
+// takes the focus, being the one to offer by default.
 export default function ConfirmModal({
   title,
   children,

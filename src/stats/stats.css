@@ -1,35 +1,34 @@
-/* Page Répartition. N'emploie que les tokens partagés de theme.css : cette page
-   ne re-skinne rien (seul l'éditeur le fait), et REDÉFINIR un token `--header-*`
-   y est interdit par la CI (scripts/tests/test_contracts.py). En LIRE un reste
-   permis, et la barre de légende le fait (`--header-shadow`), comme l'éditeur lit
-   `--header-accent` : deux bandes empilées doivent porter la même ombre.
+/* Speaking share page. Uses only the shared tokens of theme.css: this page re-skins
+   nothing (only the editor does that), and REDEFINING a `--header-*` token is
+   forbidden here by the CI (scripts/tests/test_contracts.py). READING one stays
+   allowed, and the legend bar does it (`--header-shadow`), just as the editor reads
+   `--header-accent`: two stacked bands must carry the same shadow.
 
-   Les trois panneaux sont des `.card` partagées, comme tout ce qui porte du
-   contenu sur ce site. Ce fichier ne fait que les disposer et dessiner ce que le
-   thème ne connaît pas : un anneau, une légende, et un bloc de carrés. */
+   The three panels are shared `.card` elements, like everything that carries content
+   on this site. This file only lays them out and draws what the theme does not know
+   about: a ring, a legend, and a block of squares. */
 
-/* ----------------------------------------------------------- la coquille
-   La page ne défile pas en entier : le bandeau et la barre des personnages tiennent
-   le haut, et seul le contenu au-dessous défile. Ce sont les classes partagées
-   `.page-shell` / `.page-scroll` (theme.css), posées en JSX, et cette page n'a
-   AUCUNE règle à écrire ici : son `--shell-height` est le défaut du thème,
-   `100dvh`, parce qu'elle est dans les cartes des acteurs, donc au téléphone, où
-   une barre d'adresse qui se rétracte change vraiment la hauteur utile (l'Édition,
-   qui ne s'ouvre qu'à la souris, est celle qui doit le poser à `100vh`). */
+/* ----------------------------------------------------------- the shell
+   The page does not scroll as a whole: the header and the character bar hold the
+   top, and only the content below scrolls. They are the shared classes
+   `.page-shell` / `.page-scroll` (theme.css), set in JSX, and this page has NO rule
+   to write here: its `--shell-height` is the theme's default, `100dvh`, because it is
+   among the actors' cards, hence on the phone, where an address bar that retracts
+   really does change the usable height (Editing, which only opens with a mouse, is
+   the one that has to set it to `100vh`). */
 
-/* ------------------------------------------- la barre des personnages
-   La légende de la page, sous le bandeau et au-dessus du contenu. Fond de carte
-   et filet bas comme le bandeau qu'elle prolonge, et la même ombre que lui, pour
-   la même raison : c'est sous elle que le contenu passe. Le remplissage et la
-   largeur maximale sont ceux du `.container` (20 px, 900 px), donc le premier nom
-   s'aligne sur le bord des cartes du dessous et pas sur celui de la fenêtre.
+/* ------------------------------------------- the character bar
+   The legend of the page, under the header and above the content. A card background
+   and a bottom rule like the header it extends, and the same shadow as it, for the
+   same reason: it is under it that the content passes. The padding and the maximum
+   width are those of `.container` (20 px, 900 px), so the first name lines up on the
+   edge of the cards below and not on that of the window.
 
-   Le plafond de hauteur n'est pas de la prudence : la légende passe à la ligne, et
-   une distribution de quinze personnages sur un téléphone y prenait cinq rangées
-   de 40 px, soit la moitié de l'écran avant même le premier dessin. Au-delà, elle
-   défile (précédent du journal de l'Avancement) ; ses boutons étant focalisables,
-   cette zone défilante n'a pas besoin du `tabIndex` que la grille de l'Avancement
-   doit se donner. */
+   The height cap is not a precaution: the legend wraps, and a cast of fifteen
+   characters on a phone took five rows of 40 px there, that is half the screen before
+   even the first drawing. Beyond that, it scrolls (precedent of the Progress page's
+   log); its buttons being focusable, this scrolling area does not need the `tabIndex`
+   that the grid of the Progress page has to give itself. */
 .stats-legend-bar {
   flex: none;
   background: var(--card);
@@ -45,12 +44,11 @@
   padding: 8px 20px;
 }
 
-/* Les deux camemberts côte à côte, le bloc en pleine largeur au-dessous : c'est
-   la mise en page du PDF d'origine (viz/main.tex : deux minipages à 0.45 puis une
-   à 0.8). `minmax(0, 1fr)` et pas `1fr` : le minimum d'une piste `fr` vaut la
-   contribution min-content de son contenu, or une légende porte des noms de
-   personnages, donc les deux colonnes débordaient sur une fenêtre étroite au
-   lieu de se partager la place. */
+/* The two pie charts side by side, the block at full width below: that is the layout
+   of the original PDF (viz/main.tex: two minipages at 0.45 then one at 0.8).
+   `minmax(0, 1fr)` and not `1fr`: the minimum of an `fr` track is the min-content
+   contribution of its content, and a legend carries character names, so the two
+   columns overflowed on a narrow window instead of sharing the space. */
 .stats-pies {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -58,17 +56,17 @@
   margin-bottom: 16px;
 }
 
-/* ------------------------------------------------------ réglages du bandeau */
+/* ------------------------------------------------------ header settings */
 
-/* La rangée de portée n'a aucune règle propre à cette page : ce sont les deux
-   selects de `.selects-row` (theme.css), partagés avec la Répétition et
-   l'Enregistrement, et les trois niveaux de portée tiennent dans leurs listes (cf.
-   App.jsx). Un troisième contrôle a vécu ici, un bouton bascule « Toute la pièce »
-   aux métriques d'un select ; il est retiré, avec sa classe `.scope-all`. */
+/* The scope row has no rule specific to this page: they are the two selects of
+   `.selects-row` (theme.css), shared with the Rehearsal and Recording pages, and the
+   three levels of scope fit in their lists (see App.jsx). A third control lived here,
+   a "Whole play" toggle button with the metrics of a select; it has been removed,
+   along with its `.scope-all` class. */
 
-/* Le seul réglage d'affichage de la page. Il ne ressemble donc pas aux selects
-   au-dessus : pas de cadre, une étiquette et un nombre à l'encre douce, comme les
-   phrases de doc du bandeau. Ce qui se règle est le curseur, et il est seul. */
+/* The only display setting of the page. It therefore does not look like the selects
+   above: no frame, a label and a number in soft ink, like the documentation sentences
+   of the header. What is being set is the slider, and it is alone. */
 .stats-scale {
   display: flex;
   align-items: center;
@@ -77,11 +75,11 @@
   color: var(--ink-soft);
 }
 
-/* `accent-color` plutôt que de reconstruire piste et curseur : c'est ce que le
-   projet fait déjà des cases à cocher (theme.css), pour la même raison, un contrôle
-   natif qui rendrait bleu au milieu d'une page bordeaux. La largeur est fixée
-   plutôt que souple : à `flex: 1` le curseur prenait toute la rangée du bandeau, et
-   un déplacement d'un pixel valait moins d'un mot par ligne. */
+/* `accent-color` rather than rebuilding the track and the thumb: that is what the
+   project already does with the checkboxes (theme.css), for the same reason, a native
+   control that would render blue in the middle of a burgundy page. The width is fixed
+   rather than flexible: with `flex: 1` the slider took the whole row of the header,
+   and a one-pixel move was worth less than one word per line. */
 .stats-scale input[type="range"] {
   accent-color: var(--accent);
   flex: none;
@@ -94,9 +92,9 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-/* Le nombre, en chiffres de largeur fixe et sur une largeur réservée : sans ça la
-   rangée entière se décalait de deux pixels au passage de 99 à 100 pendant qu'on
-   tire le curseur. */
+/* The number, in fixed-width digits and on a reserved width: without that the whole
+   row shifted by two pixels when going from 99 to 100 while the slider is being
+   dragged. */
 .stats-scale-value {
   font-variant-numeric: tabular-nums;
   min-width: 3ch;
@@ -109,15 +107,15 @@
 }
 
 .stats-panel-title {
-  /* font-family et font-weight viennent de la règle h1,h2,h3 de theme.css : les
-     redéclarer ici donnait les seuls titres serif du site en 600 au lieu de 700.
-     Même parti que `.dash-journal h2`. */
+  /* font-family and font-weight come from the h1,h2,h3 rule of theme.css:
+     redeclaring them here gave the only serif headings of the site in 600 instead of
+     700. The same choice as `.dash-journal h2`. */
   font-size: 20px;
   color: var(--ink);
   margin: 0 0 14px;
 }
 
-/* ---------------------------------------------------------------- camembert */
+/* ---------------------------------------------------------------- pie chart */
 
 .stats-donut-row {
   display: flex;
@@ -139,44 +137,44 @@
   stroke-width: 13;
 }
 
-/* Une part = une fraction de circonférence, posée en `stroke-dasharray` par le
-   composant. Le quart de tour ramène le départ à midi, où un camembert commence.
-   `butt` et pas `round` : un bout arrondi mord sur la part voisine, donc une
-   petite part paraissait plus grande que son chiffre. */
+/* A slice = a fraction of the circumference, set as a `stroke-dasharray` by the
+   component. The quarter turn brings the start back to noon, where a pie chart begins.
+   `butt` and not `round`: a rounded end bites into the neighbouring slice, so a small
+   slice looked bigger than its figure. */
 .stats-slice {
   fill: none;
   stroke-width: 13;
   stroke-linecap: butt;
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
-  /* Une part désigne son personnage : elle se survole et s'appuie, comme sa ligne
-     de légende (cf. `hoverProps` dans App.jsx). */
+  /* A slice designates its character: it can be hovered and pressed, like its legend
+     row (see `hoverProps` in App.jsx). */
   cursor: pointer;
   transition: opacity 0.12s;
 }
 
-/* Les autres personnages quand l'un est mis en évidence. À 0,18 la part se fond
-   dans la piste de l'anneau, qui est juste dessous : l'anneau reste un anneau, on
-   voit encore la place de la part choisie dans le tout, et c'est ce que la
-   référence montrait en découpant un fichier par personnage. Pas le 0,12 du bloc :
-   là-bas les mots éteints font une masse, ici un arc de 13 px d'épaisseur
-   disparaîtrait. */
+/* The other characters when one is highlighted. At 0.18 the slice blends into the
+   track of the ring, which is just underneath: the ring stays a ring, one still sees the
+   place of the chosen slice within the whole, and that is what the reference showed by
+   cutting one file per character. Not the 0.12 of the block: over there the dimmed words
+   form a mass, here an arc 13 px thick would disappear. */
 .stats-slice.dimmed {
   opacity: 0.18;
 }
 
-/* La piste est un décor, pas une cible : sans ça, le trou de l'anneau et le
-   liseré qui dépasse d'une part répondaient au pointeur sans rien désigner. */
+/* The track is decoration, not a target: without that, the hole of the ring and the
+   sliver sticking out of a slice responded to the pointer without designating
+   anything. */
 .stats-donut-track {
   pointer-events: none;
 }
 
-/* La taille de ces deux lignes n'est PAS ici : elle descend du JSX en style, parce
-   que stats.js la calcule pour qu'elles tiennent dans le trou de l'anneau
-   (`centerFontSize`, `TOTAL_SIZE`, `UNIT_SIZE`). La poser aussi en CSS mettrait le
-   même chiffre à deux endroits, qui se désaccorderaient au premier réglage. Les
-   `tabular-nums` du total ne sont pas un détail : c'est la chasse fixe des
-   chiffres que ce calcul suppose. */
+/* The size of these two lines is NOT here: it comes down from the JSX as a style,
+   because stats.js computes it so that they fit inside the hole of the ring
+   (`centerFontSize`, `TOTAL_SIZE`, `UNIT_SIZE`). Setting it in CSS as well would put the
+   same number in two places, which would fall out of agreement at the first
+   adjustment. The `tabular-nums` of the total are not a detail: it is the fixed width of
+   the digits that this computation assumes. */
 .stats-donut-total {
   text-anchor: middle;
   font-family: var(--font-ui);
@@ -191,14 +189,13 @@
   fill: var(--ink-soft);
 }
 
-/* ------------------------------------------------------------------ légende */
+/* ------------------------------------------------------------------ legend */
 
-/* La base de 190 px est ce qui fait PASSER la légende sous l'anneau quand la
-   carte se resserre, au lieu de la laisser s'écraser à côté : `flex-wrap` décide
-   sur la base, pas sur le contenu, donc avec `flex: 1` et `min-width: 0` elle ne
-   demandait jamais à passer à la ligne et tous les noms se coupaient en « C. » à
-   375 px. Le `min-width: 0` reste, pour qu'elle puisse rétrécir APRÈS avoir
-   passé la ligne. */
+/* The 190 px basis is what makes the legend WRAP under the ring when the card
+   narrows, instead of letting it be crushed beside it: `flex-wrap` decides on the basis,
+   not on the content, so with `flex: 1` and `min-width: 0` it never asked to wrap and
+   all the names were cut down to "C." at 375 px. The `min-width: 0` stays, so that it can
+   shrink AFTER having wrapped. */
 .stats-legend {
   flex: 1 1 190px;
   min-width: 0;
@@ -208,19 +205,18 @@
   font-size: 13px;
 }
 
-/* Quatre colonnes : la pastille, le nom (qui prend la place et se coupe), le
-   décompte et la part, tous deux alignés à droite en chiffres de largeur fixe.
-   C'est le motif de la grille de l'Avancement : une colonne de nombres se lit
-   sans les comparer un à un.
+/* Four columns: the dot, the name (which takes the room and cuts itself off), the
+   count and the share, both right-aligned in fixed-width digits. That is the reasoning of
+   the Progress grid: a column of numbers reads without comparing them one by one.
 
-   Et c'est un BOUTON dans les trois légendes (il l'était sous le bloc seul) :
-   toutes désignent un personnage, donc toutes se comportent pareil. Elles ne
-   doivent pas ressembler à des boutons au repos (ce sont des légendes), d'où le
-   fond transparent, et se signaler au survol.
-   Le remplissage horizontal et la marge négative qui l'annule vont ensemble : ils
-   donnent à la nappe de survol de quoi déborder du texte sans déplacer d'un pixel
-   la pastille ni la colonne des parts, qui restent où elles étaient quand la
-   rangée était une simple ligne de liste. */
+   And it is a BUTTON in all three legends (it was one under the block alone): they all
+   designate a character, so they all behave the same. They must not look like buttons at
+   rest (they are legends), hence the transparent background, and they must announce
+   themselves on hover.
+   The horizontal padding and the negative margin that cancels it go together: they give
+   the hover wash something to overflow the text with, without moving the dot or the
+   column of shares by a single pixel, which stay where they were when the row was a plain
+   list line. */
 .stats-legend-row {
   display: grid;
   grid-template-columns: 10px minmax(0, 1fr) auto auto;
@@ -233,9 +229,9 @@
   border: none;
   border-radius: 6px;
   font: inherit;
-  /* `color` en plus de `font` : un `<button>` prend le `buttontext` du
-     navigateur, donc sans lui le `currentColor` du filet de la pastille
-     (`.stats-legend-dot`) valait un noir système et pas l'encre de la page. */
+  /* `color` in addition to `font`: a `<button>` takes the browser's `buttontext`, so
+     without it the `currentColor` of the rule of the dot (`.stats-legend-dot`) was a
+     system black and not the ink of the page. */
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -251,12 +247,12 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-/* Le personnage mis en évidence : le fond dit lequel, et pas seulement l'aspect
-   des dessins au-dessus (`aria-pressed` le dit aussi à la voix, mais lui ne suit
-   que le choix arrêté, cf. `CharacterLegend`).
-   La classe s'appelle `lit` et pas `active` parce qu'elle suit le SURVOL autant
-   que le choix : c'est un état d'aspect, et le confondre avec l'état du bouton
-   était le piège de départ. */
+/* The highlighted character: the background says which one, and not only the look of
+   the drawings above (`aria-pressed` says it to the voice too, but that one only follows
+   the settled choice, see `CharacterLegend`).
+   The class is called `lit` and not `active` because it follows the HOVER as much as the
+   choice: it is a state of appearance, and confusing it with the state of the button was
+   the initial trap. */
 .stats-legend-row.lit {
   background: var(--paper-dark);
   box-shadow: inset 0 0 0 1px var(--border);
@@ -270,26 +266,25 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  /* Un filet intérieur, sans quoi la pastille d'un 11e personnage (les teintes
-     claires de la palette, à 1.3:1 sur le crème) n'aurait pas de silhouette.
-     Tiré de l'encre du thème via `currentColor` et pas d'un noir écrit à la
-     main : la pastille suit ainsi la page, et le fichier ne pose aucune couleur
-     en dur. */
+  /* An inner rule, without which the dot of an 11th character (the light tints of the
+     palette, at 1.3:1 on the cream) would have no silhouette. Taken from the ink of the
+     theme through `currentColor` and not from a black written by hand: the dot thus
+     follows the page, and the file sets no hard-coded colour. */
   box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 22%, transparent);
 }
 
-/* Le nom prend la place et se coupe en « … » (classe partagée `.truncate` de
-   theme.css, posée en JSX) : un nom à rallonge ne doit pas pousser le décompte et
-   la part hors de la carte. Ne reste ici que son encre. */
+/* The name takes the room and cuts itself off with "…" (shared class `.truncate` from
+   theme.css, set in JSX): a name that goes on and on must not push the count and the
+   share out of the card. All that remains here is its ink. */
 .stats-legend-name {
   color: var(--ink);
 }
 
-/* Sauf dans la légende de la barre du haut, où le bouton fait la largeur de son
-   nom : rien ne le suit sur sa ligne, donc rien à protéger, et un nom coupé y
-   serait un bouton qu'on ne sait pas nommer. `white-space: normal` va avec, et pas
-   seulement pour le confort : sans lui, l'absence de coupure laissait un nom à
-   rallonge sortir de la barre, donc défiler la page entière à 375 px. */
+/* Except in the legend of the top bar, where the button is the width of its name:
+   nothing follows it on its line, so there is nothing to protect, and a cut name there
+   would be a button one cannot name. `white-space: normal` goes with it, and not only for
+   comfort: without it, the absence of a cut let a name that goes on and on stick out of
+   the bar, hence scroll the whole page at 375 px. */
 .stats-legend-flow .stats-legend-name {
   overflow: visible;
   white-space: normal;
@@ -312,16 +307,15 @@
   text-align: right;
 }
 
-/* La légende de la barre du haut s'étale en rangée : elle n'a pas de nombres à
-   aligner, et elle a toute la largeur de la page. Elle PASSE À LA LIGNE plutôt que
-   de défiler en travers : une barre d'une seule ligne aurait poussé les derniers
-   noms hors de vue (à dix personnages, la rangée dépasse les 900 px du contenu),
-   et cette légende est le seul endroit d'où l'on isole quelqu'un, donc rien n'y
-   doit se cacher. Le prix est sa hauteur, et c'est le plafond de
-   `.stats-legend-bar` qui le borne.
-   Pas de marge haute : c'est le remplissage de la barre qui l'espace du bandeau,
-   et cette légende n'a plus rien au-dessus d'elle depuis qu'elle a quitté le pied
-   de la carte de la chronologie. */
+/* The legend of the top bar spreads out in a row: it has no numbers to align, and it
+   has the whole width of the page. It WRAPS rather than scrolling sideways: a
+   single-line bar would have pushed the last names out of sight (with ten characters,
+   the row exceeds the 900 px of the content), and this legend is the only place from
+   which one isolates somebody, so nothing in it may hide. The price is its height, and
+   it is the cap of `.stats-legend-bar` that bounds it.
+   No top margin: it is the padding of the bar that spaces it from the header, and this
+   legend no longer has anything above it since it left the foot of the timeline
+   card. */
 .stats-legend-flow {
   display: flex;
   flex-wrap: wrap;
@@ -329,40 +323,38 @@
 }
 
 .stats-legend-flow .stats-legend-row {
-  /* `auto` et pas `minmax(0, 1fr)` : ici les boutons sont posés côte à côte dans
-     une rangée qui passe à la ligne, donc chacun doit faire la largeur de son
-     nom. Avec la piste souple de la légende des camemberts, ils se partageaient
-     la largeur de la carte et tous les noms se coupaient en « Cather… ».
-     La largeur et la marge de la légende à nombres ne valent pas ici pour la même
-     raison : chaque bouton fait son contenu, il n'y a pas de colonne à tenir en
-     place, et seule la marge gauche est reprise pour que le premier de chaque
-     rangée s'aligne sur le bord du contenu. */
+  /* `auto` and not `minmax(0, 1fr)`: here the buttons are laid side by side in a row
+     that wraps, so each one must be the width of its name. With the flexible track of
+     the pie chart legend, they shared the width of the card and all the names were cut
+     down to "Cather…".
+     The width and the margin of the legend with numbers do not apply here for the same
+     reason: each button is the size of its content, there is no column to hold in
+     place, and only the left margin is kept so that the first of each row lines up on
+     the edge of the content. */
   grid-template-columns: 10px auto;
   width: auto;
   margin-inline: -6px 0;
 }
 
-/* ---- Au pouce ----
-   Ces boutons sont la SEULE commande du contenu de la page, et la page s'ouvre à
-   toute la troupe, donc sur téléphone. À 13 px de texte et 3 px de remplissage ils
-   ne faisaient que 24 px de haut, collés par 2 px. Celle de la barre du haut passe
-   à 40 px, la taille que le contrat demande aux commandes tactiles (la Répétition
-   s'arrête à 32 px pour ses cases, mais elle en a quatre à faire tenir sur une
-   ligne ; ici la légende passe à la ligne d'elle-même). Elle les garde depuis
-   qu'elle est du mobilier permanent en haut de page : c'est la seule commande du
-   contenu, la rétrécir pour gagner de la hauteur reviendrait à la rendre moins
-   sûre à viser au moment même où elle est toujours sous le pouce, et c'est le
-   plafond de `.stats-legend-bar` qui borne ce qu'elle peut prendre. Le remplissage
-   vertical n'agrandit pas la boîte : c'est `min-height` plus le centrage qui
-   portent la cible, donc les rangées ne s'éloignent pas les unes des autres plus
-   que du bord de la barre.
+/* ---- Under the thumb ----
+   These buttons are the ONLY control of the content of the page, and the page is open to
+   the whole troupe, hence on a phone. At 13 px of text and 3 px of padding they were
+   only 24 px high, 2 px apart. The one of the top bar goes up to 40 px, the size the
+   contract asks of touch controls (the Rehearsal page stops at 32 px for its checkboxes,
+   but it has four of them to fit on one line; here the legend wraps by itself). It keeps
+   them now that it is permanent furniture at the top of the page: it is the only control
+   of the content, shrinking it to gain height would amount to making it less safe to aim
+   at at the very moment when it is always under the thumb, and it is the cap of
+   `.stats-legend-bar` that bounds what it can take. The vertical padding does not enlarge
+   the box: it is `min-height` plus the centring that carry the target, so the rows do not
+   move further apart from each other than from the edge of the bar.
 
-   Les deux légendes des camemberts s'arrêtent à 32 px, comme les cases de la
-   Répétition et pour la même raison : ce sont d'abord des tableaux de nombres, une
-   colonne par grandeur, et à dix personnages 40 px par rangée ajoutaient 400 px à
-   chacun des deux panneaux sur un écran de téléphone, soit deux écrans de légende
-   pour deux anneaux. Ce qui rattrape les 12 px manquants est la largeur : la
-   rangée entière est la cible, d'un bord de la carte à l'autre. */
+   The two pie chart legends stop at 32 px, like the checkboxes of the Rehearsal page and
+   for the same reason: they are first of all tables of numbers, one column per quantity,
+   and with ten characters 40 px per row added 400 px to each of the two panels on a phone
+   screen, that is two screens of legend for two rings. What makes up for the missing
+   12 px is the width: the whole row is the target, from one edge of the card to the
+   other. */
 @media (max-width: 800px) {
   .stats-legend-row {
     min-height: 32px;
@@ -379,22 +371,21 @@
   }
 }
 
-/* --------------------------------------------------------------------- bloc */
+/* --------------------------------------------------------------------- block */
 
-/* Le bloc prend la largeur de la carte et sa hauteur suit son viewBox : un mot
-   fait donc le même carré partout, quelle que soit la fenêtre.
-   `crispEdges` désactive l'antialiasing des bords : sans lui, deux tronçons
-   voisins laissent un liseré translucide entre eux, et sur un bloc de 120
-   colonnes la grille entière paraissait voilée. */
-/* Pas de `border-radius` : `--radius` vaut 10 px et rognerait les mots des quatre
-   coins, qui sont des données. Le bloc est un rectangle de carrés, il se termine
-   carré. */
-/* Le bloc prend TOUTE la largeur de la carte, à l'arrondi près (ci-dessous), et
-   c'est le plancher du curseur « Mots par ligne » qui garde un carré raisonnable :
-   à 50 mots par ligne, la largeur d'une carte donne 16 px de côté. Un plafond de
-   12 px par carré a existé ici, du temps où le curseur descendait à 24 (34 px de
-   côté, où le bloc cesse d'être une mosaïque et devient une pile de barres) ; il
-   n'a plus d'objet, et il faisait flotter un bloc étroit au milieu de sa carte. */
+/* The block takes the width of the card and its height follows its viewBox: a word
+   therefore makes the same square everywhere, whatever the window.
+   `crispEdges` disables the antialiasing of the edges: without it, two neighbouring runs
+   leave a translucent sliver between them, and on a block of 120 columns the whole grid
+   looked veiled. */
+/* No `border-radius`: `--radius` is 10 px and would crop the words of the four corners,
+   which are data. The block is a rectangle of squares, it ends square. */
+/* The block takes ALL the width of the card, give or take the rounding (below), and it
+   is the floor of the "Words per line" slider that keeps a reasonable square: at 50 words
+   per line, the width of a card gives a 16 px side. A ceiling of 12 px per square existed
+   here, back when the slider went down to 24 (a 34 px side, where the block stops being a
+   mosaic and becomes a stack of bars); it no longer has an object, and it made a narrow
+   block float in the middle of its card. */
 .stats-block {
   display: block;
   width: 100%;
@@ -402,36 +393,33 @@
   shape-rendering: crispEdges;
 }
 
-/* La largeur du bloc est ARRONDIE à un multiple entier du nombre de colonnes, et
-   ce n'est pas de la cosmétique : c'est ce qui rend les mots tous de la même
-   taille. `crispEdges` cale chaque bord sur le pixel écran le plus proche, or
-   dans la carte de l'accueil respo la pièce entière fait 120 colonnes pour 820 px
-   de large, soit 6,833 px par mot : les cellules sortaient donc à 7, 7, 7, 6,
-   7… (mesuré), une colonne étroite tous les six mots et une rangée basse toutes
-   les six rangées. Sur une grille de 120 x 86 ce défaut périodique de 1 px se lit
-   exactement comme le blocage d'un JPEG, une trame de colonnes et de rangées plus
-   serrées en travers du bloc. À 720 px (6 px pile par mot) tout est régulier et
-   les couleurs restent pures, en écran simple comme en densité double (vérifié
-   au pixel sur les deux).
-   Les deux autres pistes ont été essayées et écartées, mesures en main : laisser
-   l'antialiasing (retirer `crispEdges`) rend bien des cellules toutes égales,
-   mais pose un pixel de mélange à chaque frontière, et ce mélange laisse passer
-   le fond (deux tronçons voisins donnaient un gris là où l'un finit et l'autre
-   commence), c'est-à-dire le liseré ci-dessus ; le faire disparaître demande de
-   déborder chaque rectangle sur son voisin et de peindre la liste à l'envers pour
-   que le suivant recouvre le débord, beaucoup de finesse pour rendre le bloc
-   moins net. Le prix payé est donc la largeur : jusqu'à une cellule de moins que
-   la carte (100 px sur 820 pour la pièce entière), d'où le centrage, sans lequel
-   le bloc paraîtrait décalé dans sa carte. Le multiple est compté en pixels CSS
-   et pas en pixels écran, qu'aucune requête ne connaît : à une densité de 1,5 et
-   une cellule impaire il reste une alternance 25/26 px écran, soit 4 % de
-   variation régulière, contre les 15 % irréguliers d'aujourd'hui.
-   `@supports` et pas seulement `calc()` : la déclaration contient un `var()`,
-   donc elle n'est pas vérifiée à l'analyse, et sur un navigateur sans `round()`
-   elle tomberait à `width: auto` au lieu de rendre la main au `width: 100%`
-   ci-dessus. Le repli du `var()` va avec : sans la variable (posée par le JSX,
-   qui seul connaît le nombre de colonnes), le multiple vaut 1 px et le bloc
-   reprend toute la largeur, comme avant. */
+/* The width of the block is ROUNDED to a whole multiple of the number of columns, and
+   that is not cosmetic: it is what makes the words all the same size. `crispEdges` snaps
+   each edge to the nearest screen pixel, and in the card of the coordinator's home page
+   the whole play makes 120 columns for 820 px of width, that is 6.833 px per word: the
+   cells therefore came out at 7, 7, 7, 6, 7… (measured), a narrow column every six words
+   and a short row every six rows. On a 120 x 86 grid this periodic 1 px defect reads
+   exactly like the blocking of a JPEG, a screen of tighter columns and rows across the
+   block. At 720 px (exactly 6 px per word) everything is regular and the colours stay
+   pure, on a simple screen as well as at double density (checked to the pixel on both).
+   The two other paths were tried and set aside, measurements in hand: leaving the
+   antialiasing on (removing `crispEdges`) does give cells that are all equal, but it puts
+   one pixel of blending at each boundary, and that blending lets the background through
+   (two neighbouring runs gave a grey where one ends and the other begins), that is the
+   sliver above; making it disappear requires overflowing each rectangle onto its
+   neighbour and painting the list in reverse so that the next one covers the overflow, a
+   lot of finesse to make the block less sharp. The price paid is therefore the width: up
+   to one cell less than the card (100 px out of 820 for the whole play), hence the
+   centring, without which the block would look off-centre in its card. The multiple is
+   counted in CSS pixels and not in screen pixels, which no query knows about: at a
+   density of 1.5 and an odd cell there remains an alternation of 25/26 screen px, that is
+   4 % of regular variation, against the 15 % of irregular variation of today.
+   `@supports` and not only `calc()`: the declaration contains a `var()`, so it is not
+   checked at parse time, and on a browser without `round()` it would fall back to
+   `width: auto` instead of handing back to the `width: 100%` above. The fallback of the
+   `var()` goes with it: without the variable (set by the JSX, which alone knows the number
+   of columns), the multiple is 1 px and the block takes back the whole width, as
+   before. */
 @supports (width: round(down, 100%, 1px)) {
   .stats-block {
     width: calc(round(down, 100%, var(--stats-columns, 1) * 1px));
@@ -439,43 +427,42 @@
   }
 }
 
-/* Le plancher d'un pixel par carré. Il est INATTEIGNABLE avec les bornes
-   d'aujourd'hui, et il reste quand même, parce qu'il est ce qui rend le plafond du
-   curseur relevable sans redécouvrir le piège : `round(down, A, B)` vaut ZÉRO dès
-   que A < B, donc dès que la carte est plus étroite que le réglage (la carte fait la
-   fenêtre moins 82 px : container 40, filet 2, carte 40). Le bloc DISPARAÎT alors en
-   silence, légende et légende explicative restant en place. À 200 mots par ligne il
-   faudrait une fenêtre de 282 px, sous tous les téléphones réels ; un plafond de 250
-   a existé le temps d'un essai, et là il suffisait d'un écran de 320 px. Le prix est
-   un bloc qui peut dépasser sa carte d'au plus une largeur de carré moins un pixel,
-   largement dans ses 20 px de remplissage ; rendre la main au `width: 100%` à la
-   place ferait peindre par `crispEdges` certains carrés à 1 px et d'autres à 0,
-   c'est-à-dire des mots qui s'effacent, bien pire qu'un bloc un peu large. */
+/* The floor of one pixel per square. It is UNREACHABLE with today's bounds, and it stays
+   all the same, because it is what makes the ceiling of the slider raisable without
+   rediscovering the trap: `round(down, A, B)` is ZERO as soon as A < B, hence as soon as
+   the card is narrower than the setting (the card is the window minus 82 px: container
+   40, rule 2, card 40). The block then DISAPPEARS in silence, legend and explanatory
+   caption staying in place. At 200 words per line it would take a window of 282 px, below
+   all real phones; a ceiling of 250 existed for the duration of one attempt, and there a
+   320 px screen was enough. The price is a block that can exceed its card by at most one
+   square width minus one pixel, well within its 20 px of padding; handing back to
+   `width: 100%` instead would make `crispEdges` paint some squares at 1 px and others at
+   0, that is words that vanish, far worse than a slightly wide block. */
 .stats-block {
   min-width: calc(var(--stats-columns, 1) * 1px);
 }
 
-/* Pas de `cursor: pointer` ici, et c'est voulu : la mosaïque suit la mise en
-   évidence mais ne la prend pas (cf. App.jsx, un mot fait 8 px au réglage par
-   défaut et 4 px au bout de la course). */
+/* No `cursor: pointer` here, and that is deliberate: the mosaic follows the
+   highlighting but does not take it (see App.jsx, a word is 8 px at the default setting
+   and 4 px at the end of the travel). */
 .stats-block-rect {
   transition: opacity 0.12s;
 }
 
-/* Un personnage isolé : les autres s'effacent au lieu de disparaître, pour que
-   sa place DANS la pièce reste lisible (c'est ce que montraient les
-   all_image_<nom>.svg de la version imprimée). */
+/* One character isolated: the others fade instead of disappearing, so that his place
+   WITHIN the play stays legible (that is what the all_image_<name>.svg files of the
+   printed version showed). */
 .stats-block-rect.dimmed {
   opacity: 0.12;
 }
 
-/* ------------------------------------------------------- phrases du panneau */
+/* ------------------------------------------------------- panel sentences */
 
-/* La phrase qui dit comment lire la mosaïque vit AU-DESSUS d'elle, entre le titre
-   du panneau et le dessin : sur la pièce entière, le bloc fait plusieurs écrans,
-   donc une phrase posée en pied de carte n'arrivait qu'à qui avait déjà défilé
-   jusqu'au bout. Elle garde les 14 px du titre de part et d'autre, sans quoi elle
-   se collerait au dessin qu'elle explique. */
+/* The sentence that says how to read the mosaic lives ABOVE it, between the title of
+   the panel and the drawing: on the whole play, the block is several screens long, so a
+   sentence placed at the foot of the card only reached those who had already scrolled all
+   the way down. It keeps the 14 px of the title on either side, without which it would
+   stick to the drawing it explains. */
 .stats-caption {
   color: var(--ink-soft);
   font-size: 13px;
@@ -483,12 +470,11 @@
   margin: 0 0 14px;
 }
 
-/* Un paragraphe, pas une boîte flex : `WarnIcon` porte déjà sa propre classe
-   d'alignement (`.warn-icon` dans theme.css, qui l'assoit sur la ligne de base
-   et pose sa marge droite), et c'est ainsi que les quatre autres avertissements
-   du site le glissent en tête de phrase. Une boîte flex ajoutait une seconde
-   gouttière par-dessus cette marge et alignait le triangle sur le HAUT de la
-   ligne au lieu de sa base. */
+/* A paragraph, not a flex box: `WarnIcon` already carries its own alignment class
+   (`.warn-icon` in theme.css, which sits it on the baseline and sets its right margin),
+   and that is how the four other warnings of the site slip it in at the head of a
+   sentence. A flex box added a second gutter on top of that margin and aligned the
+   triangle on the TOP of the line instead of its base. */
 .stats-warning {
   color: var(--warn);
   font-size: 13px;
@@ -496,16 +482,16 @@
   margin: 10px 0 0;
 }
 
-/* ---- Fenêtre étroite ----
-   Les deux camemberts passent l'un sous l'autre : à 375 px, deux colonnes
-   laissaient 150 px par carte, où l'anneau et sa légende ne tiennent pas côte à
-   côte. C'est la seule bascule dont la page ait besoin, le bloc et les légendes
-   étant déjà fluides, et la rangée de portée passant à la ligne d'elle-même.
-   Un piège d'outillage, pour qui croirait voir un débordement ici : Chrome sans
-   interface refuse les fenêtres de moins de 500 px, il rend la page à 500 px puis
-   rogne la capture à la taille demandée, ce qui ressemble trait pour trait à une
-   rangée qui déborde. Une règle a déjà été écrite puis retirée sur cette illusion ;
-   mesurer `document.documentElement.scrollWidth` la dissipe. */
+/* ---- Narrow window ----
+   The two pie charts go one under the other: at 375 px, two columns left 150 px per
+   card, where the ring and its legend do not fit side by side. It is the only switch the
+   page needs, the block and the legends being already fluid, and the scope row wrapping by
+   itself.
+   A tooling trap, for anyone who would think they see an overflow here: headless Chrome
+   refuses windows of less than 500 px, it renders the page at 500 px then crops the
+   screenshot to the requested size, which looks feature for feature like a row that
+   overflows. A rule has already been written then removed on the strength of that
+   illusion; measuring `document.documentElement.scrollWidth` dispels it. */
 @media (max-width: 700px) {
   .stats-pies {
     grid-template-columns: minmax(0, 1fr);

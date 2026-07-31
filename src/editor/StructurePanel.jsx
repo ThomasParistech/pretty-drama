@@ -22,19 +22,18 @@ import { LOCALES } from "../shared/i18n.js";
 import { fmt, t, translator } from "../shared/locale.js";
 import { actLabel, sceneLabel } from "../shared/structureLabels.js";
 
-// Le plan de la pièce : son titre, ses actes, ses scènes. C'est à la fois la
-// NAVIGATION de l'éditeur (une scène à la fois, comme avant) et le seul endroit
-// où la structure se façonne (ajouter, supprimer, réordonner).
+// The play's plan: its title, its acts, its scenes. It is at once the editor's
+// NAVIGATION (one scene at a time, as before) and the only place where the
+// structure is shaped (add, delete, reorder).
 //
-// Elle vivait dans le bandeau partagé, en deux `<select>` plus deux boutons
-// « + Scène » / « + Acte », et c'est le déménagement des puces de personnage qui
-// se rejoue ici, pour le même motif : sur la Répétition et l'Enregistrement on
-// CHOISIT une scène dans un contenu figé, dans l'Édition on la FAÇONNE, et le
-// bandeau est partagé par cinq pages. La structure était de surcroît éparpillée
-// sur trois endroits (les selects et les deux boutons dans le bandeau, la
-// suppression de l'acte dans la colonne, celle de la scène dans SceneEditor),
-// alors qu'aucun d'eux ne montrait la forme de la pièce : deux listes déroulantes
-// n'affichent qu'une ligne à la fois.
+// It used to live in the shared header, as two `<select>` plus two "+ Scene" /
+// "+ Act" buttons, and it is the move of the character chips that plays out again
+// here, for the same reason: on Rehearsal and Recording one CHOOSES a scene inside
+// frozen content, in Editing one SHAPES it, and the header is shared by five pages.
+// The structure was moreover scattered across three places (the selects and the two
+// buttons in the header, the act's deletion in the column, the scene's in
+// SceneEditor), while none of them showed the shape of the play: two dropdown lists
+// only display one line at a time.
 //
 // **Only the PLAY has a name.** Acts and scenes are not renamed at all: their
 // label is derived from their rank ("Acte I", "Scène 3", see structureLabels.js).
@@ -77,56 +76,55 @@ export default function StructurePanel({
   onMoveAct,
   onMoveScene,
 }) {
-  // Suppression en attente de confirmation, actes et scènes confondus : un seul
-  // état et un seul modal, la question étant la même à l'objet près. Rien à
-  // demander quand l'objet est vide, comme partout ailleurs dans l'éditeur.
+  // Deletion awaiting confirmation, acts and scenes alike: one single state and one
+  // single modal, the question being the same but for the object. Nothing to ask
+  // when the object is empty, as everywhere else in the editor.
   const [pending, setPending] = useState(null);
 
-  // L'étiquette « Langue de la pièce » nomme le groupe de drapeaux, qui n'est pas
-  // un `<label>` (un groupe de boutons radio ne s'associe pas à un champ mais à
-  // plusieurs) : il faut donc un id, et `useId` évite d'en écrire un en dur dans
-  // un composant que rien n'interdit de monter deux fois.
+  // The "Play language" label names the group of flags, which is not a `<label>` (a
+  // group of radio buttons is not associated with one field but with several): an id
+  // is therefore needed, and `useId` avoids hardcoding one in a component nothing
+  // forbids mounting twice.
   const languageLabelId = useId();
 
-  // Le traducteur des libellés du plan, lié à la langue de la PIÈCE et non à celle
-  // du lecteur (cf. structureLabels.js). Il descend en prop dans les rangées :
-  // deux composants ne peuvent pas lire la langue chacun de son côté sans que la
-  // colonne de texte et le plan finissent par se désaccorder.
-  // Il change à la seconde où l'on clique un drapeau juste au-dessus, ce qui est
-  // aussi ce qui rend le réglage lisible : on voit le plan passer d'« Acte I » à
-  // « Act I », donc on voit ce que la langue de la pièce commande.
+  // The translator for the plan's labels, bound to the language of the PLAY and not
+  // to the reader's (see structureLabels.js). It goes down as a prop into the rows:
+  // two components cannot read the language each on their own without the text
+  // column and the plan ending up out of step.
+  // It changes the second one clicks a flag just above, which is also what makes the
+  // setting legible: one sees the plan go from "Acte I" to "Act I", so one sees what
+  // the play's language commands.
   const tPlay = translator(script.language);
 
-  // Amener la scène ouverte à l'écran À L'OUVERTURE de la section, et seulement
-  // là : le plan d'une pièce à cinq actes dépasse la hauteur du panneau, donc
-  // rouvrir « Structure » depuis une scène tardive montrait le début de la pièce
-  // et demandait de descendre chercher où l'on est. `nearest` ne fait rien quand
-  // la rangée est déjà visible, et le panneau n'étant monté que pendant que la
-  // section est ouverte, un effet de montage suffit (pas de dépendances : une
-  // navigation faite d'ici n'a pas à faire bouger la liste sous le curseur).
+  // Bring the open scene into view WHEN THE SECTION OPENS, and only then: the plan
+  // of a five-act play is taller than the panel, so reopening "Structure" from a
+  // late scene showed the beginning of the play and required scrolling down to find
+  // where one is. `nearest` does nothing when the row is already visible, and since
+  // the panel is only mounted while the section is open, a mount effect is enough
+  // (no dependencies: navigating from here has no business moving the list under the
+  // cursor).
   const currentRow = useRef(null);
   useEffect(() => {
     currentRow.current?.scrollIntoView({ block: "nearest" });
   }, []);
 
   const sensors = useSensors(
-    // Même distance d'activation que les répliques : un clic simple sur une
-    // scène doit y aller, pas commencer un glissement.
+    // Same activation distance as the lines: a simple click on a scene must go to
+    // it, not start a drag.
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Une passe sur la pièce plutôt qu'une somme par acte à chaque rendu de rangée.
+  // One pass over the play rather than a sum per act on every row render.
   const actCounts = useMemo(
     () => script.acts.map((a) => a.scenes.reduce((n, s) => n + s.lines.length, 0)),
     [script.acts]
   );
 
-  // Les actes et les scènes n'ont pas d'id : l'identité dnd-kit est le rang,
-  // préfixé par le type (`act:2`, `scene:2:0`). Stable le temps d'un glissement,
-  // qui ne modifie rien avant son terme, et c'est aussi ce que MOVE_ACT /
-  // MOVE_SCENE attendent. Les clés React sont des rangs pour la même raison, donc
-  // rien ne se réanime après un déplacement.
+  // Acts and scenes have no id: the dnd-kit identity is the rank, prefixed by the
+  // type (`act:2`, `scene:2:0`). Stable for the duration of a drag, which changes
+  // nothing before it ends, and it is also what MOVE_ACT / MOVE_SCENE expect. The
+  // React keys are ranks for the same reason, so nothing re-animates after a move.
   const onDragEnd = ({ active, over }) => {
     if (!over || active.id === over.id) return;
     const from = String(active.id).split(":");
@@ -138,13 +136,13 @@ export default function StructurePanel({
     }
   };
 
-  // Un acte ne se dépose pas sur une scène, et une scène ne quitte pas son acte
-  // (cf. MOVE_SCENE dans reducer.js). Le filtrage est fait ICI, à la détection de
-  // collision, et pas seulement en garde à l'arrivée : les deux `SortableContext`
-  // imbriqués vivent dans un seul `DndContext`, donc sans lui `closestCenter`
-  // désignait volontiers la scène d'un autre acte, et le glissement se figeait
-  // sans que rien n'explique pourquoi (le geste était refusé, mais seulement à la
-  // fin). Filtré, la liste s'écarte exactement là où le dépôt aura lieu.
+  // An act is not dropped onto a scene, and a scene does not leave its act (see
+  // MOVE_SCENE in reducer.js). The filtering is done HERE, at collision detection,
+  // and not only as a guard on arrival: the two nested `SortableContext` live inside
+  // a single `DndContext`, so without it `closestCenter` happily designated the
+  // scene of another act, and the drag froze with nothing explaining why (the gesture
+  // was refused, but only at the end). Filtered, the list parts exactly where the
+  // drop will take place.
   const collision = (args) => {
     const [kind, ai] = String(args.active.id).split(":");
     const prefix = kind === "act" ? "act:" : `scene:${ai}:`;
@@ -156,10 +154,10 @@ export default function StructurePanel({
     });
   };
 
-  // Le titre de la PIÈCE est le seul nom qui se saisisse encore : un acte et une
-  // scène tirent leur libellé de leur rang (structureLabels.js), donc ils ne se
-  // renomment pas. Le HISTORY_BREAK ferme la rafale de frappes à la sortie du
-  // champ, `history.js` la fusionnant en une seule étape d'annulation.
+  // The PLAY's title is the only name that is still typed in: an act and a scene
+  // draw their label from their rank (structureLabels.js), so they are not renamed.
+  // The HISTORY_BREAK closes the run of keystrokes when the field is left,
+  // `history.js` merging it into a single undo step.
   const breakHistory = () => dispatch({ type: "HISTORY_BREAK" });
 
   const askDeleteAct = (ai) => {
@@ -182,16 +180,15 @@ export default function StructurePanel({
 
   return (
     <>
-      {/* La racine du plan. Pas d'étiquette écrite au-dessus : la tête du panneau
-          dit déjà « Structure », deux libellés empilés se disputeraient, et le
-          champ est en serif comme le titre que la rangée du haut affiche au même
-          instant. C'est l'`aria-label` qui le nomme, le repère visuel est cet
-          écho.
-          C'est le seul des trois qui accepte de rester vide, et il l'a toujours
-          fait : une pièce en cours d'écriture peut n'avoir pas encore de titre,
-          et les cinq bandeaux du site savent l'écrire (« Pièce sans titre »).
-          Un acte ou une scène sans nom, lui, ne serait qu'une case blanche dans
-          le plan, sans rien pour le désigner. */}
+      {/* The root of the plan. No label written above it: the panel's head already
+          says "Structure", two stacked labels would compete, and the field is in
+          serif like the title the top row displays at the very same moment. It is
+          the `aria-label` that names it, the visual cue is that echo.
+          It is the only one of the three that accepts staying empty, and it always
+          has: a play being written may not have a title yet, and the site's five
+          headers know how to write that ("Untitled play"). A nameless act or scene,
+          on the other hand, would be nothing but a blank box in the plan, with
+          nothing to designate it. */}
       <input
         type="text"
         className="structure-field play-title-input"
@@ -202,31 +199,29 @@ export default function StructurePanel({
         onBlur={breakHistory}
       />
 
-      {/* La langue de la PIÈCE, juste sous son titre : les deux décrivent le
-          document, alors que tout ce qui suit décrit sa forme.
-          Ce n'est PAS la langue de l'interface (celle-là se choisit sur l'accueil
-          et n'appartient pas à la pièce) : c'est celle dans laquelle la troupe a
-          écrit, et elle sert deux choses qu'on ne pouvait pas régler avant. Le
-          PDF compose ses intertitres et sa césure avec elle, et la voix de
-          synthèse qui remplace une réplique pas encore enregistrée parle enfin la
-          langue du texte qu'elle lit, au lieu d'un français imposé à toute pièce.
-          Une étiquette écrite plutôt qu'une simple infobulle : contrairement au
-          titre, un drapeau ne dit pas de lui-même ce qu'il désigne, et deux
-          drapeaux seuls dans une rangée pourraient aussi bien choisir la langue
-          du site (celle-là se choisit sur l'accueil).
-          **Des drapeaux et non plus un `<select>`**, comme au pied des accueils :
-          un `<option>` ne porte pas d'image, donc les deux endroits où l'on
-          choisit une langue ne pouvaient pas se ressembler tant que celui-ci
-          était une liste déroulante. Ce sont de vrais boutons radio, masqués sous
-          leur drapeau : la navigation aux flèches, le groupe et le « coché » sont
-          alors ceux du navigateur, là où des `<button>` et un `role="radio"`
-          posé à la main auraient demandé de réécrire le `tabIndex` mobile d'un
-          groupe radio.
-          Ça reste un CHAMP qui décrit le document, et pas le sélecteur de langue
-          du site : on y déclare une donnée de la pièce, elle part dans
-          `script.json`, et rien ici ne recharge la page (cf. LocaleSwitch.jsx,
-          qui explique pourquoi les deux ne se confondent pas malgré les mêmes
-          drapeaux). */}
+      {/* The language of the PLAY, right under its title: both describe the
+          document, whereas everything that follows describes its shape.
+          This is NOT the interface language (that one is chosen on the home page and
+          does not belong to the play): it is the one the company wrote in, and it
+          serves two things that could not be set before. The PDF composes its
+          headings and its hyphenation with it, and the synthetic voice that stands
+          in for a line not yet recorded finally speaks the language of the text it
+          reads, instead of a French imposed on every play.
+          A written label rather than a mere tooltip: unlike the title, a flag does
+          not say by itself what it designates, and two flags alone in a row could
+          just as well be choosing the site's language (that one is chosen on the
+          home page).
+          **Flags and no longer a `<select>`**, as at the foot of the home pages: an
+          `<option>` cannot carry an image, so the two places where one chooses a
+          language could not look alike as long as this one was a dropdown list.
+          These are real radio buttons, hidden under their flag: arrow-key
+          navigation, the grouping and the "checked" state are then the browser's,
+          where `<button>` elements plus a hand-set `role="radio"` would have
+          required rewriting the roving `tabIndex` of a radio group.
+          It remains a FIELD that describes the document, and not the site's language
+          selector: one declares a piece of the play's data here, it goes off into
+          `script.json`, and nothing here reloads the page (see LocaleSwitch.jsx,
+          which explains why the two are not confused despite the same flags). */}
       <div className="structure-language">
         <span className="structure-language-label" id={languageLabelId}>
           {t("structure.language")}
@@ -245,11 +240,11 @@ export default function StructurePanel({
                 className={`structure-language-flag ${current ? "current" : ""}`}
                 title={name}
               >
-                {/* Le nom de la langue est porté par le champ (le drapeau est
-                    `aria-hidden`), et il est TRADUIT : « Anglais » dans une
-                    interface française, contrairement aux endonymes du
-                    sélecteur du site. On énonce ici un fait sur un document,
-                    dans la langue où on le lit. */}
+                {/* The language's name is carried by the field (the flag is
+                    `aria-hidden`), and it is TRANSLATED: "Anglais" in a French
+                    interface, unlike the endonyms of the site's selector. Here one
+                    states a fact about a document, in the language one reads it
+                    in. */}
                 <input
                   type="radio"
                   name="play-language"
@@ -271,9 +266,9 @@ export default function StructurePanel({
         modifiers={[restrictToVerticalAxis, restrictToParentElement]}
         onDragEnd={onDragEnd}
       >
-        {/* Une `<ol>` d'actes, chacun portant une `<ol>` de scènes : un lecteur
-            d'écran annonce le plan comme un plan, et le rang qu'il énonce est
-            celui qui nomme l'acte (« Acte II »). */}
+        {/* An `<ol>` of acts, each carrying an `<ol>` of scenes: a screen reader
+            announces the plan as a plan, and the rank it states is the one that
+            names the act ("Acte II"). */}
         <ol className="structure-acts">
           <SortableContext
             items={script.acts.map((_, ai) => `act:${ai}`)}
@@ -299,11 +294,11 @@ export default function StructurePanel({
         </ol>
       </DndContext>
 
-      {/* Sous la liste et hors de son défilement, comme le formulaire d'ajout des
-          personnages : sur une pièce à cinq actes il reste sous les yeux.
-          Même classe `structure-add` que le « + Scène » de chaque acte, et plus
-          `.btn` : les deux ajouts du plan sont la même chose à deux niveaux, donc
-          ils se dessinent pareil (cf. editor.css). */}
+      {/* Below the list and outside its scrolling, like the character add form: on a
+          five-act play it stays in sight.
+          Same `structure-add` class as each act's "+ Scene", and no longer `.btn`:
+          the plan's two additions are the same thing at two levels, so they are
+          drawn the same way (see editor.css). */}
       <button className="structure-add structure-add-act" onClick={onAddAct}>
         {t("structure.addAct")}
       </button>
@@ -343,7 +338,7 @@ function ActItem({
     id: `act:${actIndex}`,
   });
 
-  // L'acte où l'on est : celui dont une scène est ouverte.
+  // The act one is in: the one whose scene is open.
   const current = currentScene >= 0;
 
   return (
@@ -362,16 +357,15 @@ function ActItem({
           listeners={listeners}
           label={t("structure.moveAct", { act: actLabel(tPlay, actIndex) })}
         />
-        {/* Un libellé, plus un champ : le nom d'un acte est dérivé de son rang et
-            ne se saisit pas. Il ne mène nulle part non plus (l'acte n'est pas une
-            page de l'éditeur, la scène l'est), donc ce n'est ni un champ ni un
-            bouton, juste du texte. Rien ne se perd au clavier : la tabulation
-            atteignait ce champ pour le renommer, or il n'y a plus rien à y
-            renommer, et les scènes juste dessous ont chacune son bouton. */}
-        {/* Le libellé est dans la langue de la pièce, la phrase qui le CITE
-            (l'`aria-label` du ✕) dans celle du lecteur : un paramètre chaîne
-            traverse intact, comme le chiffre romain d'un acte l'a toujours fait
-            (cf. i18n.js). */}
+        {/* A label, no longer a field: an act's name is derived from its rank and is
+            not typed in. It leads nowhere either (the act is not a page of the
+            editor, the scene is), so it is neither a field nor a button, just text.
+            Nothing is lost at the keyboard: tabbing used to reach this field in
+            order to rename it, but there is nothing left to rename there, and the
+            scenes just below each have their own button. */}
+        {/* The label is in the language of the play, the sentence that QUOTES it
+            (the ✕'s `aria-label`) in the reader's: a string parameter travels
+            through intact, as an act's roman numeral always has (see i18n.js). */}
         <span className="structure-name structure-name-static truncate">
           {actLabel(tPlay, actIndex)}
         </span>
@@ -410,9 +404,9 @@ function ActItem({
         </SortableContext>
       </ol>
 
-      {/* Un « + Scène » par acte, et non plus un seul bouton qui ajoutait à
-          l'acte courant : dans un plan, l'endroit où la scène atterrit doit se
-          désigner du doigt. */}
+      {/* One "+ Scene" per act, and no longer a single button that added to the
+          current act: in a plan, the place where the scene lands must be pointed
+          at. */}
       <button
         className="structure-add structure-add-scene"
         onClick={() => onAddScene(actIndex)}
@@ -447,17 +441,17 @@ function SceneItem({
         opacity: isDragging ? 0.6 : 1,
       }}
     >
-      {/* Le ref d'amenée à l'écran est posé sur la rangée et non sur le `<li>`,
-          qui porte déjà celui de dnd-kit.
-          **La rangée ENTIÈRE ouvre la scène**, et pas seulement son nom : dans
-          une liste de scènes, la ligne est l'objet, et viser un mot de 60 px pour
-          changer de scène demandait de savoir que le nom était la cible. C'est
-          aussi pour ça que le nom ne porte plus aucun dessin à lui (ni cadre ni
-          fond, cf. editor.css) : ce qui répond au survol est la rangée.
-          Pas de `role="button"` ni de `tabIndex` sur cette `<div>` : elle
-          contient déjà trois boutons, dont celui du nom, et le chemin clavier
-          passe par lui. Ce gestionnaire n'ajoute donc qu'une commodité à la
-          souris, il n'est le seul accès à rien. */}
+      {/* The scroll-into-view ref is set on the row and not on the `<li>`, which
+          already carries dnd-kit's.
+          **The WHOLE row opens the scene**, and not only its name: in a list of
+          scenes, the line is the object, and aiming at a 60 px word to change scene
+          required knowing that the name was the target. That is also why the name no
+          longer carries any drawing of its own (neither frame nor background, see
+          editor.css): what responds to hover is the row.
+          No `role="button"` nor `tabIndex` on this `<div>`: it already contains three
+          buttons, including the name's, and the keyboard path goes through that one.
+          So this handler only adds a mouse convenience, it is the sole access to
+          nothing. */}
       <div
         ref={rowRef}
         className={`structure-row scene ${current ? "current" : ""}`}
@@ -468,18 +462,16 @@ function SceneItem({
           listeners={listeners}
           label={t("structure.moveScene", { scene: sceneLabel(tPlay, sceneIndex) })}
         />
-        {/* Un BOUTON et non plus un champ de saisie : une scène ne se renomme
-            plus (son libellé vient de son rang), mais elle reste la seule chose
-            du plan où l'on NAVIGUE, donc elle doit rester atteignable au clavier.
-            Le champ portait ce chemin par accident (la tabulation l'atteignait
-            pour renommer, et le focus ouvrait la scène au passage) ; un bouton le
-            porte pour de bon, et Entrée comme Espace l'activent. Un bouton qui
-            ne ressemble PAS à un champ, en revanche : il en avait gardé le cadre
-            blanc, ce qui laissait le plan promettre une saisie qui n'existe plus
-            (cf. editor.css).
-            La scène ouverte n'est pas signalée par la seule couleur : le bouton
-            porte `aria-current`, comme la correspondance courante de la
-            recherche. */}
+        {/* A BUTTON and no longer an input field: a scene is no longer renamed (its
+            label comes from its rank), but it remains the one thing in the plan one
+            NAVIGATES to, so it must stay reachable at the keyboard. The field carried
+            that path by accident (tabbing reached it in order to rename, and focusing
+            it opened the scene along the way); a button carries it for good, and both
+            Enter and Space activate it. A button that does NOT look like a field,
+            however: it had kept the white frame, which left the plan promising an
+            entry that no longer exists (see editor.css).
+            The open scene is not signalled by colour alone: the button carries
+            `aria-current`, like the search's current match. */}
         <button
           type="button"
           className="structure-name structure-scene-name truncate"
@@ -495,9 +487,9 @@ function SceneItem({
             className="chip-delete"
             title={t("structure.deleteScene")}
             aria-label={t("structure.deleteScene.named", { scene: sceneLabel(tPlay, sceneIndex) })}
-            /* Le ✕ ne traverse pas la rangée : supprimer une scène n'est pas une
-               façon d'y aller, et la confirmation s'ouvrirait sur une colonne
-               qui vient de changer de scène. */
+            /* The ✕ does not travel through the row: deleting a scene is not a way
+               of going to it, and the confirmation would open onto a column that
+               has just changed scene. */
             onClick={(e) => {
               e.stopPropagation();
               onDelete(actIndex, sceneIndex);
@@ -511,10 +503,10 @@ function SceneItem({
   );
 }
 
-// La poignée des répliques, au même caractère et au même verbe : c'est le même
-// geste, sur un autre objet de la pièce, donc elle garde la classe `drag-handle`
-// (avec son curseur et son `touch-action`) et n'ajoute que le resserrement de sa
-// boîte, taillée là-bas pour une rangée de 40 px.
+// The lines' handle, with the same character and the same verb: it is the same
+// gesture, on another object of the play, so it keeps the `drag-handle` class (with
+// its cursor and its `touch-action`) and only adds the tightening of its box, cut
+// over there for a 40 px row.
 function DragHandle({ attributes, listeners, label }) {
   return (
     <button

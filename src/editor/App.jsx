@@ -33,15 +33,15 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [loadInfo, setLoadInfo] = useState("");
   // Blocking error: the published script EXISTS but could not be read.
-  // Starting empty here would let the respo overwrite the real play.
+  // Starting empty here would let the coordinator overwrite the real play.
   const [loadError, setLoadError] = useState(null);
-  // Demande de focus et/ou de sélection adressée à UNE réplique, effacée dès
-  // qu'elle est honorée : `{ lineId, selection: [start, end] | null, focus }`.
-  // Généralise le `focusLineId` d'origine (la réplique qu'on vient de créer
-  // prend le curseur) : la recherche a besoin de sélectionner en plus, et parfois
-  // SANS voler le focus. L'objet s'auto-effaçant, son identité suffit à
-  // distinguer deux demandes successives sur la même réplique, donc pas de
-  // numéro de série ici (contrairement au champ de recherche, cf. useSearch.js).
+  // Focus and/or selection request addressed to ONE line, cleared as soon as it
+  // is honoured: `{ lineId, selection: [start, end] | null, focus }`.
+  // Generalises the original `focusLineId` (the line just created takes the
+  // caret): the search also needs to select, and sometimes WITHOUT stealing the
+  // focus. Since the object clears itself, its identity is enough to tell two
+  // successive requests on the same line apart, so no serial number here (unlike
+  // the search field, see useSearch.js).
   const [focusRequest, setFocusRequest] = useState(null);
   // Pending character deletion needing a decision (has lines).
   const [deleteRequest, setDeleteRequest] = useState(null);
@@ -51,19 +51,20 @@ export default function App() {
   // Identity is enough, the stack stores the very objects it restores.
   const dirty = script !== saved;
 
-  // Les libellés d'acte et de scène de CETTE page se composent dans la langue de
-  // la PIÈCE et pas dans celle du lecteur (cf. structureLabels.js) : ici on
-  // façonne le document, et « Acte II » est l'intertitre que le PDF imprimera.
-  // C'est la seule des cinq pages dans ce cas, les quatre autres ne faisant que
-  // naviguer dans une pièce qu'elles ne touchent pas. Le reste du texte de
-  // l'éditeur, lui, reste dans la langue du lecteur : c'est de l'interface.
-  // La langue descend par PROP (et jamais ce `tPlay`) aux deux composants qui en
-  // ont besoin plus bas : `SceneEditor` est en `React.memo`, et une fonction
-  // fraîche à chaque rendu lui ferait rendre toute la scène à chaque frappe.
+  // The act and scene labels of THIS page are composed in the language of the
+  // PLAY and not in the reader's (see structureLabels.js): here one shapes the
+  // document, and "Acte II" is the heading the PDF will print. It is the only one
+  // of the five pages in that case, the other four merely navigating a play they
+  // do not touch. The rest of the editor's text stays in the reader's language:
+  // that is interface.
+  // The language goes down as a PROP (and never this `tPlay`) to the two
+  // components that need it below: `SceneEditor` is in `React.memo`, and a fresh
+  // function on every render would make it re-render the whole scene on every
+  // keystroke.
   const tPlay = translator(script.language);
 
-  // Page réservée à l'ordinateur (cf. useTouchPointer) : au doigt, elle rend un
-  // écran d'explication à la place de l'éditeur.
+  // Computer-only page (see useTouchPointer): on a touch pointer it renders an
+  // explanation screen instead of the editor.
   const touchOnly = useTouchPointer();
 
   const canUndo = past.length > 0;
@@ -95,11 +96,11 @@ export default function App() {
   }, [canUndo, canRedo, undo, redo]);
 
   // "Reprise" mode: load the published script.json to continue editing it.
-  // Chargé même quand la page est murée (écran tactile), et pas pour rien : le
-  // bandeau de cet écran nomme la pièce comme les cinq autres bandeaux du
-  // site. Sauter le fetch était une économie de rien du tout (un JSON, sur une
-  // page qui n'affiche ensuite qu'une phrase) payée par la seule rangée du haut
-  // du site à écrire « Édition » au lieu du titre de la pièce.
+  // Fetched even when the page is walled off (touch screen), and not for nothing:
+  // that screen's header names the play like the site's five other headers.
+  // Skipping the fetch was a saving of nothing at all (one JSON, on a page that
+  // then shows a single sentence) paid for by the site's only top row writing
+  // "Editing" instead of the play's title.
   useEffect(() => {
     let cancelled = false;
     fetchScript()
@@ -146,12 +147,11 @@ export default function App() {
   // Stable identity: LineRow uses it in an effect dependency list.
   const handleFocusHandled = useCallback(() => setFocusRequest(null), []);
 
-  // Une scène à la fois, désignée dans la section « Structure » du rail (elle
-  // portait les deux selects du bandeau, cf. StructurePanel.jsx). Les indices
-  // sont bornés au rendu, donc une suppression ne peut jamais en laisser un
-  // pendre ; les gestes ci-dessous les remettent en plus là où il faut, pour que
-  // la colonne de texte continue de montrer LA MÊME scène après un remaniement du
-  // plan.
+  // One scene at a time, designated in the rail's "Structure" section (which took
+  // over the header's two selects, see StructurePanel.jsx). The indices are
+  // clamped at render time, so a deletion can never leave one dangling; the
+  // gestures below also put them back where they belong, so that the text column
+  // keeps showing THE SAME scene after the plan is reshuffled.
   const [actIndex, setActIndex] = useState(0);
   const [sceneIndex, setSceneIndex] = useState(0);
   const safeActIndex = Math.max(0, Math.min(actIndex, script.acts.length - 1));
@@ -169,15 +169,15 @@ export default function App() {
     dispatch({ type: "ADD_ACT" });
     goToScene(script.acts.length, 0);
   };
-  // Un acte donné, et plus « l'acte courant » : le plan du rail ajoute la scène
-  // là où on la lui demande.
+  // A given act, no longer "the current act": the rail's plan adds the scene
+  // where it is asked to.
   const addScene = (ai) => {
     dispatch({ type: "ADD_SCENE", actIndex: ai });
     goToScene(ai, script.acts[ai].scenes.length);
   };
 
-  // Suppressions : la question a déjà été posée (le plan confirme quand l'objet
-  // n'est pas vide, cf. StructurePanel), il ne reste que le déplacement du regard.
+  // Deletions: the question has already been asked (the plan confirms when the
+  // object is not empty, see StructurePanel), only moving the gaze is left.
   const deleteAct = (ai) => {
     dispatch({ type: "DELETE_ACT", actIndex: ai });
     const nextAct = indexAfterRemoval(safeActIndex, ai);
@@ -188,8 +188,8 @@ export default function App() {
     if (ai === safeActIndex) setSceneIndex(indexAfterRemoval(safeSceneIndex, si));
   };
 
-  // Réordonner : le regard suit l'objet déplacé, et se décale quand c'est un
-  // voisin qui l'a traversé (indexAfterMove, testé à côté de MOVE_*).
+  // Reorder: the gaze follows the moved object, and shifts when it is a neighbour
+  // that crossed it (indexAfterMove, tested next to MOVE_*).
   const moveAct = (from, to) => {
     dispatch({ type: "MOVE_ACT", from, to });
     setActIndex(indexAfterMove(safeActIndex, from, to));
@@ -210,22 +210,21 @@ export default function App() {
     return counts;
   }, [script]);
 
-  // Section ouverte du rail, ou null (replié). « Structure » à l'arrivée, et plus
-  // « Personnages » : c'est elle qui porte maintenant la navigation de la page,
-  // donc la refermer serait cacher le choix de la scène, que les deux selects du
-  // bandeau affichaient d'office. Elle montre au passage le champ de titre de la
-  // pièce, qui vivait aussi dans le bandeau. Une constante suffit, là où « ouvrir
-  // sur Personnages seulement si la pièce n'en a aucun » demanderait un effet de
-  // semis après le fetch.
+  // The rail's open section, or null (collapsed). "Structure" on arrival, no
+  // longer "Characters": it is the one that now carries the page's navigation, so
+  // closing it would hide the choice of scene, which the header's two selects used
+  // to show without being asked. It also shows the play's title field, which used
+  // to live in the header too. A constant is enough, where "open on Characters
+  // only if the play has none" would need a seeding effect after the fetch.
   const [railSection, setRailSection] = useState("structure");
   const openSearch = useCallback(() => setRailSection("search"), []);
   const closeRail = useCallback(() => setRailSection(null), []);
 
-  // Aller à une correspondance. Les quatre changements d'état vivent dans le
-  // MÊME gestionnaire, donc React les regroupe en un seul rendu : la scène cible
-  // y est déjà désignée, la rangée visée se monte avec sa demande de focus dans
-  // le même commit, et l'effet tourne après, sur un textarea posé et mesuré. Ni
-  // setTimeout ni requestAnimationFrame.
+  // Go to a match. The four state changes live in the SAME handler, so React
+  // batches them into a single render: the target scene is already designated
+  // there, the targeted row mounts with its focus request in the same commit, and
+  // the effect runs afterwards, on a textarea that is laid out and measured.
+  // Neither setTimeout nor requestAnimationFrame.
   const goToMatch = useCallback((match, focus) => {
     setActIndex(match.actIndex);
     setSceneIndex(match.sceneIndex);
@@ -243,8 +242,8 @@ export default function App() {
     isOpen: railSection !== null,
     onOpen: openSearch,
     onClose: closeRail,
-    // Sur l'écran du mur tactile, Ctrl+F serait confisqué au navigateur pour une
-    // page qui n'affiche qu'une phrase.
+    // On the touch-wall screen, Ctrl+F would be taken away from the browser for a
+    // page that only shows one sentence.
     enabled: !touchOnly && !loadError,
   });
 
@@ -264,13 +263,12 @@ export default function App() {
     return <PageState page="editor" loading={t("common.loadingScript")} />;
   }
 
-  // Avant le reste des états chargés : sur un écran tactile la page ne montre
-  // jamais l'éditeur, seulement pourquoi et où l'ouvrir. Elle nomme quand même
-  // la pièce, comme les cinq bandeaux du site : c'est un écran définitif et
-  // pas une attente. Il passe donc APRÈS le chargement (le titre n'arrive qu'avec
-  // le script, et le bandeau ne dit rien tant qu'il ne le connaît pas) mais AVANT
-  // l'erreur de lecture : un script illisible n'apprend rien à qui ne peut pas
-  // éditer.
+  // Before the other loaded states: on a touch screen the page never shows the
+  // editor, only why and where to open it. It still names the play, like the
+  // site's five headers: this is a final screen and not a wait. It therefore comes
+  // AFTER the loading (the title only arrives with the script, and the header says
+  // nothing as long as it does not know it) but BEFORE the read error: an
+  // unreadable script teaches nothing to someone who cannot edit.
   if (touchOnly) {
     return (
       <PageState
@@ -302,36 +300,34 @@ export default function App() {
   }
 
   return (
-    // Coquille de la hauteur de la fenêtre : le bandeau en haut dans le flux,
-    // puis le rail et la colonne de texte, qui défilent chacun pour son compte.
-    // `.page-shell` est partagée avec la Répartition (theme.css) ; `.editor-shell`
-    // ne pose plus que la hauteur, `vh` au lieu du `dvh` par défaut. Le rôle de
-    // zone défilante n'est PAS tenu par `.page-scroll` ici : c'est
-    // `.editor-layout`, une grille dont les deux colonnes défilent chacune pour
-    // son compte, là où la Répartition n'a qu'un seul flux à faire défiler.
-    // Posée ici et pas sur `body` : les écrans pleine page rendus plus haut
-    // gardent le défilement normal.
+    // Shell the height of the window: the header at the top in the flow, then the
+    // rail and the text column, each scrolling on its own. `.page-shell` is shared
+    // with the Speaking share page (theme.css); `.editor-shell` now only sets the
+    // height, `vh` instead of the default `dvh`. The scrolling-area role is NOT
+    // held by `.page-scroll` here: it is `.editor-layout`, a grid whose two
+    // columns each scroll on their own, where the Speaking share page has a single
+    // flow to scroll. Put here and not on `body`: the full-page screens rendered
+    // above keep normal scrolling.
     <div className="page-shell editor-shell">
-      {/* Un bandeau SANS réglages, comme celui de l'Avancement : le titre de la
-          pièce et le choix de la scène sont partis dans la section « Structure »
-          du rail (cf. StructurePanel.jsx), donc il ne reste ici que ce que les
-          cinq pages du site ont en commun, le titre de la pièce en serif, la
-          doc et le retour à l'accueil. Il se replie quand même, comme les quatre
-          autres. */}
+      {/* A header WITHOUT settings, like the Progress one: the play's title and
+          the choice of scene have moved to the rail's "Structure" section (see
+          StructurePanel.jsx), so all that is left here is what the site's five
+          pages have in common, the play's title in serif, the doc and the way
+          back home. It still collapses, like the other four. */}
       <PlayHeader
         page="editor"
         title={script.title || t("common.untitledPlay")}
         hint={
           <>
-            {/* Les deux phrases sont dans l'ordre où on les vit : ce qui sert
-                pendant la saisie d'abord, ce qui sert une fois qu'on a fini
-                ensuite (taper, télécharger, déposer). L'inverse annonçait la
-                sortie de la page avant d'y entrer, et coupait en deux le
-                parcours du fichier. Prix assumé : le `hint` de cette page est
-                le seul à ne pas ouvrir sur un impératif (cf. pages.js), il
-                arrive une phrase plus tard. Et pas d'« appuyez sur le
-                bouton » : c'est le verbe du doigt, et c'est la seule page
-                qu'il n'ouvre pas (cf. useTouchPointer.js). */}
+            {/* The two sentences are in the order in which they are lived: what
+                serves during typing first, what serves once one has finished
+                next (type, download, upload). The other way round announced the
+                way out of the page before entering it, and cut the file's
+                journey in two. Accepted price: this page's `hint` is the only
+                one not to open on an imperative (see pages.js), it arrives one
+                sentence later. And no "press the button": that is the finger's
+                verb, and this is the only page the finger does not open (see
+                useTouchPointer.js). */}
             <T
               k="editor.hintTyping"
               p={{
@@ -339,21 +335,20 @@ export default function App() {
                 shiftEnter: <strong>{t("common.keyShiftEnter")}</strong>,
               }}
             />
-            {/* Un `<br />` et surtout pas un troisième paragraphe : le bandeau
-                n'en porte que deux (cf. PlayHeader.jsx), et les deux phrases
-                sont bien la même voix, à un moment du travail près. La ligne
-                coupe donc à l'endroit où le travail change de nature, pendant
-                la saisie puis une fois qu'elle est finie, plutôt qu'à la
-                largeur de la fenêtre. */}
+            {/* A `<br />` and above all not a third paragraph: the header only
+                carries two (see PlayHeader.jsx), and the two sentences really
+                are the same voice, one moment of the work apart. So the line
+                breaks where the work changes nature, during typing then once it
+                is finished, rather than at the width of the window. */}
             <br />
-            {/* Le sceau vert de l'Avancement plutôt qu'un mot souligné : la
-                destination est une page du site, que la troupe reconnaît à sa
-                pastille (accueil, bandeaux, journal des dépôts), et un hyperlien
-                classique au milieu d'une phrase de doc y faisait la seule chose
-                soulignée de tout le bandeau. Le mot reste dans le lien : c'est lui
-                qui nomme la page, le sceau est décoratif.
-                Le lien est un PARAMÈTRE de la phrase : découpée autour de lui, la
-                phrase figeait l'ordre des mots français dans le composant. */}
+            {/* The green Progress seal rather than an underlined word: the
+                destination is a page of the site, which the company recognises by
+                its badge (home, headers, upload journal), and a plain hyperlink in
+                the middle of a doc sentence was the only underlined thing in the
+                whole header. The word stays inside the link: it is what names the
+                page, the seal is decorative.
+                The link is a PARAMETER of the sentence: cut around it, the
+                sentence froze the French word order inside the component. */}
             <T
               k="editor.hintDownload"
               p={{
@@ -370,15 +365,15 @@ export default function App() {
         actions={
           <>
             {dirty && <span className="dirty-hint">{t("editor.dirty")}</span>}
-            {/* Les trois boutons de cette rangée s'éteignent, et chacun explique
-                pourquoi dans son infobulle. Elle est donc portée par une enveloppe
-                et jamais par le bouton : un contrôle `disabled` ne reçoit aucun
-                événement souris, donc son `title` ne s'affiche pas (Chrome,
-                Safari), et l'explication n'arrivait jamais au moment où elle est
-                utile. Le nom accessible, lui, reste sur le bouton : c'est
-                l'`aria-label`, qui ne change pas d'un état à l'autre (le nom d'un
-                bouton ne dépend pas de son état, seule l'infobulle dit pourquoi
-                il dort). */}
+            {/* The three buttons of this row go dark, and each explains why in
+                its tooltip. That tooltip is therefore carried by a wrapper and
+                never by the button: a `disabled` control receives no mouse event,
+                so its own `title` does not show (Chrome, Safari), and the
+                explanation never arrived at the moment it is useful. The
+                accessible name, on the other hand, stays on the button: it is the
+                `aria-label`, which does not change from one state to the other (a
+                button's name does not depend on its state, only the tooltip says
+                why it sleeps). */}
             <span className="history-group">
               <span
                 className="btn-tip"
@@ -407,18 +402,18 @@ export default function App() {
                 </button>
               </span>
             </span>
-            {/* Icône seule : le bouton vit à côté de la paire annuler/rétablir,
-                déjà sans mots, et son libellé écrit était le seul texte de la
-                rangée à concurrencer le titre de la pièce sur une fenêtre
-                étroite. Le verbe est porté par l'infobulle et l'aria-label, et
-                la phrase de doc du bandeau dit à quoi sert le geste.
-                Éteint quand il n'y a rien à télécharger (`dirty` est un
-                comparatif d'états, pas un drapeau : annuler jusqu'au dernier
-                téléchargement l'éteint aussi), comme les deux boutons
-                d'historique à côté : redéposer le script tel qu'il est déjà
-                publié n'apprend rien à l'Action, et un bouton toujours vif fait
-                douter qu'il reste quelque chose à envoyer. Infobulle sur
-                l'enveloppe, comme les deux autres, pour la même raison. */}
+            {/* Icon only: the button lives next to the undo/redo pair, already
+                wordless, and its written label was the only text of the row to
+                compete with the play's title on a narrow window. The verb is
+                carried by the tooltip and the aria-label, and the header's doc
+                sentence says what the gesture is for.
+                Dark when there is nothing to download (`dirty` is a comparison of
+                states, not a flag: undoing back to the last download turns it off
+                too), like the two history buttons next to it: uploading the script
+                exactly as it is already published teaches the Action nothing, and
+                a button that is always live makes one doubt whether anything is
+                left to send. Tooltip on the wrapper, like the other two, for the
+                same reason. */}
             <span
               className="btn-tip"
               title={t(dirty ? "editor.download" : "editor.download.none")}
@@ -436,10 +431,10 @@ export default function App() {
         }
       />
 
-      {/* Le rail AVANT le contenu, dans le DOM comme à l'écran : la tabulation
-          part du bandeau, passe par le rail, arrive aux répliques, ce qui est
-          aussi l'ordre qu'avaient les puces de personnage du temps où elles
-          suivaient les selects d'acte et de scène. */}
+      {/* The rail BEFORE the content, in the DOM as on screen: tabbing starts
+          from the header, goes through the rail, reaches the lines, which is also
+          the order the character chips had back when they followed the act and
+          scene selects. */}
       <div className="editor-layout">
         <EditorRail
           section={railSection}
@@ -500,11 +495,11 @@ export default function App() {
           <div className="editor-main">
             {loadInfo && <p className="load-info">{loadInfo}</p>}
 
-            {/* Le titre de l'acte, en clair : la colonne DIT où l'on écrit, le
-                rail fait tout le reste (créer, renommer, supprimer, réordonner,
-                naviguer). Il a porté le renommage de l'acte et le ✕ qui le
-                supprimait ; il ne reste rien qui apparaisse, disparaisse ou
-                s'ouvre au-dessus du texte qu'on est en train de saisir. */}
+            {/* The act's title, plainly: the column SAYS where one is writing, the
+                rail does all the rest (create, rename, delete, reorder, navigate).
+                It used to carry the act's renaming and the ✕ that deleted it;
+                nothing is left that appears, disappears or opens above the text
+                one is typing. */}
             {act && <h2 className="act-title">{actLabel(tPlay, safeActIndex)}</h2>}
 
             {scene && (
@@ -551,14 +546,14 @@ export default function App() {
 }
 
 // Guard against ghost data: a character that still owns lines cannot be
-// silently removed — the user chooses to reassign or delete those lines.
+// silently removed: the user chooses to reassign or delete those lines.
 //
-// Bâti sur le ConfirmModal partagé, comme les confirmations de réplique, de
-// scène et d'acte : il réimplémentait la même boîte à la main, et se
-// distinguait donc en silence sur tout ce que ce composant apporte (Escape,
-// focus initial, rendu en portail, role="dialog"). La réassignation est la
-// sortie sûre, donc le `primaryLabel` ; supprimer les répliques est le geste
-// destructif. Sans autre personnage à qui les donner, il ne reste que lui.
+// Built on the shared ConfirmModal, like the line, scene and act confirmations:
+// it used to reimplement the same box by hand, and therefore silently differed on
+// everything that component brings (Escape, initial focus, portal rendering,
+// role="dialog"). Reassigning is the safe way out, hence the `primaryLabel`;
+// deleting the lines is the destructive gesture. With no other character to give
+// them to, only the latter is left.
 function DeleteCharacterModal({ request, characters, onCancel, onConfirm }) {
   const others = characters.filter((c) => c.id !== request.character.id);
   const [reassignTo, setReassignTo] = useState(others[0]?.id ?? null);

@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
 
-// L'Édition est la seule page réservée à l'ordinateur : on y glisse des
-// répliques à la souris et on y saisit de longs textes au clavier. Le critère
-// est le POINTEUR PRINCIPAL, pas la largeur : un téléphone en paysage fait
-// 844 px de large (il passerait un seuil de largeur) et reste inutilisable,
-// tandis qu'une fenêtre d'ordinateur rétrécie garde souris et clavier, donc
-// n'a aucune raison d'être refusée (le CSS de la page sait déjà se replier).
+// Editing is the only computer-only page: one drags lines around with the mouse
+// and types long texts on the keyboard. The criterion is the PRIMARY POINTER, not
+// the width: a phone in landscape is 844 px wide (it would pass a width threshold)
+// and stays unusable, whereas a shrunken computer window keeps mouse and keyboard,
+// so it has no reason to be refused (the page's CSS already knows how to fold).
 const TOUCH_QUERY = "(pointer: coarse)";
 
-// Écouté et pas seulement lu au montage : un hybride peut passer du doigt à la
-// souris (clavier détaché/rattaché), et l'émulation d'appareil des outils de
-// développement change la réponse sans recharger la page.
+// Listened to and not merely read at mount: a hybrid can switch from finger to
+// mouse (keyboard detached/reattached), and the device emulation of the developer
+// tools changes the answer without reloading the page.
 export default function useTouchPointer() {
   const [touch, setTouch] = useState(() => matches());
 
@@ -19,7 +18,7 @@ export default function useTouchPointer() {
     if (!mq) return;
     const onChange = (e) => setTouch(e.matches);
     mq.addEventListener("change", onChange);
-    // La requête peut avoir changé entre le premier rendu et l'abonnement.
+    // The query may have changed between the first render and the subscription.
     setTouch(mq.matches);
     return () => mq.removeEventListener("change", onChange);
   }, []);
@@ -27,8 +26,8 @@ export default function useTouchPointer() {
   return touch;
 }
 
-// Sans matchMedia (navigateur très ancien, rendu hors navigateur), on ne bloque
-// pas : mieux vaut un éditeur à l'étroit qu'une page murée par erreur.
+// Without matchMedia (very old browser, rendering outside a browser), we do not
+// block: better a cramped editor than a page walled off by mistake.
 function mediaQuery() {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
     return null;

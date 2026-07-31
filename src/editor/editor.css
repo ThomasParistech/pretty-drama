@@ -1,8 +1,8 @@
-/* Éditeur — direction « Rail » : fond crème partagé, neutres chauds, la couleur
-   du personnage n'est plus qu'un accent (poignée de drag + select).
-   Répliques en lignes fines séparées d'un filet 1px, sans carte ni ombre.
-   Typo : Spectral (texte des répliques), IBM Plex Sans (UI),
-   IBM Plex Mono (badges/chiffres). */
+/* Editor, "Rail" direction: shared cream background, warm neutrals, the
+   character's colour is now only an accent (drag handle + select).
+   Lines as thin rows separated by a 1px rule, no card and no shadow.
+   Type: Spectral (line text), IBM Plex Sans (UI),
+   IBM Plex Mono (badges/numbers). */
 
 :root {
   /* Re-skin of the shared tokens, scoped to this page (this file is only
@@ -11,138 +11,139 @@
   --paper-dark: #f1eadd;
   --card: #ffffff;
   --ink: #2b2b28;
-  --ink-soft: #6f6f66; /* gris « Rail » assombri : ≥ 4.5:1 sur le crème */
-  --ed-ghost: #8f8f88; /* poignée de drag des lignes sans personnage (≥ 3:1 sur blanc) */
+  --ink-soft: #6f6f66; /* darkened "Rail" grey: ≥ 4.5:1 on the cream */
+  --ed-ghost: #8f8f88; /* drag handle of lines without a character (≥ 3:1 on white) */
   --accent: #7a5cc0;
   --accent-soft: #f2eefb;
   --border: #e8e1d3;
-  /* « Rail » ne veut pas d'ombre sur ses propres surfaces : les répliques sont
-     des lignes séparées d'un filet, pas des cartes posées. Le bandeau partagé,
-     lui, garde la sienne (--header-shadow, token réservé de theme.css) : elle
-     n'est pas décorative, elle détache une barre collante du texte qui défile
-     dessous, et un re-skin ne doit rien changer à un composant partagé. */
+  /* "Rail" wants no shadow on its own surfaces: the lines are thin rows
+     separated by a rule, not cards laid on the page. The shared header keeps
+     its own (--header-shadow, a reserved token of theme.css): it is not
+     decorative, it detaches a sticky bar from the text scrolling underneath,
+     and a re-skin must change nothing in a shared component. */
   --shadow: none;
-  /* Seule ombre conservée du thème partagé pour une surface de la page : le
-     panneau des répliques. */
-  /* Le `--shadow` du thème est mis à `none` juste au-dessus (le design « Rail »
-     pose ses panneaux au filet), mais deux surfaces de la page en veulent une
-     vraie : le panneau de répliques et la carte pleine page. On LIT le token
-     réservé du bandeau plutôt que de recopier sa valeur : le contrat interdit de
-     redéfinir un `--header-*`, pas de le lire (précédent nommé, la barre de
-     légende de la Répartition), et cette valeur était écrite trois fois à
-     l'identique dans le dépôt (`--shadow`, `--header-shadow`, ici). Le site n'a
-     qu'UNE ombre d'élévation pour une surface posée sur le papier, et
-     `--header-shadow` est la seule des trois qu'une page ne re-skinne jamais,
-     donc la seule qui puisse la porter. */
+  /* The only shadow of the shared theme kept for a surface of this page: the
+     lines panel. */
+  /* The theme's `--shadow` is set to `none` just above (the "Rail" design lays
+     its panels out with a rule), but two surfaces of the page do want a real
+     one: the lines panel and the full-page card. We READ the header's reserved
+     token rather than copying its value: the contract forbids redefining a
+     `--header-*`, not reading one (named precedent, the legend bar of the
+     Speaking share page), and this value was written three times identically in
+     the repo (`--shadow`, `--header-shadow`, here). The site has only ONE
+     elevation shadow for a surface laid on the paper, and `--header-shadow` is
+     the only one of the three that no page ever re-skins, hence the only one
+     that can carry it. */
   --ed-panel-shadow: var(--header-shadow);
   --font-ui: "IBM Plex Sans", system-ui, sans-serif;
   --font-serif: "Spectral", Georgia, serif;
 
   --ed-title: #26261f;
   --ed-rule: #ece5d6;
-  /* La tuile d'un ACTE dans le plan du rail : le VIN de la marque, éclairci à
-     moins d'un cinquième de sa force (#ead8db), franchement plus foncé que le
-     fond du rail (rapport de luminance 1,20 sur le crème `--ed-sidebar`, quand une
-     surface BLANCHE posée sur ce même crème n'en tient que 1,14 : la bande d'acte
-     se détache donc un peu plus du panneau que les cartes blanches qu'elle
-     contient, ce qui est le bon sens de lecture). C'est ce qui fait de la rangée
-     d'acte une bande, et des scènes blanches qui la suivent des cartes posées
-     dedans. Un `--paper-dark` aurait suffi à la tuile technique mais pas à la
-     lecture (1,05 sur ce fond, donc la même crème que le panneau à l'oeil).
-     Deux essais avant celui-ci, dans cet ordre : un sable (`#e7dabc`), qui tenait
-     le même rapport mais était une troisième famille de couleur sur une page qui
-     n'en veut que deux ; puis un tint du violet de la page (`--accent` à 22 %),
-     qui la ramenait à une seule teinte mais posait le plan dans un lilas si
-     proche de l'`--accent-soft` d'une scène ouverte que la bande et la carte
-     qu'elle contient se lisaient comme deux états du même objet.
-     Le vin les sépare pour de bon, et il n'est pas une couleur de plus : c'est
-     celle du bouton de téléchargement juste au-dessus (`--header-accent`, le seul
-     endroit de la page qui la porte en plein) et celle des deux visages du logo,
-     en pied du bandeau. Un TINT et pas un hex, écrit avec l'expression que le
-     `<mark>` de la recherche emploie déjà.
-     On LIT `--header-accent` sans le redéfinir, ce que le contrat autorise
-     (précédent nommé : `--ed-panel-shadow`) : ce vin est le seul rouge que ce
-     `:root` ne re-skinne pas, donc le seul qui ne bougera pas sous le plan.
-     18 % et pas plus : l'accent assombri du plan tient 5,4:1 dessus (le « vous
-     êtes ici » d'un acte) et la poignée en `--ink-soft` 3,7:1 ; à 28 % l'encre
-     tombe à 4,5:1 tout juste et la poignée sous le seuil d'un dessin. */
+  /* The tile of an ACT in the rail's outline: the WINE of the brand, lightened
+     to less than a fifth of its strength (#ead8db), clearly darker than the
+     rail's background (luminance ratio 1.20 on the cream `--ed-sidebar`, when a
+     WHITE surface laid on that same cream only holds 1.14: the act band
+     therefore stands out from the panel slightly more than the white cards it
+     contains, which is the right reading order). This is what makes the act row
+     a band, and the white scenes that follow it cards laid inside it. A
+     `--paper-dark` would have been enough for a technical tile but not for the
+     reading (1.05 on this background, so the same cream as the panel to the eye).
+     Two attempts before this one, in that order: a sand (`#e7dabc`), which held
+     the same ratio but was a third colour family on a page that only wants two;
+     then a tint of the page's purple (`--accent` at 22%), which brought it back
+     to a single hue but laid the outline in a lilac so close to the
+     `--accent-soft` of an open scene that the band and the card it contains read
+     as two states of the same object.
+     The wine separates them for good, and it is not one colour more: it is that
+     of the download button just above (`--header-accent`, the only place on the
+     page that carries it at full strength) and that of the two faces of the
+     logo, at the foot of the header. A TINT and not a hex, written with the
+     expression the search's `<mark>` already uses.
+     We READ `--header-accent` without redefining it, which the contract allows
+     (named precedent: `--ed-panel-shadow`): this wine is the only red this
+     `:root` does not re-skin, hence the only one that will not shift under the
+     outline.
+     18% and no more: the outline's darkened accent holds 5.4:1 on it (an act's
+     "you are here") and the handle in `--ink-soft` 3.7:1; at 28% the ink falls
+     to just 4.5:1 and the handle below the threshold for a drawing. */
   --ed-tile-act: color-mix(in srgb, var(--header-accent) 18%, #fff);
-  /* L'accent, mais assez foncé pour porter du TEXTE sur les deux surfaces pâles
-     du plan : sur la tuile d'acte `--accent` tombe à 3,7:1 (échec AA) et sur le
-     lilas `--accent-soft` à 4,4:1, quand celui-ci tient 5,4:1 et 6,5:1. Même
-     leçon que `characterInk` : on plafonne la clarté, on garde la teinte. Les
-     FILETS et les fonds continuent de prendre `--accent`, un trait n'ayant pas à
-     tenir le contraste d'un texte. */
+  /* The accent, but dark enough to carry TEXT on the two pale surfaces of the
+     outline: on the act tile `--accent` falls to 3.7:1 (AA failure) and on the
+     lilac `--accent-soft` to 4.4:1, when this one holds 5.4:1 and 6.5:1. Same
+     lesson as `characterInk`: we cap the lightness, we keep the hue. The RULES
+     and the backgrounds keep taking `--accent`, a line not having to hold the
+     contrast of a text. */
   --ed-accent-ink: #5f45a0;
-  /* Un hex mesuré et pas un dérivé calculé de `--accent`, et c'est un choix, pas
-     un oubli : les trois rapports écrits ci-dessus (5,4:1 sur la tuile d'acte,
-     6,5:1 sur le lilas, et l'échec de `--accent` à 3,7:1) sont vrais de CETTE
-     valeur, donc les recalculer à chaque re-skin les rendrait faux sans que rien
-     ne le dise. L'idiome `oklch(from … min(l, 0.5) c h)` de `characterInk` a été
-     considéré : là-bas il est obligatoire (vingt couleurs de palette, on ne peut
-     pas mesurer une à une), ici il y a UNE encre, sur DEUX fonds connus. Et la
-     syntaxe de couleur relative est la moins portée de tout le dépôt, plus
-     récente que le `color-mix` de la tuile juste au-dessus. Corollaire à
-     connaître : re-régler `--accent` demande de re-mesurer cette encre, comme il
-     demanderait de re-mesurer un `color-mix`. */
+  /* A measured hex and not a value computed from `--accent`, and that is a
+     choice, not an oversight: the three ratios written above (5.4:1 on the act
+     tile, 6.5:1 on the lilac, and the failure of `--accent` at 3.7:1) are true
+     of THIS value, so recomputing them at each re-skin would make them false
+     without anything saying so. The `oklch(from … min(l, 0.5) c h)` idiom of
+     `characterInk` was considered: over there it is mandatory (twenty palette
+     colours, they cannot be measured one by one), here there is ONE ink, on TWO
+     known backgrounds. And relative colour syntax is the least supported in the
+     whole repo, more recent than the `color-mix` of the tile just above.
+     Corollary to know: re-tuning `--accent` requires re-measuring this ink, just
+     as it would require re-measuring a `color-mix`. */
 
-  /* Le filet de survol des deux surfaces qu'on DÉSIGNE dans le plan, la rangée
-     d'une scène et la vignette d'un drapeau de langue. Un token parce que leurs
-     deux commentaires exigent qu'elles « répondent pareil » : l'expression était
-     écrite deux fois, et deux jumelles se désaccordent au premier réglage. Le
-     fond, lui, est déjà un token partagé (`--accent-soft`). */
+  /* The hover rule of the two surfaces one POINTS AT in the outline, the row of
+     a scene and the thumbnail of a language flag. A token because their two
+     comments require them to "respond the same way": the expression was written
+     twice, and two twins fall out of step at the first tweak. The background is
+     already a shared token (`--accent-soft`). */
   --ed-tile-hover-border: color-mix(in srgb, var(--accent) 35%, var(--border));
-  /* Le fond du rail. Ce token portait déjà ce nom quand il n'était le fond
-     d'aucune barre latérale (il servait aux puces de personnage, dans le
-     bandeau blanc) : la direction s'appelle « Rail » depuis le début, la page
-     n'en avait pas. */
+  /* The rail's background. This token already bore this name when it was the
+     background of no sidebar at all (it served the character chips, in the white
+     header): the direction has been called "Rail" from the start, the page had
+     no rail. */
   --ed-sidebar: #f5f0e5;
   --ed-danger: #c0603f;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  /* La bande d'icônes du rail, toujours visible, et la section ouverte.
-     272 px de panneau laissent 248 px utiles : de quoi tenir une puce de
-     personnage complète sur une ligne, la palette de couleurs et un extrait de
-     réplique d'une quarantaine de caractères sur deux lignes. 300 px coupait
-     l'extrait trop court pour reconnaître la réplique, 360 px mangeait la
-     gouttière de la colonne dès 1280 px de fenêtre.
-     Ce n'est plus qu'un DÉPART : `EditorRail` redéfinit `--ed-rail-panel` en
-     ligne, la poignée du bord droit permettant de régler la largeur (bornes et
-     pas du clavier dans le composant, avec leurs raisons). Le token reste ici
-     parce que c'est lui que la géométrie du rail consomme, et qu'une valeur par
-     défaut doit vivre à côté des autres. */
+  /* The rail's icon strip, always visible, and the open section.
+     272 px of panel leave 248 px of usable width: enough to hold a complete
+     character chip on one line, the colour palette and an excerpt of a line of
+     about forty characters over two lines. 300 px cut the excerpt too short to
+     recognise the line, 360 px ate the column's gutter as soon as the window was
+     1280 px wide.
+     This is no more than a STARTING POINT: `EditorRail` redefines
+     `--ed-rail-panel` inline, the right-edge handle allowing the width to be
+     tuned (bounds and keyboard step in the component, with their reasons). The
+     token stays here because it is the one the rail's geometry consumes, and
+     because a default value must live next to the others. */
   --ed-rail-strip: 48px;
   --ed-rail-panel: 272px;
-  /* Le bord droit du panneau : la poignée de largeur, et rien d'autre depuis que
-     ce sont les icônes de la bande qui replient. 10 px, la largeur d'une poignée
-     qui se vise sans être cherchée : une de 6 px se rate à la souris, et les 14 px
-     de la version qui portait une languette de repli laissaient une gouttière
-     morte entre le texte du panneau et la colonne de la pièce. */
+  /* The panel's right edge: the width handle, and nothing else since it is the
+     strip's icons that collapse the rail. 10 px, the width of a handle one aims
+     at without having to look for it: a 6 px one is missed with the mouse, and
+     the 14 px of the version that carried a collapse tab left a dead gutter
+     between the panel's text and the play's column. */
   --ed-rail-edge: 10px;
 }
 
-/* Pas de règle de focus ici : celle de theme.css dérive de --accent, que ce
-   :root local re-skinne déjà en violet. */
+/* No focus rule here: the one in theme.css derives from --accent, which this
+   local :root already re-skins in purple. */
 
-/* Même bouton « Télécharger » que la page Enregistrement : accent chaud du
-   thème partagé (que le :root local re-skinne en violet), hover compris —
-   la règle hover du thème (var(--accent-dark)) s'applique telle quelle.
-   Un téléchargement se présente pareil sur les trois pages qui en offrent un,
-   et c'est la FORME comme la couleur : l'essai d'un aplat clair, à la teinte de
-   la tuile d'acte du plan, a été fait et retiré. Il demandait de repeindre le
-   dessin (le blanc tombe à 1,4:1 sur une tuile pâle) et surtout il s'éteignait
-   pour de bon : l'`opacity: 0.45` des boutons désactivés laisse un aplat clair
-   à 1,2:1 sur le blanc du bandeau, or ce bouton EST désactivé à l'ouverture de
-   la page, tant que rien n'est modifié. L'aplat de vin, lui, reste franc. */
+/* Same "Download" button as the Recording page: warm accent of the shared
+   theme (which the local :root re-skins in purple), hover included; the
+   theme's hover rule (var(--accent-dark)) applies as it is.
+   A download presents itself the same way on the three pages that offer one,
+   and that is the SHAPE as much as the colour: the attempt at a pale flat fill,
+   in the hue of the outline's act tile, was made and dropped. It required
+   repainting the drawing (white falls to 1.4:1 on a pale tile) and above all it
+   went out for good: the `opacity: 0.45` of disabled buttons leaves a pale flat
+   fill at 1.2:1 on the white of the header, and this button IS disabled when the
+   page opens, as long as nothing has been modified. The wine fill stays frank. */
 .btn.primary {
   background: var(--header-accent);
   border-color: var(--header-accent);
 }
 
-/* Le re-skin « Rail » couvre aussi le bouton destructif (modal de
-   suppression de personnage) : sans quoi il hérite du violet accent. Le filet
-   aussi, sinon il reste violet (theme.css le tire de --accent-soft, que ce
-   :root re-skinne) autour d'un texte devenu terre cuite. */
+/* The "Rail" re-skin also covers the destructive button (character deletion
+   modal): otherwise it inherits the accent purple. The rule too, otherwise it
+   stays purple (theme.css derives it from --accent-soft, which this :root
+   re-skins) around a text that has become terracotta. */
 .btn.danger {
   color: var(--ed-danger);
   border-color: color-mix(in srgb, var(--ed-danger) 25%, #fff);
@@ -154,74 +155,72 @@ h3 {
   color: var(--ed-title);
 }
 
-/* ---- Coquille de la page : le bandeau, puis le rail et la colonne ----
+/* ---- Shell of the page: the header, then the rail and the column ----
 
-   La page d'édition ne défile plus en entier : elle occupe la hauteur de la
-   fenêtre, et ce sont le rail et la colonne de texte qui défilent, chacun pour
-   son compte. Motif : le rail (et donc la liste des correspondances) doit rester
-   sous les yeux pendant qu'on parcourt les répliques, et la seule autre façon de
-   l'obtenir, un rail collant sous le bandeau, demande de connaître la hauteur du
-   bandeau. Or c'est un inconnu ANIMÉ : titre sur deux lignes, deux paragraphes
-   de doc, repli sur 0,26 s. Il faudrait la mesurer en JS, la remesurer à chaque
-   repli, et le `top` du rail traînerait un quart de seconde derrière l'animation
-   à chaque geste. Ici rien n'est mesuré, aucun nombre ne circule entre le CSS et
-   le JS.
-   `PlayHeader` n'est pas touché pour autant : son `position: sticky` dans un
-   ancêtre qui ne défile pas se comporte comme `relative`, il tient le haut parce
-   qu'il EST en haut.
-   `vh` et pas `dvh` : une barre d'adresse qui se rétracte est un problème de
-   téléphone, et cette page ne s'ouvre pas au doigt (cf. useTouchPointer.js).
-   La coquille est posée sur un élément de l'éditeur et jamais sur `body` : les
-   deux écrans pleine page de la page (script illisible, ouverture au doigt)
-   gardent le défilement normal, leur carte pouvant dépasser d'une fenêtre
-   basse. */
-/* La géométrie est la classe partagée `.page-shell` (theme.css), que la
-   Répartition emploie aussi ; il ne reste ici que la hauteur, et c'est le seul
-   écart réel entre les deux : `vh` et pas le `dvh` par défaut, une barre d'adresse
-   qui se rétracte étant un problème de téléphone et cette page ne s'ouvrant pas au
-   doigt (cf. useTouchPointer.js). */
+   The editing page no longer scrolls as a whole: it takes the height of the
+   window, and it is the rail and the text column that scroll, each on its own.
+   Motive: the rail (and therefore the list of matches) must stay in front of the
+   eyes while one goes through the lines, and the only other way to obtain that,
+   a rail sticky under the header, requires knowing the height of the header. Now
+   that is an ANIMATED unknown: title on two lines, two paragraphs of doc,
+   collapse over 0.26 s. It would have to be measured in JS, re-measured at every
+   collapse, and the rail's `top` would lag a quarter of a second behind the
+   animation at each gesture. Here nothing is measured, no number travels between
+   the CSS and the JS.
+   `PlayHeader` is not touched for all that: its `position: sticky` in an
+   ancestor that does not scroll behaves like `relative`, it holds the top
+   because it IS at the top.
+   `vh` and not `dvh`: an address bar that retracts is a phone problem, and this
+   page does not open under a finger (cf. useTouchPointer.js).
+   The shell is laid on an element of the editor and never on `body`: the two
+   full-page screens of the page (unreadable script, opened with a finger) keep
+   normal scrolling, their card being able to overflow a short window. */
+/* The geometry is the shared class `.page-shell` (theme.css), which the Speaking
+   share page uses too; all that is left here is the height, and it is the only
+   real difference between the two: `vh` and not the default `dvh`, an address bar
+   that retracts being a phone problem and this page not opening under a finger
+   (cf. useTouchPointer.js). */
 .editor-shell {
   --shell-height: 100vh;
 }
 
 .editor-layout {
   flex: 1;
-  /* Sans lui, les deux zones défilantes poussent la coquille au-delà de la
-     fenêtre au lieu de défiler : le minimum automatique d'un élément flex vaut
-     sa hauteur de contenu (même piège que le `min-height: 0` de
-     `.play-header-settings-inner`, theme.css). */
+  /* Without it, the two scrolling areas push the shell past the window instead
+     of scrolling: the automatic minimum of a flex item is its content height
+     (same trap as the `min-height: 0` of `.play-header-settings-inner`,
+     theme.css). */
   min-height: 0;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  /* La rangée s'écrit `minmax(0, 1fr)` et JAMAIS implicitement (`auto`) ni `1fr`
-     tout court, exactement pour la raison déjà payée sur le repli du bandeau : le
-     minimum d'une piste `auto` ou `fr` vaut la contribution min-content de son
-     contenu. Sans cette ligne, la rangée grandissait à la hauteur DÉPLIÉE de la
-     liste des résultats (mesuré : 8643 px pour 144 correspondances), donc le rail
-     dépassait la fenêtre, son bord droit avec, et le bouton de repli, centré
-     verticalement sur ce bord, se retrouvait à quatre mille pixels sous l'écran.
-     Ça tenait avant par accident : le rail était en `overflow: hidden`, donc un
-     conteneur de défilement, dont la contribution min-content vaut zéro. Il est
-     passé en `overflow: clip` (cf. le bégaiement de la bande d'icônes) et l'accident
-     a cessé de nous couvrir. */
+  /* The row is written `minmax(0, 1fr)` and NEVER implicitly (`auto`) nor plain
+     `1fr`, for exactly the reason already paid for on the header's collapse: the
+     minimum of an `auto` or `fr` track is the min-content contribution of its
+     content. Without this line, the row grew to the UNFOLDED height of the
+     results list (measured: 8643 px for 144 matches), so the rail overflowed the
+     window, its right edge with it, and the collapse button, vertically centred
+     on that edge, ended up four thousand pixels below the screen.
+     It held before by accident: the rail was in `overflow: hidden`, hence a
+     scroll container, whose min-content contribution is zero. It moved to
+     `overflow: clip` (cf. the stutter of the icon strip) and the accident stopped
+     covering for us. */
   grid-template-rows: minmax(0, 1fr);
 }
 
-/* La zone défilante occupe TOUTE la largeur restante, et c'est le bloc
-   intérieur (`.editor-main`) qui se centre sur 860 px : l'ascenseur appartient
-   au bord de la fenêtre, pas à la colonne de texte. Ouvrir le rail décale donc
-   le texte de la moitié de la largeur gagnée (136 px), ce qui est assumé, et
-   c'est la raison pour laquelle le rail s'anime. Piste écartée : compenser par
-   une marge gauche égale à la largeur du rail, pour garder le texte centré sur
-   la fenêtre ; elle mange la gouttière gauche jusqu'à ce que le texte touche le
-   panneau, et sur 1280 px il finit collé.
-   `container` : le repli étroit des rangées de réplique se mesure désormais sur
-   CETTE largeur et plus sur celle de la fenêtre (cf. la section « Fenêtre
-   étroite » en fin de fichier). Contrepartie à connaître : `container-type`
-   implique le confinement de mise en page, donc cet élément devient le bloc
-   conteneur des descendants en `position: fixed`. Ne rien poser de `fixed` dans
-   la colonne (même piège que le transform dnd-kit, qui a valu son portail à
-   ConfirmModal). */
+/* The scrolling area takes ALL the remaining width, and it is the inner block
+   (`.editor-main`) that centres itself on 860 px: the scrollbar belongs to the
+   edge of the window, not to the text column. Opening the rail therefore shifts
+   the text by half the width gained (136 px), which is accepted, and that is the
+   reason the rail animates. Rejected option: compensating with a left margin
+   equal to the rail's width, to keep the text centred on the window; it eats the
+   left gutter until the text touches the panel, and at 1280 px it ends up stuck
+   to it.
+   `container`: the narrow reflow of the line rows is now measured against THIS
+   width and no longer against the window's (cf. the "Narrow window" section at
+   the end of the file). Trade-off to know: `container-type` implies layout
+   containment, so this element becomes the containing block of descendants in
+   `position: fixed`. Put nothing `fixed` in the column (same trap as the dnd-kit
+   transform, which earned ConfirmModal its portal). */
 .editor-column {
   overflow: auto;
   container: ed-column / inline-size;
@@ -233,8 +232,8 @@ h3 {
   padding: 16px 20px 20px;
 }
 
-/* Paire annuler/rétablir : deux boutons icône collés, lus comme une seule
-   commande de navigation dans la pile d'états (voir history.js). */
+/* Undo/redo pair: two icon buttons side by side, read as a single command for
+   navigating the stack of states (see history.js). */
 .history-group {
   display: inline-flex;
   gap: 4px;
@@ -245,37 +244,38 @@ h3 {
   padding: 7px 10px;
 }
 
-/* Le téléchargement est lui aussi une icône seule, à côté de cette paire (cf.
-   App.jsx : son libellé écrit concurrençait le titre de la pièce dans la rangée
-   toujours visible). Il reste l'action principale de la page, donc son dessin
-   est plus grand, mais la HAUTEUR est calée sur celle des boutons d'historique
-   (19 + 2x6 = 17 + 2x7 = 31 px) : trois boutons voisins dont un dépasse de deux
-   pixels se lisent comme un défaut d'alignement, pas comme une hiérarchie.
-   C'est la largeur, plus généreuse, qui la dit avec la couleur d'accent. */
-/* Sélecteur en `.btn.script-download-btn` et pas sur la classe seule : `.btn.icon`
-   (theme.css) pose déjà un padding et gagnerait sur une classe simple.
-   Nom qualifié (`script-`) parce que l'Enregistrement a son propre bouton de
-   téléchargement, avec des règles contraires (cible tactile de 40 px, contre
-   31 px ici) : les deux CSS ne se croisent pas aujourd'hui, chacun n'étant
-   chargé que par sa page, mais deux `.download-btn` de valeurs opposées se
-   casseraient en silence le jour où l'un des deux remonterait dans theme.css. */
+/* The download is an icon on its own too, next to this pair (cf. App.jsx: its
+   written label competed with the play's title in the always visible row). It
+   remains the page's main action, so its drawing is bigger, but the HEIGHT is
+   aligned with that of the history buttons (19 + 2x6 = 17 + 2x7 = 31 px): three
+   neighbouring buttons of which one is two pixels taller read as a misalignment,
+   not as a hierarchy. It is the width, more generous, that says it along with
+   the accent colour. */
+/* Selector written `.btn.script-download-btn` and not on the class alone:
+   `.btn.icon` (theme.css) already sets a padding and would win over a single
+   class.
+   A qualified name (`script-`) because the Recording page has its own download
+   button, with opposite rules (touch target of 40 px, against 31 px here): the
+   two stylesheets do not meet today, each being loaded only by its own page, but
+   two `.download-btn` of opposite values would break silently the day one of
+   them moved up into theme.css. */
 .btn.script-download-btn {
   font-size: 19px;
   padding: 6px 12px;
 }
 
-/* `.btn-tip`, l'enveloppe qui porte l'infobulle des boutons qui s'éteignent, est
-   dans theme.css : l'Enregistrement en a besoin pour les quatre boutons de sa
-   barre basse. */
+/* `.btn-tip`, the wrapper that carries the tooltip of buttons that go dark, is
+   in theme.css: the Recording page needs it for the four buttons of its bottom
+   bar. */
 
-/* Quand le bouton destructif EST l'action principale (le seul autre choix est
-   « Annuler »), il s'affirme. Il reste en retrait dans le modal personnage, où
-   il n'est qu'un des deux gestes possibles face à « Réassigner ».
-   Le test porte sur la présence d'un `.btn.primary` et pas sur une classe posée
-   par l'appelant : ConfirmModal ne rend ce bouton que si on lui donne un
-   `primaryLabel`, donc la question « y a-t-il une sortie sûre ? » est déjà
-   écrite dans le DOM. Un navigateur sans `:has()` retombe simplement sur le
-   `.btn.danger` du thème, jamais sur du cassé. */
+/* When the destructive button IS the main action (the only other choice being
+   "Cancel"), it asserts itself. It stays understated in the character modal,
+   where it is only one of the two possible gestures facing "Reassign".
+   The test is on the presence of a `.btn.primary` and not on a class set by the
+   caller: ConfirmModal only renders that button if it is given a
+   `primaryLabel`, so the question "is there a safe way out?" is already written
+   in the DOM. A browser without `:has()` simply falls back on the theme's
+   `.btn.danger`, never on something broken. */
 .confirm-modal:not(:has(.btn.primary)) .btn.danger {
   border-color: var(--ed-danger);
 }
@@ -294,20 +294,20 @@ h3 {
   padding: 4px 12px;
 }
 
-/* Les deux écrans pleine page de l'éditeur (script illisible, page ouverte au
-   doigt) posent la carte partagée `.page-notice`, qui tire son ombre de
-   `--shadow` : à `none` ici. Elle reprend donc celle que « Rail » réserve à son
-   panneau de contenu, puisque cette carte EST le contenu de l'écran ; sans
-   quoi c'est la seule surface du site posée sur le papier sans rien dessous. */
+/* The editor's two full-page screens (unreadable script, page opened with a
+   finger) lay out the shared card `.page-notice`, which takes its shadow from
+   `--shadow`: at `none` here. It therefore takes the one "Rail" reserves for its
+   content panel, since this card IS the content of the screen; without that it
+   is the only surface of the site laid on the paper with nothing underneath. */
 .page-notice {
   box-shadow: var(--ed-panel-shadow);
 }
 
-/* Script publié illisible : la carte partagée `.page-notice` (theme.css) reçoit
-   ici plusieurs paragraphes de marche à suivre, donc elle s'élargit et aligne à
-   gauche. Le blocage sur écran tactile (cf. useTouchPointer.js) ne prend PAS
-   cette classe : sa phrase unique reste dans la carte étroite et centrée,
-   comme les états pleine page des autres pages. */
+/* Unreadable published script: the shared card `.page-notice` (theme.css)
+   receives several paragraphs of instructions here, so it widens and aligns
+   left. The block on touch screens (cf. useTouchPointer.js) does NOT take this
+   class: its single sentence stays in the narrow, centred card, like the
+   full-page states of the other pages. */
 .load-error {
   max-width: min(660px, calc(100% - var(--notice-gutter)));
   text-align: left;
@@ -320,48 +320,46 @@ h3 {
   margin: 0 0 14px;
 }
 
-/* ---- Le rail ----
+/* ---- The rail ----
 
-   Une bande de trois icônes toujours visible (Structure, Personnages,
-   Recherche) et une section ouverte à la fois, à gauche de la colonne de texte.
-   L'animation est une LARGEUR, et pas la ruse `minmax(0, 0fr)` du bandeau : là
-   bas la hauteur du contenu est inconnue et ne s'interpole pas, ici la largeur
-   ouverte est un nombre qu'on choisit. Et une piste `fr` ferait dépendre la
-   largeur du rail de son contenu, donc un nom de personnage à rallonge
-   élargirait le panneau. On garde en revanche la leçon de la grille : c'est le
-   RAIL qui rogne et le panneau qui garde sa largeur, un panneau élastique
-   reflowant son texte à chaque image du glissement, ce qui se lit comme un
-   défaut d'affichage.
-   Ne PAS donner de `position` ni de `z-index` au rail : il créerait un contexte
-   d'empilement et enfermerait le `z-index: 20` de la palette de couleurs, qui
-   doit passer au-dessus du fond plein écran à 19. `overflow: hidden` seul n'en
-   crée pas. */
+   A strip of three icons always visible (Structure, Characters, Search) and one
+   section open at a time, to the left of the text column.
+   The animation is a WIDTH, and not the `minmax(0, 0fr)` trick of the header:
+   over there the height of the content is unknown and does not interpolate, here
+   the open width is a number we choose. And an `fr` track would make the rail's
+   width depend on its content, so a character name of excessive length would
+   widen the panel. We do keep the lesson of the grid, though: it is the RAIL
+   that clips and the panel that keeps its width, an elastic panel reflowing its
+   text at every frame of the drag, which reads as a display glitch.
+   Do NOT give the rail a `position` or a `z-index`: it would create a stacking
+   context and would trap the `z-index: 20` of the colour palette, which must
+   pass over the full-screen backdrop at 19. `overflow: hidden` alone creates
+   none. */
 .editor-rail {
   display: flex;
   flex: none;
-  /* Replié, il n'y a QUE la bande d'icônes. Le bord droit, qui ne règle plus que
-     la largeur, n'existe pas dans cet état : replié, il n'y a aucune largeur à
-     régler, et une seconde barre verticale collée à la bande se lisait comme un
-     morceau de mobilier oublié là (du temps où elle portait un bouton de repli,
-     un chevron y était perdu au milieu). Ce sont donc les icônes qui rouvrent, et
-     elles disent en plus quelle section. */
+  /* Collapsed, there is ONLY the icon strip. The right edge, which now only
+     tunes the width, does not exist in this state: collapsed, there is no width
+     to tune, and a second vertical bar stuck to the strip read as a piece of
+     furniture forgotten there (back when it carried a collapse button, a chevron
+     was lost in the middle of it). So it is the icons that reopen the rail, and
+     they say which section on top of that. */
   width: var(--ed-rail-strip);
-  /* `clip` et NON `hidden`, et c'est un bug déjà payé : `hidden` fait du rail un
-     conteneur de défilement (invisible, mais défilable par programme), donc au
-     montage du panneau, quand le champ de recherche prend le focus, le navigateur
-     faisait défiler le rail horizontalement pour amener ce champ à l'écran. La
-     bande d'icônes sortait par la gauche (mesuré : left = -104) puis revenait à
-     mesure que la largeur arrivait, ce qui se lisait comme un bégaiement de la
-     barre permanente. `clip` rogne sans créer de conteneur de défilement, donc il
-     n'y a plus rien à faire défiler. Les pistes écartées supposaient toutes de
-     retarder le focus derrière un minuteur, c'est-à-dire de faire revenir la
-     machinerie que le repli du bandeau vient de perdre. */
+  /* `clip` and NOT `hidden`, and this is a bug already paid for: `hidden` makes
+     the rail a scroll container (invisible, but scrollable by program), so when
+     the panel mounts, when the search field takes the focus, the browser scrolled
+     the rail horizontally to bring that field into view. The icon strip went out
+     on the left (measured: left = -104) then came back as the width arrived,
+     which read as a stutter of the permanent bar. `clip` clips without creating
+     a scroll container, so there is nothing left to scroll. The rejected options
+     all assumed delaying the focus behind a timer, that is, bringing back the
+     machinery the header's collapse has just got rid of. */
   overflow: clip;
   background: var(--ed-sidebar);
   border-right: 1px solid var(--border);
-  /* La même courbe et la même durée que le repli du bandeau (`--ease-header`,
-     theme.css, emprunté et jamais redéfini) : la page a deux surfaces qui se
-     replient, elles doivent se replier du même geste. */
+  /* The same curve and the same duration as the header's collapse
+     (`--ease-header`, theme.css, borrowed and never redefined): the page has two
+     surfaces that collapse, they must collapse with the same gesture. */
   transition: width 0.26s var(--ease-header);
 }
 
@@ -369,31 +367,31 @@ h3 {
   width: calc(var(--ed-rail-strip) + var(--ed-rail-panel) + var(--ed-rail-edge));
 }
 
-/* Pendant le glissement de la poignée, la transition de largeur est coupée :
-   sinon le panneau poursuit le curseur avec un quart de seconde de retard, ce qui
-   se lit comme une latence et pas comme une animation. */
+/* While the handle is being dragged, the width transition is cut off: otherwise
+   the panel chases the cursor a quarter of a second behind, which reads as
+   latency and not as an animation. */
 .editor-rail.resizing {
   transition: none;
 }
 
-/* ---- Le bord droit du rail : la poignée de largeur ----
+/* ---- The rail's right edge: the width handle ----
 
-   Elle ne fait plus QUE la largeur : le repli est passé aux icônes de la bande
-   (cf. EditorRail.jsx, où la languette qui vivait ici a laissé le récit de son
-   bug de capture du pointeur). Le bord n'a donc plus besoin ni de `position` ni de
-   place pour un bouton, et on tire n'importe où dessus. */
+   It now does ONLY the width: collapsing has moved to the strip's icons (cf.
+   EditorRail.jsx, where the tab that used to live here left the story of its
+   pointer capture bug). The edge therefore no longer needs a `position` nor room
+   for a button, and one can drag anywhere on it. */
 .editor-rail-edge {
   flex: none;
   width: var(--ed-rail-edge);
   background: var(--ed-sidebar);
   cursor: col-resize;
-  /* Le glissement ne doit pas devenir un défilement sur pavé tactile. */
+  /* The drag must not become a scroll on a trackpad. */
   touch-action: none;
-  /* Le filet de séparation du rail vit sur ce bord, et c'est LUI qui s'épaissit
-     et prend l'accent quand on s'apprête à tirer : un filet qui passe de 1 à 2 px
-     dit « cette ligne est saisissable » sans rien colorer d'autre. La première
-     version teintait tout le bord sur ses 14 px de large, ce qui posait un pavé
-     violet en travers de la page pour annoncer un geste d'un pixel. */
+  /* The rail's separating rule lives on this edge, and it is IT that thickens
+     and takes the accent when one is about to drag: a rule that goes from 1 to
+     2 px says "this line can be grabbed" without colouring anything else. The
+     first version tinted the whole edge over its 14 px of width, which laid a
+     purple slab across the page to announce a one-pixel gesture. */
   border-right: 1px solid var(--border);
   transition: border-right-color 0.15s, border-right-width 0.15s;
 }
@@ -411,10 +409,10 @@ h3 {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  /* 8 px de remplissage pour un bouton de 32 px : la bague de focus (2 px à 2 px
-     de décalage) tient ainsi DANS le rail, dont l'`overflow: clip` l'aurait
-     rognée par le côté. Une bague rognée est un défaut d'accessibilité qui ne se
-     voit pas en relisant la règle. */
+  /* 8 px of padding for a 32 px button: the focus ring (2 px at a 2 px offset)
+     thus fits INSIDE the rail, whose `overflow: clip` would have clipped it on
+     the side. A clipped ring is an accessibility defect that cannot be seen by
+     re-reading the rule. */
   padding: 8px;
   border-right: 1px solid var(--border);
 }
@@ -429,7 +427,7 @@ h3 {
   border-radius: 8px;
   background: none;
   color: var(--ink-soft);
-  font-size: 18px; /* les icônes se dimensionnent dessus (1em) */
+  font-size: 18px; /* the icons size themselves on it (1em) */
   cursor: pointer;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
@@ -439,39 +437,38 @@ h3 {
   color: var(--ink);
 }
 
-/* La bague du projet et pas celle du navigateur, comme partout ailleurs dans ce
-   panneau (`.editor-rail-edge`, `.structure-scene-name`, `.search-hit`). C'est
-   aussi celle que les 8 px de remplissage de la bande réservent juste au-dessus :
-   la place était provisionnée, la règle manquait, donc les trois icônes qui
-   ouvrent le rail étaient les seules commandes de la page à s'allumer au clavier
-   dans un autre style que leurs voisines. */
+/* The project's ring and not the browser's, as everywhere else in this panel
+   (`.editor-rail-edge`, `.structure-scene-name`, `.search-hit`). It is also the
+   one the strip's 8 px of padding reserve just above: the room was provisioned,
+   the rule was missing, so the three icons that open the rail were the only
+   controls of the page to light up under the keyboard in a different style from
+   their neighbours. */
 .editor-rail-tab:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
 
-/* L'état de la section est porté par `aria-expanded` et rien d'autre : le CSS le
-   lit sur l'attribut plutôt que sur une classe de plus, donc l'aspect ne peut
-   pas se désaccorder du nom accessible. */
+/* The section's state is carried by `aria-expanded` and nothing else: the CSS
+   reads it from the attribute rather than from one more class, so the appearance
+   cannot fall out of step with the accessible name. */
 .editor-rail-tab[aria-expanded="true"] {
   background: var(--accent-soft);
   border-color: color-mix(in srgb, var(--accent) 30%, transparent);
   color: var(--accent);
 }
 
-/* Le panneau NE DÉFILE PAS : c'est chaque section qui accorde le défilement à
-   ce qui doit défiler, et à lui seul (la liste des résultats, la liste des
-   personnages). Sinon les réglages de la recherche partaient vers le haut dès
-   qu'on parcourait les correspondances, et les faire redescendre chercher pour
-   relire la requête ou recocher « Mot entier » était le geste le plus fréquent de
-   l'écran. */
+/* The panel DOES NOT SCROLL: it is each section that grants scrolling to what
+   must scroll, and to that alone (the list of results, the list of characters).
+   Otherwise the search settings went up out of view as soon as one moved through
+   the matches, and bringing them back down to re-read the query or to re-tick
+   "Whole word" was the most frequent gesture of the screen. */
 .editor-rail-panel {
-  /* Largeur FIXE, cf. l'`overflow` du rail : c'est le rail qui rogne, le panneau
-     ne bouge pas. D'où `flex: none`, qui n'est pas décoratif : par défaut un
-     élément flex a `flex-shrink: 1`, donc pendant le repli (le rail passe de
-     ~480 px à 48) le panneau se serait laissé écraser au lieu d'être rogné, et son
-     texte se serait recomposé à chaque image du glissement. C'est exactement ce
-     que la géométrie du rail cherche à éviter. */
+  /* FIXED width, cf. the rail's `overflow`: it is the rail that clips, the panel
+     does not move. Hence `flex: none`, which is not decorative: by default a flex
+     item has `flex-shrink: 1`, so during the collapse (the rail goes from ~480 px
+     to 48) the panel would have let itself be squeezed instead of being clipped,
+     and its text would have reflowed at every frame of the drag. That is exactly
+     what the rail's geometry sets out to avoid. */
   flex: none;
   width: var(--ed-rail-panel);
   overflow: hidden;
@@ -488,10 +485,10 @@ h3 {
   gap: 8px;
 }
 
-/* Titre de section : petite capitale espacée, le vocabulaire du nom de
-   personnage sur les cartes de dialogue. En `--font-ui` et non dans la serif des
-   h1/h2/h3 : c'est une étiquette d'outil, pas un titre de contenu (les titres
-   d'acte et de scène, eux, restent en Spectral). */
+/* Section title: small letter-spaced caps, the vocabulary of the character name
+   on the dialogue cards. In `--font-ui` and not in the serif of the h1/h2/h3:
+   this is a tool label, not a content title (the act and scene titles, for their
+   part, stay in Spectral). */
 .editor-rail-title {
   flex: 1;
   min-width: 0;
@@ -504,10 +501,10 @@ h3 {
   margin: 0;
 }
 
-/* Ce qui reste du panneau sous sa tête : les sections y posent elles-mêmes leur
-   zone défilante, d'où le `min-height: 0` (sans lui, le minimum automatique d'un
-   élément flex vaut sa hauteur de contenu et rien ne défilerait, même piège que
-   `.play-header-settings-inner` et `.editor-layout`). */
+/* What is left of the panel under its head: the sections lay out their own
+   scrolling area in it, hence the `min-height: 0` (without it, the automatic
+   minimum of a flex item is its content height and nothing would scroll, same
+   trap as `.play-header-settings-inner` and `.editor-layout`). */
 .editor-rail-body {
   flex: 1;
   min-height: 0;
@@ -516,20 +513,19 @@ h3 {
   gap: 10px;
 }
 
-/* ---- Puces de personnage (section « Personnages » du rail) ----
+/* ---- Character chips (the rail's "Characters" section) ----
 
-   Elles vivaient dans le bandeau, où les autres pages ont leur select de
-   personnage. Le bandeau est partagé par cinq pages et n'a de place que pour
-   ce que les cinq ont en commun ; les puces y étaient le seul bloc propre à
-   une page de cette taille, elles poussaient les deux paragraphes de doc et le
-   retour à l'accueil vers le bas, et elles grandissaient avec la distribution,
-   donc la barre d'une pièce à quinze personnages n'avait plus de rapport avec
-   celle d'une pièce à trois. */
+   They used to live in the header, where the other pages have their character
+   select. The header is shared by five pages and only has room for what the five
+   have in common; the chips were the only block of that size specific to one
+   page, they pushed the two paragraphs of doc and the return to the home page
+   downwards, and they grew with the cast, so the bar of a play with fifteen
+   characters had nothing to do with that of a play with three. */
 
-/* Une puce par ligne, et non plus une rangée qui passe à la ligne : dans une
-   colonne de 248 px, des pastilles de largeurs inégales se lisaient en escalier,
-   et alignés les comptes de répliques forment enfin une colonne, donc une
-   distribution de la pièce qui se lit sans compter. */
+/* One chip per line, and no longer a row that wraps: in a column of 248 px,
+   pills of unequal widths read as a staircase, and once aligned the line counts
+   finally form a column, hence a cast list for the play that reads without
+   counting. */
 .character-list {
   list-style: none;
   margin: 0;
@@ -537,22 +533,22 @@ h3 {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  /* La liste est ce qui défile dans cette section (le panneau, lui, ne défile
-     plus) : le formulaire d'ajout reste donc sous les yeux d'une distribution à
-     vingt personnages, alors qu'il fallait avant descendre le chercher.
-     `flex: 0 1 auto` et surtout PAS `flex: 1` : elle doit faire la hauteur de son
-     contenu et ne se laisser comprimer (donc défiler) que quand il n'y a plus la
-     place. Avec `flex: 1` elle prenait toute la colonne même à trois
-     personnages, et poussait le formulaire d'ajout tout en bas du panneau, à un
-     écran de la liste qu'il complète. */
+  /* The list is what scrolls in this section (the panel itself no longer
+     scrolls): the add form therefore stays in front of the eyes with a cast of
+     twenty characters, whereas one had to scroll down to find it before.
+     `flex: 0 1 auto` and above all NOT `flex: 1`: it must be the height of its
+     content and only let itself be squeezed (hence scroll) when there is no room
+     left. With `flex: 1` it took the whole column even with three characters, and
+     pushed the add form right to the bottom of the panel, a screen away from the
+     list it completes. */
   flex: 0 1 auto;
   min-height: 0;
   overflow-y: auto;
   scrollbar-gutter: stable;
 }
 
-/* Le personnage et, quand elle est ouverte, sa palette : deux blocs empilés
-   dans le même élément de liste. */
+/* The character and, when it is open, its palette: two blocks stacked in the
+   same list item. */
 .character-item {
   display: flex;
   flex-direction: column;
@@ -563,16 +559,16 @@ h3 {
   display: flex;
   align-items: center;
   gap: 7px;
-  /* Blanc sur le crème du rail : les puces portent du contenu, donc elles se
-     posent sur le papier comme tout le reste du site (cartes de dialogue,
-     panneau des répliques, cartes d'accueil). Le crème, lui, est passé au fond
-     du rail, qui est la barre latérale que `--ed-sidebar` annonçait. */
+  /* White on the rail's cream: the chips carry content, so they lie on the paper
+     like everything else on the site (dialogue cards, lines panel, home page
+     cards). The cream has moved to the rail's background, which is the sidebar
+     `--ed-sidebar` was announcing. */
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 3px 6px 3px 8px;
-  /* Plus de `position: relative` : la palette de couleurs n'est plus accrochée
-     à la puce, elle se pose dans le flux du panneau. */
+  /* No more `position: relative`: the colour palette is no longer anchored to
+     the chip, it lies in the panel's flow. */
 }
 
 .chip-delete {
@@ -608,45 +604,46 @@ h3 {
   z-index: 19;
 }
 
-/* La palette ne pend plus sous la puce : elle se pose DANS LE FLUX du panneau,
-   sous le personnage, et pousse les suivants. Trois raisons, dont deux nouvelles.
-   (1) Le panneau du rail défile, donc il rogne tout enfant absolu : accrochée à
-   la puce, la palette serait coupée par le bord du panneau.
-   (2) Elle prend la largeur du panneau et ses pastilles la taille de leur case :
-   il n'y a plus rien à faire déborder, ce qui était TOUTE la raison de la barre
-   basse en fenêtre étroite (règle supprimée, avec l'agrandissement des pastilles
-   qui allait avec).
-   (3) Dans une colonne, un tiroir qui pousse la liste se lit mieux qu'une boîte
-   qui recouvre le personnage voisin.
-   Il ne reste que `position: relative` + `z-index`, et pour le seul empilement :
-   le fond plein écran qui ferme la palette est à 19, elle doit passer au-dessus.
-   C'est aussi pour ça que le rail ne prend ni `position` ni `z-index`. */
-/* Dix colonnes, donc deux rangées : Tableau 10 en haut, ses dix teintes claires
-   en bas. C'est la structure de tab20, d'où la palette est tirée, et ça rend le
-   choix lisible (une couleur et sa version pâle sont l'une sous l'autre) là où
-   six colonnes coupaient la série au milieu.
-   La gouttière descend de 7 à 4 px pour la même raison qu'il y a dix colonnes :
-   le panneau du rail fait 233 px de contenu par défaut, et dix pastilles de
-   18 px plus neuf gouttières de 7 px en demandent 243, donc la dernière colonne
-   sortait du panneau, qui la rognait (`overflow: clip`). */
+/* The palette no longer hangs under the chip: it lies IN THE FLOW of the panel,
+   under the character, and pushes the following ones. Three reasons, two of them
+   new.
+   (1) The rail's panel scrolls, so it clips any absolutely positioned child:
+   anchored to the chip, the palette would be cut off by the panel's edge.
+   (2) It takes the panel's width and its pills the size of their cell: there is
+   nothing left to overflow, which was the WHOLE reason for the bottom bar in a
+   narrow window (rule removed, along with the enlargement of the pills that went
+   with it).
+   (3) In a column, a drawer that pushes the list reads better than a box that
+   covers the neighbouring character.
+   All that is left is `position: relative` + `z-index`, and for stacking alone:
+   the full-screen backdrop that closes the palette is at 19, it must pass above.
+   That is also why the rail takes neither `position` nor `z-index`. */
+/* Ten columns, hence two rows: Tableau 10 on top, its ten light hues below. That
+   is the structure of tab20, from which the palette is drawn, and it makes the
+   choice legible (a colour and its pale version are one under the other) where
+   six columns cut the series in the middle.
+   The gutter goes down from 7 to 4 px for the same reason there are ten columns:
+   the rail's panel is 233 px of content by default, and ten pills of 18 px plus
+   nine gutters of 7 px ask for 243, so the last column went out of the panel,
+   which clipped it (`overflow: clip`). */
 .swatch-popover {
   position: relative;
   z-index: 20;
   display: grid;
   grid-template-columns: repeat(10, minmax(0, 1fr));
   gap: 4px;
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 9px;
   box-shadow: 0 8px 24px rgba(43, 43, 40, 0.12);
 }
 
-/* La pastille prend la taille de SA CASE, elle ne l'impose pas : la largeur du
-   rail se règle à la souris (200 à 560 px), donc une taille fixe déborderait en
-   bas de course et laisserait dix pastilles perdues dans un panneau large en
-   haut de course. `aspect-ratio` la garde ronde, et le plafond l'empêche de
-   devenir un gros bouton quand le panneau est étiré. */
+/* The pill takes the size of ITS CELL, it does not impose it: the rail's width
+   is tuned with the mouse (200 to 560 px), so a fixed size would overflow at the
+   bottom of the range and would leave ten pills lost in a wide panel at the top
+   of it. `aspect-ratio` keeps it round, and the cap keeps it from becoming a big
+   button when the panel is stretched. */
 .swatch-popover .swatch {
   width: 100%;
   max-width: 20px;
@@ -666,11 +663,11 @@ h3 {
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink);
 }
 
-/* Le nom prend la place et se coupe en « … » (classe partagée `.truncate` de
-   theme.css, posée en JSX) : un nom à rallonge ne doit pas pousser le compte de
-   répliques et le ✕ hors du rail. `min-width: 0` va avec dans un conteneur flex,
-   sans quoi l'élément refuse de descendre sous la largeur de son texte et ne se
-   coupe jamais. */
+/* The name takes the room and is cut off with "…" (shared class `.truncate` from
+   theme.css, set in JSX): a name of excessive length must not push the line count
+   and the ✕ out of the rail. `min-width: 0` goes with it in a flex container,
+   without which the element refuses to go below the width of its text and is
+   never cut off. */
 .character-name {
   background: none;
   border: none;
@@ -689,16 +686,16 @@ h3 {
 }
 
 .character-rename-input {
-  /* Élastique, là où 130 px étaient mesurés pour une rangée horizontale. */
+  /* Elastic, where 130 px were measured for a horizontal row. */
   flex: 1;
   min-width: 0;
   padding: 2px 6px;
   font-size: 13.5px;
 }
 
-/* Le même compte de répliques dans les deux sections du rail qui en portent un,
-   la distribution et le plan : une seule règle, sinon les deux colonnes de
-   chiffres du même panneau finissent par ne plus se ressembler. */
+/* The same line count in the two sections of the rail that carry one, the cast
+   and the outline: a single rule, otherwise the two columns of numbers of the
+   same panel end up no longer looking alike. */
 .character-count,
 .structure-count {
   font-family: var(--font-mono);
@@ -714,15 +711,14 @@ h3 {
   color: var(--ink-soft);
 }
 
-/* En colonne, comme la liste au-dessus : les 170 px du champ étaient mesurés
-   pour une rangée horizontale dans le bandeau. Il se pose JUSTE SOUS la liste (le
-   `gap` du panneau suffit à l'en écarter) et ne défile pas avec elle, donc il
-   reste sous les yeux d'une distribution à vingt noms.
-   Pas de filet ici, contrairement à la Recherche : là-bas il annonce une
-   frontière réelle, la liste des résultats défilant toujours ; ici la liste
-   s'arrête à son contenu la plupart du temps, et un trait en travers du panneau
-   sous trois personnages ne séparerait rien. Quand elle défile pour de bon, c'est
-   son ascenseur qui le dit. */
+/* In a column, like the list above: the 170 px of the field were measured for a
+   horizontal row in the header. It lies JUST UNDER the list (the panel's `gap` is
+   enough to keep it clear of it) and does not scroll with it, so it stays in
+   front of the eyes with a cast of twenty names.
+   No rule here, unlike in Search: over there it announces a real boundary, the
+   results list always scrolling; here the list stops at its content most of the
+   time, and a line across the panel under three characters would separate
+   nothing. When it does scroll for real, it is its scrollbar that says so. */
 .character-add {
   flex: none;
   display: flex;
@@ -740,38 +736,38 @@ h3 {
   align-self: flex-end;
 }
 
-/* ---- Plan de la pièce (section « Structure » du rail) ----
+/* ---- Play outline (the rail's "Structure" section) ----
 
-   Elle a remplacé les deux `<select>` du bandeau partagé et les boutons
-   « + Scène » / « + Acte » qui les suivaient, comme les puces de personnage
-   avaient remplacé son select de personnage, et pour le même motif : sur la
-   Répétition et l'Enregistrement on CHOISIT une scène dans un contenu figé, dans
-   l'Édition on la façonne. Une liste déroulante n'affiche qu'une ligne à la fois,
-   donc la forme de la pièce ne se lisait nulle part.
+   It has replaced the two `<select>` of the shared header and the "+ Scene" /
+   "+ Act" buttons that followed them, as the character chips had replaced its
+   character select, and for the same motive: on Rehearsal and Recording one
+   CHOOSES a scene in frozen content, in Editing one shapes it. A drop-down list
+   only shows one line at a time, so the shape of the play could be read nowhere.
 
-   L'ordre des blocs raconte la pièce du général au particulier : son titre, ses
-   actes, ses scènes ; et « + Acte » est en pied, hors du défilement. */
+   The order of the blocks tells the play from the general to the particular: its
+   title, its acts, its scenes; and "+ Act" is at the foot, outside the
+   scrolling. */
 
-/* Le titre de la pièce est le SEUL champ du plan : un acte et une scène tirent
-   leur libellé de leur rang et ne se renomment pas (cf. StructurePanel.jsx).
-   Le cadre vient de `theme.css` (`input[type="text"]`, plus spécifique qu'une
-   classe seule) ; il ne reste ici qu'à dire le survol : le filet prend l'accent,
-   le fond ne bouge pas. */
+/* The play's title is the ONLY field of the outline: an act and a scene take
+   their label from their rank and are not renamed (cf. StructurePanel.jsx).
+   The frame comes from `theme.css` (`input[type="text"]`, more specific than a
+   class alone); all that is left here is to say the hover: the rule takes the
+   accent, the background does not move. */
 .structure-field:hover {
   border-color: var(--accent);
 }
 
-/* La racine du plan. Le champ vivait dans le bandeau, en 19 px : ici il en fait
-   18, la largeur utile passant de la barre entière aux 248 px du panneau.
-   Il garde le cadre blanc que `theme.css` donne à tout `input[type="text"]`, comme
-   les deux autres champs du rail (l'ajout de personnage, la requête de recherche),
-   et n'ajoute que sa serif : c'est ce qui le fait lire comme un champ et pas comme
-   un titre affiché, alors que la rangée du haut du bandeau montre la même chaîne
-   au même instant. Il portait `border: none` plus un filet du bas pour ressembler
-   à un titre souligné, et ces déclarations n'ont jamais rien fait : `input[type=
-   "text"]` (un élément plus un attribut) est plus spécifique qu'une classe seule,
-   donc le cadre partagé gagnait déjà du temps du bandeau. Elles sont retirées
-   plutôt que rendues gagnantes, l'aspect obtenu étant celui qu'on veut ici. */
+/* The root of the outline. The field used to live in the header, at 19 px: here
+   it is 18, the usable width going from the whole bar to the panel's 248 px.
+   It keeps the white frame `theme.css` gives to every `input[type="text"]`, like
+   the two other fields of the rail (the character add, the search query), and only
+   adds its serif: that is what makes it read as a field and not as a displayed
+   title, while the header's top row shows the same string at the same moment. It
+   carried `border: none` plus a bottom rule to look like an underlined title, and
+   those declarations never did anything: `input[type="text"]` (an element plus an
+   attribute) is more specific than a class alone, so the shared frame was already
+   winning back in the header days. They are removed rather than made to win, the
+   resulting appearance being the one we want here. */
 .play-title-input {
   flex: none;
   width: 100%;
@@ -782,15 +778,16 @@ h3 {
   padding: 4px 8px;
 }
 
-/* La liste est ce qui défile dans cette section, comme celle des personnages, et
-   pour la même raison : `flex: 0 1 auto` et surtout pas `flex: 1`, sinon une pièce
-   à deux actes pousse « + Acte » au bas du panneau, loin du plan qu'il complète.
-   Elle porte en revanche le filet de `.search-results`, que la liste des
-   personnages n'a pas : le plan d'une vraie pièce (dix scènes dans le premier acte
-   de la nôtre) défile toujours, donc la frontière avec le champ de titre fixe est
-   réelle, et une scène coupée en haut de la liste se lirait comme un défaut
-   d'affichage. Il file jusqu'aux bords du panneau (marges négatives de son
-   remplissage), sinon c'est un soulignement de bloc et pas une division. */
+/* The list is what scrolls in this section, like the characters' one, and for the
+   same reason: `flex: 0 1 auto` and above all not `flex: 1`, otherwise a play with
+   two acts pushes "+ Act" to the bottom of the panel, far from the outline it
+   completes.
+   It does carry the rule of `.search-results`, which the characters list does not:
+   the outline of a real play (ten scenes in the first act of ours) always scrolls,
+   so the boundary with the fixed title field is real, and a scene cut off at the
+   top of the list would read as a display glitch. It runs to the edges of the
+   panel (negative margins of its padding), otherwise it is a block underline and
+   not a division. */
 .structure-acts {
   list-style: none;
   margin: 0 -12px;
@@ -805,12 +802,12 @@ h3 {
   border-top: 1px solid var(--border);
 }
 
-/* Trois pixels entre les rangées : chacune est maintenant une tuile pleine, donc
-   il faut voir le crème du panneau entre deux voisines, sinon la pile se lit comme
-   une seule surface découpée. Deux suffisaient du temps où les rangées étaient
-   transparentes (l'écart n'y servait qu'à éviter que le filet d'une rangée
-   survolée ou ouverte ne se lise en trait double avec celui de sa voisine). Il en
-   va de même entre les scènes d'un acte, d'où le flex sur leur liste. */
+/* Three pixels between the rows: each is now a solid tile, so the panel's cream
+   must be visible between two neighbours, otherwise the stack reads as a single
+   cut-up surface. Two were enough back when the rows were transparent (the gap
+   only served to keep the rule of a hovered or open row from reading as a double
+   line with that of its neighbour). The same goes between the scenes of an act,
+   hence the flex on their list. */
 .structure-act {
   display: flex;
   flex-direction: column;
@@ -823,28 +820,28 @@ h3 {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  /* Le retrait des scènes sous leur acte, qui redit à l'alignement ce que les
-     deux tuiles disent déjà à la couleur (pas de filet ni de guide vertical, qui
-     dans une colonne de 248 px ajoutent une ligne à lire pour une information que
-     l'alignement donne déjà). Il vaut la poignée plus son écart, donc une scène
-     commence là où commence le nom de son acte. */
+  /* The indent of the scenes under their act, which says again through alignment
+     what the two tiles already say through colour (no rule and no vertical guide,
+     which in a column of 248 px add a line to read for information the alignment
+     already gives). It equals the handle plus its gap, so a scene starts where
+     the name of its act starts. */
   padding: 0 0 0 19px;
 }
 
-/* Une rangée de plan : la poignée, le nom, le compte, le ✕.
-   **C'est une TUILE, et sa couleur dit son niveau.** Les deux rangées étaient
-   transparentes, donc de la couleur du panneau : le plan n'était qu'une colonne de
-   texte où seule la scène ouverte posait quelque chose, et rien ne distinguait un
-   acte d'une scène que sa serif et son retrait. Un acte prend maintenant le vin
-   très éclairci `--ed-tile-act` et une scène le blanc des surfaces qui portent du contenu
-   (`--card`, comme les puces de personnage juste à côté dans le rail), donc l'acte
-   se lit comme la bande qui contient les cartes de ses scènes, et c'est LUI qui
-   ressort. Un acte est le seul objet du panneau à ne pas être blanc, et c'est
-   voulu : ce n'est pas du contenu, c'est un intertitre.
-   Le remplissage passe de 1 à 3 px en haut et en bas et cesse d'être nul à gauche :
-   une tuile a besoin d'air, et la poignée touchait son bord.
-   Le filet transparent au repos reste ce qui empêche la scène courante de décaler
-   ses voisines quand elle prend le sien (même règle que `.search-hit`). */
+/* A row of the outline: the handle, the name, the count, the ✕.
+   **It is a TILE, and its colour says its level.** Both rows were transparent,
+   hence the colour of the panel: the outline was only a column of text where the
+   open scene alone laid something down, and nothing distinguished an act from a
+   scene but its serif and its indent. An act now takes the heavily lightened wine
+   `--ed-tile-act` and a scene the white of the surfaces that carry content
+   (`--card`, like the character chips right next to it in the rail), so the act
+   reads as the band that contains the cards of its scenes, and it is IT that
+   stands out. An act is the only object of the panel not to be white, and that is
+   deliberate: it is not content, it is a subheading.
+   The padding goes from 1 to 3 px at the top and bottom and stops being zero on
+   the left: a tile needs air, and the handle was touching its edge.
+   The transparent rule at rest remains what keeps the current scene from shifting
+   its neighbours when it takes its own (same rule as `.search-hit`). */
 .structure-row {
   display: flex;
   align-items: center;
@@ -865,14 +862,14 @@ h3 {
   color: var(--ed-title);
 }
 
-/* Une rangée de SCÈNE s'ouvre en entier, pas seulement par son bouton : c'est la
-   ligne qui est l'objet, et le survol doit donc allumer la ligne et pas le mot.
-   Le `:not` est nécessaire, à égalité de spécificité avec la règle du dessous. Les
-   rangées d'acte n'en prennent rien : leur nom ne mène nulle part.
-   La tuile blanche prend son filet dès le repos, comme une puce de personnage : le
-   crème du panneau ne suffit pas à cerner du blanc. Le survol la fait passer au
-   lilas de l'accent, la scène ouverte y ajoute le filet plein : rien ne bouge à
-   l'écran entre les trois états, seule la teinte monte. */
+/* A SCENE row opens as a whole, not only through its button: it is the line that
+   is the object, so the hover must light the line and not the word.
+   The `:not` is necessary, at equal specificity with the rule below. Act rows take
+   nothing of it: their name leads nowhere.
+   The white tile takes its rule from the resting state on, like a character chip:
+   the panel's cream is not enough to outline white. The hover moves it to the
+   accent's lilac, the open scene adds the solid rule to that: nothing moves on
+   screen between the three states, only the hue rises. */
 .structure-row.scene {
   cursor: pointer;
   background: var(--card);
@@ -884,34 +881,34 @@ h3 {
   background: var(--accent-soft);
 }
 
-/* La scène ouverte, en accent : c'est la rangée qui dit où on est, et elle le dit
-   aussi par `aria-current` (cf. StructurePanel.jsx). */
+/* The open scene, in accent: it is the row that says where one is, and it says so
+   through `aria-current` too (cf. StructurePanel.jsx). */
 .structure-row.scene.current {
   border-color: var(--accent);
   background: var(--accent-soft);
 }
 
-/* L'acte qui la contient prend l'accent sur son seul nom, et pas le cadre de la
-   scène : deux rangées encadrées l'une sous l'autre se disputeraient le « vous
-   êtes ici », alors que la scène est le seul objet vraiment ouvert. Il sert à
-   retrouver où l'on est dans un plan qui dépasse la hauteur du panneau, quand la
-   scène courante a défilé hors de vue.
-   C'est l'accent ASSOMBRI (`--ed-accent-ink`) depuis que la rangée porte une tuile
-   pleine : sur celle-ci `--accent` ne tient que 3,7:1. L'encre est violette sur une
-   bande vinée, donc la teinte ET la clarté l'en détachent, et c'est le même écart
-   de clarté qui distingue les deux libellés d'un acte courant, son nom en accent et
-   son compte en gris. */
+/* The act that contains it takes the accent on its name alone, and not the frame
+   of the scene: two framed rows one under the other would fight over the "you are
+   here", when the scene is the only object really open. It serves to find where one
+   is in an outline that exceeds the height of the panel, when the current scene has
+   scrolled out of view.
+   It is the DARKENED accent (`--ed-accent-ink`) now that the row carries a solid
+   tile: on it `--accent` only holds 3.7:1. The ink is purple on a wine band, so the
+   hue AND the lightness detach it from it, and it is the same difference in
+   lightness that distinguishes the two labels of a current act, its name in accent
+   and its count in grey. */
 .structure-row.act.current .structure-name {
   color: var(--ed-accent-ink);
 }
 
-/* Même poignée que les répliques (classe `drag-handle` conservée sur le bouton) :
-   c'est le même geste sur un autre objet de la pièce. Il n'en reste qu'à
-   resserrer la boîte, taillée là-bas pour une rangée haute de 40 px.
-   En `--ink-soft` et non plus en `--ed-ghost`, qui est taillé pour du blanc : sur
-   la tuile d'un acte il tombe à 2,4:1, sous le seuil d'un dessin (la tuile a changé
-   de teinte, pas de clarté, donc la mesure tient). C'est du même coup l'encre du ✕
-   qui lui fait face au bout de la rangée. */
+/* Same handle as the lines (class `drag-handle` kept on the button): it is the same
+   gesture on another object of the play. All that is left to do is tighten the box,
+   sized over there for a row 40 px tall.
+   In `--ink-soft` and no longer in `--ed-ghost`, which is sized for white: on the
+   tile of an act it falls to 2.4:1, below the threshold for a drawing (the tile has
+   changed hue, not lightness, so the measurement holds). It is at the same time the
+   ink of the ✕ that faces it at the end of the row. */
 .structure-handle {
   font-size: 13px;
   line-height: 1;
@@ -919,10 +916,10 @@ h3 {
   color: var(--ink-soft);
 }
 
-/* Le nom prend la place et se coupe en « … » comme celui d'un personnage, par la
-   même classe partagée `.truncate` (theme.css) : un libellé à rallonge ne doit pas
-   pousser le compte et le ✕ hors du panneau. Le remplissage du thème (8px 10px)
-   est repris pour une rangée de 13.5 px. */
+/* The name takes the room and is cut off with "…" like that of a character, through
+   the same shared class `.truncate` (theme.css): a label of excessive length must
+   not push the count and the ✕ out of the panel. The theme's padding (8px 10px) is
+   taken over for a row of 13.5 px. */
 .structure-name {
   flex: 1;
   min-width: 0;
@@ -931,35 +928,35 @@ h3 {
   padding: 2px 6px;
 }
 
-/* Le nom d'un acte : du texte, rien de plus. Il reprend la géométrie de
-   `.structure-name` (donc la rangée ne change pas de hauteur) et rien d'autre :
-   ni cadre, ni fond, ni curseur, parce qu'il n'y a rien à faire dessus. */
+/* The name of an act: text, nothing more. It takes over the geometry of
+   `.structure-name` (so the row does not change height) and nothing else: no frame,
+   no background, no cursor, because there is nothing to do on it. */
 .structure-name-static {
   cursor: default;
 }
 
-/* Le nom d'une scène : un BOUTON, seul objet du plan où l'on navigue.
-   **Aucun cadre, aucun fond**, exactement comme le nom d'un acte juste au-dessus.
-   Il en portait, hérités du champ de saisie qu'il remplace, et c'était le dernier
-   endroit du plan à mentir : une case blanche encadrée dans une colonne d'édition
-   se lit comme un texte à taper, or plus rien ne se renomme ici (le libellé vient
-   du rang, cf. structureLabels.js). Ce qui répond au survol et dit où l'on est,
-   c'est la RANGÉE, et c'est aussi la surface qu'on vise pour ouvrir la scène ;
-   allumer le mot par-dessus la rangée doublait le signal, sur deux géométries qui
-   ne se superposent pas. Le seul dessin qui reste propre au bouton est sa bague
-   de focus, qui appartient à ce qui a le clavier.
-   Bénéfice de bord : les rangées d'acte et de scène font enfin la même hauteur
-   (le filet du bouton en donnait deux de plus aux secondes).
-   `text-align: left` et la police héritée sont là parce qu'un `<button>` centre
-   son texte et prend la police du système : sans elles, le plan se lisait en
-   Arial centré au milieu d'une colonne en IBM Plex alignée à gauche. */
+/* The name of a scene: a BUTTON, the only object of the outline one navigates with.
+   **No frame, no background**, exactly like the name of an act just above.
+   It carried some, inherited from the input field it replaces, and it was the last
+   place in the outline to lie: a framed white box in an editing column reads as a
+   text to type, and nothing is renamed here any more (the label comes from the rank,
+   cf. structureLabels.js). What responds to the hover and says where one is, is the
+   ROW, and it is also the surface one aims at to open the scene; lighting the word
+   on top of the row doubled the signal, on two geometries that do not overlap. The
+   only drawing that remains specific to the button is its focus ring, which belongs
+   to whatever has the keyboard.
+   Side benefit: the act and scene rows are finally the same height (the button's
+   rule gave the latter two pixels more).
+   `text-align: left` and the inherited font are here because a `<button>` centres
+   its text and takes the system font: without them, the outline read in Arial,
+   centred, in the middle of a left-aligned IBM Plex column. */
 .structure-scene-name {
-  /* Les trois propriétés qu'un `<button>` doit désapprendre, et PAS le raccourci
-     `font: inherit` : celui-ci réinitialise aussi `font-size`, donc il écrasait
-     les 13,5 px que `.structure-name` pose juste au-dessus (même spécificité,
-     règle plus bas), et le nom d'une scène sortait à 16 px, plus gros que le nom
-     de son acte et plus haut que sa rangée. Sans `font-size` ici, le bouton et le
-     `<span>` de l'acte rendent exactement pareil. */
+  /* The three properties a `<button>` must unlearn, and NOT the `font: inherit`
+     shorthand: that one also resets `font-size`, so it overrode the 13.5 px
+     `.structure-name` sets just above (same specificity, rule further down), and
+     the name of a scene came out at 16 px, bigger than the name of its act and
+     taller than its row. Without `font-size` here, the button and the act's
+     `<span>` render exactly alike. */
   font-family: inherit;
   font-weight: inherit;
   line-height: inherit;
@@ -967,29 +964,29 @@ h3 {
   cursor: pointer;
   background: none;
   border: none;
-  /* Rien à arrondir tant que rien n'est peint : ce rayon est celui de la bague
-     de focus, qui suivrait sinon les angles vifs de la boîte au milieu d'un
-     panneau dont tout le reste est arrondi. */
+  /* Nothing to round as long as nothing is painted: this radius is that of the
+     focus ring, which would otherwise follow the sharp corners of the box in the
+     middle of a panel where everything else is rounded. */
   border-radius: 6px;
 }
 
-/* La bague de focus du THÈME, et pas celle du navigateur : ce bouton est le seul
-   chemin clavier vers l'ouverture d'une scène, et l'`input` qu'il remplace la
-   prenait gratuitement par `input:focus` (theme.css). Sans cette règle, il
-   retombait sur l'anneau par défaut, hors palette. */
+/* The THEME's focus ring, and not the browser's: this button is the only keyboard
+   path to opening a scene, and the `input` it replaces got the ring for free through
+   `input:focus` (theme.css). Without this rule, it fell back on the default ring,
+   outside the palette. */
 .structure-scene-name:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
 
-/* La langue de la pièce, sous son titre. L'étiquette est en encre douce et petite
-   : c'est un réglage qu'on pose une fois, il ne doit pas concurrencer le titre
-   juste au-dessus ni les actes juste en dessous. */
+/* The language of the play, under its title. The label is in soft ink and small:
+   it is a setting one sets once, it must not compete with the title just above nor
+   with the acts just below. */
 .structure-language {
   display: flex;
   align-items: center;
-  /* `wrap` parce que le rail se resserre jusqu'à 200 px : les drapeaux passent
-     sous leur étiquette au lieu de la pousser hors du panneau. */
+  /* `wrap` because the rail narrows down to 200 px: the flags go under their
+     label instead of pushing it out of the panel. */
   flex-wrap: wrap;
   gap: 4px 8px;
   margin-top: 8px;
@@ -1000,24 +997,24 @@ h3 {
   color: var(--ink-soft);
 }
 
-/* Les deux drapeaux, à la place du `<select>` d'avant (cf. StructurePanel.jsx).
-   Ils sont poussés à droite du panneau : l'étiquette ouvre la rangée, la valeur
-   la ferme, comme un champ le faisait. */
+/* The two flags, in place of the earlier `<select>` (cf. StructurePanel.jsx).
+   They are pushed to the right of the panel: the label opens the row, the value
+   closes it, as a field used to do. */
 .structure-language-flags {
   display: flex;
   gap: 4px;
   margin-left: auto;
 }
 
-/* Une vignette de drapeau, qui RÉPOND comme une rangée du plan juste en dessous
-   (lilas de l'accent au survol, filet d'accent plein quand elle est choisie) : ce
-   sont les deux seules choses qu'on désigne dans cette section, et elles doivent
-   répondre pareil.
-   Elle n'en prend pas la TUILE pour autant : un drapeau n'est pas un objet du
-   plan, c'est la valeur d'un champ, et deux vignettes blanches encadrées au-dessus
-   des actes se liraient comme deux rangées de plus.
-   `line-height: 0` parce que la boîte d'un `<label>` réserve sinon la place d'une
-   ligne de texte sous le drapeau, qui n'en a pas. */
+/* A flag thumbnail, which RESPONDS like a row of the outline just below (the
+   accent's lilac on hover, a solid accent rule when it is chosen): these are the
+   only two things one points at in this section, and they must respond the same
+   way.
+   It does not take the TILE for all that: a flag is not an object of the outline,
+   it is the value of a field, and two framed white thumbnails above the acts would
+   read as two more rows.
+   `line-height: 0` because the box of a `<label>` otherwise reserves the room of a
+   line of text under the flag, which has none. */
 .structure-language-flag {
   display: block;
   padding: 4px;
@@ -1027,9 +1024,9 @@ h3 {
   cursor: pointer;
 }
 
-/* Le bouton radio est le vrai contrôle : masqué à l'œil, jamais à la
-   tabulation, donc `opacity: 0` et pas `display: none`, qui le sortirait du
-   parcours clavier et priverait le groupe de sa navigation aux flèches. */
+/* The radio button is the real control: hidden from the eye, never from tabbing,
+   hence `opacity: 0` and not `display: none`, which would take it out of the
+   keyboard path and would deprive the group of its arrow key navigation. */
 .structure-language-flag input {
   position: absolute;
   width: 0;
@@ -1049,34 +1046,34 @@ h3 {
   background: var(--accent-soft);
 }
 
-/* La bague de focus se pose sur le drapeau et non sur l'étiquette qui l'entoure :
-   c'est le dessin qu'on voit, et le `+` évite d'avoir à faire confiance à `:has`
-   pour un chemin clavier. */
+/* The focus ring lands on the flag and not on the label that surrounds it: the
+   drawing is what one sees, and the `+` avoids having to trust `:has` for a
+   keyboard path. */
 .structure-language-flag input:focus-visible + .flag-icon {
   outline: var(--focus-ring);
   outline-offset: 3px;
 }
 
-/* Les deux ajouts du plan, « + Scène » et « + Acte », sont la MÊME chose à deux
-   niveaux, donc ils se dessinent pareil : une tuile fantôme au filet tireté, à la
-   place et à la largeur de l'objet qu'ils créent, avec le lilas de l'accent au
-   survol comme les rangées qu'ils allongent. C'est la forme que la page emploie
-   déjà pour ajouter la première réplique d'une scène (`.add-first-line-btn`).
-   La FORME est reprise, pas la règle : ces deux-là gardent le rayon de 7 px des
-   rangées qu'ils prolongent (là-bas c'est `--radius`, au milieu des cartes de
-   répliques) et le survol de leur panneau, lilas d'accent, quand celui de la
-   colonne prend le crème du rail. Chacun répond comme son voisinage, ce qui est
-   la raison de les garder distincts plutôt que de factoriser quatre déclarations
-   sous une troisième classe que ni l'un ni l'autre ne porterait en entier.
-   Ils ne se ressemblaient pas du tout : « + Scène » était un mot gris sans cadre,
-   « + Acte » un vrai `.btn small` blanc aligné à droite, donc deux gestes voisins
-   et de même nature se lisaient comme un lien et un bouton. Depuis que les rangées
-   du plan sont des tuiles, l'écart se voyait deux fois plus (un mot nu au milieu
-   d'une pile de tuiles n'a plus l'air d'un contrôle du tout).
-   Ce qui les distingue est ce qui distingue leurs objets : le retrait des scènes et
-   le corps du texte. Le filet TIRETÉ n'est pas décoratif, c'est ce qui les sépare
-   des tuiles pleines du plan : ils ne sont pas un acte ni une scène de la pièce,
-   ils en fabriquent un. */
+/* The two additions of the outline, "+ Scene" and "+ Act", are the SAME thing at
+   two levels, so they are drawn the same way: a ghost tile with a dashed rule, at
+   the place and at the width of the object they create, with the accent's lilac on
+   hover like the rows they lengthen. It is the shape the page already uses to add
+   the first line of a scene (`.add-first-line-btn`).
+   The SHAPE is taken over, not the rule: these two keep the 7 px radius of the
+   rows they extend (over there it is `--radius`, in the middle of the line cards)
+   and the hover of their panel, accent lilac, when the column's takes the rail's
+   cream. Each responds like its neighbourhood, which is the reason to keep them
+   distinct rather than factor four declarations under a third class that neither
+   of them would carry in full.
+   They did not look alike at all: "+ Scene" was a grey word with no frame,
+   "+ Act" a real white `.btn small` aligned right, so two neighbouring gestures of
+   the same nature read as a link and a button. Now that the outline's rows are
+   tiles, the gap showed twice as much (a bare word in the middle of a stack of
+   tiles no longer looks like a control at all).
+   What distinguishes them is what distinguishes their objects: the indent of the
+   scenes and the size of the text. The DASHED rule is not decorative, it is what
+   separates them from the solid tiles of the outline: they are not an act nor a
+   scene of the play, they make one. */
 .structure-add {
   align-self: stretch;
   text-align: left;
@@ -1089,58 +1086,57 @@ h3 {
   transition: color 0.12s, background 0.12s, border-color 0.12s;
 }
 
-/* L'accent assombri pour le texte (cf. `--ed-accent-ink`) : sur le lilas,
-   `--accent` ne tient que 4,4:1, et ces deux libellés sont les plus petits du
-   panneau. Le filet, lui, prend l'accent plein, comme la rangée d'une scène
-   ouverte. */
+/* The darkened accent for the text (cf. `--ed-accent-ink`): on the lilac,
+   `--accent` only holds 4.4:1, and these two labels are the smallest of the panel.
+   The rule, for its part, takes the accent at full strength, like the row of an
+   open scene. */
 .structure-add:hover {
   color: var(--ed-accent-ink);
   border-color: var(--accent);
   background: var(--accent-soft);
 }
 
-/* La bague du thème et pas l'anneau du navigateur, et c'est le PANNEAU qui décide :
-   ses deux autres contrôles dessinés la portent déjà (`.structure-scene-name`, la
-   vignette de drapeau), or ces deux ajouts ont maintenant la forme et la place
-   d'une rangée du plan. Sans elle, tabuler dans le panneau alternait deux anneaux
-   sur des objets de même silhouette. Ce n'était pas une régression (en `.btn`
-   comme aujourd'hui ils retombaient sur l'anneau natif), c'est la mise au niveau
-   de leurs voisins. */
+/* The theme's ring and not the browser's, and it is the PANEL that decides: its two
+   other drawn controls already carry it (`.structure-scene-name`, the flag
+   thumbnail), and these two additions now have the shape and the place of a row of
+   the outline. Without it, tabbing through the panel alternated two rings on
+   objects of the same silhouette. It was not a regression (as `.btn`, like today,
+   they fell back on the native ring), it is bringing them up to the level of their
+   neighbours. */
 .structure-add:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
 
-/* Sous les scènes de SON acte et à leur retrait : c'est là qu'il ajoute, et il a
-   la largeur de la scène qui va s'y poser. */
+/* Under the scenes of ITS act and at their indent: that is where it adds, and it has
+   the width of the scene that is going to land there. */
 .structure-add-scene {
   margin-left: 19px;
   font-size: 11.5px;
   padding: 3px 8px;
 }
 
-/* Hors du défilement de la liste, comme le formulaire d'ajout des personnages, et
-   à la largeur d'un acte. Il ne porte plus `.btn` : un bouton blanc de 13 px aligné
-   à droite ne pouvait pas ressembler à « + Scène » sans que l'un des deux mente sur
-   ce qu'il fait. */
+/* Outside the list's scrolling, like the character add form, and at the width of an
+   act. It no longer carries `.btn`: a white 13 px button aligned right could not look
+   like "+ Scene" without one of the two lying about what it does. */
 .structure-add-act {
   flex: none;
   font-size: 13px;
   padding: 5px 10px;
 }
 
-/* ---- Recherche (section « Recherche » du rail) ----
+/* ---- Search (the rail's "Search" section) ----
 
-   L'ordre des blocs : comment je cherche (les deux cases), ce que je cherche, ce
-   que je mets à la place, combien et où, puis les résultats. Ce sont les deux
-   CHAMPS qui doivent se toucher, comme dans un éditeur de code : on tape l'un,
-   on tape l'autre, on relit les deux avant de remplacer, et le chevron qui ouvre
-   le second doit être à côté de ce qu'il fait apparaître. Les cases, qui règlent
-   la recherche, se lisent très bien avant elle ; entre les deux champs, elles les
-   séparaient de trois blocs et le remplacement ne se lisait plus comme la suite
-   de la requête. */
+   The order of the blocks: how I search (the two checkboxes), what I search for,
+   what I put in its place, how many and where, then the results. It is the two
+   FIELDS that must touch each other, as in a code editor: one types in the first,
+   one types in the second, one re-reads both before replacing, and the chevron
+   that opens the second must be next to what it makes appear. The checkboxes,
+   which tune the search, read very well before it; between the two fields, they
+   separated them by three blocks and the replacement no longer read as the
+   continuation of the query. */
 
-/* Les réglages, en tête et hors du défilement. */
+/* The settings, at the head and outside the scrolling. */
 .search-controls {
   flex: none;
   display: flex;
@@ -1154,16 +1150,15 @@ h3 {
   gap: 4px;
 }
 
-/* Le chevron de dévoilement du remplacement. Il pointe vers le bas quand il est
-   fermé, vers le haut quand il est ouvert : il désigne ce qu'il fait apparaître.
-   **Encadré au repos et haut comme le champ** (`align-self: stretch`, donc aucune
-   hauteur à tenir synchrone avec le remplissage du champ) : c'est le seul chemin
-   vers le remplacement, or le premier essai n'était qu'un glyphe gris sans cadre
-   posé au bord d'un champ de saisie, où il se lisait comme une décoration du champ
-   plutôt que comme un bouton. Un cadre et un fond de carte en font un contrôle
-   attaché au champ, comme la boîte de recherche d'un éditeur de code. Ouvert, il
-   passe à l'accent, plein comme une case cochée : il dit alors que le champ du
-   dessous vient de lui. */
+/* The disclosure chevron of the replacement. It points down when it is closed, up
+   when it is open: it designates what it makes appear.
+   **Framed at rest and as tall as the field** (`align-self: stretch`, hence no
+   height to keep in sync with the field's padding): it is the only path to the
+   replacement, and the first attempt was only a grey glyph with no frame set at the
+   edge of an input field, where it read as a decoration of the field rather than as
+   a button. A frame and a card background make it a control attached to the field,
+   like the search box of a code editor. Open, it moves to the accent, solid like a
+   ticked checkbox: it then says that the field below comes from it. */
 .search-replace-toggle {
   flex: none;
   align-self: stretch;
@@ -1199,11 +1194,11 @@ h3 {
   transform: rotate(180deg);
 }
 
-/* Décalé de la largeur du chevron plus la gouttière de sa rangée (26 + 4) : le
-   champ de remplacement s'aligne ainsi exactement sur le champ de requête, et le
-   bloc entier se lit comme le dépliage du bouton qui est à sa gauche. Sans ce
-   décalage les deux champs faisaient deux largeurs différentes, et le second
-   avait l'air d'appartenir au panneau plutôt qu'à la requête. */
+/* Offset by the width of the chevron plus the gutter of its row (26 + 4): the
+   replacement field thus aligns exactly on the query field, and the whole block
+   reads as the unfolding of the button that is to its left. Without this offset the
+   two fields were two different widths, and the second looked as if it belonged to
+   the panel rather than to the query. */
 .search-replace {
   display: flex;
   flex-direction: column;
@@ -1217,26 +1212,26 @@ h3 {
   font-size: 13.5px;
 }
 
-/* Le champ de requête partage sa rangée avec le chevron. */
+/* The query field shares its row with the chevron. */
 .search-query-row .search-field {
   flex: 1;
   min-width: 0;
 }
 
-/* Les deux cases côte à côte, et en `flex-wrap` comme les quatre réglages de la
-   Répétition : jamais un nombre de colonnes fixé, qui alignerait la courte sur la
-   longue. Elles tiennent dans les 248 px du panneau par défaut, et repassent l'une
-   sous l'autre d'elles-mêmes quand on resserre le panneau vers ses 200 px. */
+/* The two checkboxes side by side, and in `flex-wrap` like the four settings of the
+   Rehearsal page: never a fixed number of columns, which would align the short one
+   on the long one. They fit within the panel's default 248 px, and go back one under
+   the other by themselves when the panel is narrowed towards its 200 px. */
 .search-options {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 12px;
 }
 
-/* La géométrie de l'étiquette (case + texte sur une ligne, toute l'étiquette
-   cliquable) vient de la règle partagée `.checks-row label, .search-options label`
-   de theme.css : la Répétition a la même rangée. Ne reste ici que la voix du
-   panneau, plus petite et à l'encre douce. */
+/* The geometry of the label (checkbox + text on one line, the whole label
+   clickable) comes from the shared rule `.checks-row label, .search-options label`
+   of theme.css: the Rehearsal page has the same row. All that is left here is the
+   panel's voice, smaller and in soft ink. */
 .search-options label {
   font-size: 13px;
   color: var(--ink-soft);
@@ -1248,10 +1243,10 @@ h3 {
   gap: 8px;
 }
 
-/* Le temps que le rendu rattrape la frappe (cf. `searching` dans useSearch.js) :
-   on estompe au lieu de figer, et sans transition d'entrée, sinon un clignotement
-   s'ajoute à chaque caractère tapé. Le retour à l'opacité pleine, lui, est adouci :
-   c'est le moment où la liste devient juste. */
+/* While the rendering catches up with the typing (cf. `searching` in useSearch.js):
+   we fade instead of freezing, and with no transition in, otherwise a flicker is
+   added at every character typed. The return to full opacity, for its part, is
+   eased: that is the moment the list becomes correct. */
 .search-count.stale,
 .search-results.stale {
   opacity: 0.45;
@@ -1262,8 +1257,8 @@ h3 {
   transition: opacity 0.12s ease;
 }
 
-/* Le compte prend la place restante : les flèches restent collées au bord droit
-   du panneau, donc elles ne bougent pas quand le nombre change de longueur. */
+/* The count takes the remaining room: the arrows stay stuck to the right edge of
+   the panel, so they do not move when the number changes length. */
 .search-count {
   flex: 1;
   min-width: 0;
@@ -1282,15 +1277,14 @@ h3 {
   gap: 6px;
 }
 
-/* La SEULE zone défilante de la section : les réglages restent en tête.
-   Le filet du haut n'est pas décoratif : une fois qu'une partie du panneau est
-   fixe et l'autre défilante, rien ne disait plus où passait la frontière, et un
-   résultat coupé en haut de la liste se lisait comme un défaut d'affichage plutôt
-   que comme le bord d'une zone qui défile. Il file jusqu'aux bords du panneau
-   (marges négatives de son remplissage) : une ligne qui s'arrête à douze pixels
-   des bords se lit comme un soulignement de bloc, pas comme une division de
-   panneau. La zone gagne au passage la pleine largeur, donc son ascenseur se pose
-   au bord du panneau. */
+/* The ONLY scrolling area of the section: the settings stay at the head.
+   The top rule is not decorative: once one part of the panel is fixed and the other
+   scrolling, nothing said any more where the boundary ran, and a result cut off at
+   the top of the list read as a display glitch rather than as the edge of an area
+   that scrolls. It runs to the edges of the panel (negative margins of its
+   padding): a line that stops twelve pixels from the edges reads as a block
+   underline, not as a division of the panel. The area gains full width in the
+   process, so its scrollbar sits at the edge of the panel. */
 .search-results {
   flex: 1;
   min-height: 0;
@@ -1301,13 +1295,13 @@ h3 {
   padding: 0 12px;
 }
 
-/* ---- Le contrat de hauteurs de la liste fenêtrée ----
-   `ResultList` (SearchPanel.jsx) ne rend que la tranche visible et calcule les
-   positions à partir de DEUX nombres : 66 px par rangée, 30 px par en-tête de
-   scène. Ils sont écrits ici et là-bas ; les faire diverger décale la liste sous
-   l'ascenseur. Toute hauteur ci-dessous est donc fixe et jamais dérivée du
-   contenu, ce qui rend aussi la hauteur totale exacte dès le premier rendu, donc
-   un ascenseur qui ne se recale pas sous la souris en cours de route. */
+/* ---- The height contract of the windowed list ----
+   `ResultList` (SearchPanel.jsx) only renders the visible slice and computes the
+   positions from TWO numbers: 66 px per row, 30 px per scene header. They are
+   written here and over there; making them diverge shifts the list under the
+   scrollbar. Every height below is therefore fixed and never derived from the
+   content, which also makes the total height exact from the very first render,
+   hence a scrollbar that does not re-adjust under the mouse along the way. */
 .search-flat {
   list-style: none;
   margin: 0;
@@ -1315,9 +1309,9 @@ h3 {
   display: block;
 }
 
-/* 66 = 62 px de rangée + 4 px de gouttière, en REMPLISSAGE bas et pas en `gap` :
-   un `gap` ne compterait pas dans la hauteur de l'élément, donc pas dans le
-   calcul des positions. */
+/* 66 = 62 px of row + 4 px of gutter, as bottom PADDING and not as a `gap`: a
+   `gap` would not count in the height of the element, hence not in the computation
+   of the positions. */
 .search-row {
   height: 66px;
   padding-bottom: 4px;
@@ -1330,8 +1324,8 @@ h3 {
   padding-bottom: 6px;
 }
 
-/* Sur UNE ligne, coupée en « … » : l'en-tête entre dans le contrat des 30 px, et
-   deux titres d'acte et de scène à rallonge passeraient sinon à deux lignes. */
+/* On ONE line, cut off with "…": the header is part of the 30 px contract, and two
+   act and scene titles of excessive length would otherwise go to two lines. */
 .search-group-title {
   display: flex;
   align-items: baseline;
@@ -1351,13 +1345,13 @@ h3 {
   text-overflow: ellipsis;
 }
 
-/* L'acte s'efface derrière la scène : c'est la scène qu'on va ouvrir, l'acte ne
-   sert qu'à la situer. Deux graisses, donc rien à séparer par un signe. */
-/* `--ink-soft` et pas `--ed-ghost` : ce dernier est taillé pour la poignée de
-   glisser d'une réplique sans personnage, un dessin, donc visé à « ≥ 3:1 » ; ici
-   c'est du texte informatif de 12 px, qui demande l'encre la plus claire admise
-   pour du texte (≥ 4.5:1). L'acte s'efface derrière la scène par sa seule
-   graisse, ce qui suffisait déjà à les distinguer. */
+/* The act steps back behind the scene: it is the scene one is going to open, the act
+   only serves to place it. Two weights, hence nothing to separate with a sign. */
+/* `--ink-soft` and not `--ed-ghost`: the latter is sized for the drag handle of a
+   line without a character, a drawing, hence aimed at "≥ 3:1"; here it is
+   informative text at 12 px, which requires the lightest ink allowed for text
+   (≥ 4.5:1). The act steps back behind the scene through its weight alone, which
+   was already enough to tell them apart. */
 .search-group-act {
   color: var(--ink-soft);
   font-weight: 500;
@@ -1367,16 +1361,16 @@ h3 {
   color: var(--ink-soft);
 }
 
-/* Un résultat : le personnage puis l'extrait, sur un bloc blanc posé sur le
-   crème du rail, comme les puces de personnage juste à côté.
-   `height: 100%` remplit la rangée, ce qui est la seule façon d'avoir des cartes
-   toutes de la même hauteur : un extrait qui tient sur une ligne, ou une réplique
-   dont le personnage a disparu, en ferait autrement une plus courte que ses
-   voisines et l'interligne de la liste aurait l'air de changer d'une rangée à
-   l'autre (c'est le bug qu'a valu un `<li>` de trop entre les deux : un
-   pourcentage se résout contre la hauteur du PARENT, donc contre les 66 px de
-   `.search-row`, et pas contre un intermédiaire à hauteur automatique). Rien ne
-   doit donc s'insérer entre la rangée et ce bouton. */
+/* A result: the character then the excerpt, on a white block laid on the rail's
+   cream, like the character chips right next to it.
+   `height: 100%` fills the row, which is the only way to have cards all of the same
+   height: an excerpt that fits on one line, or a line whose character has
+   disappeared, would otherwise make one shorter than its neighbours and the leading
+   of the list would look as if it changed from one row to the next (that is the bug
+   one `<li>` too many between the two earned us: a percentage resolves against the
+   height of the PARENT, hence against the 66 px of `.search-row`, and not against
+   an intermediate of automatic height). So nothing must be inserted between the row
+   and this button. */
 .search-hit {
   width: 100%;
   height: 100%;
@@ -1394,8 +1388,8 @@ h3 {
   border-color: var(--border);
 }
 
-/* La correspondance courante n'est pas signalée par la seule couleur : son
-   bouton porte aussi `aria-current`. */
+/* The current match is not signalled by colour alone: its button also carries
+   `aria-current`. */
 .search-hit.current {
   border-color: var(--accent);
   background: var(--accent-soft);
@@ -1403,7 +1397,7 @@ h3 {
 
 .search-hit-who {
   display: block;
-  /* Hauteur de ligne explicite : elle entre dans l'addition des 62 px. */
+  /* Explicit line height: it is part of the sum making up the 62 px. */
   line-height: 14px;
   font-size: 10.5px;
   font-weight: 700;
@@ -1411,16 +1405,15 @@ h3 {
   text-transform: uppercase;
 }
 
-/* En Spectral, comme partout où le site cite la pièce (texte des répliques,
-   cartes de dialogue, citation des confirmations).
-   Deux lignes, pas plus, et coupé net au-delà : c'est ce qui donne à la rangée sa
-   hauteur fixe, donc un défileur qui ne mente pas et une liste fenêtrable
-   (cf. `.search-row`). On ne
-   perd rien d'essentiel, l'extrait sert à reconnaître la réplique et pas à la
-   lire, et l'occurrence est garantie visible parce que ce qui la précède est bridé
-   à peu près à une ligne (EXCERPT_BEFORE dans search.js).
-   `line-height` en pixels et pas en multiple : c'est un terme de l'addition des
-   62 px, il ne doit pas dépendre de l'arrondi d'un produit. */
+/* In Spectral, as everywhere the site quotes the play (line text, dialogue cards,
+   quotation in the confirmations).
+   Two lines, no more, and cut off beyond that: that is what gives the row its fixed
+   height, hence a scrollbar that does not lie and a list that can be windowed
+   (cf. `.search-row`). Nothing essential is lost, the excerpt serves to recognise
+   the line and not to read it, and the occurrence is guaranteed visible because
+   what precedes it is capped at about one line (EXCERPT_BEFORE in search.js).
+   `line-height` in pixels and not as a multiplier: it is a term in the sum making up
+   the 62 px, it must not depend on the rounding of a product. */
 .search-hit-text {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -1432,8 +1425,8 @@ h3 {
   color: var(--ink);
 }
 
-/* `<mark>` restylé : son jaune par défaut est hors palette, et il est le seul
-   fond de couleur pleine que le navigateur impose. */
+/* `<mark>` restyled: its default yellow is outside the palette, and it is the only
+   solid colour background the browser imposes. */
 .search-hit mark {
   background: color-mix(in srgb, var(--accent) 22%, #fff);
   color: inherit;
@@ -1447,16 +1440,16 @@ h3 {
 
 /* ---- Main column ----
 
-   Les deux titres ne sont plus que des titres : ils DISENT où l'on écrit, et le
-   plan de la pièce (section « Structure » du rail) fait tout le reste, y compris
-   les renommer. Ils étaient des boutons qui se changeaient en champ au clic,
-   d'où la paire de classes `title-display` / `title-input` qui a disparu d'ici,
-   et d'où aussi leur remplissage de 2px 6px, qui était la boîte du bouton et pas
-   celle du titre : il partait avec, donc les deux titres s'alignent maintenant
-   sur le bord gauche du panneau des répliques, au lieu d'être rentrés de 6 px
-   par rapport à lui. Ce sont des `<h2>` et `<h3>`, qui prennent la serif et
-   `--ed-title` des règles d'en-tête ; il ne reste ici que leur corps, leur
-   graisse et l'écart au bloc suivant. */
+   The two titles are now nothing but titles: they SAY where one is writing, and
+   the play's outline (the rail's "Structure" section) does all the rest, including
+   renaming them. They used to be buttons that turned into a field on click, hence
+   the pair of classes `title-display` / `title-input` that has disappeared from
+   here, and hence too their padding of 2px 6px, which was the box of the button
+   and not that of the title: it went away with it, so the two titles now align on
+   the left edge of the lines panel, instead of being indented 6 px relative to it.
+   They are `<h2>` and `<h3>`, which take the serif and `--ed-title` from the
+   heading rules; all that is left here is their size, their weight and the gap to
+   the next block. */
 
 .act-title {
   font-size: 24px;
@@ -1494,7 +1487,7 @@ h3 {
   margin: 4px 0 10px;
 }
 
-/* ---- Line rows (« Rail ») ----
+/* ---- Line rows ("Rail") ----
    One white panel per scene (same white-on-cream contrast as the dialogue
    cards of the other pages), thin rows inside separated by a 1px rule. The
    character's color only paints the ⠿ handle and the select (inline
@@ -1510,9 +1503,9 @@ h3 {
   overflow: hidden;
 }
 
-/* Grille explicite plutôt qu'un flex qui déborde : les quatre éléments ont
-   une place nommée, et le repli étroit (plus bas) se contente de redessiner
-   la grille — pas de wrap subi qui envoie le ✕ sur une 3e ligne. */
+/* An explicit grid rather than a flex that overflows: the four items have a
+   named place, and the narrow reflow (further down) simply redraws the grid;
+   no wrapping imposed on us that sends the ✕ onto a 3rd line. */
 .line-row {
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr) auto;
@@ -1556,7 +1549,7 @@ h3 {
 
 .line-character {
   /* Intrinsic width: a select sizes itself to its LONGEST option, so every
-     row's dropdown arrow aligns on the longest character name — no dead
+     row's dropdown arrow aligns on the longest character name, with no dead
      margin after short names. */
   width: auto;
   max-width: 220px;
@@ -1611,7 +1604,7 @@ h3 {
 }
 
 /* The button fills the whole band so a click anywhere in the (row-wide)
-   hover zone inserts — no need to aim for the centred pill. */
+   hover zone inserts, with no need to aim for the centred pill. */
 .insert-zone button {
   position: absolute;
   inset: 0;
@@ -1676,32 +1669,32 @@ h3 {
   font-size: 14.5px;
 }
 
-/* Les deux paragraphes de doc du bandeau sont rendus par PlayHeader, dans la
-   même `.header-hint` (theme.css). L'éditeur est le seul à y mettre un lien,
-   d'où les seules règles qui restent ici.
-   Ce lien vers une autre page du site est le sceau de la page visée PLUS son
-   nom, jamais un mot souligné : c'est la forme qu'a déjà le retour à l'accueil
-   en pied de bandeau (logo + mot, sans soulignement), et le site nomme ses
-   pages par leur pastille partout ailleurs (cartes d'accueil, bandeaux, journal
-   des dépôts). Les couleurs viennent de la classe `page-<clé>` posée sur le
-   lien : rien de codé en dur ici, et l'accent violet de l'éditeur ne teinte pas
-   une destination qui est verte. */
-/* Élément `inline` et pas `inline-flex` : le mot doit s'asseoir sur la ligne de
-   base du paragraphe comme n'importe quel autre mot, et une boîte flex n'expose
-   pas la ligne de base de son texte (il fallait la recentrer à la main, avec
-   `vertical-align: middle`, et elle retombait un pixel trop bas). Le sceau, lui,
-   est décalé pour son propre compte (cf. `.hint-page-mark`), sur le modèle de
-   `.warn-icon` dans theme.css. `nowrap` garde le sceau et le mot sur la même
-   ligne : le rond seul en fin de ligne ne voudrait rien dire. */
+/* The header's two paragraphs of doc are rendered by PlayHeader, in the same
+   `.header-hint` (theme.css). The editor is the only one to put a link in them,
+   hence the only rules that remain here.
+   This link to another page of the site is the seal of the target page PLUS its
+   name, never an underlined word: it is the shape the return to the home page at
+   the foot of the header already has (logo + word, with no underline), and the
+   site names its pages by their pill everywhere else (home page cards, headers,
+   upload log). The colours come from the class `page-<key>` set on the link:
+   nothing hard-coded here, and the editor's purple accent does not tint a
+   destination that is green. */
+/* An `inline` element and not `inline-flex`: the word must sit on the baseline of
+   the paragraph like any other word, and a flex box does not expose the baseline
+   of its text (it had to be re-centred by hand, with `vertical-align: middle`, and
+   it landed one pixel too low). The seal, for its part, is offset on its own
+   account (cf. `.hint-page-mark`), on the model of `.warn-icon` in theme.css.
+   `nowrap` keeps the seal and the word on the same line: the disc alone at the end
+   of a line would mean nothing. */
 .hint-page-link {
   white-space: nowrap;
-  /* Sur un élément inline, le remplissage vertical peint la nappe sans écarter
-     les lignes du paragraphe : il n'est là que pour couvrir le sceau, qui
-     dépasse de la boîte de contenu du texte. Le remplissage droit, lui, sert la
-     nappe et pas l'espacement, d'où la marge négative qui l'annule : sans elle
-     le mot suivant se retrouvait à deux espaces du lien, ce qui se lit comme
-     une coquille. L'espace du JSX reste, lui : c'est la seule occasion de
-     retour à la ligne entre le lien et la suite de la phrase. */
+  /* On an inline element, the vertical padding paints the wash without pushing
+     the lines of the paragraph apart: it is only there to cover the seal, which
+     sticks out of the content box of the text. The right padding, for its part,
+     serves the wash and not the spacing, hence the negative margin that cancels
+     it: without it the next word ended up two spaces away from the link, which
+     reads as a typo. The JSX space does stay: it is the only opportunity for a
+     line break between the link and the rest of the sentence. */
   padding: 3px 6px 3px 3px;
   margin-right: -5px;
   border-radius: 999px;
@@ -1711,75 +1704,73 @@ h3 {
   transition: background 0.15s;
 }
 
-/* Même intention que le retour à l'accueil (le fond du sceau s'étend et englobe
-   le mot, pour qu'ils se lisent comme un seul objet), mais PAS le même moyen, et
-   la différence est voulue : là-bas la nappe est un dégradé radial en `::before`,
-   parce qu'un fond plein y laissait une arête au bord de sa boîte sur les 36 px
-   de pastille posés au milieu d'un bandeau vide. Ici la pastille fait 19 px dans
-   une ligne de texte, la « boîte » est une gélule haute d'une ligne serrée entre
-   deux mots, et son bord est exactement ce qu'on veut voir : c'est lui qui
-   montre où commence et où finit le lien. Pas de pas d'un pixel vers le haut non
-   plus, il ferait sauter la ligne de texte autour. */
+/* Same intention as the return to the home page (the seal's background spreads and
+   takes in the word, so that they read as a single object), but NOT the same means,
+   and the difference is deliberate: over there the wash is a radial gradient in a
+   `::before`, because a solid background left an edge at the border of its box on
+   the 36 px pill set in the middle of an empty header. Here the pill is 19 px
+   within a line of text, the "box" is a capsule one line tall squeezed between two
+   words, and its edge is exactly what we want to see: it is what shows where the
+   link begins and where it ends. No one-pixel step upwards either, it would make
+   the line of text around it jump. */
 .hint-page-link:hover {
   background: var(--page-mark-soft);
 }
 
-/* Bague bâtie sur la couleur de la page visée, comme celle du lien de retour à
-   l'accueil l'est sur `--header-accent` : la bague partagée dérive de
-   `--accent`, que cette page re-skinne en violet. */
+/* A ring built on the colour of the target page, as the one of the link back to the
+   home page is built on `--header-accent`: the shared ring derives from `--accent`,
+   which this page re-skins in purple. */
 .hint-page-link:focus-visible {
   outline: 2px solid var(--page-mark);
   outline-offset: 2px;
 }
 
-/* La pastille de doc est la plus petite du site : elle vit dans du 13.5 px, où
-   les 36 px du sceau feraient trois lignes de haut. L'icône de l'Avancement
-   (deux barres) se lit encore à cette taille ; un sceau au dessin plus fin
-   demanderait de remonter.
-   Préfixée par `.play-header` pour la même raison que `.play-header-home-mark`
-   l'est dans theme.css : la règle mobile qui rapetisse les sceaux du bandeau
-   vise `.play-header .page-mark`, et sans ce préfixe elle ramènerait cette
-   pastille de 19 à 30 px sous 800 px, soit plus grande qu'en large. */
+/* The doc pill is the smallest of the site: it lives inside 13.5 px text, where the
+   36 px of the seal would be three lines tall. The Progress icon (two bars) is still
+   legible at this size; a seal with a finer drawing would require going back up.
+   Prefixed by `.play-header` for the same reason `.play-header-home-mark` is in
+   theme.css: the mobile rule that shrinks the header's seals targets
+   `.play-header .page-mark`, and without this prefix it would take this pill from
+   19 to 30 px below 800 px, that is bigger than on a wide window. */
 .play-header .hint-page-mark {
   width: 19px;
   height: 19px;
   font-size: 12px;
   margin-right: 5px;
-  /* Le rond se cale sur la bande des CAPITALES du texte et non sur sa hauteur
-     d'x : le mot qu'il précède commence par une majuscule, et centré sur l'x le
-     sceau se lisait un pixel et demi trop bas.
-     D'où ce couple, et pas un `vertical-align` en longueur : `middle` centre la
-     boîte de MARGE sur la ligne de base plus la moitié de la hauteur d'x, donc
-     3 px de marge basse remontent la pastille de 1,5 px, pile la différence
-     entre les deux bandes. Une longueur aurait été plus directe mais elle se
-     mesure depuis la ligne de base du sceau, et un `inline-flex` dont l'unique
-     enfant est un SVG n'en a pas de fiable (Chrome la synthétise, la spec parle
-     du bord bas de la marge : 4 px d'écart d'un navigateur à l'autre). */
+  /* The disc lines up on the CAPITAL band of the text and not on its x-height:
+     the word it precedes starts with a capital, and centred on the x the seal
+     read a pixel and a half too low.
+     Hence this pair, and not a `vertical-align` given as a length: `middle`
+     centres the MARGIN box on the baseline plus half the x-height, so 3 px of
+     bottom margin raise the pill by 1.5 px, exactly the difference between the
+     two bands. A length would have been more direct but it is measured from the
+     seal's baseline, and an `inline-flex` whose only child is an SVG has no
+     reliable one (Chrome synthesises it, the spec speaks of the bottom edge of
+     the margin: 4 px of difference from one browser to the next). */
   vertical-align: middle;
   margin-bottom: 3px;
 }
 
-/* ---- Fenêtre étroite ----
-   Et pas « mobile » : la page ne s'ouvre plus du tout sur un pointeur tactile
-   (cf. useTouchPointer.js), donc tout ce qui suit ne vise que la fenêtre
-   rétrécie d'un ordinateur, souris et clavier compris. Les règles de cibles
-   tactiles qui vivaient ici (micro-boutons portés à 40 px, zone de clic de la
-   pastille de couleur étendue par un ::after) ont été retirées : plus aucun
-   doigt ne les atteint, et elles épaississaient les rangées exactement là où
-   la place manque le plus. */
+/* ---- Narrow window ----
+   And not "mobile": the page does not open at all any more on a touch pointer
+   (cf. useTouchPointer.js), so everything that follows only targets the shrunk
+   window of a computer, mouse and keyboard included. The touch target rules that
+   used to live here (micro-buttons taken up to 40 px, click area of the colour
+   pill extended by an ::after) have been removed: no finger reaches them any
+   more, and they thickened the rows exactly where room is scarcest. */
 
-/* Repli étroit des répliques : la ligne unique tient tant que le texte garde
-   une largeur de saisie décente (~280 px). En dessous, deux rangées —
-   poignée + personnage + ✕ en tête, texte en pleine largeur dessous.
-   Requête de CONTENEUR et non de fenêtre (cf. `container: ed-column` en tête de
-   fichier) : depuis que le rail prend sa largeur sur la colonne, la largeur de
-   la fenêtre ne dit plus rien de la place qui reste pour taper. Rail ouvert, une
-   fenêtre de 940 px ne laisse que 620 px à la colonne, et une requête de fenêtre
-   ne se déclenchait pas ; rail replié, le seuil arrive à 668 px de fenêtre, soit
-   les 48 px de la bande d'icônes. C'est le même seuil, mesuré au bon endroit, et
-   le chiffre garde donc sa raison d'être. Base technique : les requêtes de
-   conteneur sont de la génération du `:has()` dont ce fichier dépend déjà, et la
-   page est réservée à l'ordinateur. */
+/* Narrow reflow of the lines: the single row holds as long as the text keeps a
+   decent typing width (~280 px). Below that, two rows: handle + character + ✕ at
+   the head, text in full width underneath.
+   A CONTAINER query and not a window one (cf. `container: ed-column` at the head
+   of the file): now that the rail takes its width from the column, the width of
+   the window says nothing any more about the room left for typing. With the rail
+   open, a window of 940 px only leaves 620 px to the column, and a window query
+   did not fire; with the rail collapsed, the threshold comes at 668 px of window,
+   that is the 48 px of the icon strip. It is the same threshold, measured in the
+   right place, and the number therefore keeps its reason for being. Technical
+   basis: container queries are of the same generation as the `:has()` this file
+   already depends on, and the page is reserved for the computer. */
 @container ed-column (max-width: 620px) {
   .line-row {
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1795,18 +1786,18 @@ h3 {
   }
 
   .line-text {
-    /* Aligné sur le bord du panneau, pas sur la colonne du personnage : sur
-       un écran étroit chaque pixel de largeur de saisie compte. */
+    /* Aligned on the edge of the panel, not on the character column: on a
+       narrow screen every pixel of typing width counts. */
     padding-left: 2px;
   }
 }
 
-/* ---- Mouvement réduit ----
-   Pendant du bloc de fin de theme.css, qui neutralise le repli du bandeau :
-   chaque fichier neutralise SES animations, et faire connaître des classes de
-   l'éditeur au thème partagé casserait le sens des deux fichiers. Le rail se
-   replie toujours, il devient instantané, et le chevron du remplacement pivote
-   toujours, il arrive d'un coup. */
+/* ---- Reduced motion ----
+   Counterpart of the block at the end of theme.css, which neutralises the header's
+   collapse: each file neutralises ITS own animations, and making the shared theme
+   aware of the editor's classes would break the meaning of both files. The rail
+   still collapses, it becomes instantaneous, and the replacement chevron still
+   rotates, it arrives at once. */
 @media (prefers-reduced-motion: reduce) {
   .editor-rail,
   .search-replace-toggle svg {

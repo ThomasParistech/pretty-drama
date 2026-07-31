@@ -1,9 +1,9 @@
 import { useEffect, useRef, useCallback } from "react";
 import { DEFAULT_LOCALE } from "../shared/i18n.js";
 
-// La voix régionale préférée pour chaque langue de pièce. Aucune voix installée
-// ne porte un tag nu, donc sans cette table la préférence exacte ne servirait
-// jamais et n'importe quelle variante gagnerait.
+// The preferred regional voice for each play language. No installed voice carries
+// a bare tag, so without this table the exact preference would never be of any
+// use and any variant would win.
 const REGIONAL = { fr: "fr-fr", en: "en-gb" };
 
 // Browser TTS fallback (SpeechSynthesis) for lines whose real clip is not
@@ -58,18 +58,18 @@ export default function useTts(language) {
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);
 
-  // iOS/Safari mobile: speechSynthesis n'a le droit de parler que s'il a été
-  // amorcé au moins une fois DANS un geste utilisateur. Sans ça, la 1re
-  // réplique TTS déclenchée par un callback (fin d'un mp3, timer) échoue en
-  // silence — ni onend ni onerror — et la lecture reste figée. À appeler
-  // depuis le clic Lecture, comme la création de l'AudioContext.
+  // iOS/Safari mobile: speechSynthesis is only allowed to speak if it has been
+  // primed at least once INSIDE a user gesture. Without that, the 1st TTS line
+  // triggered from a callback (the end of an mp3, a timer) fails silently (neither
+  // onend nor onerror) and playback stays frozen. To be called from the Play
+  // click, like the creation of the AudioContext.
   const unlock = useCallback(() => {
     if (!("speechSynthesis" in window)) return;
     try {
       window.speechSynthesis.resume();
       window.speechSynthesis.speak(new SpeechSynthesisUtterance(" "));
     } catch {
-      /* pas de synthèse dispo : le fallback minuté prend le relais */
+      /* no synthesiser available: the timed fallback takes over */
     }
   }, []);
 

@@ -1,22 +1,22 @@
 name: uploads
 
-# Réagit aux dépôts du respo : tout ce qu'il glisse dans uploads/ (ZIP de voix
-# des acteurs, script.json produit par la page Édition). Traite, consigne le
-# journal, commite, puis appelle build.yml pour publier.
+# Reacts to the coordinator's uploads: anything dropped into uploads/ (voice ZIPs, a
+# script.json produced by the Editor page). Processes them, writes the journal, commits,
+# then calls build.yml to publish.
 #
-# Deux workflows et pas un seul : celui-ci est le seul à écrire dans le dépôt et
-# le seul à écrire les journaux de dépôt (celui de chaque pièce, plus celui de la
-# racine pour ce qu'aucune pièce ne réclame), donc un journal affiché ne contient QUE
-# des dépôts, jamais les reconstructions du site déclenchées par un push de code.
+# Two workflows rather than one: this is the only one that writes to the repo and the
+# only one that writes the upload journals (each play's, plus the root one for whatever
+# no play claims), so a displayed journal contains ONLY uploads, never the site rebuilds
+# triggered by a code push.
 #
-# Pourquoi un appel explicite à build.yml : un commit poussé avec le
-# GITHUB_TOKEN ne déclenche AUCUN autre workflow (garde anti-récursion de
-# GitHub). Sans ce `uses:`, le site ne serait jamais republié après un dépôt.
+# Why the explicit call to build.yml: a commit pushed with the GITHUB_TOKEN triggers NO
+# other workflow (GitHub's anti-recursion guard). Without this `uses:`, the site would
+# never be republished after an upload.
 #
-# Ordre assumé : on commite avant de déployer (le déploiement vit dans un autre
-# job, donc un autre runner ; l'attendre imposerait de transporter plays/ et
-# data/ en artefact). Si le déploiement échoue, les données restent dans le
-# dépôt, rien n'est perdu et le prochain build les publie.
+# Deliberate order: we commit before deploying (the deployment lives in another job, so
+# another runner; waiting for it would mean shipping plays/ and data/ as an artifact).
+# If the deployment fails, the data is still in the repo, nothing is lost, and the next
+# build publishes it.
 
 on:
   push:
@@ -30,10 +30,10 @@ permissions:
   pages: write
   id-token: write
 
-# Un seul traitement à la fois : ce workflow commite, deux exécutions
-# concurrentes se marcheraient dessus quand plusieurs fichiers sont déposés à la
-# suite. Groupe DIFFÉRENT de celui de build.yml : un workflow appelé qui partage
-# le groupe de son appelant est détecté comme interblocage et annulé.
+# One processing run at a time: this workflow commits, and two concurrent runs would
+# step on each other when several files are dropped in a row. A DIFFERENT group from
+# build.yml: a called workflow that shares its caller's group is detected as a deadlock
+# and cancelled.
 concurrency:
   group: uploads
   cancel-in-progress: false
@@ -41,25 +41,25 @@ concurrency:
 jobs:
   process:
     runs-on: ubuntu-latest
-    # Ce job ne fait qu'écrire dans le dépôt : il n'a rien à voir avec Pages.
-    # Les permissions `pages`/`id-token` du bloc du haut n'existent que pour
-    # pouvoir les déléguer au job `site` (un workflow appelé ne peut jamais
-    # obtenir plus que son appelant), pas pour être servies ici.
+    # This job only writes to the repo; it has nothing to do with Pages. The
+    # `pages`/`id-token` permissions in the block above exist only so they can be
+    # delegated to the `site` job (a called workflow can never obtain more than its
+    # caller), not to be used here.
     permissions:
       contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      # `-maxdepth 2` et pas 1 : un ZIP de voix vit dans la zone de dépôt de sa
-      # pièce, `uploads/<id>/`, donc un niveau plus bas que du temps de la pièce
-      # unique. Avec la profondeur 1, plus aucun ZIP n'était trouvé, ffmpeg n'était
-      # jamais installé, et `process_uploads.py` sortait en « ffmpeg introuvable » :
-      # le run échouait, donc il ne commitait rien ET n'écrivait aucun journal, et le
-      # respo déposait des voix sans que rien ne se passe ni ne se dise.
-      # Pas de profondeur illimitée pour autant : une zone de dépôt n'a qu'un niveau,
-      # et un ZIP enfoui plus bas ne serait de toute façon pas traité (cf.
-      # `deposited_files`), donc il n'a pas à faire installer ffmpeg.
+      # `-maxdepth 2` and not 1: a voice ZIP lives in its play's upload zone,
+      # `uploads/<id>/`, so one level deeper than back when there was a single play.
+      # At depth 1 no ZIP was found any more, ffmpeg was never installed, and
+      # `process_uploads.py` exited with "ffmpeg not found": the run failed, so it
+      # committed nothing AND wrote no journal, and the coordinator uploaded voices with
+      # nothing happening and nothing said.
+      # Not unlimited depth either: an upload zone has only one level, and a ZIP buried
+      # deeper would not be processed anyway (see `deposited_files`), so it has no
+      # business causing an ffmpeg install.
       - name: Check for voice ZIPs
         id: zips
         run: |
@@ -80,31 +80,31 @@ jobs:
         with:
           python-version: "3.12"
 
-      # C'est le DOSSIER de dépôt qui dit de quelle pièce un fichier est :
-      # voix -> plays/<id>/clips/*.mp3 + son clips.json, script validé puis promu dans
-      # son data/. Un fichier fautif est retiré et consigné, jamais bloquant.
+      # The upload FOLDER is what says which play a file belongs to:
+      # voices -> plays/<id>/clips/*.mp3 plus its clips.json; a script is validated then
+      # promoted into its data/. A faulty file is removed and logged, never blocking.
       - name: Process uploaded files
         run: python scripts/process_uploads.py
 
-      - name: Update the deposits journals
+      - name: Update the upload journals
         run: python scripts/update_history.py
 
-      # Un manifest par pièce, puis l'index qui les liste pour les deux pages
-      # racine. Dans cet ordre : l'index lit les manifests.
+      # One manifest per play, then the index that lists them for the two root pages.
+      # In that order: the index reads the manifests.
       - name: Rebuild the manifests and the plays index
         run: |
           python scripts/build_manifest.py
           python scripts/build_plays_index.py
 
-      # `plays` porte tout ce qui appartient à une pièce (script, clips, journal,
-      # manifest) ; `data` ne garde que l'index des pièces et le journal des dépôts
-      # qu'aucune pièce n'a réclamés.
+      # `plays` carries everything belonging to a play (script, clips, journal,
+      # manifest); `data` only holds the plays index and the journal of uploads no play
+      # claimed.
       - name: Commit the plays, the index and the consumed uploads
         run: |
-          bash scripts/ci/commit_push.sh "🤖 Traitement des dépôts et mise à jour des manifests" \
+          bash scripts/ci/commit_push.sh "🤖 Process uploads and refresh manifests" \
             plays data uploads
 
-  # Publie le résultat. Jobs du même run : le respo voit une seule ligne verte.
+  # Publishes the result. Jobs in the same run: the coordinator sees one green line.
   site:
     needs: process
     permissions:

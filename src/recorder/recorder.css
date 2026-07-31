@@ -1,24 +1,24 @@
-/* Enregistrement — même structure que la Répétition (bandeau, cartes,
-   barre basse : styles partagés dans shared/theme.css). Ici : surbrillance
-   des répliques à faire, bouton micro, prise audio sous les contrôles. */
+/* Recording: same structure as Rehearsal (header, cards, bottom bar: styles
+   shared in shared/theme.css). Here: highlighting of the lines still to do, mic
+   button, audio take under the controls. */
 
 :root {
-  /* Palette d'état des prises (choix orange/vert assumé, propre à cette page).
-     Les tons foncés tiennent le contraste AA (≥ 4.5:1) sur la carte rose
-     --accent-soft ET sous glyphe blanc ; les clairs ne servent qu'au décor
-     (point, halo, onde).
+  /* State palette of the takes (an orange/green choice we own, specific to this
+     page). The dark tones hold AA contrast (>= 4.5:1) on the pink
+     --accent-soft card AND under a white glyph; the light ones only serve the
+     decoration (dot, halo, waveform).
 
-     **Ne pas les faire dériver de --warn / --ok du thème**, qui portent pourtant
-     la même sémantique « à faire / fait » sur l'Avancement : c'est tentant, ça a
-     été proposé, et c'est une régression d'accessibilité mesurée. Ces étiquettes
-     sont du TEXTE sur la carte rose « mes répliques » (`.dialogue-card.mine`,
-     donc --accent-soft #f6e8ea), pas sur le blanc ni sur le crème où les tokens
-     du thème sont taillés. Sur ce fond-là : --ok #2e7d32 tombe à 4,31:1 et
-     ÉCHOUE l'AA, quand --rec-fresh tient 4,87:1. Pour --warn le calcul passe de
-     justesse (4,66:1 contre 4,59:1 à --rec-todo), mais séparer la paire pour
-     gagner sept centièmes rendrait la palette de la page illisible à la lecture.
-     C'est donc bien la sémantique qui est partagée, et pas la valeur : le fond
-     n'est pas le même. */
+     **Do not derive them from the theme's --warn / --ok**, which nevertheless
+     carry the same "to do / done" semantics on the Progress page: it is
+     tempting, it has been proposed, and it is a measured accessibility
+     regression. These labels are TEXT on the pink "my lines" card
+     (`.dialogue-card.mine`, hence --accent-soft #f6e8ea), not on the white nor on
+     the cream for which the theme tokens are cut. On that background: --ok
+     #2e7d32 drops to 4.31:1 and FAILS AA, whereas --rec-fresh holds 4.87:1. For
+     --warn the sum just barely passes (4.66:1 against 4.59:1 for --rec-todo), but
+     splitting the pair to gain seven hundredths would make the palette of the
+     page illegible when read. So it really is the semantics that is shared, and
+     not the value: the background is not the same. */
   --rec-todo: #9a5a15;
   --rec-todo-dot: #d08a3e;
   --rec-done: #4c6e5b;
@@ -28,9 +28,9 @@
   --rec-fresh-wave: #8fcaa4;
 }
 
-/* La page n'écrit plus aucun texte d'explication : la doc du bandeau est rendue
-   par PlayHeader (le `desc` de pages.js, plus le `hint` que la page lui passe
-   une fois le personnage choisi), en .header-hint (theme.css). */
+/* The page no longer writes any explanatory text: the documentation of the header
+   is rendered by PlayHeader (the `desc` from pages.js, plus the `hint` that the
+   page passes it once the character is chosen), in .header-hint (theme.css). */
 
 .mic-error {
   color: var(--accent);
@@ -38,11 +38,11 @@
   margin: 0;
 }
 
-/* ---- Encart d'accueil (aucun personnage choisi) ---- */
+/* ---- Intro card (no character chosen) ---- */
 
-/* Le select du bandeau est le second chemin vers le même choix : on le
-   souligne en accent tant qu'il est vide, pour que le lien avec l'encart
-   soit évident. */
+/* The select of the header is the second path to the same choice: we mark it in
+   the accent colour as long as it is empty, so that the link with the intro card
+   is obvious. */
 .character-select.unset {
   border-color: var(--accent);
   color: var(--accent);
@@ -80,8 +80,8 @@
   font-size: 14.5px;
 }
 
-/* Réplique miniature du bouton Télécharger de la barre basse, dans le texte :
-   l'acteur reconnaît le bouton qu'on lui décrit. */
+/* A miniature copy of the Download button of the bottom bar, inside the text: the
+   actor recognises the button being described. */
 .intro-dl {
   display: inline-flex;
   align-items: center;
@@ -92,9 +92,9 @@
   background: var(--accent);
   color: #fff;
   line-height: 1;
-  /* La ligne de base d'un inline-flex est celle de son contenu (donc tout en
-     bas de la pastille) : c'est `middle` qui la centre sur le texte, pas un
-     décalage négatif. */
+  /* The baseline of an inline-flex is that of its content (hence right at the
+     bottom of the disc): it is `middle` that centres it on the text, not a
+     negative offset. */
   vertical-align: middle;
 }
 
@@ -164,18 +164,19 @@
 
 /* ---- Dialogue card states ---- */
 
-/* Palette « mes répliques » (.mine) et bordure active : dans theme.css ; le
-   statut de prise est porté par l'étiquette de coin (.rec-status). Seules mes
-   répliques sont sélectionnables. */
+/* The "my lines" palette (.mine) and the active border: in theme.css; the status
+   of a take is carried by the corner label (.rec-status). Only my own lines are
+   selectable. */
 .dialogue-card.own {
   cursor: pointer;
 }
 
 /* Fresh take, not yet in a downloaded ZIP: soft green halo.
-   Le filet vert ne se pose que sur une carte NON sélectionnée : sinon, étant
-   plus spécifique (3 classes contre 2), il effacerait la bordure d'accent de
-   .dialogue-card.active (theme.css) et on ne saurait plus quelle réplique est
-   la courante. Le halo, lui, reste : sélection = bordure, prise = halo. */
+   The green rule is only laid on a card that is NOT selected: otherwise, being
+   more specific (3 classes against 2), it would wipe out the accent border of
+   .dialogue-card.active (theme.css) and one could no longer tell which line is
+   the current one. The halo, for its part, stays: selection = border,
+   take = halo. */
 .dialogue-card.own.fresh:not(.active) {
   border-color: var(--rec-fresh-halo);
 }
@@ -237,7 +238,8 @@
   background: var(--rec-fresh);
 }
 
-/* Légende des 3 statuts — vit dans le bandeau repliable (plus dans la liste). */
+/* Legend of the 3 statuses: lives in the collapsible header (no longer in the
+   list). */
 .status-legend {
   display: flex;
   align-items: center;
@@ -277,7 +279,7 @@
   position: relative;
 }
 
-/* Zone tactile ≥ 42px sans grossir le bouton visuellement. */
+/* Touch target >= 42px without making the button visually bigger. */
 .player-play::after {
   content: "";
   position: absolute;
@@ -321,8 +323,8 @@
   transition: background 0.1s linear;
 }
 
-/* Barres non encore lues : teinte atténuée. Les barres « .played » (avant la
-   tête de lecture) prennent la couleur pleine → progression visible. */
+/* Bars not yet played: muted tint. The ".played" bars (before the playhead) take
+   the full colour, hence a visible progress. */
 .card-player.done .player-wave span {
   background: color-mix(in srgb, var(--rec-done-wave) 50%, transparent);
 }
@@ -339,13 +341,13 @@
   background: var(--rec-fresh);
 }
 
-/* Jeter la prise de la séance : bout de rangée, en rouge du thème sur une
-   pastille teintée. Il côtoie le bouton d'écoute, vert et plein : un dessin
-   gris au trait s'y perdait, alors que c'est le seul geste irréversible de la
-   page. Rouge donc, mais au trait et sur un aplat pâle, pour qu'il reste
-   second face au lecteur.
-   Il n'existe que sur une prise de cette séance : un clip déjà publié se
-   réécoute mais ne se supprime pas depuis le navigateur. */
+/* Discard the take of this session: end of the row, in the theme's red on a
+   tinted disc. It sits next to the listen button, green and solid: a grey line
+   drawing was lost there, whereas this is the only irreversible gesture of the
+   page. Red then, but as a line drawing and on a pale flat colour, so that it
+   stays second to the player.
+   It only exists on a take from this session: a clip that is already published
+   can be listened to again but cannot be deleted from the browser. */
 .player-delete {
   margin-left: auto;
   border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
@@ -354,7 +356,7 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  font-size: 17px; /* l'icône se dimensionne sur la font-size (1em) */
+  font-size: 17px; /* the icon sizes itself on the font-size (1em) */
   color: var(--accent);
   display: flex;
   align-items: center;
@@ -364,7 +366,8 @@
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
-/* Même zone tactile ≥ 42px que le bouton d'écoute, sans grossir le dessin. */
+/* The same touch target >= 42px as the listen button, without making the drawing
+   bigger. */
 .player-delete::after {
   content: "";
   position: absolute;
@@ -372,8 +375,8 @@
   border-radius: 50%;
 }
 
-/* Au survol, le rouge devient plein : le bouton dit alors franchement ce qu'il
-   fait, sans l'annoncer en permanence. */
+/* On hover, the red becomes solid: the button then says frankly what it does,
+   without announcing it permanently. */
 .player-delete:hover:not(:disabled),
 .player-delete:focus-visible {
   background: var(--accent);
@@ -386,8 +389,8 @@
   cursor: not-allowed;
 }
 
-/* Carte en cours d'enregistrement : halo accent qui pulse (reste visible en
-   arrière-plan derrière la pop-up). */
+/* Card being recorded: pulsing accent halo (stays visible in the background
+   behind the pop-up). */
 .dialogue-card.own.recording {
   border-color: var(--accent);
   border-left-color: var(--accent);
@@ -400,7 +403,7 @@
   }
 }
 
-/* Étiquette de coin « Enregistrement… » sur la carte captée : rouge du thème. */
+/* Corner label "Recording…" on the card being captured: the theme's red. */
 .rec-status.live {
   color: var(--accent);
   font-weight: 700;
@@ -439,12 +442,12 @@
   }
 }
 
-/* ---- Bandeau flottant « Enregistrement » (compact, au-dessus des contrôles) ---
+/* ---- Floating "Recording" panel (compact, above the controls) ---
 
-   Discret et surtout NON bloquant : pas d'assombrissement, il ne recouvre pas
-   les cartes, l'acteur continue de lire le texte de sa réplique pendant qu'il
-   enregistre. Point clignotant + halo qui respire + mini-oscilloscope + chrono
-   sur une seule ligne. L'arrêt se fait par le bouton micro de la barre. */
+   Discreet and above all NON blocking: no dimming, it does not cover the cards,
+   the actor keeps reading the text of the line while recording. Blinking dot +
+   breathing halo + mini oscilloscope + timer on a single line. Stopping is done
+   with the mic button of the bar. */
 .rec-live-panel {
   display: flex;
   align-items: center;
@@ -483,12 +486,12 @@
   white-space: nowrap;
 }
 
-/* Oscilloscope en direct du micro, dessiné au canvas. La couleur du tracé est
-   posée ICI, en `color`, et le JS la lit avec `getComputedStyle(canvas).color` :
-   c'est ce qui évite un hex de marque recopié dans le JS avec un « à garder
-   synchrone » (cf. RecWave dans App.jsx). Un canvas n'hérite pas d'une couleur de
-   tracé, mais il hérite de `color` comme n'importe quel élément, donc le repli est
-   celui de la cascade et jamais une valeur écrite à la main. */
+/* Live oscilloscope of the mic, drawn on a canvas. The colour of the trace is
+   laid down HERE, in `color`, and the JS reads it with
+   `getComputedStyle(canvas).color`: that is what avoids a brand hex copied into
+   the JS with a "keep in sync" note (see RecWave in App.jsx). A canvas does not
+   inherit a stroke colour, but it does inherit `color` like any other element, so
+   the fallback is the one of the cascade and never a value written by hand. */
 .rec-wave {
   display: block;
   flex: 1;
@@ -514,19 +517,19 @@
   }
 }
 
-/* Nom qualifié (`zip-`) : l'Édition a son propre bouton de téléchargement, avec
-   des règles contraires (31 px de haut, calés sur ses boutons d'historique).
-   Les deux CSS ne se croisent pas, chacun n'étant chargé que par sa page, mais
-   deux `.download-btn` de valeurs opposées se casseraient en silence le jour où
-   l'un des deux remonterait dans theme.css. */
+/* Qualified name (`zip-`): Editing has its own download button, with opposite
+   rules (31 px high, aligned on its history buttons).
+   The two CSS files do not cross paths, each one being loaded only by its page,
+   but two `.download-btn` with opposite values would break in silence the day one
+   of the two moved up into theme.css. */
 .zip-download-btn {
   white-space: nowrap;
-  /* Cible tactile ≥ 40 px comme les autres boutons de la barre basse. */
+  /* Touch target >= 40 px like the other buttons of the bottom bar. */
   min-height: 40px;
 }
 
-/* Le libellé « Télécharger » a été retiré partout (icône + nombre + title) :
-   présentation identique mobile / PC, barre allégée des deux côtés. */
+/* The "Download" label has been removed everywhere (icon + number + title):
+   identical presentation on mobile and on desktop, a lighter bar on both. */
 
 /* Save-state note, in the top header (kept out of the bottom bar). */
 .zip-note {
@@ -539,12 +542,11 @@
   color: var(--accent);
 }
 
-/* « Vous n'avez aucune réplique dans cette scène » n'est pas un vide neutre
-   comme celui du tableau de bord : c'est une impasse (le micro et les flèches
-   de la barre basse restent inertes, il faut changer de scène ou de
-   personnage). Il porte donc l'accent, comme les autres notes du bandeau, mais
-   dans un encart plein : c'est la seule chose à lire de la page à ce
-   moment-là. */
+/* "You have no lines in this scene." is not a neutral emptiness like the one on
+   the dashboard: it is a dead end (the mic and the arrows of the bottom bar stay
+   inert, you have to change scene or character). It therefore carries the accent
+   colour, like the other notes of the header, but in a solid box: it is the only
+   thing there is to read on the page at that moment. */
 .no-lines-note {
   margin: 0;
   padding: 8px 12px;

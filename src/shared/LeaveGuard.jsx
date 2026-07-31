@@ -3,21 +3,21 @@ import ConfirmModal from "./ConfirmModal.jsx";
 import { setBeforeUnloadGuard } from "./data.js";
 import { t } from "./locale.js";
 
-// Sortie d'une page qui tient du travail vivant seulement dans l'onglet :
-// l'éditeur (script non téléchargé) et l'enregistrement (prises hors ZIP).
+// Leaving a page that holds work living only in the tab: the editor (script not
+// downloaded) and the recording page (takes outside any ZIP).
 //
-// Deux couches, parce que le navigateur n'en laisse habiller qu'une :
-//  - un lien du site : clic intercepté ici, modal du thème, qui peut en plus
-//    proposer de télécharger avant de partir ;
-//  - un rechargement, une URL tapée, un favori, la fermeture de l'onglet :
-//    seul `beforeunload` réagit et son dialogue appartient au navigateur
-//    (message et style imposés depuis Chrome 51 / Firefox 44). On le garde
-//    comme filet : sans lui, un F5 perdrait le travail sans un mot.
+// Two layers, because the browser lets only one of them be styled:
+//  - a site link: click intercepted here, themed modal, which can moreover
+//    offer to download before leaving;
+//  - a reload, a typed URL, a bookmark, closing the tab: only `beforeunload`
+//    reacts, and its dialog belongs to the browser (message and style imposed
+//    since Chrome 51 / Firefox 44). We keep it as a safety net: without it, an
+//    F5 would lose the work without a word.
 //
-// Rien n'est jamais persisté en local : un brouillon oublié dans le
-// navigateur redeviendrait une source de vérité périmée face au dépôt.
+// Nothing is ever persisted locally: a draft forgotten in a browser would
+// become a stale source of truth again, facing the repository.
 export default function LeaveGuard({ active, title, children, saveLabel, onSave }) {
-  // Url du lien cliqué, mise en attente le temps de la réponse.
+  // Url of the clicked link, held pending while we wait for the answer.
   const [leaveTo, setLeaveTo] = useState(null);
 
   useEffect(() => {
@@ -25,18 +25,18 @@ export default function LeaveGuard({ active, title, children, saveLabel, onSave 
     return () => setBeforeUnloadGuard(false);
   }, [active]);
 
-  // Écoute sur le document en phase capture plutôt qu'un branchement lien par
-  // lien : les liens à venir sont couverts d'office.
+  // Listening on the document in the capture phase rather than wiring link by
+  // link: future links are covered as a matter of course.
   useEffect(() => {
     if (!active) return;
     const onClick = (e) => {
       if (e.defaultPrevented || e.button !== 0) return;
-      // Clic modifié : l'utilisateur demande un nouvel onglet, on ne part pas.
+      // Modified click: the user is asking for a new tab, we are not leaving.
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const link = e.target instanceof Element ? e.target.closest("a[href]") : null;
       if (!link || link.target === "_blank" || link.hasAttribute("download")) return;
       const url = new URL(link.href, window.location.href);
-      // Ancre interne : pas de navigation, rien à perdre.
+      // Internal anchor: no navigation, nothing to lose.
       if (url.origin === window.location.origin && url.pathname === window.location.pathname) {
         return;
       }
@@ -47,12 +47,12 @@ export default function LeaveGuard({ active, title, children, saveLabel, onSave 
     return () => document.removeEventListener("click", onClick, true);
   }, [active]);
 
-  // Le modal reste affiché jusqu'à la navigation, même quand `active` retombe
-  // (le téléchargement solde la page juste avant qu'on la quitte).
+  // The modal stays on screen until the navigation, even when `active` drops
+  // back (the download settles the page just before we leave it).
   if (!leaveTo) return null;
 
-  // Départ pour de bon : on retire le garde à la main au lieu d'attendre son
-  // effet, sinon le dialogue natif se superpose au modal.
+  // Leaving for good: we remove the guard by hand instead of waiting for its
+  // effect, otherwise the native dialog stacks on top of the modal.
   const leaveNow = () => {
     setBeforeUnloadGuard(false);
     window.location.href = leaveTo;
@@ -64,8 +64,8 @@ export default function LeaveGuard({ active, title, children, saveLabel, onSave 
       primaryLabel={saveLabel}
       onPrimary={async () => {
         await onSave();
-        // Laisser le navigateur démarrer le téléchargement : décharger la
-        // page dans la même tâche peut l'annuler.
+        // Let the browser start the download: unloading the page in the same
+        // task can cancel it.
         window.setTimeout(leaveNow, 200);
       }}
       confirmLabel={t("common.leaveAnyway")}

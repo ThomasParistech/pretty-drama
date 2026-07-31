@@ -7,12 +7,11 @@ import { setSeekDragging } from "./useScrollToActiveCard.js";
 // focusable, arrow keys step one item, Home/End jump to the edges.
 export default function ProgressBar({ value, count, onSeek, disabled = false }) {
   const ref = useRef(null);
-  // Glissement en cours, ce que les deux surfaces qui traînaient derrière la
-  // souris ont besoin de savoir : le pouce et le remplissage perdent leur
-  // transition (classe `dragging`, cf. `.progress-container.dragging` dans
-  // theme.css), et la liste échange le défilement lissé du navigateur, trop
-  // long, contre un suivi rapide (`setSeekDragging`, cf.
-  // `useScrollToActiveCard.js`).
+  // Drag in progress, which is what the two surfaces that used to lag behind
+  // the mouse need to know: the thumb and the fill lose their transition
+  // (`dragging` class, see `.progress-container.dragging` in theme.css), and the
+  // list swaps the browser's smooth scrolling, which is too long, for a fast
+  // follow (`setSeekDragging`, see `useScrollToActiveCard.js`).
   const [dragging, setDragging] = useState(false);
 
   const scrub = (clientX) => {
@@ -52,23 +51,25 @@ export default function ProgressBar({ value, count, onSeek, disabled = false }) 
         scrub(e.clientX);
       }}
       onPointerMove={(e) => {
-        // Le même garde que `scrub` et `onPointerDown`, et il porte ici sur le
-        // drapeau PARTAGÉ : un geste qui ne peut pas déplacer le curseur n'a pas
-        // à annoncer un glissement à la liste. Sans lui, survoler une barre
-        // désactivée bouton enfoncé levait un drapeau que seule la fin du geste
-        // repose, or il n'y a pas de fin (rien n'a capturé le pointeur), donc le
-        // prochain recentrage se faisait en suivi rapide au lieu du lissé.
+        // The same guard as `scrub` and `onPointerDown`, and here it bears on
+        // the SHARED flag: a gesture that cannot move the cursor has no business
+        // announcing a drag to the list. Without it, hovering a disabled bar
+        // with the button held down raised a flag that only the end of the
+        // gesture puts back down, and there is no end (nothing captured the
+        // pointer), so the next recentring was done as a fast follow instead of
+        // the smooth scroll.
         if (disabled || count === 0 || e.buttons === 0) return;
-        // Le premier mouvement du geste fait basculer les deux lissés : à
-        // partir de là le pouce et la carte active collent au pointeur. Le
-        // drapeau partagé est reposé à chaque cran parce que le recentrage le
-        // consomme (cf. `useScrollToActiveCard.js`).
+        // The first movement of the gesture switches both easings off: from then
+        // on the thumb and the active card stick to the pointer. The shared flag
+        // is raised again at every notch because the recentring consumes it
+        // (see `useScrollToActiveCard.js`).
         setDragging(true);
         setSeekDragging(true);
         scrub(e.clientX);
       }}
-      // `setPointerCapture` garantit cet événement à la fin du geste (relâché
-      // ou annulé), donc c'est le seul endroit à rendre le lissé.
+      // `setPointerCapture` guarantees this event at the end of the gesture
+      // (released or cancelled), so this is the only place that gives the
+      // easings back.
       onLostPointerCapture={() => {
         setDragging(false);
         setSeekDragging(false);

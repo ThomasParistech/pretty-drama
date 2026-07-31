@@ -5,20 +5,18 @@ __pycache__/
 .mypy_cache/
 .DS_Store
 uploads_result.json
-# Dérivé du script de la pièce à chaque déploiement, jamais une donnée. Cette
-# ligne porte du poids : uploads.yml commite `plays` en entier, donc sans elle
-# un binaire de 150 Ko entrerait dans l'historique à chaque dépôt de script.
+# Derived from the play's script on every deployment, never a piece of data. This
+# line carries weight: uploads.yml commits the whole of `plays`, so without it a
+# 150 kB binary would enter the history on every script upload.
 plays/*/data/script.pdf
-# Le fichier temporaire du téléchargement de dev (`ensureScriptPdf` dans
-# vite.config.js écrit `.part` puis renomme, pour qu'une requête concurrente ne
-# tombe pas sur un PDF à moitié écrit). Il ne survit qu'à une écriture
-# interrompue (disque plein, serveur tué entre les deux appels), et c'est
-# justement là qu'il ne faut pas qu'il apparaisse dans `git status` d'un dossier
-# que l'Action commite en entier.
+# The temporary file of the dev download (`ensureScriptPdf` in vite.config.js
+# writes `.part` then renames, so a concurrent request cannot land on a
+# half-written PDF). It only survives an interrupted write (full disk, server
+# killed between the two calls), and that is precisely where it must not show up
+# in the `git status` of a folder the Action commits whole.
 plays/*/data/script.pdf.part
-# Les pages d'une pièce sont GÉNÉRÉES depuis les gabarits de `pages/` (une par
-# pièce et par page), en dev comme au build : cf. vite.config.js. Elles sont
-# dérivées comme le PDF, et pour la même raison elles n'entrent pas dans
-# l'historique, que chaque nouvelle pièce viendrait sinon remplir de sept
-# fichiers identiques à ceux de la pièce voisine.
+# A play's pages are GENERATED from the templates in `pages/` (one per play and
+# per page), in dev as at build time: cf. vite.config.js. They are derived like
+# the PDF, and for the same reason they do not enter the history, which every new
+# play would otherwise fill with seven files identical to its neighbour's.
 plays/*/*.html

@@ -1,43 +1,45 @@
-// Comment s'écrit une PART, et le seuil qui l'empêche de mentir.
+// How a SHARE is written, and the threshold that stops it from lying.
 //
-// Partagé depuis que deux pages en écrivent une : la légende de la Répartition, et la
-// carte d'une pièce sur les deux pages racine (« 12,4 % enregistré »). C'est la même
-// mesure et la même règle d'arrondi, donc la même implémentation : la dupliquer aurait
-// laissé une page dire « 0,0 % » là où l'autre dit « < 0,1 % », sur le même chiffre.
+// Shared since two pages write one: the Speaking share legend, and a play's card on
+// the two root pages ("12.4% recorded"). It is the same measure and the same
+// rounding rule, hence the same implementation: duplicating it would have left one
+// page saying "0.0%" where the other says "< 0.1%", on the very same figure.
 //
-// Module PUR : `t` et `fmt` sont PASSÉS, comme à `actLabel`, donc il reste couvert par
-// `node --test` et ne peut pas importer `locale.js`, qui lit l'URL et le navigateur.
+// A PURE module: `t` and `fmt` are PASSED IN, as they are to `actLabel`, so it stays
+// covered by `node --test` and cannot import `locale.js`, which reads the URL and
+// the navigator.
 
-// Part en pourcentage. Rendue par ce module et pas calculée dans le JSX : c'est
-// la seule division de la page, et « 0 % » sur une part non nulle se lirait
-// comme un bug (cf. `formatShare`, qui s'en charge).
+// The share as a percentage. Returned by this module rather than computed in the
+// JSX: it is the page's only division, and "0%" on a non-zero share would read
+// like a bug (see `formatShare`, which takes care of that).
 export function share(value, total) {
   if (!total) return 0;
   return (value * 100) / total;
 }
 
-// La part telle qu'elle s'écrit dans une légende : un chiffre après la décimale,
-// comme le `%1.1f%%` de la référence.
+// The share as it is written in a legend: one digit after the decimal point, like
+// the `%1.1f%%` of the reference.
 //
-// Ici et pas dans le JSX, comme tout ce qui peut se tromper : le seuil ci-dessous
-// est une règle, pas un dessin, donc `node --test` le rejoue. `t` et `fmt` sont
-// PASSÉS, comme à `actLabel` : ce module reste pur, donc testable sans DOM.
+// Here and not in the JSX, like everything that can be got wrong: the threshold
+// below is a rule, not a drawing, so `node --test` replays it. `t` and `fmt` are
+// PASSED IN, as they are to `actLabel`: this module stays pure, hence testable
+// without a DOM.
 //
-// La virgule décimale et l'espace avant le signe ne sont plus écrits à la main :
-// `Intl.NumberFormat` les tient, et il les tient MIEUX. Le code d'avant faisait
-// un `.replace(".", ",")` et posait une espace ORDINAIRE avant le `%`, ce que
-// `.stats-legend-share { white-space: nowrap }` devait rattraper ; Intl produit
-// une vraie insécable U+00A0 en français et rien du tout en anglais (« 12.4% »).
-// Le `nowrap` devient donc une ceinture de plus, gardée et sans effet.
+// The decimal comma and the space before the sign are no longer written by hand:
+// `Intl.NumberFormat` holds them, and it holds them BETTER. The previous code did a
+// `.replace(".", ",")` and laid an ORDINARY space before the `%`, which
+// `.stats-legend-share { white-space: nowrap }` had to make up for; Intl produces a
+// real U+00A0 no-break space in French and nothing at all in English ("12.4%").
+// The `nowrap` therefore becomes one more belt, kept and without effect.
 export function formatShare(value, total, t, fmt) {
   const ratio = total ? value / total : 0;
-  // Une part non nulle n'affiche JAMAIS « 0,0 % » : un mot sur les dix mille de
-  // la pièce y tombait, et un zéro en face d'un décompte de 1 se lit comme un
-  // bug d'arrondi, ce que le commentaire de `share` veut justement éviter. En
-  // dessous du dixième de point, on dit le seuil et pas la valeur.
+  // A non-zero share NEVER shows "0.0%": one word out of the play's ten thousand
+  // fell there, and a zero facing a count of 1 reads like a rounding bug, which
+  // is precisely what the comment on `share` wants to avoid. Below a tenth of a
+  // point, we state the threshold and not the value.
   //
-  // Le seuil lui-même est FORMATÉ et non écrit en dur : « < 0,1 % » en français,
-  // « < 0.1% » en anglais, sans qu'un catalogue ait à connaître le chiffre.
+  // The threshold itself is FORMATTED and not hard-coded: "< 0,1 %" in French,
+  // "< 0.1%" in English, without a catalogue having to know the figure.
   if (ratio > 0 && ratio < 0.0005) return t("stats.shareBelow", { value: fmt.percent(0.001) });
   return fmt.percent(ratio);
 }

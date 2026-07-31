@@ -58,45 +58,44 @@ export function pageDescKey(page) {
   return `page.${page}.desc`;
 }
 
-// Deux accueils, même composant, deux listes de cartes. `index.html` est
-// l'adresse qu'on donne à la troupe : elle ne propose QUE les deux pages des
-// acteurs, pour qu'un acteur ne tombe jamais sur l'éditeur (d'où le script de
-// la pièce se télécharge) ni sur l'avancement. `respo.html` est l'accueil
-// complet, connu du seul responsable : aucune page n'y renvoie depuis
-// `index.html`, il se bookmarke.
+// Two homes, the same component, two lists of cards. `index.html` is the address
+// handed to the troupe: it offers ONLY the actors' pages, so that an actor never
+// lands on the editor (from where the play's script is downloaded) nor on the
+// progress page. `respo.html` is the full home, known to the coordinator alone: no
+// page links to it from `index.html`, it gets bookmarked.
 export const ACTOR_CARDS = ["rehearsal", "recorder", "stats"];
 
-// Trois colonnes : la troupe en haut (répéter, enregistrer, comparer), le
-// responsable en bas (écrire, suivre), centré sous elle. La rangée dit donc à
-// qui la page s'adresse, ce que le carré 2x2 disait avant que la Répartition
-// s'ajoute aux pages ouvertes à tout le monde.
+// Three columns: the troupe on top (rehearse, record, compare), the coordinator
+// below (write, follow), centred underneath. The row therefore says who the page
+// is meant for, which is what the 2x2 square said before Speaking share joined the
+// pages open to everyone.
 export const RESPO_CARDS = ["rehearsal", "recorder", "stats", "editor", "dashboard"];
 
-// Accueil vers lequel renvoie la marque du bandeau : les pages du responsable
-// ramènent à SON accueil, sinon un aller-retour Édition → marque → Accueil lui
-// ferait perdre le chemin de l'éditeur.
+// The home the header's brand links back to: the coordinator's pages return to
+// THEIR home, otherwise a round trip Editing -> brand -> Home would make them lose
+// the way to the editor.
 const RESPO_ONLY = new Set(["editor", "dashboard"]);
 
-// L'accueil de LA PIÈCE, voisin de la page courante : les sept pages d'une pièce
-// vivent dans le même dossier (`plays/<id>/`), donc ce lien reste un href relatif nu,
-// exactement comme du temps où le site ne connaissait qu'une pièce.
+// THE PLAY's home, next door to the current page: the seven pages of a play live in
+// the same folder (`plays/<id>/`), so this link stays a plain relative href, exactly
+// as it was back when the site only knew one play.
 export function homeHref(page) {
   return RESPO_ONLY.has(page) ? "./respo.html" : "./index.html";
 }
 
-// Le chemin d'une page de pièce, vu de la RACINE : le seul endroit du front qui
-// écrive la disposition `plays/<id>/<page>.html`. Les deux pages racine sont les
-// seules à en avoir besoin (leurs cartes de pièces), et elles le nommaient chacune
-// de son côté, donc à deux endroits d'où la disposition pouvait dériver.
+// The path of a play page, seen from the ROOT: the only place in the front end that
+// writes out the `plays/<id>/<page>.html` layout. The two root pages are the only
+// ones that need it (their play cards), and each named it on its own side, hence in
+// two places from which the layout could drift.
 export function playHref(playId, page) {
   return `./plays/${playId}/${page}.html`;
 }
 
-// Le SEUL lien du site qui sorte d'une pièce, et donc le seul endroit qui connaisse
-// la profondeur d'une page de pièce : les deux pages racine sont deux niveaux
-// au-dessus (`plays/<id>/rehearsal.html` -> `../../index.html`). Il ne vit qu'au pied
-// de l'accueil d'une pièce, jamais sur les cinq autres pages : on change de pièce en
-// repassant par l'accueil, comme on change de langue en repassant par l'entrée.
+// The ONLY link on the site that leaves a play, and therefore the only place that
+// knows the depth of a play page: the two root pages are two levels above
+// (`plays/<id>/rehearsal.html` -> `../../index.html`). It lives only at the foot of a
+// play's home, never on the five other pages: you switch play by going back through
+// the home, just as you switch language by going back through the entrance.
 export function chooserHref(page) {
   return RESPO_ONLY.has(page) ? "../../respo.html" : "../../index.html";
 }

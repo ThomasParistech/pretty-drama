@@ -1,25 +1,25 @@
-"""Déplace la pièce unique d'un dépôt vers `plays/<id>/`. À lancer UNE fois.
+"""Move a repo's single play to `plays/<id>/`. To be run ONCE.
 
-Le dépôt n'a longtemps connu qu'une pièce : `data/script.json` était la source de
-vérité et `clips/` portait ses mp3. Depuis qu'il en héberge plusieurs, chaque pièce
-est un silo (`plays/<id>/data/`, `plays/<id>/clips/`, `uploads/<id>/`), et ce script
-est ce qui fait passer l'ancienne disposition à la nouvelle sans rien perdre.
+For a long time the repo knew only one play: `data/script.json` was the source of
+truth and `clips/` carried its mp3s. Now that it hosts several, each play is a silo
+(`plays/<id>/data/`, `plays/<id>/clips/`, `uploads/<id>/`), and this script is what
+takes the old layout to the new one without losing anything.
 
-Il sert à ce dépôt-ci comme à toute troupe qui a déjà forké et travaille depuis des
-mois : sans lui, tirer la nouvelle version laisserait sa pièce dans un `data/` que
-plus personne ne lit.
+It serves this repo as well as any troupe that already forked and has been working
+for months: without it, pulling the new version would leave its play in a `data/`
+nobody reads any more.
 
     python3 scripts/migrate_to_plays.py transport-de-femmes
 
-L'identifiant est un ARGUMENT et n'est pas dérivé du titre, alors que c'est ce que
-fait la page de gestion quand elle crée une pièce. Deux raisons : il nomme un
-dossier et une URL pour des années, donc il vaut d'être choisi à l'œil plutôt que
-subi ; et le calculer ici demanderait une seconde implémentation du slug, en Python,
-que rien ne tiendrait en accord avec celle du navigateur (`slugify`,
-src/shared/data.js) pour un script qui ne tourne qu'une fois.
+The id is an ARGUMENT and is not derived from the title, which is what the
+management page does when it creates a play. Two reasons: it names a folder and a
+URL for years, so it deserves to be chosen by eye rather than endured; and
+computing it here would require a second implementation of the slug, in Python,
+that nothing would keep in agreement with the browser's one (`slugify`,
+src/shared/data.js) for a script that runs only once.
 
-Idempotent : relancé, il constate que la pièce est déjà là et ne touche à rien. Il ne
-commite pas, il déplace des fichiers ; git reconnaît les renommages tout seul.
+Idempotent: run again, it notes that the play is already there and touches nothing.
+It does not commit, it moves files; git recognizes the renames all by itself.
 """
 
 from __future__ import annotations
@@ -27,7 +27,6 @@ from __future__ import annotations
 import json
 import shutil
 import sys
-from pathlib import Path
 
 from common import (
     REPO_ROOT,
@@ -35,7 +34,6 @@ from common import (
     is_play_id,
     play_clips_dir,
     play_data_dir,
-    play_dir,
     play_uploads_dir,
     write_json,
 )
@@ -43,9 +41,9 @@ from common import (
 OLD_DATA = REPO_ROOT / "data"
 OLD_CLIPS = REPO_ROOT / "clips"
 
-# Les quatre fichiers qui décrivaient LA pièce. Ils descendent tels quels dans son
-# dossier. Ce qui reste dans `data/` après le passage ne parle plus d'une pièce en
-# particulier : l'index des pièces et le journal des dépôts qu'aucune n'a réclamés.
+# The four files that used to describe THE play. They go down as-is into its
+# folder. What remains in `data/` after the move no longer speaks of any play in
+# particular: the plays index and the journal of the uploads none of them claimed.
 PLAY_FILES = ("script.json", "clips.json", "history.json", "manifest.json")
 
 
@@ -57,60 +55,60 @@ def fail(message: str) -> None:
 def main() -> None:
     if len(sys.argv) != 2:
         fail(
-            "usage : python3 scripts/migrate_to_plays.py <identifiant>\n"
-            "L'identifiant nomme le dossier de la pièce et son adresse sur le site "
-            "(minuscules, chiffres et tirets), par exemple « transport-de-femmes »."
+            "usage: python3 scripts/migrate_to_plays.py <id>\n"
+            "The id names the play's folder and its address on the site "
+            "(lowercase, digits and hyphens), for example transport-de-femmes."
         )
     play_id = sys.argv[1]
     if not is_play_id(play_id):
         fail(
-            f"« {play_id} » n'est pas un identifiant de pièce valide : minuscules, "
-            "chiffres et tirets, sans tiret en tête, 64 caractères au plus."
+            f"{play_id} is not a valid play id: lowercase, digits and hyphens, "
+            "no leading hyphen, 64 characters at most."
         )
 
     target_script = play_data_dir(play_id) / "script.json"
     if target_script.exists():
-        print(f"plays/{play_id}/ porte déjà un script : rien à migrer.")
+        print(f"plays/{play_id}/ already carries a script: nothing to migrate.")
         return
 
     old_script = OLD_DATA / "script.json"
     if not old_script.exists():
         fail(
-            "data/script.json est introuvable : il n'y a aucune pièce à migrer. "
-            "Créez-la depuis la page de gestion des pièces du site."
+            "data/script.json cannot be found: there is no play to migrate. "
+            "Create one from the site's plays management page."
         )
 
-    # Le script est relu ici pour lui poser son identifiant, et c'est la SEULE
-    # retouche de contenu de toute la migration. Il est réécrit avec le même
-    # formatage que celui de l'éditeur (indent 2), et tous ses champs sont
-    # conservés, couleurs des personnages comprises : on charge, on ajoute une clé,
-    # on réécrit, sans passer par aucun sanitize.
+    # The script is read back here to set its id on it, and that is the ONLY
+    # content edit of the whole migration. It is rewritten with the same formatting
+    # as the editor's (indent 2), and all its fields are kept, character colours
+    # included: we load, we add a key, we rewrite, without going through any
+    # sanitize.
     try:
         script = json.loads(old_script.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         fail(
-            f"data/script.json n'est pas un JSON valide ({exc}) : réparez-le ou "
-            "restaurez-le depuis l'historique GitHub avant de migrer."
+            f"data/script.json is not valid JSON ({exc}): repair it or "
+            "restore it from the GitHub history before migrating."
         )
     if not isinstance(script, dict):
-        fail("data/script.json ne contient pas un script de pièce : migration annulée.")
+        fail("data/script.json does not contain a play script: migration cancelled.")
 
     play_data_dir(play_id).mkdir(parents=True, exist_ok=True)
 
-    # Les CLIPS avant les fichiers de données, et l'ordre n'est pas indifférent : la
-    # garde d'idempotence, plus haut, est la présence du script à destination. Les
-    # mp3 déplacés en dernier, une interruption entre les deux (Ctrl+C, disque plein)
-    # laissait un dépôt où le script était migré mais pas les voix, et la relance
-    # s'arrêtait sur la garde en annonçant « rien à migrer », les mp3 restant en
-    # rade. Dans cet ordre, tout ce qui précède le script est déjà fait quand la
-    # garde se ferme, et une relance après interruption reprend proprement.
+    # The CLIPS before the data files, and the order is not indifferent: the
+    # idempotence guard, above, is the presence of the script at the destination.
+    # With the mp3s moved last, an interruption between the two (Ctrl+C, full disk)
+    # left a repo where the script was migrated but not the voices, and the rerun
+    # stopped on the guard announcing "nothing to migrate", the mp3s being left
+    # stranded. In this order, everything that precedes the script is already done
+    # when the guard closes, and a rerun after an interruption picks up cleanly.
     if OLD_CLIPS.is_dir():
-        # Le dossier entier, `.gitkeep` compris : il tient `clips/` en vie dans git
-        # quand la troupe n'a pas encore enregistré une seule réplique.
+        # The whole folder, `.gitkeep` included: it keeps `clips/` alive in git when
+        # the troupe has not recorded a single line yet.
         if play_clips_dir(play_id).exists():
             fail(
-                f"plays/{play_id}/clips/ existe déjà alors que clips/ est encore là : "
-                "déplacez le reste à la main, la migration ne veut pas choisir pour vous."
+                f"plays/{play_id}/clips/ already exists while clips/ is still there: "
+                "move the rest by hand, the migration will not choose for you."
             )
         shutil.move(str(OLD_CLIPS), str(play_clips_dir(play_id)))
         count = len(list(play_clips_dir(play_id).glob("*.mp3")))
@@ -124,23 +122,23 @@ def main() -> None:
 
     script["id"] = play_id
     write_json(play_data_dir(play_id) / "script.json", script)
-    print(f"  identifiant « {play_id} » inscrit dans le script")
+    print(f"  id {play_id} written into the script")
 
-    # Le PDF est dérivé et gitignoré : il se reconstruit à sa nouvelle place au
-    # prochain déploiement, il n'y a rien à déplacer.
+    # The PDF is derived and gitignored: it rebuilds itself at its new place on the
+    # next deployment, there is nothing to move.
     (OLD_DATA / "script.pdf").unlink(missing_ok=True)
 
-    # La zone de dépôt de la pièce. Elle doit exister AVANT que le respo en ait
-    # besoin : c'est elle que vise le bouton de dépôt de l'Avancement, et GitHub ne
-    # sert sa page d'envoi que sur un dossier qu'il connaît.
+    # The play's upload zone. It must exist BEFORE the coordinator needs it: it is
+    # what the Progress page's upload button points at, and GitHub only serves its
+    # upload page on a folder it knows about.
     play_uploads_dir(play_id).mkdir(parents=True, exist_ok=True)
     (play_uploads_dir(play_id) / ".gitkeep").touch()
     (UPLOADS_DIR / ".gitkeep").touch()
-    print(f"  uploads/{play_id}/ créé")
+    print(f"  uploads/{play_id}/ created")
 
     print(
-        f"\nMigration terminée. Reconstruisez les fichiers dérivés :\n"
-        f"  python3 scripts/build_manifest.py && python3 scripts/build_plays_index.py"
+        "\nMigration done. Rebuild the derived files:\n"
+        "  python3 scripts/build_manifest.py && python3 scripts/build_plays_index.py"
     )
 
 

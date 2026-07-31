@@ -1,9 +1,9 @@
 // Editor state = exactly the script.json content. Every action produces the
-// next valid script.json — malformed scripts are impossible by construction.
+// next valid script.json, malformed scripts are impossible by construction.
 //
 // Invariants (project spec §5.1):
 //  - line and character ids are UUIDs, minted once and NEVER reused;
-//  - ids are UNIQUE and match SAFE_ID (they become clip filenames — the
+//  - ids are UNIQUE and match SAFE_ID (they become clip filenames, the
 //    GitHub Action enforces the same pattern, see scripts/process_uploads.py);
 //  - moving/editing a line keeps its id; only ADD_LINE mints a new id;
 //  - a line references its character by characterId, never by name.
@@ -18,15 +18,15 @@ import { firstFreeColor, isPaletteColor } from "../shared/characterColors.js";
 // this module runnable under `node --test`. locale.js would NOT be safe: it
 // reads `window` at module load.
 import { DEFAULT_LOCALE, isLocale } from "../shared/i18n.js";
-// Pur lui aussi (il ne porte qu'une expression et son test), donc sans danger
-// pour `node --test` : cf. src/shared/plays.js.
+// Pure as well (it only carries one expression and its test), so safe for
+// `node --test`: see src/shared/plays.js.
 import { isPlayId } from "../shared/plays.js";
 
 export function newId() {
   return crypto.randomUUID();
 }
 
-// Mirror of LINE_ID_PATTERN in scripts/process_uploads.py — keep in sync.
+// Mirror of LINE_ID_PATTERN in scripts/process_uploads.py, keep in sync.
 export const SAFE_ID = /^[0-9a-zA-Z-]{1,64}$/;
 
 // Acts and scenes carry NO title. Their label is derived from their rank at
@@ -43,13 +43,13 @@ export const SAFE_ID = /^[0-9a-zA-Z-]{1,64}$/;
 // reader's UI locale. It is set in the Structure section of the rail, and it is
 // what lets build_script_pdf.py compose its own headings and set its babel, and
 // useTts.js pick a voice that matches the dialogue.
-// `id` est l'identifiant de la pièce, celui qui nomme son dossier dans le dépôt
-// (`plays/<id>/`) et sa zone de dépôt (`uploads/<id>/`), cf. src/shared/plays.js.
-// L'éditeur ne le fabrique ni ne le modifie JAMAIS : il le reçoit avec le script
-// et le rend tel quel dans le fichier téléchargé, ce qui est ce qui permet à
-// l'Action de savoir quelle pièce ce dépôt met à jour. Il est vide ici parce
-// qu'EMPTY_SCRIPT est le repli d'une page qui n'a pas encore lu de script ; c'est
-// la page de gestion des pièces qui mint l'identifiant, une fois, à la création.
+// `id` is the play's identifier, the one that names its folder in the repo
+// (`plays/<id>/`) and its upload area (`uploads/<id>/`), see src/shared/plays.js.
+// The editor NEVER mints it nor modifies it: it receives it with the script and
+// returns it as is in the downloaded file, which is what lets the Action know which
+// play this upload updates. It is empty here because EMPTY_SCRIPT is the fallback of
+// a page that has not read a script yet; it is the play management page that mints
+// the identifier, once, at creation time.
 export const EMPTY_SCRIPT = {
   id: "",
   title: "",
@@ -62,28 +62,27 @@ const isId = (value) => typeof value === "string" && SAFE_ID.test(value);
 
 // Defensive normalization of a loaded script.json (the published file can be
 // hand-edited on github.com): fills missing fields, drops malformed entries,
-// and heals invalid or DUPLICATED ids by minting fresh UUIDs — duplicate ids
+// and heals invalid or DUPLICATED ids by minting fresh UUIDs, duplicate ids
 // would corrupt React keys, dnd-kit sorting and status computation.
 export function sanitizeScript(raw) {
   if (raw === null || typeof raw !== "object" || Array.isArray(raw)) raw = {};
 
   const seenIds = new Set();
-  // Personnage reminté parce que son id était HORS SAFE_ID : ancien -> neuf,
-  // pour que ses répliques le suivent. Uniquement ce cas-là.
+  // Character reminted because its id was OUTSIDE SAFE_ID: old -> new, so that its
+  // lines follow it. That case only.
   //
-  // Un id DUPLIQUÉ ne s'y inscrit pas, et c'est la moitié qui compte : le
-  // premier porteur garde l'id, donc les répliques qui le citent lui restent,
-  // et le second repart avec un id neuf et aucune réplique. Remapper ici
-  // enverrait les répliques du premier au second, c'est-à-dire changerait qui
-  // parle dans la pièce (les mp3, eux, sont nommés par id de réplique et ne
-  // bougent pas : la voix d'Alceste se mettrait à sortir sous le nom de
-  // Philinte). Entre deux personnages indiscernables dans le fichier, on ne
-  // déplace rien.
+  // A DUPLICATED id is not entered here, and that is the half that matters: the
+  // first bearer keeps the id, so the lines that cite it stay with it, and the
+  // second one leaves with a fresh id and no lines. Remapping here would send the
+  // first one's lines to the second, that is to say would change who speaks in the
+  // play (the mp3s, for their part, are named by line id and do not move: Alceste's
+  // voice would start coming out under Philinte's name). Between two characters that
+  // are indistinguishable in the file, we move nothing.
   const characterRemap = new Map();
 
   const usedColors = new Set();
-  // Compte des personnages déjà servis, distinct de `usedColors.size`, qui cesse
-  // de grandir dès la palette épuisée : cf. `firstFreeColor`.
+  // Count of characters already served, distinct from `usedColors.size`, which stops
+  // growing as soon as the palette is exhausted: see `firstFreeColor`.
   let assignedColors = 0;
   const characters = (Array.isArray(raw.characters) ? raw.characters : [])
     .filter((c) => c && typeof c === "object" && typeof c.name === "string" && c.name.trim())
@@ -91,17 +90,17 @@ export function sanitizeScript(raw) {
       let id = c.id;
       if (!isId(id) || seenIds.has(id)) {
         const fresh = newId();
-        // Reminté pour cause d'id invalide (et non de doublon) : cet id-là
-        // n'est porté que par lui, ses répliques peuvent le suivre sans
-        // ambiguïté. Cf. le commentaire de characterRemap.
+        // Reminted because of an invalid id (and not of a duplicate): that id is
+        // borne by it alone, its lines can follow it without ambiguity. See the
+        // comment on characterRemap.
         if (!isId(id) && typeof id === "string" && id) characterRemap.set(id, fresh);
         id = fresh;
       }
       seenIds.add(id);
-      // Comble une couleur absente, étrangère ou déjà prise par la première
-      // libre (déterministe). Même comblement qu'`assignColors` du module
-      // partagé, que les pages qui lisent le manifest appliquent de leur côté :
-      // les deux doivent tomber d'accord sur un script sans couleurs.
+      // Fills in a colour that is absent, foreign or already taken with the first
+      // free one (deterministic). The same filling in as `assignColors` from the
+      // shared module, which the pages that read the manifest apply on their side:
+      // the two must agree on a script with no colours.
       const color =
         isPaletteColor(c.color) && !usedColors.has(c.color.toLowerCase())
           ? c.color.toLowerCase()
@@ -117,27 +116,26 @@ export function sanitizeScript(raw) {
     let id = l.id;
     if (!isId(id) || seenIds.has(id)) id = newId();
     seenIds.add(id);
-    // Le remap se consulte sur la valeur BRUTE, avant tout contrôle contre
-    // SAFE_ID : les ids qu'il contient sont justement ceux qui ne le passent
-    // pas. Les valider d'abord (ce que faisait ce code) revenait à ne jamais
-    // le consulter, et les répliques d'un personnage reminté devenaient
-    // orphelines pour une lettre accentuée dans le fichier.
+    // The remap is consulted on the RAW value, before any check against SAFE_ID:
+    // the ids it contains are precisely the ones that do not pass it. Validating
+    // them first (which this code used to do) amounted to never consulting it, and
+    // the lines of a reminted character became orphans over one accented letter in
+    // the file.
     let characterId = typeof l.characterId === "string" ? l.characterId : null;
     if (characterId && characterRemap.has(characterId)) characterId = characterRemap.get(characterId);
-    // characterIds ne contient que des ids valides : cette seule appartenance
-    // rejette aussi bien un id hors SAFE_ID qu'un personnage inexistant.
+    // characterIds only contains valid ids: this single membership test rejects an id
+    // outside SAFE_ID just as well as a character that does not exist.
     if (characterId && !characterIds.has(characterId)) characterId = null;
     return { id, characterId, text: typeof l.text === "string" ? l.text : "" };
   };
 
   return {
-    // L'identifiant de la pièce est RECOPIÉ, jamais reminté, contrairement aux ids
-    // de répliques et de personnages juste au-dessus : il nomme le dossier de la
-    // pièce et sa zone de dépôt, donc en fabriquer un neuf ici enverrait le
-    // prochain script téléchargé vers une pièce qui n'existe pas, en laissant
-    // derrière lui les mp3 déjà déposés. Un fichier écrit avant ce champ, ou
-    // hand-édité de travers, rend une chaîne vide : l'Action refusera de le
-    // promouvoir plutôt que de deviner sa destination.
+    // The play's identifier is COPIED, never reminted, unlike the line and character
+    // ids just above: it names the play's folder and its upload area, so minting a
+    // fresh one here would send the next downloaded script off to a play that does
+    // not exist, leaving behind it the mp3s already uploaded. A file written before
+    // this field existed, or hand-edited badly, yields an empty string: the Action
+    // will refuse to promote it rather than guess its destination.
     id: isPlayId(raw.id) ? raw.id : "",
     title: typeof raw.title === "string" ? raw.title : "",
     // An unknown or absent language falls back to French, the project's default.
@@ -179,16 +177,16 @@ function defaultCharacterId(scene, idx, characters) {
 }
 
 // Immutably update one scene designated by indices. Only that scene's
-// object changes identity — untouched acts/scenes keep theirs, which is what
+// object changes identity, untouched acts/scenes keep theirs, which is what
 // lets React.memo skip re-rendering the rest of the play on every keystroke.
 //
-// Quand `fn` rend la scène telle quelle (l'action ne changeait rien), on rend
-// l'ÉTAT tel quel. Sans cette sortie, un no-op fabriquait quand même un nouvel
-// objet d'état : history.js, qui reconnaît une action refusée à l'identité
-// (`present === state.present`), y voyait une vraie modification. Reposer une
-// réplique glissée exactement où elle était allumait donc « Modifications non
-// téléchargées » sans qu'on ait rien modifié, et laissait une étape vide à
-// annuler. Idem pour des indices hors bornes, qui ne désignent aucune scène.
+// When `fn` returns the scene as is (the action changed nothing), we return the
+// STATE as is. Without that exit, a no-op still manufactured a new state object:
+// history.js, which recognises a refused action by identity (`present ===
+// state.present`), saw a real modification in it. Dropping a dragged line exactly
+// where it already was therefore lit "Changes not downloaded" without anything
+// having been modified, and left an empty step to undo. Same for out-of-bounds
+// indices, which designate no scene.
 function updateScene(state, actIndex, sceneIndex, fn) {
   const act = state.acts[actIndex];
   const scene = act?.scenes?.[sceneIndex];
@@ -222,27 +220,27 @@ function mapAllLines(state, fn) {
   };
 }
 
-// Applique un lot de textes de répliques (`[{ lineId, text }]`) en UN état.
+// Applies a batch of line texts (`[{ lineId, text }]`) in ONE state.
 //
-// Deux choses la distinguent de mapAllLines, qui reconstruit toujours tout :
-//  - elle rend l'état PRÉCIS reçu quand aucune édition ne change quoi que ce
-//    soit (lot vide, id inconnu, texte identique, lot malformé). history.js
-//    reconnaît une action sans effet à l'identité, donc sans cette sortie un
-//    « Tout remplacer » sans occurrence laisserait une étape vide à annuler et
-//    allumerait « Modifications non téléchargées » ;
-//  - elle garde l'identité des actes, des scènes et des répliques intacts, donc
-//    React.memo continue de sauter tout ce que le remplacement n'a pas touché.
+// Two things set it apart from mapAllLines, which always rebuilds everything:
+//  - it returns the EXACT state it received when no edit changes anything at all
+//    (empty batch, unknown id, identical text, malformed batch). history.js
+//    recognises an action with no effect by identity, so without that exit a
+//    "Replace all" with no match would leave an empty step to undo and would light
+//    "Changes not downloaded";
+//  - it keeps the identity of the acts, scenes and lines intact, so React.memo keeps
+//    skipping everything the replacement did not touch.
 //
-// Les ids de réplique étant uniques dans TOUTE la pièce (sanitizeScript le
-// garantit, ADD_LINE mint un UUID), une Map par id suffit : pas d'indices
-// d'acte ni de scène dans le lot.
+// Since line ids are unique across the WHOLE play (sanitizeScript guarantees it,
+// ADD_LINE mints a UUID), a Map keyed by id is enough: no act or scene indices in the
+// batch.
 function applyTextEdits(state, edits) {
   if (!Array.isArray(edits) || edits.length === 0) return state;
   const byLine = new Map();
   for (const edit of edits) {
-    // Le lot vient du navigateur, pas d'un fichier : une entrée malformée est
-    // un bug d'appelant, on l'ignore plutôt que de jeter au milieu d'un
-    // remplacement à moitié appliqué.
+    // The batch comes from the browser, not from a file: a malformed entry is a
+    // caller bug, we ignore it rather than throw in the middle of a half-applied
+    // replacement.
     if (edit && typeof edit.lineId === "string" && typeof edit.text === "string") {
       byLine.set(edit.lineId, edit.text);
     }
@@ -272,12 +270,12 @@ function applyTextEdits(state, edits) {
   return changed ? { ...state, acts } : state;
 }
 
-// Copie du tableau avec l'élément `from` posé en `to`, ou `null` quand il n'y a
-// rien à faire (indices hors bornes, ou déplacement sur place). Le `null` n'est
-// pas de la coquetterie : les deux appelants rendent alors l'état PRÉCIS reçu, et
-// c'est ce qui empêche une scène reposée là où elle était d'allumer
-// « Modifications non téléchargées » et de laisser une étape vide à annuler
-// (même règle que updateScene, cf. son commentaire).
+// A copy of the array with the `from` element placed at `to`, or `null` when there
+// is nothing to do (out-of-bounds indices, or a move in place). The `null` is not
+// affectation: the two callers then return the EXACT state they received, and that is
+// what stops a scene dropped back where it already was from lighting "Changes not
+// downloaded" and leaving an empty step to undo (same rule as updateScene, see its
+// comment).
 function moved(list, from, to) {
   const ok = (i) => Number.isInteger(i) && i >= 0 && i < list.length;
   if (!ok(from) || !ok(to) || from === to) return null;
@@ -287,18 +285,18 @@ function moved(list, from, to) {
   return next;
 }
 
-// ---- Où regarder après un remaniement du plan ----
+// ---- Where to look after the plan has been reshuffled ----
 //
-// L'éditeur montre une scène à la fois, désignée par deux rangs. Déplacer ou
-// supprimer un acte ou une scène change les rangs de ses voisins, donc sans ces
-// deux fonctions le même couple d'indices ne désigne plus la même scène : glisser
-// l'acte III au-dessus de l'acte I pendant qu'on y travaille faisait sauter la
-// colonne de texte sur un autre acte. Elles sont ici, à côté de MOVE_* et
-// DELETE_*, parce qu'elles décrivent exactement la permutation que ces actions
-// appliquent : les faire diverger est le bug qu'on cherche à éviter.
+// The editor shows one scene at a time, designated by two ranks. Moving or deleting
+// an act or a scene changes the ranks of its neighbours, so without these two
+// functions the same pair of indices no longer designates the same scene: dragging
+// act III above act I while working in it made the text column jump to another act.
+// They are here, next to MOVE_* and DELETE_*, because they describe exactly the
+// permutation those actions apply: making them diverge is the bug we are trying to
+// avoid.
 
-// Rang de suivi d'un élément après le déplacement `from` -> `to` : celui qui
-// bouge suit, ceux que sa traversée décale d'un cran se décalent d'un cran.
+// Follow-up rank of an element after the `from` -> `to` move: the one that moves
+// follows, those its crossing shifts by one notch shift by one notch.
 export function indexAfterMove(index, from, to) {
   if (index === from) return to;
   if (from < index && index <= to) return index - 1;
@@ -306,10 +304,10 @@ export function indexAfterMove(index, from, to) {
   return index;
 }
 
-// Rang de suivi après la suppression de `removed`. Quand c'est l'élément regardé
-// qui disparaît, on regarde le précédent (et non le suivant, qui a pris son
-// rang) : c'est celui qu'on avait sous les yeux avant lui, donc le retour en
-// arrière que le geste laisse attendre.
+// Follow-up rank after the deletion of `removed`. When it is the element being looked
+// at that disappears, we look at the previous one (and not at the next, which has
+// taken its rank): it is the one that was in front of us before it, hence the step
+// backwards that the gesture leads one to expect.
 export function indexAfterRemoval(index, removed) {
   if (index === removed) return Math.max(0, removed - 1);
   return index > removed ? index - 1 : index;
@@ -320,15 +318,15 @@ export function scriptReducer(state, action) {
     case "LOAD_SCRIPT":
       return sanitizeScript(action.script);
 
-    // Le garde d'égalité n'est pas défensif, c'est l'invariant « un no-op ne doit
-    // pas fabriquer un nouvel état », et il vaut ici pour la même raison que dans
-    // `SET_LANGUAGE` juste dessous. Un titre reposé à l'identique arrive (Ctrl+A
-    // puis collage du même texte : l'événement part, la valeur est la même), et
-    // sans lui l'étape s'empilait quand même, avec un `present` égal à son `past`,
-    // donc un Ctrl+Z qui s'allume et qui ne change rien à l'écran. Depuis
-    // `asSavedIfUnchanged` (history.js) le cas se lisait de surcroît à deux
-    // endroits contradictoires : l'étiquette « Modifications non téléchargées »
-    // restait éteinte, ce qui est juste, sous un bouton d'annulation allumé.
+    // The equality guard is not defensive, it is the "a no-op must not manufacture a
+    // new state" invariant, and it holds here for the same reason as in
+    // `SET_LANGUAGE` just below. A title put back identically does happen (Ctrl+A
+    // then pasting the same text: the event fires, the value is the same), and
+    // without it the step was pushed all the same, with a `present` equal to its
+    // `past`, hence a Ctrl+Z that lights up and changes nothing on screen. Since
+    // `asSavedIfUnchanged` (history.js) the case moreover read in two contradictory
+    // places: the "Changes not downloaded" label stayed off, which is right, below a
+    // lit undo button.
     case "SET_TITLE":
       if (action.title === state.title) return state;
       return { ...state, title: action.title };
@@ -343,8 +341,8 @@ export function scriptReducer(state, action) {
     // ---- Characters (side panel referential) ----
 
     case "ADD_CHARACTER": {
-      // action.id: UUID minted by the caller. Couleur : la première libre (pure,
-      // lue dans l'état).
+      // action.id: UUID minted by the caller. Colour: the first free one (pure, read
+      // from the state).
       const name = action.name.trim();
       if (!name) return state;
       const color = firstFreeColor(
@@ -369,7 +367,7 @@ export function scriptReducer(state, action) {
     case "RENAME_CHARACTER": {
       const name = action.name.trim();
       if (!name) return state;
-      // Renaming only touches the referential — no line id changes, so no
+      // Renaming only touches the referential, no line id changes, so no
       // recording ever becomes stale because of a rename.
       return {
         ...state,
@@ -418,17 +416,17 @@ export function scriptReducer(state, action) {
         ),
       };
 
-    // Réordonner le plan de la pièce (section « Structure » du rail). Les actes
-    // et les scènes n'ont pas d'id, ils sont désignés par leur rang : un
-    // déplacement est donc un couple d'indices, et non deux ids comme MOVE_LINE.
-    // Ça ne coûte rien ici, les indices ne bougent pas pendant un glissement, et
-    // les répliques déplacées avec leur scène gardent les leurs (donc leurs mp3).
+    // Reordering the play's plan (the rail's "Structure" section). Acts and scenes
+    // have no id, they are designated by their rank: a move is therefore a pair of
+    // indices, and not two ids like MOVE_LINE. That costs nothing here, the indices
+    // do not move during a drag, and the lines moved along with their scene keep
+    // theirs (hence their mp3s).
     //
-    // Une scène ne change pas d'acte : la borner à son acte est ce qui garde
-    // l'action à un seul indice de conteneur, et un glissement d'un acte à
-    // l'autre demanderait de choisir en plus où elle atterrit dans l'acte
-    // d'arrivée. Le geste manquant est la découpe d'un acte, qui se fait
-    // aujourd'hui en ajoutant l'acte puis en redéplaçant les répliques.
+    // A scene does not change act: bounding it to its act is what keeps the action to
+    // a single container index, and a drag from one act to another would require
+    // choosing in addition where it lands in the destination act. The missing gesture
+    // is splitting an act, which is done today by adding the act then moving the
+    // lines across again.
     case "MOVE_ACT": {
       const acts = moved(state.acts, action.from, action.to);
       return acts ? { ...state, acts } : state;
@@ -451,7 +449,7 @@ export function scriptReducer(state, action) {
       // Insert after line `afterLineId` (or append when null).
       // action.id: UUID minted by the caller (which also uses it to focus
       // the new line's textarea). The default character (same speaker as
-      // the previous line) is computed here — pure, from state + action only.
+      // the previous line) is computed here: pure, from state + action only.
       return updateScene(state, action.actIndex, action.sceneIndex, (scene) => {
         const idx =
           action.afterLineId == null
@@ -471,12 +469,11 @@ export function scriptReducer(state, action) {
     case "EDIT_TEXT":
       return updateScene(state, action.actIndex, action.sceneIndex, (scene) => {
         const line = scene.lines.find((l) => l.id === action.lineId);
-        // Texte inchangé (ou réplique disparue) : on rend la scène telle quelle,
-        // et updateScene rend donc l'état tel quel. Sans ça, `map` allouait
-        // toujours une nouvelle scène, history.js y voyait une vraie
-        // modification, et une frappe qui ne change rien (un remplacement au
-        // texte identique, une valeur reposée par du code) laissait une étape
-        // vide à annuler et allumait « Modifications non téléchargées ».
+        // Text unchanged (or line gone): we return the scene as is, and updateScene
+        // therefore returns the state as is. Without this, `map` always allocated a
+        // new scene, history.js saw a real modification in it, and a keystroke that
+        // changes nothing (a replacement with identical text, a value put back by
+        // code) left an empty step to undo and lit "Changes not downloaded".
         if (!line || line.text === action.text) return scene;
         return {
           ...scene,
@@ -484,11 +481,11 @@ export function scriptReducer(state, action) {
         };
       });
 
-    // Un lot de textes de répliques, à travers TOUTE la pièce : le remplacement
-    // de la recherche (une occurrence ou toutes). Seul cas « lignes » qui n'est
-    // pas borné à une scène, exprès, un remplacement traversant la pièce.
-    // Nommé d'après ce qu'il fait au script et pas d'après la fonctionnalité :
-    // le reducer ne sait rien d'une recherche.
+    // A batch of line texts, across the WHOLE play: the search's replacement (one
+    // match or all of them). The only "lines" case that is not bounded to one scene,
+    // on purpose, since a replacement crosses the play. Named after what it does to
+    // the script and not after the feature: the reducer knows nothing about a
+    // search.
     case "SET_LINE_TEXTS":
       return applyTextEdits(state, action.edits);
 

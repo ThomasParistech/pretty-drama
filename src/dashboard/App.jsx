@@ -14,7 +14,7 @@ import { isPlayId } from "../shared/plays.js";
 import "./dashboard.css";
 
 // Pure read of data/manifest.json: recording progress per character, so the
-// respo knows who to chase.
+// coordinator knows who to chase.
 export default function App() {
   const { manifest, error: loadError } = useManifest();
   if (loadError) {
@@ -26,24 +26,24 @@ export default function App() {
   return <Dashboard manifest={manifest} />;
 }
 
-// Le journal garde une trentaine de dépôts (MAX_RUNS côté Python), chacun
-// pouvant porter plusieurs fichiers : de quoi dépasser la soixantaine de lignes.
-// Le tableau défilant les tient, ce plafond n'est qu'un garde-fou.
+// The journal keeps about thirty uploads (MAX_RUNS on the Python side), each of
+// which may carry several files: enough to go beyond sixty rows. The scrolling
+// table holds them, this cap is only a safeguard.
 const JOURNAL_ROWS = 60;
 
-// Libellé du type, hors du tableau : le sceau le porte à l'écran, le mot ne sert
-// plus qu'à l'infobulle et aux lecteurs d'écran. Les trois clés sont celles que
-// `kind_of` (process_uploads.py) écrit dans le journal, donc elles restent en
-// français : c'est de la DONNÉE, pas du texte d'interface, et le mot affiché vit
-// dans les catalogues.
+// The type's label, outside the table: the seal carries it on screen, the word
+// now only serves the tooltip and screen readers. The three keys are the ones
+// `kind_of` (process_uploads.py) writes into the journal, so they stay in
+// French: this is DATA, not interface text, and the displayed word lives in
+// the catalogues.
 const KIND_LABEL_KEY = {
   voix: "dashboard.kind.voix",
   script: "dashboard.kind.script",
   inconnu: "dashboard.kind.inconnu",
 };
 
-// Les fichiers d'un dépôt, normalisés : le manifest peut venir d'une version
-// antérieure du format, ou avoir été bricolé à la main comme script.json.
+// An upload's files, normalised: the manifest may come from an earlier version
+// of the format, or have been tinkered with by hand like script.json.
 function filesOf(run) {
   const files = run && Array.isArray(run.files) ? run.files : [];
   return files
@@ -56,10 +56,10 @@ function filesOf(run) {
     }));
 }
 
-// Le détail d'une ligne, optionnel : le badge et le statut disent déjà
-// l'essentiel. Un script réussi n'a donc rien à ajouter (son nom de fichier ne
-// dit rien) ; une voix nomme son ZIP et compte ses répliques ; un échec nomme le
-// fichier et donne son motif, le seul texte qui vienne de l'Action.
+// A row's detail, optional: the badge and the status already say the essential.
+// A successful script therefore has nothing to add (its file name says nothing);
+// a voices file names its ZIP and counts its lines; a failure names the file and
+// gives its reason, the only text that comes from the Action.
 function detailOf(row) {
   if (row.error) {
     return (
@@ -70,9 +70,9 @@ function detailOf(row) {
     );
   }
   if (row.kind === "script") return null;
-  // Le nom du fichier est un PARAMÈTRE et pas un fragment posé avant le
-  // décompte : juxtaposés dans le JSX, leur ordre et l'espace qui les sépare
-  // étaient figés dans le composant.
+  // The file name is a PARAMETER and not a fragment placed before the count:
+  // juxtaposed in the JSX, their order and the space between them were frozen
+  // in the component.
   return (
     <T
       k="dashboard.journal.detailVoices"
@@ -88,7 +88,7 @@ function okCount(lines) {
   return lines.filter((l) => l.status === "ok").length;
 }
 
-// Une seule échelle de statut pour toute la grille : cases, noms, scènes, actes.
+// A single status scale for the whole grid: cells, names, scenes, acts.
 function statusClass(ok, total) {
   if (total === 0) return "empty";
   return ok < total ? "todo" : "done";
@@ -99,12 +99,15 @@ function Dashboard({ manifest }) {
   const scenes = manifest.acts.flatMap((act, actIndex) =>
     act.scenes.map((scene, sceneIndex) => ({
       key: `${actIndex}-${sceneIndex}`,
-      // Le libellé complet pour l'infobulle, et le seul NUMÉRO dans l'en-tête de
-      // colonne, qui est étroit. Plus de regex pour extraire ce numéro d'un
-      // titre : le rang le donne directement (`sceneNumber` a disparu avec les
-      // titres stockés).
+      // The full label for the tooltip, and the NUMBER alone in the column
+      // header, which is narrow. No more regex to extract that number from a
+      // title: the rank gives it directly (`sceneNumber` disappeared along with
+      // the stored titles).
       act: actLabel(t, actIndex),
-      label: String(sceneIndex + 1),
+      // `fmt.number` and not `String`: it is the site's rule for a figure written
+      // ALONE, outside any sentence (cf. CountBadge.jsx), and this one's own tooltip
+      // already follows it, `sceneLabel` handing its rank to the engine.
+      label: fmt.number(sceneIndex + 1),
       title: sceneLabel(t, sceneIndex),
       lines: scene.lines,
       total: scene.lines.length,
@@ -140,24 +143,24 @@ function Dashboard({ manifest }) {
   });
 
   // Lines pointing at no (known) character: they inflate the totals but
-  // belong to nobody and NOBODY can record them — surface them loudly so the
-  // respo fixes the script instead of chasing a phantom "41/42".
+  // belong to nobody and NOBODY can record them: surface them loudly so the
+  // coordinator fixes the script instead of chasing a phantom "41/42".
   const knownIds = new Set(manifest.characters.map((c) => c.id));
   const orphanLines = manifest.lines.filter(
     (l) => l.characterId == null || !knownIds.has(l.characterId)
   );
 
-  // Journal des dépôts : absent d'un manifest reconstruit avant son existence.
+  // Upload journal: absent from a manifest rebuilt before it existed.
   const runs = Array.isArray(manifest.history) ? manifest.history : [];
 
   return (
     <>
-      {/* Sa phrase compacte et rien d'autre (pas de `hint`) : la page n'a aucun
-          réglage, mais son bandeau se déplie comme les trois autres (il porte le
-          retour à l'accueil), et déplier pour ne trouver qu'un lien faisait
-          vide. Elle dit à quoi sert la page, jamais comment lire la grille (ça,
-          c'est le rôle de `.dash-legend`, sous le tableau) ni comment déposer
-          (la carte de dépôt est juste en dessous, elle se lit seule). */}
+      {/* Its compact sentence and nothing else (no `hint`): the page has no
+          setting, but its header folds like the three others (it carries the way
+          back to the home page), and unfolding it only to find a link felt
+          empty. It says what the page is for, never how to read the grid (that
+          is `.dash-legend`'s job, under the table) nor how to upload (the upload
+          card is right below, it reads on its own). */}
       <PlayHeader page="dashboard" title={manifest.title || t("common.untitledPlay")} />
       <div className="container">
         <div className="dash-actions">
@@ -168,8 +171,8 @@ function Dashboard({ manifest }) {
         {orphanLines.length > 0 && (
           <div className="dash-orphans card">
             <WarnIcon />
-            {/* Le décompte en gras est un PARAMÈTRE : découper la phrase autour du
-                <strong> figerait l'ordre des mots français dans le composant. */}
+            {/* The bold count is a PARAMETER: cutting the sentence around the
+                <strong> would freeze the French word order in the component. */}
             <T
               k="dashboard.orphans"
               p={{
@@ -184,10 +187,10 @@ function Dashboard({ manifest }) {
             <ul>
               {orphanLines.map((l) => (
                 <li key={l.id}>
-                  {/* Le couple acte + scène par la clé partagée `common.actScene`,
-                      comme la portée de la Répartition : le séparateur est un fait
-                      de langue, il était un « · » écrit dans le JSX ici et une
-                      virgule là-bas, sur le même site. */}
+                  {/* The act + scene pair through the shared key `common.actScene`,
+                      like the Speaking share page's scope: the separator is a fact
+                      of language, and it was a "·" written in the JSX here and a
+                      comma over there, on the same site. */}
                   <span className="dash-pending-loc">
                     {t("common.actScene", {
                       act: actLabel(t, l.actIndex),
@@ -201,8 +204,18 @@ function Dashboard({ manifest }) {
           </div>
         )}
 
-        {rows.length === 0 || scenes.length === 0 ? (
+        {/* Two empty states and not one, because the grid has two ways of having
+            nothing to draw and they do not say the same thing. The two conditions
+            used to share the "no characters" sentence, which then stated something
+            false about the very thing the page had: a play can carry its whole cast
+            and not a single scene (a script edited by hand in the repository, with
+            `acts: []`, which `sanitize_script` deliberately does not floor where the
+            editor does). Characters first, since without them the scenes have no row
+            to be drawn on. */}
+        {rows.length === 0 ? (
           <div className="empty-state">{t("common.noCharacters", { page: t(pageLabelKey("editor")) })}</div>
+        ) : scenes.length === 0 ? (
+          <div className="empty-state">{t("common.emptyPlay", { page: t(pageLabelKey("editor")) })}</div>
         ) : (
           <ProgressTable acts={actCols} scenes={scenes} rows={rows} />
         )}
@@ -215,35 +228,35 @@ function Dashboard({ manifest }) {
   );
 }
 
-// Journal des dépôts : le SEUL retour du respo sur ce que la GitHub Action a
-// fait de ses fichiers (il ne lit ni les logs de la CI ni les issues). Les
-// entrées viennent de data/history.json, recopié dans le manifest.
+// Upload journal: the coordinator's ONLY feedback on what the GitHub Action did with
+// their files (they read neither the CI logs nor the issues). The entries come
+// from data/history.json, copied into the manifest.
 //
-// UNE LIGNE PAR FICHIER, pas par dépôt : chaque fichier a son propre sort (un
-// ZIP abîmé au milieu de trois bons n'empêche pas les autres), donc chaque ligne
-// porte son statut. La date se répète pour les fichiers déposés ensemble, ce qui
-// les regroupe visuellement sans avoir à les imbriquer.
+// ONE ROW PER FILE, not per upload: each file has its own fate (a damaged ZIP in
+// the middle of three good ones does not stop the others), so each row carries
+// its own status. The date repeats for files uploaded together, which groups them
+// visually without having to nest them.
 //
-// Le tableau reste affiché même vide (une ligne d'explication à la place des
-// dépôts) : c'est le seul canal de retour du projet, donc le respo doit savoir
-// qu'il existe et où le regarder AVANT son premier dépôt, sinon un échec le
-// trouverait devant une page qui n'a jamais rien promis.
+// The table stays displayed even when empty (a line of explanation in place of
+// the uploads): it is the project's only feedback channel, so the coordinator must know
+// that it exists and where to look at it BEFORE their first upload, otherwise a
+// failure would find them in front of a page that never promised anything.
 function Journal({ runs }) {
   const all = runs.flatMap((run) => filesOf(run).map((file) => ({ ...file, at: run.at })));
   const rows = all.slice(0, JOURNAL_ROWS);
-  // Le plafond est un garde-fou, mais il ne doit pas couper en silence : c'est
-  // le seul canal de retour du projet, et un tableau qui s'arrête sans le dire
-  // se lit comme « il n'y a rien de plus », y compris pour un dépôt raté qui
-  // vient de sortir par le bas.
+  // The cap is a safeguard, but it must not cut silently: this is the project's
+  // only feedback channel, and a table that stops without saying so reads as
+  // "there is nothing more", including for a failed upload that has just fallen
+  // off the bottom.
   const hidden = all.length - rows.length;
   return (
     <section className="dash-journal">
       <h2>{t("dashboard.journal.title")}</h2>
-      {/* Le conteneur défile, jamais la page : le journal garde une trentaine de
-          dépôts, il ne doit pas allonger l'Avancement sans fin. Comme la grille
-          au-dessus, c'est donc une région nommée et focalisable : il défile sur
-          les deux axes et ne contient rien de focalisable, donc sans `tabIndex`
-          il ne se parcourrait ni au clavier ni au lecteur d'écran. */}
+      {/* The container scrolls, never the page: the journal keeps about thirty
+          uploads, it must not lengthen the Progress page endlessly. Like the grid
+          above, it is therefore a named and focusable region: it scrolls on both
+          axes and contains nothing focusable, so without `tabIndex` it could be
+          walked neither by keyboard nor by screen reader. */}
       <div
         className="dash-journal-wrap"
         tabIndex={0}
@@ -289,12 +302,11 @@ function Journal({ runs }) {
   );
 }
 
-// Statut au seul dessin, dans les mêmes vert et ambre que la grille au-dessus.
-// Il emprunte la pastille des sceaux (`page-mark`) pour que les deux colonnes
-// d'icônes du tableau soient de la même famille, avec les teintes de statut à la
-// place d'une couleur de page. Le mot passe en `aria-label` : la colonne est
-// trop étroite pour lui, mais un lecteur d'écran ne doit pas se retrouver devant
-// une cellule muette.
+// Status by drawing alone, in the same green and amber as the grid above. It
+// borrows the seals' pill (`page-mark`) so that the table's two icon columns are
+// of the same family, with the status tints in place of a page colour. The word
+// goes into the `aria-label`: the column is too narrow for it, but a screen
+// reader must not end up in front of a mute cell.
 function Status({ failed }) {
   const label = t(failed ? "dashboard.journal.failed" : "dashboard.journal.ok");
   return (
@@ -309,11 +321,11 @@ function Status({ failed }) {
   );
 }
 
-// Le type de dépôt porté par le sceau de la page qui produit ce fichier : le
-// micro de l'Enregistrement pour les voix, la plume de l'Édition pour le script.
-// Ce sont les deux mêmes sceaux que le bouton de dépôt en haut de page, donc
-// l'association se lit sans légende. Un fichier ni ZIP ni script n'est
-// revendiqué par aucune page : pastille neutre, sans couleur de page.
+// The upload's type carried by the seal of the page that produces that file: the
+// Recording page's mic for voices, the Editing page's quill for the script. They
+// are the same two seals as the upload button at the top of the page, so the
+// association reads without a legend. A file that is neither a ZIP nor a script is
+// claimed by no page: neutral pill, without a page colour.
 function KindMark({ kind }) {
   const label = t(KIND_LABEL_KEY[kind] ?? KIND_LABEL_KEY.inconnu);
   if (kind === "inconnu") {
@@ -324,8 +336,8 @@ function KindMark({ kind }) {
     );
   }
   const page = kind === "script" ? "editor" : "recorder";
-  // `label` explicite : dans cette colonne le sceau dit le TYPE de fichier, pas
-  // la page dont il porte les couleurs.
+  // Explicit `label`: in this column the seal says the file's TYPE, not the page
+  // whose colours it carries.
   return (
     <span title={label}>
       <PageMark page={page} className="dash-journal-mark" label={label} />
@@ -333,41 +345,43 @@ function KindMark({ kind }) {
   );
 }
 
-// Le geste quotidien du respo : glisser un fichier reçu (ZIP de voix) ou produit
-// (script.json de la page Édition) dans l'écran de dépôt GitHub de SON dépôt.
-// Un seul bouton parce qu'il n'y a qu'un dossier, `uploads/` : l'Action déduit
-// le type de l'extension. Deux cartes vers la même URL se liraient comme deux
-// destinations différentes.
-// Ce qu'on dépose se lit donc dans le libellé, pas dans le choix du bouton : les
-// deux sceaux encadrent le texte (le micro de l'Enregistrement à gauche, la
-// plume de l'Édition à droite) et les deux mots portent la couleur de leur page.
-// « Déposer » reste en noir : c'est le geste, il n'appartient à aucune des deux.
-// L'extension attendue est dite entre parenthèses dans le libellé même, plutôt
-// qu'en exemples de noms de fichiers sur une deuxième ligne : c'est l'extension
-// seule qui décide du traitement (`kind_of`), et le bouton tient sur une ligne.
-// Masqué hors github.io (dev local, domaine perso) où l'URL est indevinable.
+// The coordinator's daily gesture: dropping a file they received (a ZIP of voices) or
+// produced (the script.json from the Editing page) into the GitHub upload screen
+// of THEIR repo. A single button because there is only one folder, `uploads/`:
+// the Action deduces the type from the extension. Two cards towards the same URL
+// would read as two different destinations.
+// What one uploads is therefore read in the label, not in the choice of button:
+// the two seals frame the text (the Recording page's mic on the left, the Editing
+// page's quill on the right) and both words carry their page's colour.
+// "Upload" stays in black: it is the gesture, it belongs to neither of the two.
+// The expected extension is said in parentheses in the label itself, rather than
+// as example file names on a second line: it is the extension alone that decides
+// the processing (`kind_of`), and the button fits on one line.
+// Hidden outside github.io (local dev, custom domain) where the URL cannot be
+// guessed.
 function UploadLinks({ playId }) {
-  // La zone de dépôt de CETTE pièce, `uploads/<id>/`. C'est le dossier qui route le
-  // fichier vers sa pièce, jamais son contenu : un ZIP abîmé, donc illisible, doit
-  // quand même atterrir dans le journal de sa pièce. Le respo ne tape jamais ce
-  // chemin, il clique ce bouton depuis la pièce où il travaille.
+  // THIS play's upload folder, `uploads/<id>/`. It is the folder that routes the
+  // file towards its play, never its content: a damaged ZIP, hence an unreadable
+  // one, must still land in its play's journal. The coordinator never types this path,
+  // they click this button from the play they are working on.
   //
-  // Sans identifiant valide (un `script.json` hand-édité qui a perdu son champ `id`),
-  // la carte se masque au lieu de viser la racine d'`uploads/` : là-bas un ZIP de voix
-  // est refusé, et le refus va dans le journal RACINE, que l'Avancement de cette pièce
-  // n'affiche jamais. Le respo aurait déposé sans que rien ne se dise sur la page qu'il
-  // a sous les yeux, ce qui est pire qu'un bouton absent. Même règle que hors
-  // github.io : on ne forge pas une adresse dont on sait qu'elle ne marchera pas.
+  // Without a valid id (a hand-edited `script.json` that has lost its `id` field),
+  // the card hides itself instead of aiming at the root of `uploads/`: over there a
+  // ZIP of voices is refused, and the refusal goes into the ROOT journal, which this
+  // play's Progress page never displays. The coordinator would have uploaded with nothing
+  // being said on the page in front of them, which is worse than an absent button.
+  // Same rule as outside github.io: we do not forge an address we know will not
+  // work.
   const url = isPlayId(playId) ? githubUploadUrl(playId) : null;
   if (!url) return null;
-  // Pas de conteneur ici : les deux cartes de la page partagent `.dash-actions`,
-  // qui les aligne sur la même largeur (cf. dashboard.css).
+  // No container here: the page's two cards share `.dash-actions`, which aligns
+  // them to the same width (cf. dashboard.css).
   return (
     <a className="dash-upload card lift-hover" href={url} target="_blank" rel="noreferrer">
       <PageMark page="recorder" className="dash-upload-mark" />
-      {/* Les deux mots colorés sont des PARAMÈTRES : chacun porte la couleur de sa
-          page, et la phrase garde l'ordre des mots de sa langue. L'ancien JSX était
-          six fragments dans quatre spans imbriqués, où l'ordre comptait. */}
+      {/* The two coloured words are PARAMETERS: each carries its page's colour, and
+          the sentence keeps its own language's word order. The old JSX was six
+          fragments inside four nested spans, where the order mattered. */}
       <span className="dash-upload-text">
         <T
           k="dashboard.upload"
@@ -392,65 +406,63 @@ function UploadLinks({ playId }) {
   );
 }
 
-// Le script de la pièce mis en page pour l'impression, construit à chaque
-// déploiement par scripts/build_script_pdf.py depuis le MÊME script.json que le
-// site (donc jamais un brouillon de l'éditeur : ce qui n'a pas été déposé n'est
-// pas dedans).
+// The play's script laid out for printing, built at every deployment by
+// scripts/build_script_pdf.py from the SAME script.json as the site (so never a
+// draft from the editor: what has not been uploaded is not in it).
 //
-// Sur l'Avancement et pas sur un accueil, parce que c'est au respo de décider
-// quelle version fait foi et quand la distribuer. Le fichier reste servi à une
-// URL publique du site : c'est la même discrétion que respo.html, pas un verrou.
+// On the Progress page and not on a home page, because it is up to the coordinator to
+// decide which version is authoritative and when to distribute it. The file stays
+// served at a public URL of the site: this is the same discretion as respo.html,
+// not a lock.
 //
-// `.btn.primary`, le bouton de téléchargement du site : le même que le ZIP des
-// prises (Enregistrement) et que le script (Édition). Un téléchargement se
-// présente pareil partout, et l'aplat d'accent le sépare franchement de la
-// carte de dépôt juste au-dessus, qui est l'autre geste de la page (aller
-// déposer sur GitHub) et n'a aucune raison de lui ressembler.
+// `.btn.primary`, the site's download button: the same as the ZIP of takes
+// (Recording page) and as the script (Editing page). A download presents itself
+// the same way everywhere, and the flat accent separates it clearly from the
+// upload card right above, which is the page's other gesture (going to upload on
+// GitHub) and has no reason to look like it.
 //
-// Pas de sceau ici, contrairement à la carte de dépôt : la plume y désigne le
-// script.json qu'on DÉPOSE, la reprendre pour un PDF qu'on TÉLÉCHARGE ferait
-// lire deux gestes opposés sous la même pastille. La flèche du téléchargement
-// dit tout.
+// No seal here, unlike on the upload card: there the quill designates the
+// script.json one UPLOADS, taking it back for a PDF one DOWNLOADS would make two
+// opposite gestures read under the same pill. The download arrow says everything.
 //
-// « la pièce à imprimer » et non « le script de la pièce » : la carte de dépôt
-// juste au-dessus dit déjà « script de la pièce (JSON) », et deux libellés
-// partageant leur groupe de mots ne se distinguaient plus que par l'acronyme.
-// Or PDF est le seul des trois (ZIP, JSON, PDF) qu'un respo lit sans y penser :
-// on ne peut pas faire porter la différence à celui qu'il ne connaît pas.
-// « à imprimer » dit l'usage, et le mot « script » reste au dépôt, où il
-// désigne le fichier de travail.
+// "the play to print" and not "the play's script": the upload card right above
+// already says "the play's script (JSON)", and two labels sharing their group of
+// words could no longer be told apart except by the acronym. Yet PDF is the only
+// one of the three (ZIP, JSON, PDF) a coordinator reads without thinking about it: the
+// difference cannot be made to rest on the one they do not know.
+// "to print" says the use, and the word "script" stays with the upload, where it
+// designates the working file.
 const SCRIPT_PDF_HREF = "data/script.pdf";
 
 function ScriptPdfLink({ title }) {
-  // Le bouton est INCONDITIONNEL : le script imprimable n'est pas une option de
-  // la page, c'est l'un de ses deux gestes, et il se rend avec elle.
+  // The button is UNCONDITIONAL: the printable script is not an option of the
+  // page, it is one of its two gestures, and it renders along with it.
   //
-  // Il a commencé autrement, et l'essai est instructif : `ScriptPdfLink` sondait
-  // `data/script.pdf` en `HEAD` au montage et ne rendait rien tant que la
-  // réponse n'était pas là, sur le motif de `githubUploadUrl()`, qui masque la
-  // carte de dépôt plutôt que de forger un 404. Ça coûtait deux choses. Sur le
-  // site publié, le seul bouton de téléchargement du respo arrivait APRÈS la
-  // page, donc il poussait le tableau vers le bas sous ses yeux à chaque
-  // ouverture ; en dev, où le PDF est gitignoré, il n'arrivait jamais, et la
-  // page ne montrait pas la moitié de ce qu'elle a à montrer. Le prix payé pour
-  // ça était théorique : un fichier manquant en production suppose que l'install
-  // LaTeX ou la compilation ait échoué (les deux étapes de build.yml sont en
-  // `continue-on-error`), et un 404 nommé « transport-de-femmes.pdf » se
-  // diagnostique, alors qu'un bouton qui n'existe pas ne se cherche même pas.
-  // La production du fichier suit donc le bouton, et pas l'inverse : build.yml
-  // le construit avant de déployer, et en dev le middleware le télécharge depuis
-  // le site publié à la première requête (`ensureScriptPdf` dans
-  // vite.config.js), le PDF n'étant nulle part dans le dépôt.
+  // It started out otherwise, and the attempt is instructive: `ScriptPdfLink`
+  // probed `data/script.pdf` with `HEAD` on mount and rendered nothing until the
+  // response was in, on the grounds of `githubUploadUrl()`, which hides the
+  // upload card rather than forging a 404. That cost two things. On the published
+  // site, the coordinator's only download button arrived AFTER the page, so it pushed
+  // the table downwards under their eyes at every opening; in dev, where the PDF
+  // is gitignored, it never arrived at all, and the page did not show half of
+  // what it has to show. The price paid for that was theoretical: a missing file
+  // in production presupposes that the LaTeX install or the compilation failed
+  // (build.yml's two steps are in `continue-on-error`), and a 404 named
+  // "transport-de-femmes.pdf" can be diagnosed, whereas a button that does not
+  // exist is not even looked for.
+  // The file's production therefore follows the button, and not the other way
+  // round: build.yml builds it before deploying, and in dev the middleware
+  // downloads it from the published site on the first request (`ensureScriptPdf`
+  // in vite.config.js), the PDF being nowhere in the repo.
   //
-  // Le repli du slug est OBLIGATOIRE et se choisit par appelant : « ??? » est un
-  // titre non vide dont il ne reste rien après nettoyage, et le repli d'un
-  // personnage (l'usage d'origine de slugify) n'a aucun sens sur un PDF de
-  // pièce. Il vient du catalogue, comme tout nom de fichier téléchargé.
+  // The slug's fallback is MANDATORY and is chosen per caller: "???" is a
+  // non-empty title of which nothing remains after cleaning, and a character's
+  // fallback (slugify's original use) makes no sense on a play's PDF. It comes
+  // from the catalogue, like every downloaded file name.
   const name = slugify(title, t("dashboard.pdfSlug"));
   return (
-    // `download` renomme au passage : le respo reçoit « transport-de-femmes.pdf »
-    // et pas « script.pdf », qui ne dit rien une fois dans le dossier des
-    // téléchargements.
+    // `download` renames along the way: the coordinator gets "transport-de-femmes.pdf"
+    // and not "script.pdf", which says nothing once in the downloads folder.
     <a
       className="btn primary dash-script-btn lift-hover"
       href={SCRIPT_PDF_HREF}
@@ -468,14 +480,14 @@ function ScriptPdfLink({ title }) {
 }
 
 // Characters × scenes grid: "recorded / total" ratio in each cell. Acts,
-// scene numbers and character names carry the same ambre/vert tint as the
+// scene numbers and character names carry the same amber/green tint as the
 // cells, so a whole row, column or act reads as done at a glance.
 //
-// La colonne des noms est figée (CSS), le reste défile dans le conteneur : une
-// pièce à quinze scènes ne tient sur aucun téléphone, et une case « 2/5 » sans
-// son nom ne dit rien. Le conteneur défilant est donc une région nommée et
-// focalisable : il ne contient aucun élément focalisable, donc sans `tabIndex`
-// il ne se parcourrait ni au clavier ni au lecteur d'écran.
+// The names column is frozen (CSS), the rest scrolls inside the container: a play
+// with fifteen scenes fits on no phone, and a "2/5" cell without its name says
+// nothing. The scrolling container is therefore a named and focusable region: it
+// contains no focusable element, so without `tabIndex` it could be walked neither
+// by keyboard nor by screen reader.
 function ProgressTable({ acts, scenes, rows }) {
   return (
     <div
@@ -514,9 +526,9 @@ function ProgressTable({ acts, scenes, rows }) {
         <tbody>
           {rows.map((row) => (
             <tr key={row.character.id}>
-              {/* Le nom est enveloppé pour pouvoir être coupé quand la place
-                  manque (la colonne est figée, elle prend sur les scènes) ;
-                  le `title` le rend alors en entier. */}
+              {/* The name is wrapped so it can be truncated when room runs out
+                  (the column is frozen, it takes room from the scenes); the
+                  `title` then renders it in full. */}
               <th
                 className={`dash-name ${statusClass(row.ok, row.total)}`}
                 title={row.character.name}
@@ -524,15 +536,24 @@ function ProgressTable({ acts, scenes, rows }) {
                 <span className="dash-name-text truncate">{row.character.name}</span>
               </th>
               {row.cells.map((cell, i) =>
-                // Pas de réplique dans cette scène : case vide, sans marqueur.
+                // No line in this scene: empty cell, without a marker.
                 cell.total === 0 ? (
                   <td key={scenes[i].key} className="empty" />
                 ) : (
                   <td key={scenes[i].key} className={statusClass(cell.ok, cell.total)}>
-                    {/* Deux éléments et pas une chaîne : les deux nombres n'ont
-                        pas la même graisse (l'enregistré ressort du total). Chacun
-                        passe par `fmt.number`, le formateur des nombres écrits
-                        seuls, hors de toute phrase. */}
+                    {/* Two elements and not one string: the two numbers do not
+                        have the same weight (the recorded one stands out from the
+                        total). Each goes through `fmt.number`, the formatter for
+                        numbers written alone, outside any sentence.
+                        The slash STAYS in the JSX, and that is deliberate even though
+                        a fraction slash is normally a fact of language kept in the
+                        string (`recorder.lineCounter` is "{n}/{total}" in both
+                        catalogues, French included, which is what settles it): the two
+                        numbers have to be two elements for their weights, so routing
+                        the separator through the catalogue would mean a `<T>` per CELL,
+                        that is several hundred on a play of twenty characters and forty
+                        scenes, in exchange for a character both languages write the
+                        same way. */}
                     <span className="dash-cell-ok">{fmt.number(cell.ok)}</span>
                     <span className="dash-cell-total">/{fmt.number(cell.total)}</span>
                   </td>

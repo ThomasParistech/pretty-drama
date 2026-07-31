@@ -1,19 +1,18 @@
 import { fmt } from "./locale.js";
 
-// La date d'un dépôt, année comprise (un journal se relit des mois plus tard, et
-// deux saisons de répétitions passent par les mêmes jours). Rend null sur un
-// horodatage illisible, plutôt que d'afficher « Invalid Date ».
+// The date of an upload, year included (a log is read back months later, and two
+// rehearsal seasons go through the same days). Returns null on an unreadable
+// timestamp, rather than showing "Invalid Date".
 //
-// `fmt.dateTime` remplace deux `toLocale*` figés sur « fr-FR » et le mot de
-// liaison « à » qui les joignait : le format d'une locale porte son propre
-// séparateur (une virgule en anglais), donc il n'y avait rien à traduire, juste
-// à cesser de l'écrire à la main.
+// `fmt.dateTime` replaces two `toLocale*` calls pinned to "fr-FR" and the linking
+// word "à" that joined them: a locale's format carries its own separator (a comma
+// in English), so there was nothing to translate, only to stop writing it by hand.
 //
-// Partagé depuis que deux pages datent un dépôt : le journal de l'Avancement d'une
-// pièce, et la carte de chaque pièce sur la page de gestion, où la date du dernier
-// dépôt fait office de témoin de vie. Un module à part et pas une fonction de
-// `data.js` : celui-là est couvert par `node --test` et ne peut pas importer
-// `locale.js`, qui lit l'URL, le stockage et le navigateur dès son import.
+// Shared since two pages date an upload: a play's Progress log, and each play's
+// card on the management page, where the date of the last upload acts as a sign of
+// life. A module of its own and not a function of `data.js`: that one is covered by
+// `node --test` and cannot import `locale.js`, which reads the URL, the storage and
+// the navigator as soon as it is imported.
 export default function formatWhen(iso) {
   const then = new Date(iso);
   if (Number.isNaN(then.getTime())) return null;

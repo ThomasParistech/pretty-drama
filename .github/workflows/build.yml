@@ -1,17 +1,17 @@
 name: build
 
-# Construit le site et le déploie sur GitHub Pages. Rien d'autre : ce workflow
-# n'écrit JAMAIS dans le dépôt (pas de commit, pas de journal). Le seul écrivain
-# est uploads.yml, qui traite les dépôts puis appelle celui-ci (`workflow_call`)
-# parce qu'un commit poussé avec le GITHUB_TOKEN ne déclenche aucun workflow.
+# Builds the site and deploys it to GitHub Pages. Nothing else: this workflow NEVER
+# writes to the repo (no commit, no journal). The only writer is uploads.yml, which
+# processes uploads and then calls this one (`workflow_call`), because a commit pushed
+# with the GITHUB_TOKEN triggers no workflow.
 #
-# `paths-ignore: uploads/**` : un dépôt est l'affaire d'uploads.yml, qui finit
-# par nous appeler. Sans ce filtre, un dépôt déclencherait les deux en parallèle
-# et publierait un site sans les nouvelles voix.
+# `paths-ignore: uploads/**`: an upload is uploads.yml's business, and it ends up
+# calling us. Without this filter an upload would trigger both in parallel and publish
+# a site without the new voices.
 #
-# Le respo ne vient jamais sur GitHub en dehors du dépôt de fichiers : ce
-# workflow ne lui écrit donc rien ici, ni issue ni statut dans le README. Son
-# seul retour est le journal des dépôts de la page Avancement.
+# The coordinator never visits GitHub except to drop files, so this workflow writes
+# nothing for them here, no issue and no README status. Their only feedback is the upload
+# journal on the Dashboard page.
 
 on:
   push:
@@ -26,9 +26,8 @@ permissions:
   pages: write
   id-token: write
 
-# Un seul déploiement Pages à la fois. Groupe DIFFÉRENT de celui d'uploads.yml :
-# un workflow appelé qui partage le groupe de son appelant est détecté comme
-# interblocage et annulé.
+# One Pages deployment at a time. A DIFFERENT group from uploads.yml: a called
+# workflow that shares its caller's group is detected as a deadlock and cancelled.
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -37,10 +36,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # `ref` explicite : appelés depuis uploads.yml, nous tournons dans le run
-      # d'un push ANTÉRIEUR au commit que ce workflow vient de pousser. Sans
-      # cela, checkout prendrait ce SHA d'origine et publierait un site sans les
-      # voix qu'on vient de traiter.
+      # Explicit `ref`: when called from uploads.yml we run inside the run of a push
+      # made BEFORE the commit that workflow just pushed. Without this, checkout would
+      # take that original SHA and publish a site without the voices we just
+      # processed.
       - name: Checkout (head of the branch, not the triggering SHA)
         uses: actions/checkout@v7
         with:
@@ -49,11 +48,11 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
-          # Node 24 (LTS Krypton) : Node 20 est en fin de vie depuis avril 2026.
-          # Le `npm ci` qui suit tourne donc avec npm 11, qui n'exécute plus les
-          # scripts d'installation sans accord explicite et saute le postinstall
-          # d'esbuild : sans effet, le binaire vient du paquet de plateforme
-          # `@esbuild/linux-x64` et `vite build` s'en contente (vérifié).
+          # Node 24 (LTS Krypton): Node 20 has been end-of-life since April 2026.
+          # The `npm ci` below therefore runs with npm 11, which no longer runs
+          # install scripts without explicit consent and skips esbuild's postinstall.
+          # No consequence: the binary comes from the `@esbuild/linux-x64` platform
+          # package and `vite build` is happy with it (verified).
           node-version: 24
           cache: npm
 
@@ -65,41 +64,39 @@ jobs:
       - name: Install front dependencies
         run: npm ci
 
-      - name: Run tests (normalization + statuses + ZIP contract + journal + contrats)
+      - name: Run tests (normalization + statuses + ZIP contract + journal + contracts)
         run: python -m unittest discover -s scripts/tests -v
 
-      # Logique pure du front : réparation d'un script.json douteux, pile
-      # d'annulation, helpers partagés. `node --test` est intégré à Node, il n'y
-      # a donc aucune dépendance de test à installer.
+      # Pure front logic: repairing a dubious script.json, the undo stack, shared
+      # helpers. `node --test` ships with Node, so there is no test dependency to
+      # install.
       - name: Run front tests (reducer, undo stack, shared helpers)
         run: npm test
 
-      # Les manifests sont dérivés : on les reconstruit pour que le site déployé
-      # colle aux script.json et clips.json même après une édition à la main dans
-      # le dépôt, et l'index des pièces avec eux (il les lit, donc il vient après).
-      # Rien n'est commité ici (seul uploads.yml écrit dans le dépôt).
+      # Manifests are derived: we rebuild them so the deployed site matches the
+      # script.json and clips.json files even after a hand edit in the repo, and the
+      # plays index with them (it reads the manifests, so it comes after). Nothing is
+      # committed here; only uploads.yml writes to the repo.
       - name: Rebuild the manifests and the plays index
         run: |
           python scripts/build_manifest.py
           python scripts/build_plays_index.py
 
-      # Le PDF du script est un confort, jamais une condition de déploiement :
-      # d'où le continue-on-error ici, et le code de retour 0 que
-      # build_script_pdf.py rend même quand LaTeX échoue. Sans ces deux
-      # filets, une réplique mal formée ferait disparaître le site entier
-      # sans que le respo en soit averti (ce workflow n'écrit ni issue ni
-      # journal, il n'a aucun moyen de le lui dire).
-      # Les paquets TeX de la distribution, et rien d'autre. tectonic a été
-      # essayé et écarté : plus rapide en régime établi (un binaire statique de
-      # 26 Mo, ~0,5 s de compilation contre 0,25 s ici, contre ~300 Mo de
-      # paquets), mais il demandait une URL de release figée, une empreinte
-      # sha256 à faire suivre à chaque montée de version et un cache
-      # `actions/cache` pour ne pas repayer 40 s de téléchargement de fichiers
-      # TeX. Trois choses qui pourrissent, dans un dépôt fait pour être forké
-      # par une troupe et laissé tranquille des années, et tout ça pour gagner
-      # moins d'une minute sur un job qui tourne une fois par semaine. Les
-      # paquets apt sont signés par la distribution, se résolvent encore dans
-      # dix ans et n'ajoutent aucune relation de confiance.
+      # The script PDF is a convenience, never a deployment condition: hence the
+      # continue-on-error here, and the exit code 0 that build_script_pdf.py returns
+      # even when LaTeX fails. Without those two nets, one malformed line would make
+      # the whole site disappear with no warning to the coordinator (this workflow writes
+      # neither issue nor journal, so it has no way to tell them).
+      #
+      # Distro TeX packages, and nothing else. tectonic was tried and dropped: it is
+      # faster in steady state (a 26 MB static binary, ~0.5 s of compilation against
+      # 0.25 s here, against ~300 MB of packages), but it required a pinned release
+      # URL, a sha256 to carry forward on every version bump, and an `actions/cache`
+      # to avoid re-paying 40 s of TeX file downloads. Three things that rot, in a
+      # repo meant to be forked by a troupe and left alone for years, all to save
+      # under a minute on a job that runs about once a week. The apt packages are
+      # signed by the distro, still resolve in ten years, and add no trust
+      # relationship.
       - name: Install LaTeX (script PDF)
         continue-on-error: true
         run: |
@@ -107,28 +104,29 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             texlive-latex-recommended texlive-lang-french texlive-fonts-recommended lmodern
 
-      # Écrit plays/<id>/data/script.pdf, que la copie de plays/ ci-dessous emporte
-      # dans dist/. Doit donc rester AVANT « Build site ».
+      # Writes plays/<id>/data/script.pdf, which the copy of plays/ below carries into
+      # dist/. So it must stay BEFORE "Build site".
       - name: Build the printable script of every play
         continue-on-error: true
         run: python scripts/build_script_pdf.py
 
-      # `npm run build` écrit lui-même les sept pages de chaque pièce depuis les
-      # gabarits de `pages/` (cf. vite.config.js), donc dist/plays/<id>/ existe déjà
-      # quand on y recopie les données et les clips de la pièce.
+      # `npm run build` writes the seven pages of each play itself, from the templates
+      # in `pages/` (see vite.config.js), so dist/plays/<id>/ already exists when we
+      # copy the play's data and clips into it.
       #
-      # L'exclusion des `.html` n'est pas une précaution, elle est nécessaire :
-      # `plays/<id>/*.html` sont les gabarits instanciés en clair dans l'arbre de
-      # travail (gitignorés), alors que ceux de `dist/` sont la version que Vite a
-      # écrite, avec les URLs d'assets hachées. Les recopier par-dessus servirait un
-      # site qui référence `/src/rehearsal/main.jsx`, donc une page blanche.
-      # Les deux `mkdir -p` ne sont pas décoratifs : un dépôt sans aucune pièce est
-      # un état atteignable (fork tout neuf, ou pièce d'exemple supprimée pour
-      # partir propre), et alors `plays/` n'existe pas, `dist/plays/` non plus
-      # (Vite n'a écrit aucune page de pièce), et `rsync` échouerait sur un dossier
-      # source absent. Le site doit se construire quand même : c'est justement lui
-      # qui porte la page où l'on crée sa première pièce. Même précaution que le
-      # `mkdir -p clips` d'avant, et pour la même raison.
+      # Excluding the `.html` files is not a precaution, it is necessary:
+      # `plays/<id>/*.html` are the templates instantiated verbatim in the worktree
+      # (gitignored), whereas the ones in `dist/` are the version Vite wrote, with
+      # hashed asset URLs. Copying over them would serve a site referencing
+      # `/src/rehearsal/main.jsx`, so a blank page.
+      #
+      # The two `mkdir -p` are not decorative: a repo with no play at all is a
+      # reachable state (a brand new fork, or the example play deleted to start
+      # clean), and then `plays/` does not exist, `dist/plays/` does not either (Vite
+      # wrote no play page), and `rsync` would fail on a missing source directory. The
+      # site must build anyway: it is precisely the site that carries the page where
+      # you create your first play. Same precaution as the earlier `mkdir -p clips`,
+      # and for the same reason.
       - name: Build site
         run: |
           npm run build
@@ -140,15 +138,16 @@ jobs:
         uses: actions/configure-pages@v6
         with:
           # Auto-enables Pages (source: GitHub Actions) on first run when the
-          # token has the required permissions; otherwise the respo enables it
+          # token has the required permissions; otherwise the coordinator enables it
           # once in Settings -> Pages.
           enablement: true
 
-      # Depuis la v4 cette action EXCLUT les fichiers cachés de l'artefact (il
-      # existe un `include-hidden-files` pour les rattraper). Sans effet ici, et
-      # à garder ainsi : rien de ce que le site sert ne commence par un point.
-      # Le seul dotfile qui arrive dans dist/ est le clips/.gitkeep recopié
-      # au-dessus, qui n'a aucune raison d'être publié.
+      # Since v4 this action EXCLUDES hidden files from the artifact (there is an
+      # `include-hidden-files` to bring them back). No effect here, and to be kept
+      # that way: nothing the site serves starts with a dot. The dotfiles that reach
+      # dist/ are the `.gitkeep` files rsync carries along with the plays (one keeps
+      # `plays/` alive in git, one per play keeps its `clips/`), and none of them has
+      # any reason to be published.
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v5
         with:

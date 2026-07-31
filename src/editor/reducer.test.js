@@ -1,10 +1,10 @@
-// Tests du cœur de l'éditeur : la réparation d'un script.json douteux
-// (sanitizeScript) et les cas du reducer qui portent un invariant du projet.
+// Tests for the heart of the editor: the repair of a dubious script.json
+// (sanitizeScript) and the reducer cases that carry a project invariant.
 //
-// C'est de la logique pure, sans React ni DOM : `node --test` la joue telle
-// quelle. Ce qui se teste ici est exactement ce qui ne se relit pas à l'œil :
-// un id de réplique recyclé, une réplique qui change de personnage en
-// silence, une action refusée qui pousserait quand même une étape d'annulation.
+// This is pure logic, with no React and no DOM: `node --test` runs it as is.
+// What is tested here is exactly what cannot be re-read by eye: a recycled line
+// id, a line that silently changes character, a rejected action that would push
+// an undo step anyway.
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -40,8 +40,8 @@ const play = (overrides = {}) => ({
   ...overrides,
 });
 
-// Une pièce à DEUX actes : SET_LINE_TEXTS est le seul cas « lignes » qui n'est
-// pas borné à une scène, donc le seul qui ne se vérifie pas sur un acte unique.
+// A play with TWO acts: SET_LINE_TEXTS is the only "lines" case that is not
+// bounded to one scene, hence the only one a single act cannot verify.
 const twoActs = () =>
   play({
     acts: [
@@ -65,7 +65,7 @@ const ownerOf = (script, lineId) => {
 
 // ---------------------------------------------------------------- sanitize
 
-test("sanitizeScript rend un script valide inchangé dans sa substance", () => {
+test("sanitizeScript returns a valid script unchanged in substance", () => {
   const sane = sanitizeScript(play());
   assert.equal(sane.title, "Le Misanthrope");
   assert.deepEqual(lineIds(sane), ["l-1", "l-2"]);
@@ -75,19 +75,19 @@ test("sanitizeScript rend un script valide inchangé dans sa substance", () => {
   );
 });
 
-test("sanitizeScript accepte n'importe quelle racine sans jeter", () => {
+test("sanitizeScript accepts any root without throwing", () => {
   for (const raw of [null, undefined, 42, "texte", [1, 2, 3], {}]) {
     const sane = sanitizeScript(raw);
     assert.equal(typeof sane.title, "string");
     assert.deepEqual(sane.characters, []);
-    // Toujours au moins un acte et une scène : l'éditeur a besoin d'un endroit
-    // où écrire la première réplique.
+    // Always at least one act and one scene: the editor needs somewhere to write
+    // the first line.
     assert.ok(sane.acts.length >= 1);
     assert.ok(sane.acts[0].scenes.length >= 1);
   }
 });
 
-test("tout id de réplique rendu respecte SAFE_ID, donc nomme un mp3 sans danger", () => {
+test("every line id returned satisfies SAFE_ID, so it names an mp3 safely", () => {
   const sane = sanitizeScript(
     play({
       acts: [
@@ -111,12 +111,12 @@ test("tout id de réplique rendu respecte SAFE_ID, donc nomme un mp3 sans danger
   const ids = lineIds(sane);
   assert.equal(ids.length, 6);
   for (const id of ids) assert.match(id, SAFE_ID);
-  // Un id lisible et valide n'est jamais remplacé : il nomme peut-être déjà
-  // un clip publié.
+  // A readable and valid id is never replaced: it may already name a published
+  // clip.
   assert.ok(ids.includes("l-legitime"));
 });
 
-test("un id de réplique dupliqué est reminté, jamais recyclé", () => {
+test("a duplicated line id is re-minted, never recycled", () => {
   const sane = sanitizeScript(
     play({
       acts: [
@@ -134,15 +134,15 @@ test("un id de réplique dupliqué est reminté, jamais recyclé", () => {
     })
   );
   const [a, b] = firstScene(sane).lines;
-  assert.equal(a.id, "l-1", "le premier porteur garde son id (son clip existe peut-être)");
+  assert.equal(a.id, "l-1", "the first holder keeps its id (its clip may exist)");
   assert.notEqual(b.id, "l-1");
   assert.match(b.id, SAFE_ID);
   assert.equal(new Set(lineIds(sane)).size, 2);
 });
 
-test("un personnage à l'id hors SAFE_ID est reminté ET ses répliques le suivent", () => {
-  // Sans quoi une simple lettre accentuée dans un script.json édité à la main
-  // orphelinerait tout un rôle : plus personne pour l'enregistrer.
+test("a character whose id fails SAFE_ID is re-minted AND its lines follow it", () => {
+  // Otherwise a single accented letter in a hand-edited script.json would
+  // orphan a whole role: nobody left to record it.
   const sane = sanitizeScript({
     characters: [{ id: "éliante", name: "Éliante" }],
     acts: [{ scenes: [{ lines: [{ id: "l-1", characterId: "éliante", text: "Bonjour." }] }] }],
@@ -151,11 +151,11 @@ test("un personnage à l'id hors SAFE_ID est reminté ET ses répliques le suive
   assert.match(sane.characters[0].id, SAFE_ID);
 });
 
-test("deux personnages au MÊME id : le premier garde l'id et ses répliques", () => {
-  // Le second repart avec un id neuf et aucune réplique. Déplacer les
-  // répliques vers lui changerait qui parle dans la pièce, alors que les mp3
-  // (nommés par id de réplique) ne bougeraient pas : la voix enregistrée par
-  // l'un se mettrait à sortir sous le nom de l'autre.
+test("two characters with the SAME id: the first keeps the id and its lines", () => {
+  // The second leaves with a fresh id and no lines. Moving the lines to it would
+  // change who speaks in the play, while the mp3s (named by line id) would not
+  // move: the voice recorded by one would start coming out under the other's
+  // name.
   const sane = sanitizeScript({
     characters: [{ id: "c1", name: "Alceste" }, { id: "c1", name: "Philinte" }],
     acts: [{ scenes: [{ lines: [{ id: "l-1", characterId: "c1", text: "Laissez-moi." }] }] }],
@@ -165,7 +165,7 @@ test("deux personnages au MÊME id : le premier garde l'id et ses répliques", (
   assert.equal(ownerOf(sane, "l-1"), "Alceste");
 });
 
-test("une réplique qui cite un personnage inexistant devient orpheline, pas une erreur", () => {
+test("a line naming a character that does not exist becomes orphaned, not an error", () => {
   const sane = sanitizeScript(
     play({
       acts: [{ scenes: [{ lines: [{ id: "l-1", characterId: "c-fantome", text: "?" }] }] }],
@@ -174,11 +174,11 @@ test("une réplique qui cite un personnage inexistant devient orpheline, pas une
   assert.equal(firstScene(sane).lines[0].characterId, null);
 });
 
-test("les entrées malformées sont abandonnées, jamais un crash", () => {
+test("malformed entries are dropped, never a crash", () => {
   const sane = sanitizeScript({
     characters: [
       { id: "c-ok", name: "Alceste" },
-      { id: "c-vide", name: "   " }, // nom blanc : pas un personnage
+      { id: "c-vide", name: "   " }, // blank name: not a character
       { id: "c-sans-nom" },
       null,
       "Philinte",
@@ -196,36 +196,37 @@ test("les entrées malformées sont abandonnées, jamais un crash", () => {
   assert.equal(allLines(sane)[0].text, "seule valide");
 });
 
-test("une couleur absente ou étrangère est réparée avec une couleur de la palette", () => {
+test("a missing or foreign colour is repaired with a colour from the palette", () => {
   const sane = sanitizeScript({
     characters: [
       { id: "c1", name: "A" },
       { id: "c2", name: "B", color: 999 },
       { id: "c3", name: "C", color: "bleu" },
-      // Un doublon repart aussi avec une couleur neuve : deux personnages de la
-      // même couleur seraient indiscernables dans les camemberts de la
-      // Répartition.
+      // A duplicate also leaves with a fresh colour: two characters of the same
+      // colour would be indistinguishable in the pie charts of the Speaking
+      // share page.
       { id: "c4", name: "D", color: CHARACTER_COLORS[0] },
     ],
     acts: [],
   });
-  for (const c of sane.characters) assert.ok(isPaletteColor(c.color), `couleur : ${c.color}`);
-  // Déterministe et sans doublon tant que la palette n'est pas épuisée.
+  for (const c of sane.characters) assert.ok(isPaletteColor(c.color), `colour: ${c.color}`);
+  // Deterministic and free of duplicates as long as the palette is not
+  // exhausted.
   assert.equal(new Set(sane.characters.map((c) => c.color)).size, 4);
 });
 
-test("l'Édition et la Répartition comblent les couleurs à l'identique", () => {
-  // LE contrat de l'extraction dans src/shared/characterColors.js : le script
-  // publié n'a AUCUNE couleur (le fichier de la troupe est antérieur), donc les
-  // deux pages les comblent chacune de son côté, l'éditeur par `sanitizeScript`
-  // et la Répartition par `assignColors` sur le manifest. Deux comblements qui
-  // dérivent montreraient deux distributions différentes de la même pièce.
+test("Editing and Speaking share fill in colours identically", () => {
+  // THE contract of the extraction into src/shared/characterColors.js: the
+  // published script carries NO colour (the troupe's file predates them), so the
+  // two pages fill them in each on its own side, the editor through
+  // `sanitizeScript` and Speaking share through `assignColors` on the manifest.
+  // Two fill-ins that drifted would show two different casts of the same play.
   const characters = [
     { id: "c-alceste", name: "Alceste" },
     { id: "c-philinte", name: "Philinte" },
     { id: "c-oronte", name: "Oronte" },
-    // Une couleur déjà posée doit être respectée des deux côtés, y compris
-    // quand elle n'est pas celle que le comblement aurait donnée.
+    // A colour already set must be respected on both sides, including when it is
+    // not the one the fill-in would have given.
     { id: "c-celimene", name: "Célimène", color: CHARACTER_COLORS[7] },
   ];
   const edition = sanitizeScript({ characters, acts: [] }).characters;
@@ -233,22 +234,22 @@ test("l'Édition et la Répartition comblent les couleurs à l'identique", () =>
   assert.deepEqual(
     edition.map((c) => [c.id, c.color]),
     [...repartition],
-    "même id, même couleur, dans le même ordre"
+    "same id, same colour, in the same order"
   );
 
-  // Et une fois la palette épuisée, là où les deux comptent les personnages
-  // servis chacun à sa façon (un compteur ici, la taille de la Map là) : c'est
-  // le seul endroit où ce décompte décide de la couleur, donc le seul où les
-  // deux peuvent se décaler sans que rien ne le dise.
+  // And once the palette is exhausted, where the two count the characters served
+  // each in its own way (a counter here, the size of the Map there): that is the
+  // only place where this count decides the colour, hence the only one where the
+  // two can drift apart without anything saying so.
   const troupe = Array.from({ length: 23 }, (_, i) => ({ id: `c${i}`, name: `Personnage ${i}` }));
   assert.deepEqual(
     sanitizeScript({ characters: troupe, acts: [] }).characters.map((c) => c.color),
     [...assignColors(troupe).values()],
-    "la palette boucle du même pas des deux côtés"
+    "the palette wraps at the same pace on both sides"
   );
 });
 
-test("un texte absent devient une chaîne vide, jamais undefined", () => {
+test("a missing text becomes an empty string, never undefined", () => {
   const sane = sanitizeScript({
     characters: [],
     acts: [{ scenes: [{ lines: [{ id: "l-1" }, { id: "l-2", text: 42 }] }] }],
@@ -258,7 +259,7 @@ test("un texte absent devient une chaîne vide, jamais undefined", () => {
 
 // ----------------------------------------------------------------- reducer
 
-test("déplacer une réplique lui garde son id (son mp3 reste le sien)", () => {
+test("moving a line keeps its id (its mp3 stays its own)", () => {
   const before = play();
   const after = scriptReducer(before, {
     type: "MOVE_LINE",
@@ -270,7 +271,7 @@ test("déplacer une réplique lui garde son id (son mp3 reste le sien)", () => {
   assert.deepEqual(lineIds(after), ["l-2", "l-1"]);
 });
 
-test("renommer un personnage ne touche aucun id de réplique", () => {
+test("renaming a character touches no line id", () => {
   const before = play();
   const after = scriptReducer(before, {
     type: "RENAME_CHARACTER",
@@ -281,7 +282,7 @@ test("renommer un personnage ne touche aucun id de réplique", () => {
   assert.equal(ownerOf(after, "l-1"), "ALCESTE");
 });
 
-test("éditer un texte ne touche pas l'id de la réplique", () => {
+test("editing a text does not touch the line's id", () => {
   const after = scriptReducer(play(), {
     type: "EDIT_TEXT",
     actIndex: 0,
@@ -293,7 +294,7 @@ test("éditer un texte ne touche pas l'id de la réplique", () => {
   assert.equal(allLines(after)[0].text, "Tout autre chose.");
 });
 
-test("une nouvelle réplique reprend le personnage de celle qu'elle suit", () => {
+test("a new line takes on the character of the one it follows", () => {
   const after = scriptReducer(play(), {
     type: "ADD_LINE",
     id: "l-3",
@@ -305,7 +306,7 @@ test("une nouvelle réplique reprend le personnage de celle qu'elle suit", () =>
   assert.equal(ownerOf(after, "l-3"), "Alceste");
 });
 
-test("supprimer un personnage : réassigner déplace ses répliques, sans changer leurs ids", () => {
+test("deleting a character: reassigning moves its lines, without changing their ids", () => {
   const after = scriptReducer(play(), {
     type: "DELETE_CHARACTER",
     id: "c-alceste",
@@ -317,7 +318,7 @@ test("supprimer un personnage : réassigner déplace ses répliques, sans change
   assert.equal(after.characters.length, 1);
 });
 
-test("supprimer un personnage : l'autre mode emporte ses répliques", () => {
+test("deleting a character: the other mode takes its lines away with it", () => {
   const after = scriptReducer(play(), {
     type: "DELETE_CHARACTER",
     id: "c-alceste",
@@ -326,10 +327,10 @@ test("supprimer un personnage : l'autre mode emporte ses répliques", () => {
   assert.deepEqual(lineIds(after), ["l-2"]);
 });
 
-test("une action refusée rend l'état PRÉCIS reçu, pas une copie", () => {
-  // history.js compare par identité pour savoir s'il faut empiler une étape
-  // d'annulation : une copie ferait naître des étapes vides, et « Modifications
-  // non téléchargées » s'allumerait sans qu'on ait rien modifié.
+test("a rejected action returns the EXACT state it was given, not a copy", () => {
+  // history.js compares by identity to decide whether to push an undo step: a
+  // copy would give birth to empty steps, and "Changes not downloaded" would
+  // light up without anything having been modified.
   const before = play();
   const edit = (edits) => ({ type: "SET_LINE_TEXTS", edits });
   const retype = (lineId, text) => ({ type: "EDIT_TEXT", actIndex: 0, sceneIndex: 0, lineId, text });
@@ -338,22 +339,22 @@ test("une action refusée rend l'état PRÉCIS reçu, pas une copie", () => {
     { type: "RENAME_CHARACTER", id: "c-alceste", name: "  " },
     { type: "ACTION_INCONNUE" },
     { type: "MOVE_LINE", actIndex: 0, sceneIndex: 0, activeId: "l-1", overId: "l-1" },
-    // Un remplacement sans effet : lot vide, réplique inconnue, texte déjà en
-    // place, lot malformé.
+    // A replacement with no effect: empty batch, unknown line, text already in
+    // place, malformed batch.
     edit([]),
     edit([{ lineId: "l-inconnue", text: "Ailleurs." }]),
     edit([{ lineId: "l-1", text: "Laissez-moi." }]),
     edit("pas un tableau"),
     edit([null, { lineId: "l-1" }, { text: "sans id" }]),
-    // Et une frappe qui repose le texte courant.
+    // And a keystroke that puts the current text back.
     retype("l-1", "Laissez-moi."),
     retype("l-inconnue", "Ailleurs."),
   ].entries()) {
-    assert.equal(scriptReducer(before, action), before, `action ${i} : ${action.type}`);
+    assert.equal(scriptReducer(before, action), before, `action ${i}: ${action.type}`);
   }
 });
 
-test("SET_LINE_TEXTS réécrit plusieurs répliques de plusieurs actes en un seul état", () => {
+test("SET_LINE_TEXTS rewrites several lines from several acts in a single state", () => {
   const before = twoActs();
   const after = scriptReducer(before, {
     type: "SET_LINE_TEXTS",
@@ -362,7 +363,7 @@ test("SET_LINE_TEXTS réécrit plusieurs répliques de plusieurs actes en un seu
       { lineId: "l-3", text: "Encore nous ?" },
     ],
   });
-  // Les ids ne bougent pas : ils nomment les mp3 déjà enregistrés.
+  // The ids do not move: they name the mp3s already recorded.
   assert.deepEqual(lineIds(after), ["l-1", "l-2", "l-3"]);
   assert.deepEqual(
     allLines(after).map((l) => l.text),
@@ -370,40 +371,40 @@ test("SET_LINE_TEXTS réécrit plusieurs répliques de plusieurs actes en un seu
   );
 });
 
-test("SET_LINE_TEXTS garde l'identité de ce qu'il ne touche pas", () => {
-  // C'est ce qui laisse React.memo sauter le reste de la pièce : un
-  // remplacement dans l'acte II ne doit pas faire re-rendre l'acte I.
+test("SET_LINE_TEXTS keeps the identity of what it does not touch", () => {
+  // That is what lets React.memo skip the rest of the play: a replacement in act
+  // II must not make act I re-render.
   const before = twoActs();
   const after = scriptReducer(before, {
     type: "SET_LINE_TEXTS",
     edits: [{ lineId: "l-3", text: "Encore nous ?" }],
   });
   assert.notEqual(after, before);
-  assert.equal(after.acts[0], before.acts[0], "l'acte intact garde son objet");
+  assert.equal(after.acts[0], before.acts[0], "the untouched act keeps its object");
   assert.equal(
     firstScene(after).lines[1],
     firstScene(before).lines[1],
-    "la réplique intacte garde son objet"
+    "the untouched line keeps its object"
   );
 });
 
-test("un nouveau personnage reçoit une couleur libre de la palette", () => {
+test("a new character receives a free colour from the palette", () => {
   const after = scriptReducer(play(), { type: "ADD_CHARACTER", id: "c-oronte", name: "Oronte" });
   const oronte = after.characters.find((c) => c.id === "c-oronte");
   assert.ok(isPaletteColor(oronte.color));
   assert.equal(new Set(after.characters.map((c) => c.color)).size, 3);
 });
 
-test("SET_CHARACTER_COLOR refuse une couleur hors palette, sans fabriquer d'état", () => {
-  // Une action refusée ne doit rien empiler dans l'historique : le reducer rend
-  // l'état REÇU, pas une copie (cf. l'invariant du no-op).
+test("SET_CHARACTER_COLOR rejects a colour outside the palette, without making a state", () => {
+  // A rejected action must push nothing onto the history: the reducer returns the
+  // state it was GIVEN, not a copy (cf. the no-op invariant).
   const before = play();
   const same = scriptReducer(before, {
     type: "SET_CHARACTER_COLOR",
     id: "c-alceste",
     color: "chartreuse",
   });
-  assert.equal(same, before, "état rendu à l'identique");
+  assert.equal(same, before, "state returned identically");
   const after = scriptReducer(before, {
     type: "SET_CHARACTER_COLOR",
     id: "c-alceste",
@@ -412,61 +413,60 @@ test("SET_CHARACTER_COLOR refuse une couleur hors palette, sans fabriquer d'éta
   assert.equal(after.characters[0].color, CHARACTER_COLORS[5]);
 });
 
-test("reposer le titre ou la langue à l'identique ne fabrique aucun état", () => {
-  // L'invariant du no-op sur les deux champs SCALAIRES de la pièce. Le cas se
-  // produit pour de vrai (Ctrl+A puis collage du même texte dans le champ de
-  // titre : l'événement part, la valeur ne change pas), et un état neuf y
-  // empilait une étape dont le `present` égalait son `past`, donc un Ctrl+Z
-  // allumé qui ne change rien à l'écran.
+test("putting the title or the language back identically makes no state", () => {
+  // The no-op invariant on the two SCALAR fields of the play. The case happens
+  // for real (Ctrl+A then pasting the same text into the title field: the event
+  // fires, the value does not change), and a fresh state there pushed a step
+  // whose `present` equalled its `past`, hence a lit Ctrl+Z that changes nothing
+  // on screen.
   const before = play();
   assert.equal(
     scriptReducer(before, { type: "SET_TITLE", title: before.title }),
     before,
-    "titre identique : état rendu à l'identique"
+    "identical title: state returned identically"
   );
   assert.equal(
     scriptReducer(before, { type: "SET_LANGUAGE", language: before.language }),
     before,
-    "langue identique : état rendu à l'identique"
+    "identical language: state returned identically"
   );
-  // Le garde ne doit pas manger une vraie modification, y compris l'effacement
-  // complet du titre (chaîne vide, que rien n'interdit).
+  // The guard must not swallow a real modification, including wiping the title
+  // completely (an empty string, which nothing forbids).
   assert.equal(scriptReducer(before, { type: "SET_TITLE", title: "" }).title, "");
   assert.notEqual(scriptReducer(before, { type: "SET_TITLE", title: "Autre" }), before);
 });
 
-// ---- Remaniement du plan (section « Structure » du rail) ----
+// ---- Reshaping the outline (the rail's "Structure" section) ----
 
-test("MOVE_ACT réordonne les actes et les répliques suivent leur scène", () => {
+test("MOVE_ACT reorders the acts and the lines follow their scene", () => {
   const before = twoActs();
   const after = scriptReducer(before, { type: "MOVE_ACT", from: 1, to: 0 });
-  // À l'identité des objets : les actes n'ont plus de titre par lequel les
-  // reconnaître, et l'identité dit de toute façon davantage (ce sont les mêmes
-  // actes qui se sont croisés, pas deux objets reconstruits).
+  // By object identity: acts no longer have a title to recognise them by, and
+  // identity says more anyway (these are the same acts that crossed over, not two
+  // rebuilt objects).
   assert.equal(after.acts.length, 2);
-  assert.equal(after.acts[0], before.acts[1], "l'acte déplacé garde son objet");
-  assert.equal(after.acts[1], before.acts[0], "et celui qu'il double aussi");
-  // Les ids nomment les mp3 : réordonner ne doit jamais en reminter un.
+  assert.equal(after.acts[0], before.acts[1], "the moved act keeps its object");
+  assert.equal(after.acts[1], before.acts[0], "and so does the one it overtakes");
+  // The ids name the mp3s: reordering must never re-mint one.
   assert.deepEqual(lineIds(after).sort(), lineIds(before).sort());
 });
 
-test("MOVE_SCENE réordonne dans son acte et laisse les autres intacts", () => {
+test("MOVE_SCENE reorders within its act and leaves the others intact", () => {
   const before = scriptReducer(twoActs(), { type: "ADD_SCENE", actIndex: 0 });
   const after = scriptReducer(before, { type: "MOVE_SCENE", actIndex: 0, from: 1, to: 0 });
-  // Vérifié à l'IDENTITÉ des objets et non par un titre : les scènes n'en ont
-  // plus (leur libellé est dérivé de leur rang), et c'est de toute façon plus
-  // fort, puisque ça prouve que ce sont les mêmes scènes qui ont bougé et pas
-  // deux objets reconstruits de valeur égale.
+  // Checked by object IDENTITY and not by a title: scenes no longer have one
+  // (their label is derived from their rank), and it is stronger anyway, since it
+  // proves that the same scenes moved and not two rebuilt objects of equal value.
   assert.equal(after.acts[0].scenes.length, 2);
-  assert.equal(after.acts[0].scenes[0], before.acts[0].scenes[1], "la seconde est passée devant");
-  assert.equal(after.acts[0].scenes[1], before.acts[0].scenes[0], "et la première derrière");
-  assert.equal(after.acts[1], before.acts[1], "l'acte non touché garde son objet");
+  assert.equal(after.acts[0].scenes[0], before.acts[0].scenes[1], "the second moved ahead");
+  assert.equal(after.acts[0].scenes[1], before.acts[0].scenes[0], "and the first behind");
+  assert.equal(after.acts[1], before.acts[1], "the untouched act keeps its object");
 });
 
-test("un déplacement sans effet rend l'état PRÉCIS reçu", () => {
-  // Sinon history.js y verrait une modification : reposer une scène là où elle
-  // était allumerait « Modifications non téléchargées » et laisserait une étape
-  // vide à annuler (même contrat que MOVE_LINE et EDIT_TEXT).
+test("a move with no effect returns the EXACT state it was given", () => {
+  // Otherwise history.js would see a modification in it: putting a scene back
+  // where it was would light up "Changes not downloaded" and leave an empty step
+  // to undo (same contract as MOVE_LINE and EDIT_TEXT).
   const before = twoActs();
   for (const action of [
     { type: "MOVE_ACT", from: 1, to: 1 },
@@ -480,56 +480,56 @@ test("un déplacement sans effet rend l'état PRÉCIS reçu", () => {
   }
 });
 
-test("indexAfterMove fait suivre la scène affichée", () => {
-  // Ce qu'on regarde est ce qui bouge : il suit.
+test("indexAfterMove makes the displayed scene follow along", () => {
+  // What we are looking at is what moves: it follows.
   assert.equal(indexAfterMove(2, 2, 0), 0);
-  // Un voisin traverse ce qu'on regarde : on se décale d'un cran, dans le sens
-  // inverse de sa traversée.
+  // A neighbour crosses what we are looking at: we shift by one, in the opposite
+  // direction to its crossing.
   assert.equal(indexAfterMove(0, 2, 0), 1);
   assert.equal(indexAfterMove(1, 0, 2), 0);
-  // Une traversée qui ne passe pas par nous ne change rien.
+  // A crossing that does not pass through us changes nothing.
   assert.equal(indexAfterMove(0, 1, 2), 0);
   assert.equal(indexAfterMove(3, 0, 1), 3);
 });
 
-test("indexAfterRemoval recule sur ce qui précède quand la scène regardée part", () => {
+test("indexAfterRemoval steps back onto what precedes when the watched scene goes", () => {
   assert.equal(indexAfterRemoval(2, 2), 1);
-  // Le premier supprimé : il n'y a rien avant, on reste au rang 0 (qui est
-  // maintenant celui du suivant).
+  // The first one deleted: there is nothing before, so we stay at rank 0 (which
+  // is now the next one's).
   assert.equal(indexAfterRemoval(0, 0), 0);
-  // Suppression avant nous : notre rang recule d'un cran. Après nous : rien.
+  // Deletion before us: our rank steps back by one. After us: nothing.
   assert.equal(indexAfterRemoval(2, 0), 1);
   assert.equal(indexAfterRemoval(1, 3), 1);
 });
 
-test("EMPTY_SCRIPT est un script que sanitizeScript accepte tel quel", () => {
+test("EMPTY_SCRIPT is a script sanitizeScript accepts as is", () => {
   assert.deepEqual(sanitizeScript(EMPTY_SCRIPT), {
     ...EMPTY_SCRIPT,
     characters: [],
   });
 });
 
-test("l'identifiant de la pièce est recopié, jamais reminté", () => {
-  // Le contraire de ce que font les ids de répliques et de personnages juste
-  // au-dessus : celui-ci nomme le dossier de la pièce et sa zone de dépôt, donc en
-  // fabriquer un neuf enverrait le prochain script téléchargé vers une pièce qui
-  // n'existe pas, en laissant derrière lui les mp3 déjà déposés.
+test("the play's identifier is copied over, never re-minted", () => {
+  // The opposite of what the line and character ids just above do: this one names
+  // the play's folder and its upload area, so making a fresh one would send the
+  // next downloaded script towards a play that does not exist, leaving behind the
+  // mp3s already uploaded.
   assert.equal(sanitizeScript({ id: "transport-de-femmes", acts: [] }).id, "transport-de-femmes");
 });
 
-test("un identifiant de pièce mal formé devient vide plutôt qu'un chemin", () => {
-  // Il finit dans un chemin (`plays/<id>/`) et dans une URL : même validation que
-  // côté Action, qui refusera alors de promouvoir le fichier plutôt que de deviner
-  // sa destination. Un script d'avant ce champ tombe dans le même cas.
+test("a malformed play identifier becomes empty rather than a path", () => {
+  // It ends up in a path (`plays/<id>/`) and in a URL: same validation as on the
+  // Action side, which will then refuse to promote the file rather than guess its
+  // destination. A script from before this field falls in the same case.
   for (const bad of ["../evil", "Majuscule", "avec espace", "-tiret", "x".repeat(65), 42, null]) {
     assert.equal(sanitizeScript({ id: bad, acts: [] }).id, "", String(bad));
   }
   assert.equal(sanitizeScript({ acts: [] }).id, "");
 });
 
-test("l'identifiant de la pièce entre de lui-même dans les champs comparés", () => {
-  // history.js dérive SCRIPT_FIELDS d'`Object.keys(EMPTY_SCRIPT)` exprès : un champ
-  // ajouté à la pièce doit entrer dans la comparaison d'identité qui éteint
-  // « Modifications non téléchargées », sans qu'une liste soit à tenir à la main.
+test("the play's identifier enters the compared fields by itself", () => {
+  // history.js derives SCRIPT_FIELDS from `Object.keys(EMPTY_SCRIPT)` on purpose:
+  // a field added to the play must enter the identity comparison that switches
+  // off "Changes not downloaded", without a list to keep up by hand.
   assert.ok(Object.keys(EMPTY_SCRIPT).includes("id"));
 });

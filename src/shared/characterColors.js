@@ -1,53 +1,51 @@
-// La couleur d'un personnage : la palette, son attribution, et la seule
-// dérivation qu'on en fasse. Module PUR (ni React, ni DOM, ni reducer), donc
-// entièrement rejoué par `node --test` (cf. characterColors.test.js).
+// A character's colour: the palette, how it is assigned, and the only derivation
+// we make from it. A PURE module (no React, no DOM, no reducer), hence entirely
+// replayed by `node --test` (see characterColors.test.js).
 //
-// **D'où vient la palette.** C'est Tableau 10, la palette catégorielle
-// canonique : `tab10` sous matplotlib, `schemeCategory10` sous D3. La
-// visualisation d'origine de la troupe (dépôt theatre_transport_de_femme,
-// `viz/generate_viz.py`) employait `sns.color_palette("bright", 10)`, qui n'est
-// pas une autre palette mais un autre REGISTRE de celle-ci : les six variantes
-// de seaborn (deep, muted, pastel, bright, dark, colorblind) ont les mêmes dix
-// emplacements dans le même ordre (bleu, orange, vert, rouge, violet, brun,
-// rose, gris, olive, cyan) et ne diffèrent que par la saturation et la clarté.
-// On garde le registre canonique parce qu'il sépare MIEUX ses propres couleurs
-// que `bright` (écart minimal de ΔE 27.7 contre 24.8) tout en étant moins
-// criard : `bright` paie son étendue de clarté en descendant son jaune à
-// 1.48:1 sur le crème du site, ce qui passe pour une part de camembert et pas
-// pour une pastille de légende.
+// **Where the palette comes from.** It is Tableau 10, the canonical categorical
+// palette: `tab10` under matplotlib, `schemeCategory10` under D3. The troupe's
+// original visualisation (theatre_transport_de_femme repository,
+// `viz/generate_viz.py`) used `sns.color_palette("bright", 10)`, which is not
+// another palette but another REGISTER of this one: seaborn's six variants (deep,
+// muted, pastel, bright, dark, colorblind) have the same ten slots in the same
+// order (blue, orange, green, red, purple, brown, pink, grey, olive, cyan) and
+// differ only in saturation and lightness. We keep the canonical register because
+// it separates its own colours BETTER than `bright` does (minimum gap of ΔE 27.7
+// against 24.8) while being less garish: `bright` pays for its lightness range by
+// dropping its yellow to 1.48:1 on the site's cream, which passes for a pie slice
+// but not for a legend swatch.
 //
-// **Pourquoi la palette précédente ne pouvait pas servir.** Elle rendait
-// `oklch(0.58 0.14 H)`, donc à clarté FIXE : ses douze teintes ne différaient
-// que par la teinte, soit une étendue de L* de 6 points et un écart minimal de
-// ΔE 15.9. Sur un bloc d'un pixel par mot (page Répartition), deux voisines s'y
-// confondaient. La clarté qui varie est ce qui fait le travail, pas la teinte.
+// **Why the previous palette could not serve.** It returned
+// `oklch(0.58 0.14 H)`, hence at FIXED lightness: its twelve colours differed
+// only by hue, i.e. an L* range of 6 points and a minimum gap of ΔE 15.9. On a
+// block of one pixel per word (Speaking share page), two neighbours blended into
+// each other. Varying lightness is what does the work, not hue.
 //
-// **Les dix premières, puis les dix claires.** `tab20` est l'extension
-// officielle de la même palette, et ses entrées paires SONT `tab10` à
-// l'identique. D'où l'ordre ci-dessous : toute troupe jusqu'à dix personnages
-// reçoit Tableau 10 à pleine force et ne voit jamais une teinte pâle, et chaque
-// claire reste franchement distincte de sa foncée (ΔE 22 à 46), donc le bleu ne
-// se lit jamais comme le bleu clair. Au-delà de dix l'ensemble faiblit
-// (ΔE 16.6), au-delà de vingt il boucle : dégradation bornée, et seule une
-// troupe plus grande que celle d'aujourd'hui la paie.
+// **The first ten, then the ten light ones.** `tab20` is the official extension
+// of the same palette, and its even entries ARE `tab10` identically. Hence the
+// order below: any troupe up to ten characters gets Tableau 10 at full strength
+// and never sees a pale tint, and each light one stays plainly distinct from its
+// dark counterpart (ΔE 22 to 46), so blue never reads as light blue. Beyond ten
+// the set weakens (ΔE 16.6), beyond twenty it loops: bounded degradation, and
+// only a troupe larger than today's pays for it.
 //
-// **La couleur est stockée, ce n'est plus une teinte.** Le personnage porte
-// `color: "#1f77b4"` dans script.json. Une teinte ne pouvait pas indexer cette
-// palette : `#ff7f0e` et `#8c564b` sont deux registres du même angle, et
-// `#7f7f7f` n'a pas d'angle du tout.
+// **The colour is stored, it is no longer a hue.** The character carries
+// `color: "#1f77b4"` in script.json. A hue could not index this palette:
+// `#ff7f0e` and `#8c564b` are two registers of the same angle, and `#7f7f7f` has
+// no angle at all.
 export const CHARACTER_COLORS = [
-  // Tableau 10, dans son ordre.
-  "#1f77b4", // bleu
+  // Tableau 10, in its own order.
+  "#1f77b4", // blue
   "#ff7f0e", // orange
-  "#2ca02c", // vert
-  "#d62728", // rouge
-  "#9467bd", // violet
-  "#8c564b", // brun
-  "#e377c2", // rose
-  "#7f7f7f", // gris
+  "#2ca02c", // green
+  "#d62728", // red
+  "#9467bd", // purple
+  "#8c564b", // brown
+  "#e377c2", // pink
+  "#7f7f7f", // grey
   "#bcbd22", // olive
   "#17becf", // cyan
-  // Les dix claires de tab20, dans le même ordre de teinte.
+  // The ten light ones from tab20, in the same hue order.
   "#aec7e8",
   "#ffbb78",
   "#98df8a",
@@ -60,17 +58,17 @@ export const CHARACTER_COLORS = [
   "#9edae5",
 ];
 
-// La CLÉ de catalogue de chaque couleur, dans l'ordre de `CHARACTER_COLORS`.
-// Sert à NOMMER les pastilles de la palette de l'éditeur : sans elles, les vingt
-// boutons portaient tous « Choisir cette couleur », donc au clavier et au lecteur
-// d'écran la palette était vingt boutons homonymes dont la seule information, la
-// couleur, n'était pas dite. Les dix dernières sont les teintes claires de tab20,
-// d'où le suffixe `Light` qui les distingue de leur foncée.
+// The catalogue KEY of each colour, in the order of `CHARACTER_COLORS`. Used to
+// NAME the swatches of the editor's palette: without them, all twenty buttons read
+// "Change the colour", so to the keyboard and the screen reader the palette was
+// twenty homonymous buttons whose only piece of information, the colour, was never
+// spoken. The last ten are tab20's light tints, hence the `Light` suffix that
+// distinguishes them from their dark counterpart.
 //
-// Des clés et pas les mots : ce module est pur et couvert par `node --test`, donc
-// il n'importe pas `locale.js` (qui lit l'URL et le navigateur dès son import) ;
-// c'est le panneau des personnages qui traduit. L'appariement rang par rang avec
-// les hex, lui, reste vérifié ici, à côté d'eux.
+// Keys and not the words: this module is pure and covered by `node --test`, so it
+// does not import `locale.js` (which reads the URL and the navigator as soon as it
+// is imported); the characters panel is what translates. The rank-by-rank pairing
+// with the hex values, on the other hand, stays checked here, next to them.
 export const CHARACTER_COLOR_KEYS = [
   "color.blue",
   "color.orange",
@@ -96,20 +94,20 @@ export const CHARACTER_COLOR_KEYS = [
 
 const PALETTE = new Set(CHARACTER_COLORS);
 
-// Une couleur du personnage telle qu'elle peut être STOCKÉE : la palette, et
-// rien d'autre. Sert à décider s'il faut réparer, jamais à afficher.
+// A character colour as it may be STORED: the palette, and nothing else. Used to
+// decide whether a repair is needed, never to display.
 export function isPaletteColor(value) {
   return typeof value === "string" && PALETTE.has(value.toLowerCase());
 }
 
-// Première couleur libre, en repartant du début quand la palette est épuisée.
-// `used` est un Set de couleurs déjà prises.
+// The first free colour, starting over from the beginning once the palette is
+// exhausted. `used` is a Set of colours already taken.
 //
-// `assignedCount` est le nombre de personnages DÉJÀ servis, et il est nécessaire :
-// une fois la palette épuisée, `used` ne grandit plus, donc s'en servir pour
-// choisir le repli donnait la même couleur à tous les personnages au-delà du
-// vingtième (le 21e comme le 25e repartaient sur le premier bleu). Avec le
-// compte, la palette boucle vraiment.
+// `assignedCount` is the number of characters ALREADY served, and it is necessary:
+// once the palette is exhausted, `used` stops growing, so using it to pick the
+// fallback gave the same colour to every character past the twentieth (the 21st
+// and the 25th both started over on the first blue). With the count, the palette
+// really does loop.
 export function firstFreeColor(used, assignedCount = used.size) {
   return (
     CHARACTER_COLORS.find((c) => !used.has(c)) ??
@@ -117,16 +115,16 @@ export function firstFreeColor(used, assignedCount = used.size) {
   );
 }
 
-// Couleur de chaque personnage, par id. Déterministe et sans état : une couleur
-// déjà valide et encore libre est gardée, tout le reste (absente, étrangère,
-// dupliquée) reçoit la première libre.
+// The colour of each character, by id. Deterministic and stateless: a colour that
+// is already valid and still free is kept, everything else (absent, foreign,
+// duplicated) gets the first free one.
 //
-// C'est le MÊME comblement que `sanitizeScript` (src/editor/reducer.js) applique
-// au chargement de script.json, et c'est ce qui fait que l'Édition et la
-// Répartition montrent exactement les mêmes couleurs : le script publié n'a pas
-// forcément de couleurs (le fichier de la troupe n'en avait aucune avant ce
-// changement), et les deux pages les comblent identiquement au lieu d'attendre
-// que le responsable retélécharge le script depuis l'éditeur.
+// This is the SAME filling in that `sanitizeScript` (src/editor/reducer.js) applies
+// when script.json is loaded, and it is what makes Editing and Speaking share show
+// exactly the same colours: the published script does not necessarily carry
+// colours (the troupe's file had none before this change), and the two pages fill
+// them in identically instead of waiting for the coordinator to re-download the
+// script from the editor.
 export function assignColors(characters) {
   const used = new Set();
   const byId = new Map();
@@ -143,53 +141,52 @@ export function assignColors(characters) {
   return byId;
 }
 
-// Couleur STOCKÉE d'un personnage désigné par son id, ou `null` quand l'id est
-// inconnu (ou quand la couleur n'est pas de la palette). Le repli, un token
-// neutre, appartient à l'appelant : le gris de l'éditeur n'est pas celui de la
-// légende d'un camembert.
+// The STORED colour of a character designated by their id, or `null` when the id
+// is unknown (or when the colour is not from the palette). The fallback, a neutral
+// token, belongs to the caller: the editor's grey is not the grey of a pie chart
+// legend.
 //
-// Simple recherche, sans comblement : c'est l'appel des consommateurs dont les
-// personnages portent DÉJÀ leur couleur, l'éditeur en tête (`sanitizeScript` la
-// garantit sur chaque personnage au chargement), et il est appelé une fois par
-// rangée de réplique. Qui lit un manifest, où la couleur peut manquer, appelle
-// `assignColors` une seule fois et garde la Map.
+// A plain lookup, with no filling in: this is the call for consumers whose
+// characters ALREADY carry their colour, the editor first among them
+// (`sanitizeScript` guarantees it on every character at load time), and it is
+// called once per line row. Whoever reads a manifest, where the colour may be
+// missing, calls `assignColors` once and keeps the Map.
 export function characterColor(characters, id) {
   const character = (Array.isArray(characters) ? characters : []).find((c) => c && c.id === id);
   return character && isPaletteColor(character.color) ? character.color.toLowerCase() : null;
 }
 
-// Clarté maximale d'une couleur qui porte du TEXTE. Mesurée : à 0.5 les vingt
-// couleurs sont au-dessus de 5:1 sur le crème (5.01) comme sur le blanc (5.40),
-// donc au niveau d'`--ink-soft`, que le projet tient pour le minimum d'un texte
-// informatif. Monter à 0.52 retombe à 4.63, trop près du seuil de 4.5 pour une
-// palette qu'on pourra retoucher.
+// The maximum lightness of a colour that carries TEXT. Measured: at 0.5 all twenty
+// colours are above 5:1 on the cream (5.01) as on the white (5.40), hence at the
+// level of `--ink-soft`, which the project holds to be the minimum for informative
+// text. Going up to 0.52 falls back to 4.63, too close to the 4.5 threshold for a
+// palette we may yet retouch.
 const INK_MAX_LIGHTNESS = 0.5;
 
-// La même couleur, assez foncée pour porter du TEXTE ou un filet.
+// The same colour, dark enough to carry TEXT or a hairline.
 //
-// La palette est faite d'aplats : la référence ne s'en sert que pour des parts
-// de camembert et des pixels, et sur le crème du site (`--paper` #faf6ef) son
-// olive est à 1.87:1, son jaune pâle à 1.34:1. Or l'éditeur en peint du texte
-// (le select de personnage, le nom d'un résultat de recherche).
+// The palette is made of flat fills: the reference only ever uses it for pie
+// slices and pixels, and on the site's cream (`--paper` #faf6ef) its olive sits at
+// 1.87:1 and its pale yellow at 1.34:1. The editor, however, paints text with it
+// (the character select, the name on a search result).
 //
-// **On PLAFONNE la clarté, on ne mélange pas avec du noir.** Un
-// `color-mix(… 60%, #000)` a été essayé d'abord : il tient le contraste (4.97 au
-// minimum) mais il multiplie la clarté ET la chroma, donc il éteint la couleur
-// en même temps qu'il la fonce. Le bleu #1f77b4 y tombait à une chroma de 0.074
-// et le nom du personnage se lisait comme du noir dans l'éditeur, où la couleur
-// est justement le seul repère qui distingue une réplique d'une autre. Le
-// plafond de clarté garde la chroma d'origine (0.124 pour le même bleu, soit du
-// bleu franc) et donne un MEILLEUR contraste (5.01 au minimum), parce qu'il
-// ramène toutes les couleurs à la même clarté au lieu de foncer d'autant les
-// sombres, déjà lisibles.
+// **We CAP the lightness, we do not mix with black.** A `color-mix(… 60%, #000)`
+// was tried first: it holds the contrast (4.97 at the minimum) but it multiplies
+// the lightness AND the chroma, so it puts the colour out at the same time as it
+// darkens it. Blue #1f77b4 fell there to a chroma of 0.074 and the character's
+// name read as black in the editor, where the colour is precisely the only cue
+// that tells one line from another. The lightness cap keeps the original chroma
+// (0.124 for the same blue, i.e. a plain blue) and gives BETTER contrast (5.01 at
+// the minimum), because it brings every colour to the same lightness instead of
+// darkening the dark ones, already legible, by just as much.
 //
-// Dérivé et pas une seconde liste écrite à la main : vingt hex de plus à tenir
-// synchrones seraient vingt occasions de dériver.
+// Derived and not a second hand-written list: twenty more hex values to keep in
+// sync would be twenty chances to drift.
 //
-// La syntaxe de couleur relative (`oklch(from …)`) est disponible partout depuis
-// 2024, et son repli est sans danger : une déclaration invalide est ignorée, donc
-// le texte garde la couleur héritée et reste lisible, il perd seulement son
-// codage par personnage.
+// The relative colour syntax (`oklch(from …)`) has been available everywhere since
+// 2024, and its fallback is harmless: an invalid declaration is ignored, so the
+// text keeps its inherited colour and stays legible, it only loses its per-character
+// coding.
 export function characterInk(color) {
   return `oklch(from ${color} min(l, ${INK_MAX_LIGHTNESS}) c h)`;
 }

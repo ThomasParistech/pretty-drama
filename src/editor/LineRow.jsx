@@ -40,26 +40,25 @@ export default React.memo(function LineRow({
   };
   useEffect(autoGrow, [line.text]);
 
-  // Demande de focus et/ou de sélection adressée à CETTE réplique
-  // (`{selection, focus}`, cf. App.jsx). Elle vaut pour la réplique qu'on vient
-  // de créer (focus, pas de sélection) comme pour une correspondance de la
-  // recherche (sélection, et focus seulement quand on a cliqué le résultat : à
-  // la touche Entrée le champ de recherche doit garder le clavier pour rester
-  // répétable).
+  // Focus and/or selection request addressed to THIS line (`{selection, focus}`,
+  // see App.jsx). It applies both to the line just created (focus, no selection)
+  // and to a search match (selection, and focus only when the result was clicked:
+  // on the Enter key the search field must keep the keyboard so as to stay
+  // repeatable).
   useEffect(() => {
     const el = textareaRef.current;
     if (!focusRequest || !el) return;
     if (focusRequest.focus) el.focus();
     if (focusRequest.selection) {
       const [start, end] = focusRequest.selection;
-      // Le navigateur borne déjà, on borne quand même : la demande porte les
-      // offsets d'un texte, et rien ne doit dépendre du fait que ce texte est
-      // encore exactement le même.
+      // The browser clamps already, we clamp anyway: the request carries the
+      // offsets of one text, and nothing must depend on that text still being
+      // exactly the same.
       const max = el.value.length;
       el.setSelectionRange(Math.min(start, max), Math.min(end, max));
-      // `focus()` amène l'élément à l'écran, `setSelectionRange` non : sans ça,
-      // une navigation au clavier sélectionnerait hors champ de vision. Le
-      // conteneur défilé est la colonne de l'éditeur, pas la fenêtre.
+      // `focus()` brings the element into view, `setSelectionRange` does not:
+      // without this, keyboard navigation would select out of sight. The scrolled
+      // container is the editor's column, not the window.
       el.scrollIntoView({
         behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
           ? "auto"
@@ -71,12 +70,12 @@ export default React.memo(function LineRow({
   }, [focusRequest, onFocusHandled]);
 
   // "Rail" design: white background everywhere, the character's color is
-  // only an accent — it paints the drag handle and the character select.
+  // only an accent: it paints the drag handle and the character select.
   //
-  // Les deux sont du TEXTE (le glyphe ⠿ et le nom dans le select, tous deux en
-  // 15 px), donc c'est l'encre et pas l'aplat : la palette est faite pour des
-  // surfaces, et son olive est à 1.87:1 sur le blanc. Seules les pastilles
-  // pleines gardent la couleur telle quelle. Cf. `characterInk`.
+  // Both are TEXT (the ⠿ glyph and the name in the select, both at 15 px), so it
+  // is the ink and not the flat colour: the palette is made for surfaces, and its
+  // olive sits at 1.87:1 on white. Only the solid swatches keep the colour as is.
+  // See `characterInk`.
   const color = characterColor(characters, line.characterId);
   const ink = color === null ? null : characterInk(color);
   const style = {

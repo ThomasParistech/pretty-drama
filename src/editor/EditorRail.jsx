@@ -2,65 +2,65 @@ import React, { useCallback, useRef, useState } from "react";
 import { OutlineIcon, PersonIcon, SearchIcon } from "../shared/icons.jsx";
 import { t } from "../shared/locale.js";
 
-// Le rail latéral de l'Édition : une bande de trois icônes toujours visible et
-// UNE section ouverte à la fois, à gauche de la colonne de texte.
+// The Editing side rail: a strip of three always-visible icons and ONE section
+// open at a time, to the left of the text column.
 //
-// **Les icônes de la bande sont le seul interrupteur du panneau**, comme la barre
-// d'activité d'un éditeur de code : cliquer une icône ouvre sa section, recliquer
-// celle de la section ouverte replie le rail (Escape aussi). Elles disent donc à
-// la fois quelle section et si elle est ouverte (`aria-expanded`), et elles sont
-// le seul mobilier de l'état replié : le rail y fait exactement la largeur de la
-// bande. Le bord droit ne fait plus qu'une chose, régler la largeur.
+// **The strip's icons are the panel's only switch**, like the activity bar of a
+// code editor: clicking an icon opens its section, clicking the open section's icon
+// again collapses the rail (Escape too). They therefore say both which section and
+// whether it is open (`aria-expanded`), and they are the only furniture of the
+// collapsed state: there the rail is exactly the width of the strip. The right edge
+// now does only one thing, set the width.
 //
-// Deux languettes de repli ont été essayées puis retirées, et la seconde a coûté
-// un bug qu'il ne faut pas refabriquer : posée au milieu du bord droit, elle
-// partageait son `pointerdown` avec la poignée de largeur, qui appelle
-// `setPointerCapture` (sans quoi le glissement lâche le curseur). Or un pointeur
-// capturé retarge le `click` sur l'élément capturant : le clic arrivait au bord et
-// pas au bouton, donc la languette ne repliait qu'une fois sur deux (celles où le
-// double-clic « largeur par défaut » sortait avant la capture). La contourner
-// demandait de replier depuis le `pointerdown` de la poignée, c'est-à-dire de
-// deviner dans un geste de glissement s'il visait un bouton. La première essayait
-// une tête de panneau, à côté du titre : un bouton de plus dans une rangée de
-// titre, et rien n'y disait de quel côté le panneau allait se ranger.
+// Two collapse tabs were tried then removed, and the second one cost a bug that
+// must not be rebuilt: placed in the middle of the right edge, it shared its
+// `pointerdown` with the width handle, which calls `setPointerCapture` (without
+// which the drag drops the cursor). Now a captured pointer retargets the `click`
+// onto the capturing element: the click arrived at the edge and not at the button,
+// so the tab only collapsed one time out of two (those where the "default width"
+// double-click fired before the capture). Working around it meant collapsing from
+// the handle's `pointerdown`, that is to say guessing, inside a drag gesture,
+// whether it was aiming at a button. The first tab tried a panel head, next to the
+// title: one more button in a title row, and nothing there said which side the
+// panel was going to tuck itself away to.
 //
-// **Pas un `role="tablist"`** : un tablist promet un onglet sélectionné en
-// permanence et les flèches Début/Fin/gauche/droite, alors que le rail a un état
-// « rien d'ouvert ». Le motif mentirait et il faudrait intercepter les flèches
-// pour rien. Ce sont trois boutons de dévoilement à `aria-expanded`, exactement
-// comme le bouton de repli du bandeau, et le CSS lit cet attribut plutôt qu'une
-// classe de plus : l'aspect ne peut pas se désaccorder du nom accessible.
+// **Not a `role="tablist"`**: a tablist promises a permanently selected tab and
+// Home/End/left/right arrows, whereas the rail has a "nothing open" state. The role
+// would lie and the arrows would have to be intercepted for nothing. These are
+// three disclosure buttons with `aria-expanded`, exactly like the header's collapse
+// button, and the CSS reads that attribute rather than one more class: the look
+// cannot fall out of step with the accessible name.
 //
-// Le panneau n'est monté que quand une section est ouverte : il n'y a rien à
-// sortir du parcours clavier, contrairement au bandeau, qui doit garder ses
-// réglages montés pour pouvoir animer une hauteur inconnue. Ici la largeur
-// ouverte est un nombre choisi, donc l'animation n'a rien à mesurer.
+// The panel is only mounted when a section is open: there is nothing to take out
+// of the keyboard path, unlike the header, which has to keep its settings mounted
+// in order to animate an unknown height. Here the open width is a chosen number,
+// so the animation has nothing to measure.
 //
-// L'ordre des icônes est l'ordre du parcours au clavier depuis le bandeau, et
-// Structure vient d'abord parce qu'elle porte la NAVIGATION de la page (elle a
-// remplacé les selects d'acte et de scène du bandeau, qui étaient les premiers
-// réglages de la page et venaient donc avant les puces de personnage). C'est
-// aussi la section ouverte à l'arrivée, cf. App.jsx.
-// Les clés et pas les mots : la section se nomme au rendu, et `rail.<clé>` est
-// aussi le titre du panneau, donc les deux ne peuvent pas diverger. `scene.js`
-// cite `rail.characters` pour renvoyer à cette icône, ce qui ne tient que parce
-// que ce nom vit à un seul endroit.
+// The order of the icons is the order of the keyboard path from the header, and
+// Structure comes first because it carries the page's NAVIGATION (it replaced the
+// header's act and scene selects, which were the page's first settings and
+// therefore came before the character chips). It is also the section open on
+// arrival, see App.jsx.
+// Keys and not words: the section is named at render time, and `rail.<key>` is also
+// the panel's title, so the two cannot diverge. `scene.js` cites `rail.characters`
+// to point back to this icon, which only holds because that name lives in one single
+// place.
 const SECTIONS = [
   { key: "structure", Icon: OutlineIcon },
   { key: "characters", Icon: PersonIcon },
   { key: "search", Icon: SearchIcon },
 ];
 
-// Bornes de la largeur du panneau. En bas, 200 px : en dessous, une puce de
-// personnage complète (pastille, nom, compte, ✕) ne tient plus sur une ligne et
-// un extrait de réplique ne se reconnaît plus. En haut, 560 px : au-delà, sur une
-// fenêtre courante le panneau prend plus de place que la colonne de texte, et
-// c'est la pièce qu'on est venu écrire.
+// Bounds of the panel's width. At the bottom, 200 px: below that, a complete
+// character chip (swatch, name, count, ✕) no longer fits on one line and a line
+// excerpt is no longer recognisable. At the top, 560 px: beyond that, on an ordinary
+// window the panel takes more room than the text column, and it is the play one came
+// to write.
 const MIN_PANEL = 200;
 const MAX_PANEL = 560;
 const DEFAULT_PANEL = 272;
-// Pas du clavier sur la poignée : assez grand pour arriver quelque part en
-// quelques touches, assez petit pour viser.
+// Keyboard step on the handle: big enough to get somewhere in a few keypresses,
+// small enough to aim.
 const KEY_STEP = 16;
 
 const clampPanel = (px) => Math.max(MIN_PANEL, Math.min(MAX_PANEL, Math.round(px)));
@@ -68,42 +68,42 @@ const clampPanel = (px) => Math.max(MIN_PANEL, Math.min(MAX_PANEL, Math.round(px
 export default function EditorRail({ section, onSection, structure, characters, search }) {
   const tabRefs = useRef({});
   const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL);
-  // Pendant le glissement, la transition de largeur est coupée : sinon le
-  // panneau poursuit le curseur avec un quart de seconde de retard, ce qui se
-  // lit comme une latence et pas comme une animation.
+  // During the drag, the width transition is cut off: otherwise the panel chases
+  // the cursor a quarter of a second behind, which reads as latency and not as an
+  // animation.
   const [resizing, setResizing] = useState(false);
   const drag = useRef(null);
-  // Horodatage du dernier appui sur le bord, pour reconnaître un double-clic
-  // à la main. Pourquoi à la main : `onPointerDown` appelle `preventDefault` (sans
-  // quoi le glissement sélectionne le texte sous le curseur), et cela supprime les
-  // événements souris de compatibilité, donc `onDoubleClick` ne se déclenche
-  // jamais. Piste écartée : laisser passer le défaut et empêcher la sélection en
-  // posant `user-select: none` sur le `body` le temps du glissement, soit un effet
-  // de bord global pour un confort local.
+  // Timestamp of the last press on the edge, in order to recognise a double-click
+  // by hand. Why by hand: `onPointerDown` calls `preventDefault` (without which the
+  // drag selects the text under the cursor), and that suppresses the compatibility
+  // mouse events, so `onDoubleClick` never fires. Rejected alternative: let the
+  // default through and prevent the selection by setting `user-select: none` on the
+  // `body` for the duration of the drag, that is a global side effect for a local
+  // convenience.
   const lastDown = useRef(0);
 
   const open = section !== null;
   const current = SECTIONS.find((s) => s.key === section) ?? null;
 
   const close = useCallback(() => {
-    // Rendre le focus à l'icône de la section qu'on ferme : sinon une fermeture
-    // au clavier le laisse sur le `body`, et la tabulation repart du bandeau.
+    // Give the focus back to the icon of the section being closed: otherwise a
+    // keyboard close leaves it on the `body`, and tabbing restarts from the header.
     const tab = tabRefs.current[section];
     onSection(null);
     tab?.focus();
   }, [section, onSection]);
 
-  // La largeur ne vit qu'en mémoire, le temps de l'onglet. Rien n'est écrit dans
-  // le navigateur : le projet n'a aucune persistance locale, et en ouvrir une
-  // pour une préférence d'affichage serait la première (cf. la décision produit
-  // sur les brouillons de l'éditeur).
+  // The width only lives in memory, for the lifetime of the tab. Nothing is written
+  // to the browser: the project has no local persistence at all, and opening one for
+  // a display preference would be the first (see the product decision about the
+  // editor's drafts).
   const onEdgeDown = (e) => {
-    // Empêche la sélection de texte de démarrer sous le curseur pendant le
-    // glissement (le `setPointerCapture` seul ne s'en occupe pas).
+    // Prevents a text selection from starting under the cursor during the drag
+    // (`setPointerCapture` alone does not take care of it).
     e.preventDefault();
-    // Deuxième appui rapproché : on revient à la largeur de départ au lieu de
-    // commencer un glissement. C'est la seule façon de retrouver la valeur par
-    // défaut sans la viser au pixel.
+    // Second press close behind: we go back to the starting width instead of
+    // beginning a drag. It is the only way to get the default value back without
+    // aiming at it to the pixel.
     if (e.timeStamp - lastDown.current < 350) {
       lastDown.current = 0;
       setPanelWidth(DEFAULT_PANEL);
@@ -128,9 +128,9 @@ export default function EditorRail({ section, onSection, structure, characters, 
   };
 
   return (
-    // Repère `complementary` : le rail complète le texte de la pièce, qui reste
-    // le repère principal. L'étiquette nomme ce qu'il y a dedans, et pas
-    // « panneau latéral », qui décrirait un meuble.
+    // `complementary` landmark: the rail complements the play's text, which stays
+    // the main landmark. The label names what is inside it, and not "side panel",
+    // which would describe a piece of furniture.
     <aside
       className={`editor-rail ${open ? "open" : ""} ${resizing ? "resizing" : ""}`}
       aria-label={t("rail.label")}
@@ -142,10 +142,10 @@ export default function EditorRail({ section, onSection, structure, characters, 
             key={key}
             ref={(el) => (tabRefs.current[key] = el)}
             className="editor-rail-tab"
-            // Le nom accessible ne dépend pas de l'état (c'est `aria-expanded`
-            // qui le porte), donc une seule infobulle par bouton, qui dit ce que
-            // la section contient : l'esprit de l'infobulle unique du repli du
-            // bandeau.
+            // The accessible name does not depend on the state (`aria-expanded`
+            // carries that), hence one single tooltip per button, saying what the
+            // section contains: the spirit of the single tooltip on the header's
+            // collapse button.
             aria-label={t(`rail.${key}`)}
             title={t(`rail.${key}.tip`)}
             aria-expanded={section === key}
@@ -164,28 +164,28 @@ export default function EditorRail({ section, onSection, structure, characters, 
           id="editor-rail-panel"
           onKeyDown={(e) => {
             if (e.key !== "Escape") return;
-            // Garde obligatoire, pas défensif, et c'est le même que celui de
-            // `useSearch.js` : un `ConfirmModal` ouvert DEPUIS le rail (« Tout
-            // remplacer », suppression d'un acte ou d'une scène) écoute Escape en
-            // phase de CAPTURE sur `window` et appelle `preventDefault` sans
-            // `stopPropagation`. Il est rendu en portail, mais React fait remonter
-            // ses événements dans l'arbre REACT et pas dans le DOM, donc l'Escape
-            // qui referme la modale arrivait jusqu'ici et repliait le rail derrière
-            // elle, panneau de recherche compris.
+            // Mandatory guard, not a defensive one, and it is the same as the one
+            // in `useSearch.js`: a `ConfirmModal` opened FROM the rail ("Replace
+            // all", deleting an act or a scene) listens for Escape in the CAPTURE
+            // phase on `window` and calls `preventDefault` without
+            // `stopPropagation`. It is rendered in a portal, but React bubbles its
+            // events up the REACT tree and not the DOM one, so the Escape that
+            // closes the modal reached this point and collapsed the rail behind it,
+            // search panel included.
             if (e.defaultPrevented) return;
-            // Écouté ici et pas dans les sections : le rail est le seul à savoir à
-            // quelle icône rendre le focus. `stopPropagation` pour que le
-            // raccourci global de la page ne referme pas deux fois.
+            // Listened for here and not in the sections: the rail is the only one
+            // that knows which icon to give the focus back to. `stopPropagation` so
+            // that the page's global shortcut does not close it twice.
             e.stopPropagation();
             close();
           }}
         >
-          {/* La tête ne défile pas : c'est elle qui nomme la section, et sur la
-              Recherche elle porte aussi la requête et ses options (cf.
-              `.editor-rail-body`, dont seul le contenu utile défile).
-              Un titre par section, plus un `<h3>` par groupe de résultats : le
-              rail est ainsi un plan de titres parcourable, ce qui remplace un
-              aria-label sur chaque bloc. */}
+          {/* The head does not scroll: it is what names the section, and on Search
+              it also carries the query and its options (see `.editor-rail-body`,
+              where only the useful content scrolls).
+              One title per section, plus one `<h3>` per group of results: the rail
+              is thus a browsable outline of headings, which replaces an aria-label
+              on every block. */}
           <div className="editor-rail-head">
             <h2 className="editor-rail-title">{t(`rail.${current.key}`)}</h2>
           </div>
@@ -195,14 +195,13 @@ export default function EditorRail({ section, onSection, structure, characters, 
           </div>
         </div>
 
-        {/* Le bord droit : la poignée de largeur, et rien d'autre. Il n'existe QUE
-            panneau ouvert (replié, le rail n'est plus que sa bande d'icônes, et il
-            n'y a plus de largeur à régler).
-            `role="separator"` focalisable : c'est le motif du séparateur
-            redimensionnable, et il vient avec ses flèches, sans quoi la largeur ne
-            serait réglable qu'à la souris. Les valeurs annoncées sont celles du
-            panneau, pas celles du rail entier : c'est le panneau qu'on
-            redimensionne. */}
+        {/* The right edge: the width handle, and nothing else. It exists ONLY when
+            the panel is open (collapsed, the rail is no more than its strip of
+            icons, and there is no width left to set).
+            A focusable `role="separator"`: that is the resizable separator pattern,
+            and it comes with its arrow keys, without which the width would only be
+            adjustable with the mouse. The announced values are the panel's, not
+            those of the whole rail: it is the panel one resizes. */}
         <div
           className="editor-rail-edge"
           role="separator"

@@ -4,8 +4,8 @@
 // runs once at import time.
 //
 // A module singleton rather than a React context, and that is a consequence of
-// the architecture, not a shortcut: this is a multi-page site, seven separate
-// documents, and switching language navigates. The locale is therefore a
+// the architecture, not a shortcut: this is a multi-page site, nine separate
+// documents (two above the plays, seven per play), and switching language navigates. The locale is therefore a
 // per-document CONSTANT, so a context would only thread an immutable value
 // through the tree. Pure modules (stats.js, reducer.js) that need words are
 // handed `t` as an argument instead, which is also what keeps them testable
@@ -111,7 +111,7 @@ export function localeHref(locale) {
   return url.toString();
 }
 
-// `<html lang>` and `<title>` are static in the seven HTML files, so they are set
+// `<html lang>` and `<title>` are static in the nine HTML documents, so they are set
 // here at mount. The French `<title>` in the file stays as the pre-JS fallback
 // (and a CI guard keeps it in step with the French catalogue), which means a
 // French reader never sees it change; an English one sees it settle a moment

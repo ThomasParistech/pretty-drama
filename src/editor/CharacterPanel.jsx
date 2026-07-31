@@ -4,18 +4,17 @@ import { t } from "../shared/locale.js";
 import CountBadge from "./CountBadge.jsx";
 import { newId } from "./reducer.js";
 
-// La gestion des personnages : une puce par personnage (pastille de couleur,
-// renommage en place, compte de répliques, suppression) et le formulaire
-// d'ajout. Les répliques ne référencent ces entrées que par id, donc un
-// renommage se propage partout et ne touche jamais un id de réplique.
+// Character management: one chip per character (colour swatch, in-place renaming,
+// line count, deletion) and the add form. Lines only reference these entries by
+// id, so a rename propagates everywhere and never touches a line id.
 //
-// Elle vit dans la section « Personnages » du rail (cf. EditorRail.jsx), et
-// plus dans le bandeau, où les autres pages ont leur select de personnage : le
-// bandeau est partagé par cinq pages et n'a de place que pour ce que les cinq
-// ont en commun, alors que cette liste grandit avec la distribution.
+// It lives in the rail's "Characters" section (see EditorRail.jsx), and no longer
+// in the header, where the other pages have their character select: the header is
+// shared by five pages and only has room for what the five have in common,
+// whereas this list grows with the cast.
 //
-// Une vraie `<ul>` : un lecteur d'écran annonce « liste de 7 éléments », donc la
-// distribution de la pièce devient un objet et pas une suite de boutons.
+// A real `<ul>`: a screen reader announces "list of 7 items", so the play's cast
+// becomes one object and not a string of buttons.
 export default function CharacterPanel({ characters, lineCounts, dispatch, onRequestDelete }) {
   const [newName, setNewName] = useState("");
 
@@ -58,18 +57,18 @@ export default function CharacterPanel({ characters, lineCounts, dispatch, onReq
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
         />
-        {/* « + Personnage » et pas « + Ajouter » : les trois boutons d'ajout du
-            rail se lisent dans le même meuble (« + Acte », « + Scène »), donc ils
-            nomment tous l'objet qu'ils créent, et le champ voisin dit déjà
-            « Nom du personnage ».
-            Il garde en revanche `.btn` là où les deux autres sont devenus des
-            tuiles fantômes (`.structure-add`), et la question a été posée en revue :
-            ce bouton-ci SOUMET un formulaire, il valide la saisie du champ à sa
-            gauche et s'éteint tant qu'elle est vide, alors que « + Acte » et
-            « + Scène » agissent au clic et ne peuvent pas être désactivés. Une
-            tuile fantôme désactivée à côté d'un champ vide ne se lirait plus comme
-            un contrôle du tout ; et les deux formes ne se voient jamais côte à
-            côte, une seule section du rail étant ouverte à la fois. */}
+        {/* "+ Character" and not "+ Add": the rail's three add buttons are read in
+            the same piece of furniture ("+ Act", "+ Scene"), so they all name the
+            object they create, and the neighbouring field already says "Character
+            name".
+            It does keep `.btn`, though, where the other two became ghost tiles
+            (`.structure-add`), and the question was raised in review: THIS button
+            SUBMITS a form, it validates the entry of the field to its left and
+            goes dark as long as that entry is empty, whereas "+ Act" and "+ Scene"
+            act on click and cannot be disabled. A disabled ghost tile next to an
+            empty field would no longer read as a control at all; and the two forms
+            are never seen side by side, since only one rail section is open at a
+            time. */}
         <button type="submit" className="btn small" disabled={!newName.trim()}>
           {t("characters.add")}
         </button>
@@ -136,30 +135,31 @@ function CharacterItem({ character, lineCount, onRename, onSetColor, onDelete })
         </button>
       </span>
 
-      {/* La palette est SŒUR de la puce et plus son enfant : elle se pose dans le
-          flux du panneau, sous le personnage, et pousse les suivants (le panneau
-          du rail défile, donc il rognerait une boîte accrochée à la puce).
-          Le fond plein écran qui la ferme reste : on clique une couleur, ou à
-          côté pour renoncer. */}
+      {/* The palette is a SIBLING of the chip and no longer its child: it settles
+          in the panel's flow, below the character, and pushes the following ones
+          down (the rail's panel scrolls, so it would clip a box hung off the
+          chip).
+          The full-screen backdrop that closes it stays: one clicks a colour, or
+          beside it to give up. */}
       {pickerOpen && (
         <>
           <div className="swatch-backdrop" onClick={() => setPickerOpen(false)} />
-          {/* Vingt pastilles en deux rangées de dix (cf. `.swatch-popover`) : la
-              rangée du haut est Tableau 10, celle du bas ses dix teintes claires,
-              soit la structure même de tab20 dont la palette est tirée. */}
+          {/* Twenty swatches in two rows of ten (see `.swatch-popover`): the top
+              row is Tableau 10, the bottom one its ten light tints, that is to say
+              the very structure of the tab20 the palette is drawn from. */}
           <div className="swatch-popover">
             {CHARACTER_COLORS.map((color, i) => (
               <button
                 key={color}
                 className={`swatch ${color === character.color ? "current" : ""}`}
-                /* Chaque pastille se NOMME : vingt boutons « Choisir cette
-                   couleur » étaient vingt homonymes, et la couleur, leur seule
-                   information, ne se disait pas à la voix.
-                   « la couleur X » et pas « le X » : sur vingt noms, quatre
-                   commencent par une voyelle (orange, olive, et leurs teintes
-                   claires) et l'article ne s'y élide pas. Un nom de couleur
-                   apposé se passe d'accord, alors qu'un adjectif en demanderait
-                   un (« la couleur orange », mais « la pastille orange »). */
+                /* Every swatch NAMES itself: twenty "Choose this colour" buttons
+                   were twenty homonyms, and the colour, their only piece of
+                   information, was not spoken aloud.
+                   In French, "la couleur X" and not "le X": out of twenty names,
+                   four begin with a vowel (orange, olive, and their light tints)
+                   and the article does not elide before them. An apposed colour
+                   name needs no agreement, whereas an adjective would call for one
+                   ("la couleur orange", but "la pastille orange"). */
                 aria-label={
                   color === character.color
                     ? t("characters.colorCurrent", { color: t(CHARACTER_COLOR_KEYS[i]) })

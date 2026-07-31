@@ -3,26 +3,26 @@ import PageMark from "./PageMark.jsx";
 import { t } from "./locale.js";
 import { homeHref } from "./pages.js";
 
-// Le retour à l'accueil, seul lien sortant des pages qui ne sont pas l'accueil :
-// le logo aux deux masques et le mot « PrettyDrama » à sa droite, encadrés de
-// deux filets courts qui ferment le bandeau comme un cul-de-lampe ferme une
-// page. Toujours pas de « Retour à l'accueil » écrit : le logo et le nom du
-// site disent la destination, et c'est l'`aria-label` qui porte le verbe (il
-// contient bien le texte visible ; le sceau, lui, passe décoratif).
+// The link back home, the only outgoing link of the pages that are not the home
+// page: the two-masks logo and the word "PrettyDrama" to its right, framed by
+// two short rules that close the header the way a tailpiece closes a page.
+// Still no written "Back home": the logo and the site name say the destination,
+// and it is the `aria-label` that carries the verb (it does contain the visible
+// text; the seal, for its part, turns decorative).
 //
-// **Un seul composant pour les deux bandeaux**, et c'est le point. `PageHeader`
-// est l'en-tête des écrans de `PageState`, c'est-à-dire l'écran de chargement
-// des pages que `PlayHeader` coiffe ensuite : la marque y vivait en haut à
-// gauche pendant que `PlayHeader` la posait en pied, donc à chaque ouverture de
-// la Répétition, de l'Enregistrement, de l'Avancement ou de l'Édition, le nom du
-// site s'affichait en haut puis sautait en bas quand le manifest arrivait. Deux
-// rendus du même objet ne peuvent pas rester d'accord ; un seul, si.
+// **A single component for both headers**, and that is the point. `PageHeader`
+// is the header of the `PageState` screens, that is, the loading screen of the
+// pages that `PlayHeader` then tops: the brand used to live up in the top left
+// there while `PlayHeader` put it in the foot, so on every opening of the
+// Rehearsal, the Recording, the Progress or the Editing page the site name
+// showed up at the top then jumped to the bottom when the manifest arrived. Two
+// renderings of the same object cannot stay in agreement; a single one can.
 //
-// `page-home` est posé sur le lien lui-même : c'est ce qui donne au survol le
-// crème de la marque (`--page-mark-soft`) sans le recopier en dur dans
-// theme.css. Sur les pages du responsable, la classe du bandeau met ce token au
-// vert ou au violet ; posée ici, elle rend au lien le sable des masques, qui est
-// aussi le fond de sa pastille.
+// `page-home` is set on the link itself: that is what gives the hover the cream
+// of the brand (`--page-mark-soft`) without hard-coding it into theme.css. On
+// the manager's pages the header class sets that token to green or purple; set
+// here, it gives the link back the sand of the masks, which is also the
+// background of its badge.
 export default function HomeLink({ page }) {
   return (
     <div className="play-header-foot">

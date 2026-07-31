@@ -1,71 +1,67 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { buildReplaceEdits, replaceOneEdit, searchScript } from "./search.js";
 
-// L'état de la recherche de l'éditeur : la requête, les deux options, le texte
-// de remplacement, et l'ANCRE de la correspondance courante.
+// The state of the editor's search: the query, the two options, the replacement
+// text, and the ANCHOR of the current match.
 //
-// Il vit ici et pas dans SearchPanel, parce que changer de section du rail
-// démonte le panneau : une requête perdue en allant renommer un personnage
-// serait une régression de tous les instants.
+// It lives here and not in SearchPanel, because changing rail section unmounts the
+// panel: a query lost while going off to rename a character would be a regression
+// felt at every moment.
 //
-// **Les correspondances sont toujours FRAÎCHES**, recalculées par `useMemo` sur
-// le script. Jamais un instantané pris à la validation : un instantané ne serait
-// pas seulement périmé, il serait faux, ses offsets pointant dans un texte qui
-// n'existe plus, donc un clic sélectionnerait la mauvaise portion et un
-// remplacement couperait au mauvais indice. Le coût est de l'ordre de la
-// dizaine de microsecondes par frappe, le repliement étant mémorisé par
-// réplique (cf. search.js).
+// **The matches are always FRESH**, recomputed by `useMemo` from the script. Never
+// a snapshot taken on submit: a snapshot would not merely be stale, it would be
+// wrong, its offsets pointing into a text that no longer exists, so a click would
+// select the wrong portion and a replacement would cut at the wrong index. The cost
+// is of the order of tens of microseconds per keystroke, the folding being memoised
+// per line (see search.js).
 //
-// **L'ancre n'est pas un rang.** Les rangs glissent à chaque frappe et le nombre
-// de correspondances change à chaque remplacement : on retient une POSITION
-// (`{lineId, lineOrdinal, start}`) et on retrouve son rang par render. Quand
-// aucune correspondance n'est exactement là (après un remplacement, après une
-// frappe qui a changé le texte trouvé, après un changement de requête, après un
-// Ctrl+Z sur un « Tout remplacer »), `currentIndex` vaut -1 : le compte
-// s'affiche, aucune ligne n'est marquée courante, et le « suivant » reprend là
-// où on en était. Tout cela tombe du calcul dérivé, sans une ligne de code par
-// cas.
+// **The anchor is not a rank.** Ranks slide on every keystroke and the number of
+// matches changes on every replacement: we remember a POSITION (`{lineId,
+// lineOrdinal, start}`) and find its rank again per render. When no match is exactly
+// there (after a replacement, after a keystroke that changed the found text, after a
+// change of query, after a Ctrl+Z on a "Replace all"), `currentIndex` is -1: the
+// count is displayed, no row is marked as current, and "next" picks up where one had
+// got to. All of that falls out of the derived computation, without one line of code
+// per case.
 export default function useSearch({ script, dispatch, goToMatch, isOpen, onOpen, onClose, enabled }) {
   const [query, setQuery] = useState("");
   const [replacement, setReplacement] = useState("");
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [wholeWord, setWholeWord] = useState(false);
   const [current, setCurrent] = useState(null);
-  // Le remplacement est REPLIÉ par défaut, comme dans un éditeur de code : la
-  // plupart du temps on cherche une réplique pour aller la retoucher à la main,
-  // et un champ « Remplacer par » toujours ouvert propose une réécriture en masse
-  // à qui voulait seulement retrouver un passage. Le drapeau vit ici et pas dans
-  // SearchPanel, comme la requête : changer de section du rail démonte le
-  // panneau, et rouvrir sur un remplacement replié ferait perdre le texte de
-  // remplacement déjà tapé.
+  // The replacement is FOLDED AWAY by default, as in a code editor: most of the
+  // time one searches for a line in order to go and touch it up by hand, and a
+  // "Replace with" field that is always open offers a mass rewrite to someone who
+  // only wanted to find a passage again. The flag lives here and not in SearchPanel,
+  // like the query: changing rail section unmounts the panel, and reopening on a
+  // folded-away replacement would lose the replacement text already typed.
   const [replaceOpen, setReplaceOpen] = useState(false);
-  // Compteur et pas un booléen : Ctrl+F sur un panneau DÉJÀ ouvert doit
-  // re-focaliser le champ et tout sélectionner, alors qu'aucun état ne change.
-  // La demande de focus d'une réplique, elle, n'en a pas besoin : elle s'efface
-  // dès qu'elle est honorée (cf. focusRequest dans App.jsx).
+  // A counter and not a boolean: Ctrl+F on an ALREADY open panel must refocus the
+  // field and select everything, even though no state changes. A line's focus
+  // request, on the other hand, does not need one: it clears itself as soon as it is
+  // honoured (see focusRequest in App.jsx).
   const [focusSeq, setFocusSeq] = useState(0);
 
   const options = useMemo(() => ({ caseSensitive, wholeWord }), [caseSensitive, wholeWord]);
 
-  // **La frappe ne rend pas la liste dans la même tâche qu'elle.** Chercher est
-  // gratuit (quelques dizaines de microsecondes, cf. search.js), mais AFFICHER
-  // plusieurs milliers de résultats coûte à React la création d'autant de
-  // composants : mesuré, une tâche bloquante de 329 ms pour la requête « e » et
-  // ses 6216 occurrences, 88 ms dès 750. Pendant ce temps le champ ne se
-  // rafraîchit pas, donc la frappe bégaie. `content-visibility` (editor.css) n'y
-  // fait rien : il épargne la mise en page et la peinture, pas le travail de
-  // React.
-  // `useDeferredValue` rend la requête au champ tout de suite et la liste dans une
-  // passe interruptible : React peut la découper en tranches et ABANDONNER celle
-  // qui est déjà périmée quand la frappe suivante arrive. On ne paie donc plus le
-  // rendu des états intermédiaires (« v », « vo », « vou » en tapant « vous »).
-  // Piste écartée : replafonner le nombre de résultats affichés, c'est-à-dire
-  // reprendre d'une main ce que « tout afficher » venait de donner.
+  // **The keystroke does not render the list in the same task as itself.** Searching
+  // is free (a few tens of microseconds, see search.js), but DISPLAYING several
+  // thousand results costs React the creation of as many components: measured, a
+  // blocking task of 329 ms for the query "e" and its 6216 matches, 88 ms from 750
+  // onwards. During that time the field does not refresh, so the keystroke stutters.
+  // `content-visibility` (editor.css) does nothing about it: it spares the layout and
+  // the painting, not React's work.
+  // `useDeferredValue` gives the query back to the field straight away and the list
+  // in an interruptible pass: React can slice it up and ABANDON the slice that is
+  // already stale when the next keystroke arrives. So we no longer pay for the render
+  // of the intermediate states ("v", "vo", "vou" while typing "vous").
+  // Rejected alternative: putting a ceiling back on the number of results displayed,
+  // that is to say taking back with one hand what "show everything" had just given.
   const shownQuery = useDeferredValue(query);
   const shownOptions = useDeferredValue(options);
-  // Le rendu à l'écran est en retard sur le champ : c'est ce qui permet de le
-  // signaler sans mentir (le compte et la liste décrivent la MÊME requête, celle
-  // du dernier rendu, jamais celle qu'on est en train de taper).
+  // The render on screen lags behind the field: that is what makes it possible to
+  // signal that without lying (the count and the list describe the SAME query, that
+  // of the last render, never the one being typed).
   const searching = query !== shownQuery || options !== shownOptions;
 
   const { matches, total, groups } = useMemo(
@@ -92,11 +88,11 @@ export default function useSearch({ script, dispatch, goToMatch, isOpen, onOpen,
     [goToMatch]
   );
 
-  // `focus` distingue les deux gestes, et ce n'est pas un détail : Entrée dans
-  // le champ et F3 ne doivent PAS prendre le clavier, sinon le curseur part dans
-  // un textarea de réplique où Entrée crée déjà la réplique suivante, et la
-  // touche ne se répète plus. Un clic sur un résultat, lui, focalise : on va
-  // éditer là.
+  // `focus` distinguishes the two gestures, and that is not a detail: Enter in the
+  // field and F3 must NOT take the keyboard, otherwise the caret goes off into a
+  // line textarea where Enter already creates the next line, and the key stops
+  // repeating. A click on a result, on the other hand, does focus: one is going to
+  // edit there.
   const next = useCallback(
     (focus = false) => {
       if (total === 0) return;
@@ -138,20 +134,20 @@ export default function useSearch({ script, dispatch, goToMatch, isOpen, onOpen,
       type: "SET_LINE_TEXTS",
       edits: [{ lineId: edit.lineId, text: edit.text }],
     });
-    // L'ancre passe APRÈS ce qui vient d'être écrit : « suivant » ne peut donc
-    // pas retomber sur le remplacement lui-même, qui peut contenir la requête.
+    // The anchor moves PAST what has just been written: "next" therefore cannot
+    // land back on the replacement itself, which may contain the query.
     setCurrent(anchorOn(match, edit.nextStart));
   }, [matches, currentIndex, replacement, dispatch]);
 
   const replaceAll = useCallback(() => {
-    // Ré-dérivé de la pièce et pas du tableau affiché (que le panneau plafonne) :
-    // un plafond d'affichage ne doit jamais décider de ce qui est réécrit.
+    // Re-derived from the play and not from the displayed array (which the panel
+    // caps): a display ceiling must never decide what gets rewritten.
     const edits = buildReplaceEdits(script, shownQuery, shownOptions, replacement);
     if (edits.length === 0) return;
     dispatch({ type: "SET_LINE_TEXTS", edits });
     setCurrent(null);
-    // La requête affichée et non celle du champ : c'est le compte annoncé par la
-    // confirmation qu'on doit réécrire, et il vient de la liste affichée.
+    // The displayed query and not the field's: it is the count announced by the
+    // confirmation that must be rewritten, and it comes from the displayed list.
   }, [script, shownQuery, shownOptions, replacement, dispatch]);
 
   const openAndFocus = useCallback(() => {
@@ -159,24 +155,23 @@ export default function useSearch({ script, dispatch, goToMatch, isOpen, onOpen,
     setFocusSeq((n) => n + 1);
   }, [onOpen]);
 
-  // Raccourcis de la page. Effet SÉPARÉ de celui d'annuler/rétablir (App.jsx),
-  // qui se réabonne à chaque édition (ses dépendances sont `canUndo`/`canRedo`) :
-  // les mélanger réabonnerait les deux à chaque frappe et emmêlerait deux listes
-  // de dépendances. Les deux écoutent en phase de bouillonnement et se partagent
-  // des touches disjointes, donc l'ordre d'inscription est indifférent.
+  // The page's shortcuts. An effect SEPARATE from the undo/redo one (App.jsx), which
+  // resubscribes on every edit (its dependencies are `canUndo`/`canRedo`): mixing
+  // them would resubscribe both on every keystroke and would tangle two dependency
+  // lists. Both listen in the bubbling phase and share disjoint keys, so the order of
+  // registration is immaterial.
   useEffect(() => {
     if (!enabled) return;
     const onKeyDown = (e) => {
-      // Un ConfirmModal ouvert écoute Escape en phase de CAPTURE et appelle
-      // preventDefault sans stopPropagation : sans ce garde, un Escape destiné à
-      // fermer la modale fermerait aussi le panneau derrière elle. Le garde vit
-      // ici et pas dans le composant partagé, que la page Enregistrement utilise
-      // aussi.
+      // An open ConfirmModal listens for Escape in the CAPTURE phase and calls
+      // preventDefault without stopPropagation: without this guard, an Escape meant
+      // to close the modal would also close the panel behind it. The guard lives
+      // here and not in the shared component, which the Recording page uses too.
       if (e.defaultPrevented) return;
 
-      // Ctrl+H, le compagnon de Ctrl+F : il ouvre la recherche AVEC son
-      // remplacement déplié. Sans lui, un remplacement replié par défaut se paie
-      // d'un clic de plus à chaque fois.
+      // Ctrl+H, the companion of Ctrl+F: it opens the search WITH its replacement
+      // unfolded. Without it, a replacement folded away by default costs one more
+      // click every single time.
       if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "h") {
         e.preventDefault();
         seedFromSelection(setQuery);
@@ -185,9 +180,9 @@ export default function useSearch({ script, dispatch, goToMatch, isOpen, onOpen,
         return;
       }
       if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "f") {
-        // On prend la main sur le Ctrl+F du navigateur, exprès : sa recherche ne
-        // lit pas la valeur des textarea, et une seule scène est montée à la
-        // fois, donc elle ne trouverait presque rien.
+        // We take over the browser's Ctrl+F, on purpose: its search does not read
+        // the value of textareas, and only one scene is mounted at a time, so it
+        // would find almost nothing.
         e.preventDefault();
         seedFromSelection(setQuery);
         openAndFocus();
@@ -211,11 +206,11 @@ export default function useSearch({ script, dispatch, goToMatch, isOpen, onOpen,
   return {
     query,
     setQuery,
-    // La requête RENDUE, celle que décrivent le compte, la liste et
-    // `replaceAll`. Exposée parce que la confirmation de « Tout remplacer » doit
-    // citer celle-là et pas celle du champ : son titre annonce un nombre issu du
-    // rendu différé, donc citer la frappe en cours ferait une phrase qui compte
-    // une requête et en nomme une autre.
+    // The RENDERED query, the one the count, the list and `replaceAll` describe.
+    // Exposed because the "Replace all" confirmation must quote that one and not the
+    // field's: its title announces a number that comes from the deferred render, so
+    // quoting the keystrokes in progress would make a sentence that counts one query
+    // and names another.
     shownQuery,
     replacement,
     setReplacement,
@@ -240,9 +235,9 @@ export default function useSearch({ script, dispatch, goToMatch, isOpen, onOpen,
   };
 }
 
-// Ctrl+F depuis une réplique reprend le texte sélectionné, comme un éditeur de
-// code : c'est le geste que l'on fait pour chercher « cet autre endroit où j'ai
-// écrit ça ». Une sélection multiligne est ignorée, elle ne se cherche pas.
+// Ctrl+F from a line picks up the selected text, like a code editor: it is the
+// gesture one makes to look for "that other place where I wrote this". A multiline
+// selection is ignored, one does not search for it.
 function seedFromSelection(setQuery) {
   const el = document.activeElement;
   if (!el || el.tagName !== "TEXTAREA" || !el.classList.contains("line-text")) return;

@@ -23,19 +23,17 @@ const HISTORY_LIMIT = 100;
 // closed by any other action, by an undo/redo, or by HISTORY_BREAK (field
 // blurred). Everything else (add/delete/move) is one step per action.
 //
-// Le titre de la pièce est dans le lot avec le texte des répliques : c'est un
-// champ en clair, donc il se renomme à la frappe et une rafale ne doit faire
-// qu'une étape.
+// The play's title is in the batch along with the text of the lines: it is a plain
+// field, so it is renamed as one types and a run must make only one step.
 //
-// **Toute clé identifie son objet par une valeur STABLE**, un id de réplique ou
-// rien du tout, et plus jamais par un rang. Les renommages d'acte et de scène
-// étaient les seuls à se cléer sur un rang (les actes et les scènes n'ont pas
-// d'id), ce qui tenait uniquement parce que tout ce qui déplace un rang a une clé
-// nulle et fermait donc la rafale au passage. Ils n'existent plus : un acte et
-// une scène ne se renomment pas, leur libellé est dérivé de leur rang
-// (structureLabels.js). Cette précaution n'a donc plus d'objet, et il ne faut pas
-// la faire revenir sans elle : deux objets différents ne peuvent pas se retrouver
-// dans la même étape d'annulation, et c'est testé.
+// **Every key identifies its object by a STABLE value**, a line id or nothing at
+// all, and never again by a rank. The act and scene renames were the only ones keyed
+// on a rank (acts and scenes have no id), which held solely because everything that
+// moves a rank has a null key and therefore closed the run along the way. They no
+// longer exist: an act and a scene are not renamed, their label is derived from their
+// rank (structureLabels.js). So this precaution no longer has any object, and it must
+// not be brought back without it: two different objects cannot end up in the same
+// undo step, and that is tested.
 function coalesceKey(action) {
   switch (action.type) {
     case "EDIT_TEXT":
@@ -47,34 +45,34 @@ function coalesceKey(action) {
   }
 }
 
-// Exportée pour le test qui verrouille l'invariant ci-dessus. Rien d'autre ne la
-// consomme.
+// Exported for the test that locks down the invariant above. Nothing else consumes
+// it.
 export { coalesceKey as _coalesceKeyForTests };
 
-// Les champs de haut niveau d'un script, DÉRIVÉS de `EMPTY_SCRIPT` et pas
-// recopiés : un cinquième champ ajouté un jour à la pièce entre de lui-même dans
-// la comparaison ci-dessous, là où une liste écrite ici la laisserait muette sur
-// lui (elle rendrait `saved` alors que ce champ-là aurait changé). Tout état de
-// la pile a exactement ces clés, `sanitizeScript` les posant toutes et chaque cas
-// du reducer étalant l'état reçu.
+// A script's top-level fields, DERIVED from `EMPTY_SCRIPT` and not copied out: a
+// fifth field added to the play one day enters the comparison below on its own,
+// where a list written here would leave it silent about that field (it would return
+// `saved` even though that very field had changed). Every state of the stack has
+// exactly these keys, since `sanitizeScript` sets them all and every case of the
+// reducer spreads the state it received.
 const SCRIPT_FIELDS = Object.keys(EMPTY_SCRIPT);
 
-// Un état revenu à ce qui est déjà téléchargé rend l'OBJET `saved` lui-même, et
-// pas son sosie : « Modifications non téléchargées » est un comparatif
-// d'identité (`present !== saved`, cf. App.jsx), donc sans ça un aller-retour
-// laissait l'étiquette allumée sur une pièce identique au fichier du dépôt. Le
-// cas qui l'a montré est la langue de la pièce, deux drapeaux dans le plan :
-// choisir l'anglais puis revenir au français est un aller-retour complet, en deux
-// clics, et le respo n'avait plus alors que Ctrl+Z pour éteindre l'étiquette.
+// A state that has come back to what is already downloaded returns the `saved`
+// OBJECT itself, and not its look-alike: "Changes not downloaded" is a comparison of
+// identity (`present !== saved`, see App.jsx), so without this a round trip left the
+// label lit on a play identical to the file in the repo. The case that showed it is
+// the play's language, two flags in the plan: choosing English then coming back to
+// French is a complete round trip, in two clicks, and the coordinator was then left
+// with nothing but Ctrl+Z to turn the label off.
 //
-// Une comparaison des quatre champs à l'IDENTITÉ, et jamais en profondeur : le
-// reducer étant immuable et à structure partagée, un aller-retour sur un champ
-// SCALAIRE (le titre, la langue) laisse les trois autres strictement identiques,
-// donc la même égalité qui porte déjà toute la pile suffit. C'est aussi ce qui
-// borne la promesse, et il faut le savoir : retaper une lettre puis l'effacer
-// reconstruit `acts`, donc l'étiquette reste allumée sur un texte pourtant
-// identique. La lever demanderait de comparer la pièce entière à chaque frappe,
-// c'est-à-dire exactement le travail que l'identité d'objet fait gratuitement.
+// A comparison of the four fields by IDENTITY, and never a deep one: since the
+// reducer is immutable and structurally shared, a round trip on a SCALAR field (the
+// title, the language) leaves the other three strictly identical, so the very
+// equality that already carries the whole stack is enough. That is also what bounds
+// the promise, and it has to be known: retyping a letter then deleting it rebuilds
+// `acts`, so the label stays lit on a text that is nonetheless identical. Lifting
+// that would require comparing the whole play on every keystroke, that is to say
+// exactly the work that object identity does for free.
 function asSavedIfUnchanged(present, saved) {
   if (present === saved) return present;
   return SCRIPT_FIELDS.every((field) => present[field] === saved[field]) ? saved : present;
@@ -111,7 +109,7 @@ export function historyReducer(state, action) {
   // lastKey is cleared too, so a keystroke run that resumes on the same field
   // opens a NEW step: without that, the next character would merge into the
   // step that produced `saved`, and no undo would ever land back on it (the
-  // "Modifications non téléchargées" label could no longer be cleared).
+  // "Changes not downloaded" label could no longer be cleared).
   if (action.type === "MARK_SAVED") {
     return state.saved === state.present && state.lastKey === null
       ? state
@@ -130,9 +128,9 @@ export function historyReducer(state, action) {
   // Loading the published script IS the starting point, not a step.
   if (action.type === "LOAD_SCRIPT") return initHistory(next);
 
-  // Revenu à l'état téléchargé : c'est cet objet-là qu'on repose (cf.
-  // `asSavedIfUnchanged`). L'étape s'empile normalement, il n'y a rien
-  // d'anormal à annuler un aller-retour ; seule l'étiquette s'éteint.
+  // Back at the downloaded state: it is that very object we put back (see
+  // `asSavedIfUnchanged`). The step is pushed normally, there is nothing abnormal
+  // about undoing a round trip; only the label goes out.
   const present = asSavedIfUnchanged(next, state.saved);
 
   // Continuation of a keystroke run: same step, and the future was already

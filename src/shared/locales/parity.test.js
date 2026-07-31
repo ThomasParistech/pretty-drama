@@ -142,43 +142,44 @@ test("no entry carries an em dash, in either language", () => {
   }
 });
 
-// Les deux seules entrées françaises qui gardent une espace ORDINAIRE avant leur
-// `:`, chacune pour une raison écrite dans fr.js : `common.docTitle` est un titre
-// d'onglet (rien ne s'y coupe, et son jumeau statique dans les sept `.html`
-// s'écrit pareil, ce qu'un garde CI compare), et `page.editor.desc` est reprise
-// mot pour mot de l'ancien pages.js. Nommées ici plutôt que tolérées en bloc :
-// une exception qui se justifie s'écrit, une exception qui se devine se multiplie.
+// The only two French entries that keep an ORDINARY space before their `:`, each
+// for a reason written down in fr.js: `common.docTitle` is a tab title (nothing
+// wraps in it, and its static twin in the nine `.html` documents is written the same
+// way, which a CI guard compares), and `page.editor.desc` is taken word for word
+// from the old pages.js. Named here rather than tolerated wholesale: an exception
+// that can be justified gets written down, an exception left to be guessed
+// multiplies.
 const ORDINARY_COLON_OK = new Set(["common.docTitle", "page.editor.desc"]);
 
 test("French keeps a no-break space before ? ! and :", () => {
-  // Le pendant du test suivant. Une espace ordinaire là se voit à l'usage et
-  // nulle part ailleurs : le signe passe seul à la ligne, et seulement sur
-  // certaines largeurs. Le `:` est de la partie, et il devait l'être : c'est le
-  // signe le plus fréquent de ces catalogues (la moitié des phrases de doc du
-  // site énumèrent), donc celui qu'on oublie.
+  // The counterpart of the next test. An ordinary space there shows up in use and
+  // nowhere else: the sign wraps to the next line on its own, and only at certain
+  // widths. The `:` is part of it, and it had to be: it is the most frequent sign
+  // in these catalogues (half the site's doc sentences enumerate something),
+  // hence the one that gets forgotten.
   for (const [key, entry] of Object.entries(FR)) {
     const punctuation = ORDINARY_COLON_OK.has(key) ? / [?!]/ : / [?!:]/;
     for (const form of formsOf(entry)) {
       assert.ok(
         !punctuation.test(form),
-        `fr / ${key} : espace ordinaire avant « ${form
+        `fr / ${key}: ordinary space before "${form
           .match(punctuation)?.[0]
-          .trim()} », il faut U+00A0`
+          .trim()}", U+00A0 is required`
       );
     }
   }
 });
 
 test("French quotes keep a no-break space inside the guillemets", () => {
-  // Même sort que la ponctuation ci-dessus, et le même angle mort : une espace
-  // ordinaire laisse le guillemet fermant passer seul à la ligne. Les textes
-  // citant l'utilisateur passent par `fmt.quote`, qui porte déjà l'insécable ; ce
-  // test couvre les guillemets écrits DANS une entrée (un exemple de recherche,
-  // le nom d'une section citée).
+  // Same fate as the punctuation above, and the same blind spot: an ordinary
+  // space lets the closing guillemet wrap to the next line on its own. Texts
+  // quoting the user go through `fmt.quote`, which already carries the no-break
+  // space; this test covers the guillemets written INSIDE an entry (a search
+  // example, the name of a section being quoted).
   for (const [key, entry] of Object.entries(FR)) {
     for (const form of formsOf(entry)) {
-      assert.ok(!/« /.test(form), `fr / ${key} : espace ordinaire après « « »`);
-      assert.ok(!/ »/.test(form), `fr / ${key} : espace ordinaire avant « » »`);
+      assert.ok(!/« /.test(form), `fr / ${key}: ordinary space after "«"`);
+      assert.ok(!/ »/.test(form), `fr / ${key}: ordinary space before "»"`);
     }
   }
 });

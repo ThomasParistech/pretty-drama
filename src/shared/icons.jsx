@@ -1,8 +1,9 @@
 import React from "react";
 
-// Icônes de contrôle en SVG (jamais des emojis : sur mobile ▶/⏸/⏹/⬇ rendaient
-// en emoji bleu, hors palette). Toutes héritent la couleur du bouton via
-// `currentColor` et se dimensionnent sur la font-size (1em) sauf override CSS.
+// Control icons in SVG (never emojis: on mobile ▶/⏸/⏹/⬇ rendered as blue
+// emojis, outside the palette). All of them inherit the button colour through
+// `currentColor` and size themselves on the font-size (1em) unless overridden in
+// CSS.
 const svg = {
   width: "1em",
   height: "1em",
@@ -11,9 +12,9 @@ const svg = {
   focusable: false,
 };
 
-// Variante « au trait » (par opposition aux formes pleines des contrôles) :
-// mêmes réglages de trait pour toutes, sinon les icônes ne pèsent pas pareil
-// côte à côte.
+// The "stroked" variant (as opposed to the solid shapes of the controls): the
+// same stroke settings for all of them, otherwise the icons do not carry the
+// same weight side by side.
 const strokeSvg = {
   ...svg,
   fill: "none",
@@ -110,9 +111,9 @@ export function DownloadIcon() {
   );
 }
 
-// Réussi / échoué, dans le journal des dépôts de l'Avancement : le statut y
-// tient une colonne étroite, donc il est porté par le seul dessin (la cellule
-// garde un aria-label, sinon un lecteur d'écran n'a plus rien à lire).
+// Succeeded / failed, in the upload journal of the Progress page: the status
+// there holds a narrow column, so it is carried by the drawing alone (the cell
+// keeps an aria-label, otherwise a screen reader has nothing left to read).
 export function CheckIcon() {
   return (
     <svg {...strokeSvg}>
@@ -130,11 +131,10 @@ export function CrossIcon() {
   );
 }
 
-// Supprimer une prise d'enregistrement (page Enregistrement). Volontairement
-// sans les deux traits verticaux du couvercle habituel : le dessin fait 17 px,
-// taille à laquelle ils se referment sur les parois (même raison que
-// SparkleIcon, en sens inverse : ici on retire du trait au lieu de passer à
-// l'aplat).
+// Deleting a recording take (Recording page). Deliberately without the two
+// vertical strokes of the usual lid: the drawing is 17 px, a size at which they
+// close up against the walls (same reason as SparkleIcon, the other way round:
+// here we remove strokes instead of switching to a solid).
 export function TrashIcon() {
   return (
     <svg {...strokeSvg}>
@@ -145,7 +145,7 @@ export function TrashIcon() {
   );
 }
 
-// Recherche (rail de l'Édition) : le cercle et son manche.
+// Search (Editing rail): the circle and its handle.
 export function SearchIcon() {
   return (
     <svg {...strokeSvg}>
@@ -155,10 +155,10 @@ export function SearchIcon() {
   );
 }
 
-// Personnages (rail de l'Édition). UNE tête, alors que la section est au
-// pluriel : le dessin fait 18 px, taille à laquelle une seconde tête derrière
-// la première n'ajoute qu'une bavure (même leçon que le couvercle retiré de
-// TrashIcon). C'est l'infobulle qui dit « Personnages ».
+// Characters (Editing rail). ONE head, even though the section name is plural:
+// the drawing is 18 px, a size at which a second head behind the first only adds
+// a smudge (same lesson as the lid removed from TrashIcon). It is the tooltip
+// that says "Characters".
 export function PersonIcon() {
   return (
     <svg {...strokeSvg}>
@@ -168,11 +168,11 @@ export function PersonIcon() {
   );
 }
 
-// Structure (rail de l'Édition) : le plan de la pièce, un acte et ses deux
-// scènes en retrait. Trois traits, pas quatre : à 18 px un second acte ramène
-// l'espacement sous quatre pixels et le dessin redevient une trame (même leçon
-// que la seconde tête retirée de PersonIcon). C'est le retrait, et lui seul, qui
-// distingue un plan d'un menu.
+// Structure (Editing rail): the plan of the play, an act and its two indented
+// scenes. Three strokes, not four: at 18 px a second act brings the spacing
+// under four pixels and the drawing becomes a hatch again (same lesson as the
+// second head removed from PersonIcon). It is the indent, and it alone, that
+// tells a plan apart from a menu.
 export function OutlineIcon() {
   return (
     <svg {...strokeSvg}>
@@ -183,12 +183,13 @@ export function OutlineIcon() {
   );
 }
 
-// Un seul chevron, qui PIVOTE selon ce qu'il ouvre (et non deux dessins
-// échangés) : c'est déjà la règle du chevron de repli du bandeau, pour la même
-// raison, le mouvement doit suivre celui du panneau. Il sert au repli du rail
-// (tourné d'un quart vers la bande) et au dévoilement du champ de remplacement.
-// En SVG et pas le caractère `▼` du bandeau : celui-là ne pivote bien qu'à sa
-// taille de texte, et la liste des caractères tolérés du projet est fermée.
+// A single chevron, which PIVOTS according to what it opens (and not two swapped
+// drawings): that is already the rule of the header's fold chevron, for the same
+// reason, the movement must follow that of the panel. It serves the fold of the
+// rail (turned a quarter towards the icon strip) and the reveal of the
+// replacement field. In SVG and not the header's `▼` character: that one only
+// pivots well at its text size, and the project's list of tolerated characters
+// is closed.
 export function ChevronIcon() {
   return (
     <svg {...strokeSvg}>
@@ -197,11 +198,11 @@ export function ChevronIcon() {
   );
 }
 
-// Correspondance précédente / suivante (recherche de l'Édition). Deux flèches
-// verticales, parce qu'on parcourt une liste de haut en bas. Ni ▲/▼ (la liste
-// des caractères tolérés est fermée, et ▼ est déjà le vocabulaire du repli sur
-// cette page, le même glyphe dirait deux choses), ni SkipPrev/SkipNext (aplat,
-// famille réservée aux contrôles de lecture, et horizontales).
+// Previous / next match (Editing search). Two vertical arrows, because a list is
+// walked from top to bottom. Neither ▲/▼ (the list of tolerated characters is
+// closed, and ▼ is already the vocabulary of folding on this page, so the same
+// glyph would say two things), nor SkipPrev/SkipNext (solid, a family reserved
+// for the playback controls, and horizontal).
 export function ArrowUpIcon() {
   return (
     <svg {...strokeSvg}>
@@ -211,9 +212,9 @@ export function ArrowUpIcon() {
   );
 }
 
-// Distincte de DownloadIcon, qui porte en plus le trait de réception au sol ;
-// les deux ne se côtoient jamais (l'une est dans le bandeau, l'autre dans le
-// rail).
+// Distinct from DownloadIcon, which additionally carries the receiving line at
+// the bottom; the two never sit side by side (one is in the header, the other in
+// the rail).
 export function ArrowDownIcon() {
   return (
     <svg {...strokeSvg}>
@@ -223,10 +224,10 @@ export function ArrowDownIcon() {
   );
 }
 
-// Avertissement : remplace l'emoji ⚠️, qui rendait en couleur pleine (jaune et
-// noir) sur mobile comme les ▶/⏸ d'avant, donc hors palette, et dont la
-// hauteur variait d'une plateforme à l'autre. Il ne sert qu'en tête de phrase,
-// d'où la classe d'alignement portée ici plutôt que par chaque appelant.
+// Warning: replaces the ⚠️ emoji, which rendered in full colour (yellow and
+// black) on mobile like the ▶/⏸ of before, hence outside the palette, and whose
+// height varied from one platform to the next. It only ever serves at the head of
+// a sentence, hence the alignment class carried here rather than by each caller.
 export function WarnIcon() {
   return (
     <svg {...strokeSvg} className="warn-icon">
@@ -237,12 +238,12 @@ export function WarnIcon() {
   );
 }
 
-// Voix de synthèse (Répétition) : remplace l'emoji 🤖, pour la même raison.
-// Deux étincelles, la convention du « généré automatiquement », et non plus un
-// robot : l'étiquette qui les porte est en 11.5 px, taille à laquelle un dessin
-// au trait se referme (le robot n'y était plus qu'une tache). D'où aussi le
-// choix de l'aplat plutôt que du trait, seule famille d'icônes du projet dans
-// ce cas : il n'y a rien à refermer.
+// Synthetic voice (Rehearsal): replaces the 🤖 emoji, for the same reason. Two
+// sparkles, the convention for "automatically generated", and no longer a robot:
+// the label that carries them is 11.5 px, a size at which a stroked drawing
+// closes up (the robot was no more than a blot there). Hence too the choice of a
+// solid rather than a stroke, the only icon family in the project in that case:
+// there is nothing to close up.
 export function SparkleIcon() {
   return (
     <svg {...svg} fill="currentColor" className="tts-icon">
@@ -252,32 +253,32 @@ export function SparkleIcon() {
   );
 }
 
-// ---- Icônes de page (le « sceau » de src/shared/PageMark.jsx) ----
-// Une par page, au trait, pour qu'on reconnaisse la page d'un coup d'oeil.
-// Les tracés sont repris tels quels dans les favicons des .html : toute
-// retouche ici doit y être reportée.
+// ---- Page icons (the "seal" of src/shared/PageMark.jsx) ----
+// One per page, stroked, so that the page is recognised at a glance.
+// The paths are reused as they are in the favicons of the .html files: any
+// retouching here must be carried over there.
 
-// Accueil, et donc la marque : les deux masques du théâtre.
+// Home, and therefore the brand: the two theatre masks.
 //
-// GÉOMÉTRIE FOURNIE, À NE PAS RETOUCHER. Les 8 tracés viennent tels quels de
-// `design/drama-wine.svg` (la livraison design, gardée dans le dépôt pour
-// pouvoir comparer), viewBox 329x345 d'origine comprise. Seules les VALEURS de remplissage ont changé,
-// pour que la marque suive le système des sceaux au lieu de figer des hex :
-// le vin devient `currentColor` (donc `--page-mark`) et les deux aplats
-// d'intérieur suivent le fond de la pastille (`--page-mark-soft`).
-// Ordre des tracés significatif : contour, puis intérieurs, puis les yeux et
-// les bouches par-dessus.
+// GEOMETRY SUPPLIED, NOT TO BE RETOUCHED. The 8 paths come as they are from
+// `design/drama-wine.svg` (the design delivery, kept in the repository so it can
+// be compared), original 329x345 viewBox included. Only the fill VALUES have
+// changed, so that the brand follows the system of the seals instead of freezing
+// hex values: the wine becomes `currentColor` (hence `--page-mark`) and the two
+// interior solids follow the background of the badge (`--page-mark-soft`).
+// The order of the paths is significant: outline, then interiors, then the eyes
+// and the mouths on top.
 //
-// Seul le CADRAGE est retouché, jamais les tracés : dans le fichier livré
-// l'encre occupe 259x262 à l'offset (39, 36) d'un viewBox de 329x345, donc le
-// dessin est décentré et laisse un anneau inégal dans la pastille. Le viewBox
-// ci-dessous le recadre au carré autour de ce même contenu (côté 262, centré
-// sur l'encre). Les formes, leurs proportions et leurs transform sont intacts.
+// Only the CROPPING is retouched, never the paths: in the delivered file the ink
+// occupies 259x262 at offset (39, 36) of a 329x345 viewBox, so the drawing is
+// off-centre and leaves an uneven ring inside the badge. The viewBox below crops
+// it square around that same content (side 262, centred on the ink). The shapes,
+// their proportions and their transforms are untouched.
 //
-// Densité : ce dessin demande de la place. Il ne se lit qu'à partir d'environ
-// 34 px (à 20 px les deux masques se touchent), d'où la pastille agrandie de
-// `.home-brand-mark`. Il ne sert QUE là : les bandeaux des autres pages
-// portent le sceau de leur page, pas la marque.
+// Density: this drawing needs room. It only reads from about 34 px up (at 20 px
+// the two masks touch), hence the enlarged badge of `.home-brand-mark`. It serves
+// ONLY there: the headers of the other pages carry the seal of their page, not
+// the brand.
 export function MasksIcon() {
   const inner = { fill: "var(--page-mark-soft)" };
   return (
@@ -332,7 +333,7 @@ export function MasksIcon() {
   );
 }
 
-// Répétition : deux bulles de dialogue (la pièce lue à plusieurs voix).
+// Rehearsal: two speech bubbles (the play read in several voices).
 export function DialogueIcon() {
   return (
     <svg {...strokeSvg}>
@@ -342,8 +343,8 @@ export function DialogueIcon() {
   );
 }
 
-// Enregistrement : le micro (autrefois inline dans recorder/App.jsx, avec un
-// stroke blanc en dur ; il hérite maintenant la couleur comme les autres).
+// Recording: the mic (formerly inline in recorder/App.jsx, with a hard-coded
+// white stroke; it now inherits the colour like the others).
 export function MicIcon() {
   return (
     <svg {...strokeSvg}>
@@ -354,25 +355,25 @@ export function MicIcon() {
   );
 }
 
-// Répartition : le camembert de la page, mais ÉCLATÉ, une part détachée du
-// reste.
+// Stats: the pie chart of the page, but EXPLODED, one slice detached from the
+// rest.
 //
-// Le camembert entier ne marche pas au trait : c'est un cercle plus deux rayons,
-// or deux segments partant du centre d'un cercle sont deux aiguilles, et à 12 et
-// 3 heures ce sont exactement celles d'une horloge (c'est ce que ce sceau a été,
-// et c'est ainsi qu'il se lisait, une pendule). Détacher la part règle ça par
-// construction et non par compensation : une aiguille ne quitte pas son cadran,
-// donc la lecture « horloge » n'est plus disponible, et il n'y a pas d'aplat à
-// ouvrir dans une famille au trait (remplir la part a été essayé, ça lève bien
-// l'ambiguïté mais au prix de l'exception).
+// The whole pie does not work as a stroke: it is a circle plus two radii, and two
+// segments starting from the centre of a circle are two hands, and at 12 and 3
+// o'clock they are exactly those of a clock (that is what this seal used to be,
+// and that is how it read, a clock face). Detaching the slice settles that by
+// construction and not by compensation: a hand does not leave its dial, so the
+// "clock" reading is no longer available, and there is no solid to open up inside
+// a stroked family (filling the slice was tried, it does lift the ambiguity but at
+// the cost of the exception).
 //
-// Trois mesures, toutes vérifiées au rendu à 17 px (le sceau du journal, le pire
-// cas) et à 36 : la part couvre 120° et pas 90° (un quart détaché se lit comme un
-// petit drapeau collé au cercle), elle s'écarte de 3 unités sur sa bissectrice
-// (à 1,5 la fente se referme au pixel et l'horloge revient), et l'ENSEMBLE des
-// deux formes est centré dans la boîte, d'où des coordonnées qui ne tombent pas
-// rond : centrer le cercle seul poserait le dessin en bas à gauche de sa
-// pastille, la part partant vers le haut à droite.
+// Three measurements, all checked on the rendering at 17 px (the journal's seal,
+// the worst case) and at 36: the slice covers 120° and not 90° (a detached quarter
+// reads as a little flag stuck to the circle), it moves 3 units apart along its
+// bisector (at 1.5 the gap closes up at the pixel and the clock comes back), and
+// the WHOLE of the two shapes is centred in the box, hence coordinates that are
+// not round numbers: centring the circle alone would put the drawing at the
+// bottom left of its badge, with the slice heading up and to the right.
 export function PieIcon() {
   return (
     <svg {...strokeSvg}>
@@ -382,21 +383,18 @@ export function PieIcon() {
   );
 }
 
-// Avancement : une liste cochée, c'est-à-dire ce qui est enregistré.
+// Progress: a ticked list, that is, what has been recorded.
 //
-// C'était trois barres montantes, et elles sont tombées en même temps que le
-// camembert entier de la Répartition (cf. `PieIcon`, juste au-dessus) : un
-// graphique en barres à côté d'un graphique en parts, ce sont deux fois « une
-// statistique », donc les deux sceaux du responsable se distinguaient par le
-// détail et pas par la silhouette. La page ne montre d'ailleurs aucune barre,
-// elle montre une grille de « 3/5 » qui verdissent ; c'est de l'avancement, pas
-// de la mesure.
+// It used to be three rising bars, and they fell at the same time as the whole pie
+// of the Stats page (see `PieIcon`, just above): a bar chart next to a pie chart is
+// twice "a statistic", so the manager's two seals were told apart by their detail
+// and not by their silhouette. The page shows no bar anyway, it shows a grid of
+// "3/5" turning green; this is progress, not measurement.
 //
-// La coche est le mot que le site emploie déjà pour « fait » (le statut du
-// journal, les étiquettes de l'Enregistrement), donc le sceau n'apprend rien de
-// neuf à lire. Deux lignes et pas trois : à 17 px une troisième rangée empâte le
-// dessin, et une liste toute cochée nomme très bien la page sans avoir à mettre
-// en scène une ligne qui reste à faire.
+// The tick is the word the site already uses for "done" (the journal status, the
+// Recording labels), so the seal teaches nothing new to read. Two lines and not
+// three: at 17 px a third row thickens the drawing, and a fully ticked list names
+// the page very well without having to stage a line still to be done.
 export function ChecklistIcon() {
   return (
     <svg {...strokeSvg}>
@@ -408,7 +406,7 @@ export function ChecklistIcon() {
   );
 }
 
-// Édition : la plume qui écrit le texte de la pièce.
+// Editing: the quill that writes the text of the play.
 export function QuillIcon() {
   return (
     <svg {...strokeSvg}>
@@ -419,39 +417,38 @@ export function QuillIcon() {
   );
 }
 
-// Les drapeaux des deux endroits où l'on choisit une langue : le sélecteur du
-// pied des accueils (la langue du SITE) et celui de la section « Structure » de
-// l'Édition (la langue de la PIÈCE).
+// The flags of the two places where a language is chosen: the switch in the foot
+// of the home pages (the language of the SITE) and the one in the "Structure"
+// section of the Editing page (the language of the PLAY).
 //
-// **Dessinés, jamais l'emoji drapeau.** 🇫🇷 est une paire d'indicatifs
-// régionaux : Windows n'en rend aucun et affiche les deux lettres « FR » à la
-// place, ce qui ferait du sélecteur une paire de sigles sur la moitié des
-// postes de la troupe. La règle « aucun emoji dans l'UI » (cf. la ligne
-// « Icônes » de CLAUDE.md) s'applique donc ici aussi, et les couleurs sont
-// codées en dur parce qu'un drapeau ne suit pas la palette du site : c'est la
-// seule image du dépôt qui ne soit pas en `currentColor`.
+// **Drawn, never the flag emoji.** 🇫🇷 is a pair of regional indicators: Windows
+// renders none of them and shows the two letters "FR" instead, which would turn
+// the switch into a pair of letter pairs on half the troupe's machines. The rule
+// "no emoji in the UI" (see the no-emoji invariant in CLAUDE.md) therefore applies here
+// too, and the colours are hard-coded because a flag does not follow the site
+// palette: this is the only image in the repository that is not in
+// `currentColor`.
 //
-// **Deux drapeaux, une seule boîte, 3:2.** L'Union Jack fait 2:1 dans la
-// réalité : il est étiré à la verticale (`scale(1 4/3)`, appliqué à sa
-// géométrie canonique en 60x30 plutôt que redessiné à la main). Deux vignettes
-// de largeurs différentes côte à côte dans un sélecteur se lisent comme un
-// défaut d'alignement, alors qu'un drapeau un tiers plus haut que nature reste
-// reconnu de tous.
+// **Two flags, a single box, 3:2.** The Union Jack is 2:1 in reality: it is
+// stretched vertically (`scale(1 4/3)`, applied to its canonical 60x30 geometry
+// rather than redrawn by hand). Two thumbnails of different widths side by side in
+// a switch read as a misalignment, whereas a flag a third taller than life is
+// still recognised by everyone.
 //
-// Le drapeau britannique pour l'anglais, et pas celui d'un autre pays
-// anglophone : c'est celui que porte la quasi-totalité des sélecteurs de langue
-// de ce côté-ci de l'Atlantique. Un drapeau nomme un pays et pas une langue, ce
-// qui reste vrai et assumé : le nom de la langue voyage avec, en `title` et en
-// nom accessible, jamais remplacé par l'image.
+// The British flag for English, and not that of another English-speaking country:
+// it is the one carried by very nearly every language switch on this side of the
+// Atlantic. A flag names a country and not a language, which stays true and is
+// accepted: the language name travels with it, as `title` and as accessible name,
+// never replaced by the image.
 //
-// La taille, le coin arrondi et le filet vivent dans `.flag-icon` (theme.css) :
-// sans filet, la bande blanche du tricolore et le fond blanc de l'Union Jack se
-// fondent dans le papier crème et le drapeau perd un bord.
+// The size, the rounded corner and the hairline live in `.flag-icon` (theme.css):
+// without the hairline, the white band of the tricolour and the white background
+// of the Union Jack melt into the cream paper and the flag loses an edge.
 export function FlagIcon({ locale }) {
-  // Les `clipPath` de l'Union Jack sont référencés par id, donc deux drapeaux
-  // sur la même page en dupliqueraient un. `useId` les rend uniques ; les
-  // deux-points qu'il produit sont retirés, un id en contient légalement mais
-  // les analyseurs d'URL des vieux moteurs s'y perdent.
+  // The Union Jack's `clipPath`s are referenced by id, so two flags on the same
+  // page would duplicate one. `useId` makes them unique; the colons it produces
+  // are stripped, an id may legally contain them but the URL parsers of old
+  // engines get lost in them.
   const uid = React.useId().replace(/:/g, "");
   const box = { viewBox: "0 0 60 40", className: "flag-icon", "aria-hidden": true, focusable: false };
 
@@ -462,10 +459,9 @@ export function FlagIcon({ locale }) {
           <clipPath id={`${uid}-flag`}>
             <path d="M0,0 v30 h60 v-30 z" />
           </clipPath>
-          {/* Les quatre quartiers où la diagonale rouge est décalée (le
-              contre-changement de l'Union Jack : sans lui, les deux croix de
-              Saint-Patrick et de Saint-André se superposent au lieu de
-              s'entrelacer). */}
+          {/* The four quarters where the red diagonal is offset (the
+              counterchange of the Union Jack: without it, the crosses of Saint
+              Patrick and Saint Andrew overlap instead of interlacing). */}
           <clipPath id={`${uid}-counter`}>
             <path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z" />
           </clipPath>

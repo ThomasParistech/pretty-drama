@@ -29,9 +29,9 @@ export const FR = {
   "common.homeLink": "Accueil PrettyDrama",
   "common.headerToggle": "Déplier ou replier le bandeau",
   "common.progressPosition": "Position dans les répliques",
-  // Les libellés de boutons partagés par plusieurs modales. Ils sont ici et pas
-  // dans leur page parce qu'ils voisinent « Annuler » dans la même rangée : un
-  // seul des deux traduit donnait « Supprimer » à côté de « Cancel ».
+  // Button labels shared by several modals. They live here and not in their page
+  // because they sit next to "Annuler" in the same row: translating only one of
+  // the two gave "Supprimer" beside "Cancel".
   "common.delete": "Supprimer",
   "common.dragHandle": "Glisser pour déplacer",
   "editor.leaveSave": "Télécharger puis quitter",
@@ -45,35 +45,35 @@ export const FR = {
   "common.cancel": "Annuler",
   "common.leaveAnyway": "Quitter quand même",
 
-  // Le titre des confirmations de suppression d'un objet NOMMÉ (un acte, une
-  // scène, un personnage) : le nom arrive déjà entre guillemets de la locale
-  // (`fmt.quote`). Les suppressions d'un objet qu'on ne nomme pas (une réplique,
-  // une prise) ont leur propre clé, la tournure y étant démonstrative.
+  // The title of any delete confirmation about a NAMED thing (an act, a scene, a
+  // character): the name arrives already wrapped in the locale's quotes
+  // (`fmt.quote`). Deletions of a thing that is not named (a line, a take) have
+  // their own key, the wording there being demonstrative.
   "common.deleteConfirm": "Supprimer {name} ?",
 
-  // Le nom accessible des deux selects de portée, partagé par la Répétition,
-  // l'Enregistrement et la Répartition : le mot NU, sans rang (« Acte I » est
+  // The accessible name of the two scope selects, shared by Rehearsal, Recording
+  // and Speaking share: the BARE word, with no rank ("Acte I" is
   // `structure.act`).
   "common.actSelect": "Acte",
   "common.sceneSelect": "Scène",
   "common.myCharacter": "Mon personnage",
-  // Une vraie insécable U+00A0 avant le `?`, et pas une espace ordinaire : le JSX
-  // que cette clé remplace en posait une (`Qui jouez-vous&nbsp;?` dans le grand
-  // titre de la carte d'accueil de l'Enregistrement), et sans elle le point
-  // d'interrogation peut passer seul à la ligne.
+  // A real U+00A0 no-break space before the `?`, and not an ordinary space: the
+  // JSX this key replaces laid one down (`Qui jouez-vous&nbsp;?` in the big
+  // heading of the Recording intro card), and without it the question mark can
+  // wrap onto a line of its own.
   //
-  // Les deux autres entrées qui portent un `:` gardent une espace ORDINAIRE, et
-  // c'est délibéré : `common.docTitle` est un titre d'onglet, où rien ne se coupe,
-  // et son jumeau statique dans les sept `.html` s'écrit pareil (un garde CI
-  // compare les deux) ; `page.editor.desc` est reprise MOT POUR MOT de l'ancien
-  // pages.js, et la changer ferait dériver un texte déjà validé. Le test de
-  // parité connaît ces deux exceptions par leur nom.
+  // The two other entries that carry a `:` keep an ORDINARY space, and that is
+  // deliberate: `common.docTitle` is a browser tab title, where nothing wraps, and
+  // its static twin in the nine `.html` documents is written the same way (a CI guard
+  // compares the two); `page.editor.desc` is taken WORD FOR WORD from the old
+  // pages.js, and changing it would make an already validated text drift. The
+  // parity test knows these two exceptions by name.
   "common.whoDoYouPlay": "Qui jouez-vous ?",
   "common.prevMyLine": "Ma réplique précédente",
   "common.nextMyLine": "Ma réplique suivante",
 
-  // Le repli quand la pièce n'a pas de titre, sur les cinq bandeaux et les trois
-  // écrans pleine page définitifs. Une seule clé : il était écrit huit fois.
+  // The fallback when the play has no title, on the five headers and the three
+  // final full-page screens. A single key: it used to be written eight times.
   "common.untitledPlay": "Pièce sans titre",
 
   "common.loadingPlay": "Chargement de la pièce…",
@@ -85,46 +85,54 @@ export const FR = {
     "Impossible de charger la pièce. Le site n'est peut-être pas encore publié : " +
     "réessayez dans quelques minutes ou contactez le responsable.",
 
-  // Le décompte de répliques, seul, sans phrase autour : SIX endroits le
-  // rendaient avec leur propre `n > 1 ? "s" : ""`, du compte d'un acte dans le
-  // plan à celui d'un ZIP dans le journal des dépôts. Une seule entrée, et le
-  // pluriel vient d'`Intl.PluralRules` (donc « 0 réplique » en français et
-  // « 0 lines » en anglais, ce que le ternaire ne savait pas faire).
+  // A line count on its own, with no sentence around it: SIX places used to render
+  // it with their own `n > 1 ? "s" : ""`, from an act's count in the plan to a
+  // ZIP's count in the upload log. A single entry, and the plural comes from
+  // `Intl.PluralRules` (hence "0 réplique" in French and "0 lines" in English,
+  // which the ternary could not do).
   "common.lineCount": {
     one: "{count} réplique",
     other: "{count} répliques",
   },
 
-  // Le couple acte + scène, partout où les deux se nomment ensemble : la portée
-  // de la Répartition, la colonne de l'Avancement et l'infobulle de son en-tête.
-  // Une seule entrée pour les trois : le séparateur est un fait de langue, et il
-  // était une virgule d'un côté et un « · » écrit en dur dans le JSX de l'autre,
-  // sur le même écran d'un même site.
+  // The act + scene pair, everywhere the two are named together: the Speaking
+  // share scope, the Progress column and the tooltip on its heading. A single
+  // entry for all three: the separator is a fact of language, and it was a comma
+  // on one side and a "·" hard-coded in the JSX on the other, on the same screen
+  // of the same site.
   "common.actScene": "{act}, {scene}",
 
-  // « Nom (3/12) » sur mes cartes de dialogue : mon rang parmi MES répliques de la
-  // scène. Deux pages l'affichent (Répétition et Enregistrement) et écrivaient ce
-  // gabarit chacune de son côté, parenthèses et barre comprises. L'espace initiale
-  // est dans la chaîne, comme pour `rehearsal.sceneLines` : c'est un suffixe collé
-  // à un nom, pas une phrase à part.
+  // "Nom (3/12)" on my dialogue cards: my rank among MY lines in the scene. Two
+  // pages show it (Rehearsal and Recording) and each wrote this template on its
+  // own side, brackets and slash included. The leading space is in the string, as
+  // for `rehearsal.sceneLines`: it is a suffix stuck to a name, not a sentence of
+  // its own.
   "common.myLineNumber": " ({n}/{total})",
 
-  // Le vide de trois pages qui lisent le manifest : la pièce n'a pas encore de
-  // personnage, donc rien à jouer, à enregistrer ni à suivre. Tournure
-  // impersonnelle parce que ces pages sont ouvertes à toute la troupe, alors que
-  // l'Édition ne l'est pas : un impératif y commanderait un geste que son lecteur
-  // ne peut pas faire.
-  // `{page}` est le nom de la page Édition, INTERPOLÉ depuis `page.editor.label`
-  // et jamais recopié : six entrées de chaque catalogue la citent, donc la
-  // renommer demandait douze retouches et laissait les deux catalogues dériver en
-  // silence. Même règle que le vide de la Répartition, qui cite
-  // `stats.scopeAllOption`, et que l'aide d'une scène vide, qui cite
-  // `rail.characters`.
+  // The empty state of the three pages that read the manifest: the play has no
+  // character yet, so there is nothing to play, to record or to follow. An
+  // impersonal turn of phrase because these pages are open to the whole troupe,
+  // whereas Editing is not: an imperative there would order a gesture its reader
+  // cannot make.
+  // `{page}` is the Editing page's name, INTERPOLATED from `page.editor.label` and
+  // never copied: six entries per catalogue name it, so renaming it meant twelve
+  // touch-ups and left the two catalogues to drift in silence. Same rule as the
+  // Speaking share empty state, which quotes `stats.scopeAllOption`, and as the
+  // help on an empty scene, which quotes `rail.characters`.
   "common.noCharacters":
     "Aucun personnage pour l'instant : la pièce doit d'abord être saisie dans la page {page}.",
 
-  // Deux noms de touches, cités dans la doc de l'Édition. Ils se traduisent comme
-  // le reste : c'est le libellé gravé sur le clavier du lecteur.
+  // The other empty state of those same grids, and it is NOT the one above: a play
+  // can carry its whole cast and not a single scene (a script edited by hand in the
+  // repository, `acts: []`, which the Python sanitize deliberately does not floor
+  // where the editor does). Saying "no characters" there stated something false about
+  // the one thing the page did have. In `common.` because two grids show it, Progress
+  // and Speaking share, and a sentence named twice is written once.
+  "common.emptyPlay":
+    "Aucune réplique dans la pièce : elle doit d'abord être saisie dans la page {page}.",
+
+  // Two key names, quoted in the Editing doc. They translate like the rest: this is
+  // the label engraved on the reader's keyboard.
   "common.keyEnter": "Entrée",
   "common.keyShiftEnter": "Maj + Entrée",
 
@@ -174,11 +182,11 @@ export const FR = {
   "structure.act": "Acte {n}",
   "structure.scene": "Scène {n}",
 
-  // Le suffixe collé au libellé d'une scène dans les selects de la Répétition et
-  // de l'Enregistrement. Il est DANS le catalogue : collé en français à côté d'un
-  // libellé traduit, il donnait « Scene 1 (3 répliques) ». Le décompte lui-même
-  // est INTERPOLÉ depuis `common.lineCount` et jamais recopié, donc le pluriel
-  // n'est réglé qu'à un endroit ; cette entrée-ci ne dit plus que la parenthèse.
+  // The suffix stuck to a scene's label in the Rehearsal and Recording selects. It
+  // is IN the catalogue: left in French beside a translated label, it produced
+  // "Scene 1 (3 répliques)". The count itself is INTERPOLATED from
+  // `common.lineCount` and never copied, so the plural is settled in one place
+  // only; this entry now says nothing but the brackets.
   "rehearsal.sceneLines": " ({lines})",
   "recorder.sceneTodo": " ({count} à enregistrer)",
 
@@ -190,33 +198,33 @@ export const FR = {
   "structure.deleteScene": "Supprimer cette scène",
   "structure.deleteScene.named": "Supprimer {scene}",
 
-  // Le seul nom qui se saisisse encore dans le plan : l'étiquette accessible du
-  // champ ET son texte d'invite, qui doivent dire la même chose.
+  // The only name still typed in the plan: the field's accessible label AND its
+  // placeholder, which must say the same thing.
   "structure.playTitle": "Titre de la pièce",
-  // Les trois boutons d'ajout du rail nomment tous l'objet qu'ils créent (cf.
-  // `characters.add`), donc ils se lisent comme une famille dans le même meuble.
+  // The rail's three add buttons all name the thing they create (see
+  // `characters.add`), so they read as a family in the same piece of furniture.
   "structure.addAct": "+ Acte",
   "structure.addScene": "+ Scène",
-  // Ce que la suppression d'un acte ou d'une scène emporte. Le nombre est écrit
-  // même au singulier (« 1 réplique sera supprimée. »), le pluriel ne pilotant
-  // que l'accord du verbe.
+  // What deleting an act or a scene takes away with it. The number is written even
+  // in the singular ("1 réplique sera supprimée."), the plural only driving the
+  // agreement of the verb.
   "structure.deleteLines": {
     one: "{count} réplique sera supprimée.",
     other: "{count} répliques seront supprimées.",
   },
 
-  // La langue dans laquelle la pièce est ÉCRITE, choisie dans la section
-  // « Structure » du rail. Un autre axe que la locale de l'interface : elle pilote
-  // le PDF et la voix de synthèse qui remplace une réplique pas encore enregistrée.
+  // The language the play is WRITTEN in, chosen in the "Structure" section of the
+  // rail. A different axis from the interface locale: it drives the PDF and the
+  // synthetic voice that stands in for a line not yet recorded.
   "structure.language": "Langue de la pièce",
   "structure.language.fr": "Français",
   "structure.language.en": "Anglais",
 
   // -------------------------------------------------------------- the rail
 
-  // La bande de trois icônes de l'Édition. `label` nomme la section (c'est
-  // l'`aria-label` du bouton ET le titre du panneau, qui ne doivent pas
-  // diverger), `tip` dit ce qu'elle contient.
+  // The Editing page's strip of three icons. `label` names the section (it is both
+  // the button's `aria-label` AND the panel's title, which must not diverge), `tip`
+  // says what it contains.
   "rail.label": "Structure, personnages et recherche",
   "rail.width": "Largeur du panneau",
   "rail.structure": "Structure",
@@ -229,9 +237,9 @@ export const FR = {
   // ------------------------------------------------------------------- editing
 
   "editor.noPublishedScript": "Aucun script publié trouvé : vous partez d'une pièce vide.",
-  // Le seul message du site à donner une marche à suivre sur GitHub : c'est le
-  // respo qui le lit, et le fichier du dépôt est la seule chose qui puisse le
-  // débloquer.
+  // The site's only message that gives a procedure to follow on GitHub: the
+  // coordinator is the one who reads it, and the file in the repository is the only
+  // thing that can unblock them.
   "editor.readError":
     "Le script publié existe mais n'a pas pu être lu (fichier abîmé ou problème réseau). " +
     "Pour ne pas risquer d'écraser votre pièce, l'éditeur est désactivé. " +
@@ -241,16 +249,16 @@ export const FR = {
   "editor.touchOnly":
     "Pour des raisons de praticité, le mode {page} n'est disponible que depuis un ordinateur.",
 
-  // Les deux phrases du `hint`, dans l'ordre du travail : ce qui sert pendant la
-  // saisie, puis ce qui sert une fois qu'on a fini.
+  // The two sentences of the `hint`, in the order of the work: what serves while
+  // typing, then what serves once you are done.
   "editor.hintTyping": "Dans une réplique, {enter} crée la suivante, {shiftEnter} un retour à la ligne.",
   "editor.hintDownload":
     "Une fois vos modifications terminées, téléchargez le script avec le bouton en haut de la " +
     "page, puis déposez le fichier obtenu sur la page {page} comme pour les voix des acteurs.",
 
   "editor.dirty": "Modifications non téléchargées",
-  // Le nom accessible d'un bouton ne dépend pas de son état ; seule l'infobulle
-  // dit pourquoi il dort.
+  // The accessible name of a button does not depend on its state; only the tooltip
+  // says why it is asleep.
   "editor.undo": "Annuler",
   "editor.undo.tip": "Annuler la dernière modification (Ctrl+Z)",
   "editor.undo.none": "Rien à annuler pour l'instant",
@@ -265,8 +273,8 @@ export const FR = {
     "Vos modifications ne vivent que dans cet onglet : en quittant la page sans télécharger le " +
     "fichier {file}, vous les perdez.",
 
-  // Le sort des répliques d'un personnage qu'on supprime. `{count}` arrive en
-  // gras, composé par `common.lineCount`.
+  // The fate of the lines of a character being deleted. `{count}` arrives in bold,
+  // composed by `common.lineCount`.
   "editor.deleteCharacterBody": "Ce personnage a encore {count}. Que faut-il en faire ?",
   "editor.reassignTo": "Réassigner à :",
 
@@ -280,19 +288,19 @@ export const FR = {
   "characters.changeColorOf": "Changer la couleur de {name}",
   "characters.delete": "Supprimer ce personnage",
   "characters.deleteNamed": "Supprimer {name}",
-  // « la couleur X » et pas « le X » : sur vingt noms, quatre commencent par une
-  // voyelle (orange, olive, et leurs teintes claires) et l'article ne s'y élide
-  // pas. Un nom de couleur apposé se passe d'accord, alors qu'un adjectif en
-  // demanderait un. L'anglais n'a ni l'un ni l'autre problème et dit le nom.
+  // "la couleur X" and not "le X": out of twenty names, four begin with a vowel
+  // (orange, olive, and their light tints) and the article does not elide before
+  // them. An apposed colour name needs no agreement, whereas an adjective would
+  // demand one. English has neither problem and simply says the name.
   "characters.colorCurrent": "{color}, couleur actuelle",
   "characters.colorChoose": "Choisir la couleur {color}",
 
-  // Les vingt noms de la palette (Tableau 10 puis ses dix teintes claires), dans
-  // l'ordre de `CHARACTER_COLORS`. Ils NOMMENT les pastilles : sans eux, les
-  // vingt boutons portaient tous « Choisir cette couleur », donc au clavier et au
-  // lecteur d'écran la palette était vingt homonymes dont la seule information,
-  // la couleur, n'était pas dite. `characterColors.js` porte les clés, pas les
-  // mots, pour que l'ordre reste vérifié à côté des hex.
+  // The twenty palette names (Tableau 10, then its ten light tints), in the order
+  // of `CHARACTER_COLORS`. They NAME the swatches: without them, all twenty
+  // buttons read "Choisir cette couleur", so to the keyboard and the screen reader
+  // the palette was twenty homonyms whose only piece of information, the colour,
+  // was never spoken. `characterColors.js` carries the keys, not the words, so that
+  // the order stays checked next to the hex values.
   "color.blue": "Bleu",
   "color.orange": "Orange",
   "color.green": "Vert",
@@ -324,8 +332,9 @@ export const FR = {
 
   "scene.insert": "+ insérer",
   "scene.firstLine": "Écrire la première réplique : les suivantes se créent avec la touche Entrée.",
-  // `{section}` est le nom de la section du rail, entre guillemets de la locale :
-  // recopier « Personnages » ici le ferait dériver du rail au premier renommage.
+  // `{section}` is the name of the rail section, inside the locale's quotes:
+  // copying "Personnages" here would make it drift from the rail on the first
+  // rename.
   "scene.needCharacter":
     "Ajoutez d'abord un personnage (icône {section} du rail, à gauche) pour pouvoir saisir des répliques.",
 
@@ -338,8 +347,8 @@ export const FR = {
   "search.showReplace": "Afficher le champ de remplacement (Ctrl+H)",
   "search.hideReplace": "Masquer le champ de remplacement",
   "search.placeholder": "Rechercher",
-  // L'étiquette dit le périmètre, que le texte d'invite n'a pas la place de dire :
-  // la recherche ne voit que les répliques.
+  // The label states the scope, which the placeholder has no room to state: the
+  // search only ever sees the lines.
   "search.label": "Rechercher dans les répliques",
   "search.replacePlaceholder": "Remplacer par",
   "search.replaceCurrent.tip": "Remplacer la correspondance courante",
@@ -347,7 +356,7 @@ export const FR = {
   "search.noneToReplace": "Aucune correspondance à remplacer",
   "search.replaceAll": "Tout remplacer",
   "search.replaceAll.tip": "Remplacer {matches} dans toute la pièce",
-  // Les deux décomptes de la recherche, composés dans les phrases ci-dessous.
+  // The search's two counts, composed into the sentences below.
   "search.matchCount": {
     one: "{count} correspondance",
     other: "{count} correspondances",
@@ -356,9 +365,9 @@ export const FR = {
     one: "{count} scène",
     other: "{count} scènes",
   },
-  // La forme de cette phrase ne change JAMAIS selon les nombres : elle se réécrit
-  // à chaque frappe, et une phrase qui change de forme en tapant se lit comme un
-  // clignotement.
+  // The shape of this sentence NEVER changes with the numbers: it is rewritten on
+  // every keystroke, and a sentence that changes shape as you type reads like a
+  // flicker.
   "search.count": "{matches} dans {scenes}",
   "search.none": "Aucune correspondance",
   "search.prev": "Correspondance précédente",
@@ -367,8 +376,9 @@ export const FR = {
   "search.next.tip": "Correspondance suivante (Entrée)",
   "search.noneToBrowse": "Aucune correspondance à parcourir",
   "search.replaceAllTitle": "Remplacer {matches} ?",
-  // Un champ de remplacement vide est légitime (supprimer un mot partout) : c'est
-  // ici que ça se dit, plutôt que de laisser croire à un remplacement par rien.
+  // An empty replacement field is legitimate (deleting a word everywhere): this is
+  // where that gets said, rather than letting one believe in a replacement by
+  // nothing.
   "search.replaceAllInto": "Dans {scenes} de la pièce : {query} devient {replacement}.",
   "search.replaceAllDelete": "Dans {scenes} de la pièce : {query} sera supprimé.",
 
@@ -377,11 +387,10 @@ export const FR = {
   "rehearsal.emptyPlay":
     "La pièce est vide pour l'instant. Le responsable doit d'abord la saisir dans la page {page}.",
 
-  // Les quatre cases : le libellé dit ce que la case FAIT, l'infobulle dit
-  // pourquoi. « Muet », « Bip » et « Avant » ne se comprenaient qu'une fois
-  // essayés. La quatrième ne se raccourcit pas en « Démarrer avant ma réplique » :
-  // « avant » y désignerait un rang, alors qu'il désigne un instant dans la case
-  // du dessus.
+  // The four checkboxes: the label says what the box DOES, the tooltip says why.
+  // "Muet", "Bip" and "Avant" could only be understood once tried. The fourth does
+  // not shorten to "Démarrer avant ma réplique": "avant" would then designate a
+  // rank, whereas it designates a moment in the box just above.
   "rehearsal.mute": "Couper ma voix",
   "rehearsal.mute.tip": "Mes répliques ne sont pas jouées : je les dis moi-même",
   "rehearsal.hideText": "Cacher mon texte",
@@ -415,8 +424,8 @@ export const FR = {
   "recorder.downloadedNote": "Fichier téléchargé. Envoyez-le au responsable.",
   "recorder.noLinesInScene": "Vous n'avez aucune réplique dans cette scène.",
 
-  // Les trois états d'une de mes répliques, en étiquette au coin de la carte et
-  // en légende en tête de liste : les deux endroits lisent les mêmes clés.
+  // The three states of one of my lines, as a tag in the corner of the card and as
+  // a legend at the head of the list: both places read the same keys.
   "recorder.status.todo": "À enregistrer",
   "recorder.status.fresh": "À télécharger",
   "recorder.status.done": "Déjà enregistrée",
@@ -427,29 +436,29 @@ export const FR = {
   "recorder.stop": "Terminer l'enregistrement",
   "recorder.downloadZip": "Télécharger le ZIP des prises",
   "recorder.downloadZipCount": "Télécharger le ZIP des prises ({count})",
-  // Le nombre de prises écrit SUR le bouton, à côté de sa flèche : c'est tout ce
-  // que le bouton dit à l'écran, son verbe vivant dans l'infobulle et
-  // l'`aria-label` juste au-dessus. Les parenthèses sont dans la chaîne, elles
-  // étaient dans le JSX.
+  // The number of takes written ON the button, next to its arrow: that is all the
+  // button says on screen, its verb living in the tooltip and the `aria-label` just
+  // above. The brackets are in the string, they used to be in the JSX.
   "recorder.downloadCount": "({count})",
-  // Ma position dans mes répliques de la scène, au coin de la barre basse. Séparée
-  // de `common.myLineNumber` : celle-là se colle à un nom de personnage, celle-ci
-  // est seule dans son coin et ne porte donc pas de parenthèses.
+  // My position among my lines in the scene, in the corner of the bottom bar. Kept
+  // separate from `common.myLineNumber`: that one is stuck to a character's name,
+  // this one sits alone in its corner and therefore carries no brackets.
   "recorder.lineCounter": "{n}/{total}",
-  // Le NOM du fichier téléchargé, et il se traduit comme le reste : un acteur
-  // anglophone ne reçoit pas « voix-marie.zip ». L'Action ne lit jamais ce nom
-  // (le type vient de l'extension, les clips de leur id), donc le contrat du ZIP
-  // n'en dépend pas. `{names}` est la liste des personnages en slug.
+  // The NAME of the downloaded file, and it translates like the rest: an
+  // English-speaking actor does not receive "voix-marie.zip". The Action never
+  // reads this name (the type comes from the extension, the clips from their id),
+  // so the ZIP contract does not depend on it. `{names}` is the list of characters
+  // as a slug.
   "recorder.zipName": "voix-{names}",
   "recorder.zipFallback": "prises",
-  // Le repli de `slugify` quand le nom d'un personnage ne laisse rien après
-  // nettoyage (« ??? ») : il nomme un fichier, donc il suit la locale.
+  // The `slugify` fallback when a character's name leaves nothing after cleaning
+  // ("???"): it names a file, so it follows the locale.
   "recorder.characterSlug": "personnage",
 
   "recorder.leaveTitle": "Vos prises ne sont pas téléchargées",
-  // Le nombre de prises a quitté cette phrase : le titre juste au-dessus dit déjà
-  // qu'elles ne sont pas téléchargées, et le compte exact ne change pas la
-  // décision. Le pluriel ne règle donc plus que l'accord.
+  // The number of takes has left this sentence: the title just above already says
+  // they are not downloaded, and the exact count does not change the decision. The
+  // plural therefore only settles the agreement.
   "recorder.leaveBody": {
     one:
       "Votre prise ne vit que dans cet onglet : en quittant la page sans télécharger le ZIP, " +
@@ -459,9 +468,9 @@ export const FR = {
       "vous devrez tout réenregistrer.",
   },
 
-  // L'encart d'accueil, à la place des répliques tant qu'aucun personnage n'est
-  // choisi. `{your}` est le mot mis en gras : il est une entrée à lui pour que la
-  // traduction garde l'ordre des mots au lieu de le figer dans le JSX.
+  // The intro card, standing in for the lines as long as no character is chosen.
+  // `{your}` is the word set in bold: it is an entry of its own so that the
+  // translation keeps the word order instead of freezing it in the JSX.
   "recorder.intro.lead": "Choisissez votre personnage : la page mettra alors {your} répliques en avant.",
   "recorder.intro.leadEmphasis": "vos",
   "recorder.intro.step1":
@@ -475,10 +484,11 @@ export const FR = {
   "recorder.intro.allDone": "tout est enregistré",
   "recorder.intro.todo": "{count} à enregistrer",
 
-  // Écoulé et total de la prise en cours d'écoute. Les deux durées arrivent déjà
-  // composées en « m:ss » (format universel d'un extrait court, identique dans les
-  // deux langues, et `Intl` n'expose pas de formateur de durée partout) ; ce qui
-  // était en dur dans le JSX et vit maintenant ici, c'est ce qui les JOINT.
+  // Elapsed and total time of the take being played back. Both durations arrive
+  // already composed as "m:ss" (the universal format for a short excerpt,
+  // identical in both languages, and `Intl` does not expose a duration formatter
+  // everywhere); what was hard-coded in the JSX and now lives here is what JOINS
+  // them.
   "recorder.player.time": "{elapsed} / {total}",
   "recorder.player.play": "Écouter",
   "recorder.player.pause": "Pause",
@@ -487,17 +497,17 @@ export const FR = {
 
   // ---------------------------------------------------- the speaking share
 
-  // La portée lue, composée par `scopeText` (stats/App.jsx).
-  // Le seuil sous lequel on dit le palier et non la valeur ; `{value}` est déjà
-  // formaté (« 0,1 % »).
+  // The chosen scope, composed by `scopeText` (stats/App.jsx).
+  // The floor below which the threshold is stated instead of the value; `{value}`
+  // arrives already formatted ("0,1 %").
   "stats.shareBelow": "< {value}",
 
   "stats.scope.all": "toute la pièce",
   "stats.scope.act": "{act}, en entier",
-  // La portée « une scène » n'a pas son entrée : c'est `common.actScene`, partagée
-  // avec l'Avancement, qui nomme le couple acte + scène partout sur le site.
+  // The "one scene" scope has no entry of its own: it is `common.actScene`, shared
+  // with Progress, that names the act + scene pair everywhere on the site.
 
-  // Le seul réglage d'AFFICHAGE de la page.
+  // The page's only DISPLAY setting.
   "stats.columns": "Mots par ligne",
   "stats.columns.tip":
     "Largeur de la chronologie du dialogue : le même nombre de mots par ligne pour toute la " +
@@ -505,16 +515,14 @@ export const FR = {
 
   "stats.highlight": "Mettre un personnage en évidence",
 
-  // Deux vides à ne pas confondre : une pièce vide s'écrit dans l'Édition, une
-  // portée vide se change en choisissant ailleurs. `{all}` reprend le premier
-  // choix du select de portée plutôt que de le recopier.
-  "stats.emptyPlay":
-    "Aucune réplique dans la pièce : elle doit d'abord être saisie dans la page {page}.",
+  // Two empty states not to be confused: an empty play is written in Editing, an
+  // empty scope is changed by choosing elsewhere. `{all}` reuses the first option
+  // of the scope select rather than copy it.
   "stats.emptyScope":
     "Aucune réplique dans cette partie de la pièce : choisissez un autre acte, une autre scène, ou {all}.",
 
-  // Les trois libellés de panneau sont ceux du PDF de la troupe, mot pour mot :
-  // c'est le même document, servi à l'écran et tenu à jour.
+  // The three panel labels are those of the troupe's PDF, word for word: it is the
+  // same document, served on screen and kept up to date.
   "stats.words.title": "Distribution du nombre de mots",
   "stats.words.unit": "mots",
   "stats.lines.title": "Distribution du nombre de répliques",
@@ -522,10 +530,10 @@ export const FR = {
   "stats.donutLabel": "{title}, {where} : {total} {unit} au total",
 
   "stats.timeline.title": "Chronologie du dialogue",
-  // Comment lire le dessin, AVANT lui. « Prise de parole » et pas « réplique » :
-  // les répliques voisines d'un même personnage sont fusionnées avant le dessin.
-  // « Appuyez » et pas « cliquez » : la page est ouverte à toute la troupe, donc
-  // au téléphone.
+  // How to read the drawing, BEFORE it. "Prise de parole" and not "réplique":
+  // neighbouring lines of the same character are merged before the drawing.
+  // "Appuyez" and not "cliquez": the page is open to the whole troupe, hence to
+  // phones.
   "stats.timeline.caption":
     "Le dialogue se lit ligne par ligne, de haut en bas. Chaque carré est un mot, sa couleur est " +
     "le personnage qui le prononce, donc la taille d'un bloc est la longueur de sa prise de " +
@@ -536,8 +544,8 @@ export const FR = {
   "stats.timeline.labelOnly":
     "Chronologie du dialogue, {where} : les mots de {name} seuls sont en couleur.",
 
-  // Deux replis de nom, et pas un seul : le seau des orphelines n'a jamais de
-  // nom, mais un personnage de la distribution peut n'en pas avoir non plus.
+  // Two name fallbacks, not one: the bucket of orphan lines never has a name, but a
+  // character of the cast may well have none either.
   "stats.unknownCharacter": "Personnage inconnu",
   "stats.unnamedCharacter": "Personnage sans nom",
   "stats.showEveryone": "Montrer tout le monde",
@@ -548,8 +556,8 @@ export const FR = {
 
   // ----------------------------------------------------------- the progress
 
-  // Ici c'est le responsable qui lit, donc l'impératif est de mise (les pages de
-  // la troupe, elles, restent impersonnelles sur le même sujet).
+  // Here it is the coordinator who reads, so the imperative is in order (the
+  // troupe's pages, for their part, stay impersonal on the same subject).
   "dashboard.orphans.count": {
     one: "{count} réplique sans personnage valide",
     other: "{count} répliques sans personnage valide",
@@ -569,111 +577,119 @@ export const FR = {
   "dashboard.journal.detail": "Détail",
   "dashboard.journal.empty":
     "Aucun dépôt pour l'instant : chaque fichier déposé apparaîtra ici, avec ce que l'outil en a fait.",
-  // Un tableau qui s'arrête sans un mot se lit comme « il n'y a rien de plus »,
-  // dans le seul canal de retour du projet.
-  // Le plafond du tableau, et il compte des LIGNES, donc des fichiers : le journal
-  // a une ligne par fichier et pas par dépôt (un dépôt de trois ZIP en fait
-  // trois). Le mot « dépôt » disait autre chose que ce que le nombre mesurait, sur
-  // le seul canal de retour du projet.
+  // A table that stops without a word reads as "there is nothing more", in the
+  // project's only feedback channel.
+  // The table's cap, and it counts ROWS, hence files: the log has one row per file
+  // and not per upload (an upload of three ZIPs makes three of them). The word
+  // "dépôt" said something other than what the number measured, in the project's
+  // only feedback channel.
   "dashboard.journal.more": {
     one: "{count} fichier déposé plus ancien non affiché.",
     other: "{count} fichiers déposés plus anciens non affichés.",
   },
-  // Le détail d'une ligne de voix : le nom du fichier (en `<code>`) et son
-  // nombre de répliques. Une entrée plutôt que deux morceaux juxtaposés dans le
-  // JSX, où l'ordre des deux et l'espace qui les sépare étaient figés : c'est le
-  // cas que `<T>` existe pour couvrir, et rien ne garantit qu'une langue mette le
-  // fichier avant son décompte.
+  // The detail of a voices row: the file name (in `<code>`) and its number of
+  // lines. One entry rather than two pieces juxtaposed in the JSX, where the order
+  // of the two and the space between them were frozen: this is the case `<T>` exists
+  // to cover, and nothing guarantees that a language puts the file before its
+  // count.
   "dashboard.journal.detailVoices": "{file} {count}",
-  // Le détail d'un échec. `{reason}` est le motif rendu par l'Action, donc du
-  // français non traduit (c'est la langue du DÉPÔT, cf. CLAUDE.md) : la phrase est
-  // mixte en anglais, et c'est assumé. Elle est une entrée quand même, pour que
-  // l'ordre du nom de fichier et du motif reste celui du traducteur.
+  // The detail of a failure. `{reason}` is the reason returned by the Action, still
+  // French because those strings are DATA and not interface text: translating them
+  // would only swap one hardcoded language for another (see the "known gap" note in
+  // CLAUDE.md, whose fix is error CODES the front translates). So the sentence is
+  // mixed in English, and that is accepted for now. It is an entry all the same, so
+  // that the order of the file name and the reason stays the translator's.
   "dashboard.journal.detailError": "{file} {reason}",
   "dashboard.journal.ok": "réussi",
   "dashboard.journal.failed": "échoué",
   "dashboard.journal.unknownDate": "date inconnue",
 
-  // Le TYPE du fichier déposé, pas la page dont le sceau porte les couleurs.
+  // The TYPE of the uploaded file, not the page whose seal carries the colours.
   "dashboard.kind.voix": "Voix",
   "dashboard.kind.script": "Script",
   "dashboard.kind.inconnu": "Autre",
 
-  // Les deux mots colorés du bouton de dépôt sont des paramètres : chacun porte
-  // la couleur de sa page, et le français comme l'anglais gardent leur ordre.
+  // The two coloured words of the upload button are parameters: each carries the
+  // colour of its page, and French as much as English keeps its own word order.
   "dashboard.upload": "Déposer des {voices} ou le {script}",
   "dashboard.upload.voices": "voix",
   "dashboard.upload.script": "script de la pièce",
 
-  // « la pièce à imprimer » et non « le script de la pièce » : la carte de dépôt
-  // juste au-dessus dit déjà « script de la pièce (JSON) », et deux libellés
-  // partageant leur groupe de mots ne se distinguaient plus que par l'acronyme.
+  // "la pièce à imprimer" and not "le script de la pièce": the upload card just
+  // above already says "script de la pièce (JSON)", and two labels sharing their
+  // group of words were told apart by the acronym alone.
   "dashboard.pdf": "Télécharger la pièce à imprimer {format}",
-  // Le nom du fichier téléchargé quand le titre de la pièce ne laisse rien après
-  // nettoyage : « script.pdf » ne dit rien dans un dossier de téléchargements,
-  // mais c'est mieux que rien.
+  // The name of the downloaded file when the play's title leaves nothing after
+  // cleaning: "script.pdf" says nothing in a downloads folder, but it is better
+  // than nothing.
   "dashboard.pdfSlug": "script",
 
   // -------------------------------------------------------------------- home
 
   "home.footer": "Un outil libre pour les troupes de théâtre, {link}",
-  // Le seul lien du site qui sorte d'une pièce, au pied de son accueil. Il dit
-  // « changer » et pas « retour » : on ne remonte pas d'où l'on vient, on va choisir
-  // autre chose, et c'est aussi vrai pour qui a ouvert la pièce par un favori.
+  // The site's only link that leaves a play, at the foot of its home. It says
+  // "changer" and not "retour": you are not going back where you came from, you are
+  // going to choose something else, and that is just as true for whoever opened the
+  // play from a bookmark.
   "home.changePlay": "Changer de pièce",
 
   // ------------------------------------------------------- choosing a play
 
-  // Les deux pages RACINE, celles qui vivent au-dessus des pièces : le sélecteur de
-  // la troupe (index.html) et la gestion des pièces du responsable (respo.html).
-  // Ce ne sont pas des pages de pièce : elles n'ont ni sceau ni phrase de doc, elles
-  // portent la marque, et leur libellé ne sert qu'à l'onglet du navigateur.
+  // The two ROOT pages, the ones that live above the plays: the troupe's chooser
+  // (index.html) and the coordinator's play management page (respo.html). These are
+  // not play pages: they have neither a seal nor a doc sentence, they carry the
+  // brand, and their label only ever serves the browser tab.
   "chooser.label": "Pièces",
   "manage.label": "Gestion des pièces",
 
   "chooser.heading": "Choisissez une pièce",
   "chooser.empty": "Aucune pièce pour l'instant. Le responsable en créera une.",
-  // La PANNE, distincte du vide : un 404 est un vide légitime (l'index n'a pas encore
-  // été construit), tout le reste est une panne, et l'annoncer « aucune pièce »
-  // dirait à la troupe que ses pièces ont disparu. Même distinction que partout
-  // ailleurs sur le site (cf. `HttpError` dans data.js).
+  // The FAILURE, distinct from the empty state: a 404 is a legitimate emptiness (the
+  // index has not been built yet), everything else is a failure, and announcing it
+  // as "no plays" would tell the troupe its plays have vanished. The same
+  // distinction as everywhere else on the site (see `HttpError` in data.js).
   "chooser.loadError":
     "Impossible de charger la liste des pièces. Le site n'est peut-être pas encore " +
     "publié : réessayez dans quelques minutes ou contactez le responsable.",
-  // Le décompte d'une carte de pièce. Les deux nombres sont des paramètres, donc
-  // formatés par le moteur : « 1 144 » et « 1,144 » sans qu'on s'en occupe.
+  // The count on a play card. Both numbers are parameters, hence formatted by the
+  // engine: "1 144" and "1,144" without anyone having to see to it.
   "chooser.recorded": {
     one: "{count} réplique enregistrée sur {total}",
     other: "{count} répliques enregistrées sur {total}",
   },
-  // Une pièce créée mais pas encore écrite : le décompte n'aurait rien à dire, et
-  // « 0 % » se lirait comme un retard alors que c'est un début.
+  // A play created but not yet written: the count would have nothing to say, and
+  // "0 %" would read as a delay when it is a beginning.
   "chooser.emptyPlay": "Pièce encore vide",
 
   "manage.heading": "Vos pièces",
   "manage.empty": "Aucune pièce pour l'instant : créez la première ci-dessous.",
   "manage.lastDeposit": "Dernier dépôt le {date}",
+  // It opens like `dashboard.journal.empty` and is NOT interpolated from it: that one
+  // is a whole sentence with a continuation ("chaque fichier déposé apparaîtra ici…"),
+  // this one a card label, and quoting a fragment of a sentence is exactly what the
+  // project forbids, since it freezes the French word order in the caller. Two labels
+  // are written once; two texts that happen to begin alike are not the same label.
   "manage.neverDeposited": "Aucun dépôt pour l'instant",
-  // Les deux liens propres d'une pièce : sa zone de dépôt, et son dossier dans le
-  // dépôt pour le seul geste que le site ne peut pas porter (la supprimer demande un
-  // commit). Le second dit « dossier » et pas « supprimer » : c'est ce qu'il ouvre,
-  // et la suppression s'y fait sous les yeux de qui l'a demandée.
+  // A play's two own links: its upload area, and its folder in the repository for
+  // the one gesture the site cannot carry (deleting it requires a commit). The
+  // second says "dossier" and not "supprimer": that is what it opens, and the
+  // deletion happens there under the eyes of whoever asked for it.
   "manage.deposit": "Déposer des fichiers",
   "manage.folder": "Ouvrir le dossier sur GitHub",
-  // Les mêmes, mais NOMMANT leur pièce : ces deux liens se répètent une fois par
-  // carte, et dans la liste des liens d'un lecteur d'écran « Déposer des fichiers »
-  // quatre fois de suite ne désigne plus rien. À l'écran le titre est juste
-  // au-dessus, donc le libellé visible reste court.
+  // The same, but NAMING their play: these two links repeat once per card, and in a
+  // screen reader's list of links "Déposer des fichiers" four times in a row no
+  // longer designates anything. On screen the title is just above, so the visible
+  // label stays short.
   "manage.deposit.aria": "Déposer des fichiers pour {title}",
   "manage.folder.aria": "Ouvrir le dossier de {title} sur GitHub",
 
   "manage.new.title": "Nouvelle pièce",
-  // Les trois temps du geste, dans l'ordre où on les fait : c'est la seule phrase de
-  // doc du site qui décrive un parcours en trois étapes, et elle le doit, la pièce
-  // n'existant qu'une fois le fichier déposé et traité.
-  // Deux phrases, comme toute phrase de doc du site : le deux-points y est réservé à
-  // une énumération, et il introduisait ici une conséquence dans une phrase de
-  // vingt-quatre mots.
+  // The three stages of the gesture, in the order they are done: it is the site's
+  // only doc sentence that describes a three-step journey, and it has to, the play
+  // only existing once the file has been uploaded and processed.
+  // Two sentences, like every doc sentence on the site: the colon there is reserved
+  // for an enumeration, and here it introduced a consequence inside a
+  // twenty-four-word sentence.
   "manage.new.hint":
     "Donnez un titre, puis téléchargez le script de départ. Déposez-le, et la pièce " +
     "apparaîtra ici.",
@@ -684,15 +700,15 @@ export const FR = {
   "manage.new.emptyTitle": "Donnez un titre à la pièce.",
   "manage.new.badTitle":
     "Ce titre ne laisse aucune adresse utilisable : ajoutez-y des lettres ou des chiffres.",
-  // Le test porte sur l'ADRESSE dérivée du titre et pas sur le titre lui-même : deux
-  // titres différents peuvent se réduire au même identifiant (« L'École des femmes »
-  // et « L École des femmes »), et un message qui parle du titre décrirait alors un
-  // fait faux.
+  // The test is on the ADDRESS derived from the title and not on the title itself:
+  // two different titles can reduce to the same identifier ("L'École des femmes" and
+  // "L École des femmes"), and a message that talks about the title would then
+  // describe something untrue.
   "manage.new.taken": "Une pièce occupe déjà cette adresse : changez un mot du titre.",
 
-  // Le journal des dépôts qu'aucune pièce n'a réclamés. Il n'est affiché que s'il
-  // porte quelque chose : c'est un relevé d'anomalies et pas le journal des dépôts,
-  // qui vit dans l'Avancement de chaque pièce.
+  // The log of the uploads no play has claimed. It is only shown when it carries
+  // something: it is a record of anomalies and not the upload log, which lives in
+  // each play's Progress page.
   "manage.unrouted.title": "Dépôts sans pièce",
   "manage.unrouted.hint":
     "Ces fichiers n'ont pas dit à quelle pièce ils appartiennent. Déposez-les depuis le bouton de dépôt de leur pièce.",

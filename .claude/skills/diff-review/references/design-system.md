@@ -1,340 +1,323 @@
-# Design system — contrat entre les pages
+# Design system — contract between the pages
 
-Référence pour la revue front. Si le code et ce fichier divergent, la revue doit
-le signaler : soit le code est à corriger, soit ce contrat est à mettre à jour
-(et la table « Repères rapides » de `CLAUDE.md` avec).
+Reference for the front review. If the code and this file diverge, the review must
+say so: either the code is to be fixed, or this contract is to be updated (and the
+"File map" table in `CLAUDE.md` with it).
 
 ## Pages
 
-Le dépôt héberge **plusieurs pièces**, chacune entièrement cloisonnée (cf. la section
-« Plusieurs pièces » de `CLAUDE.md`). Deux familles de documents, donc.
+The repo hosts **several plays**, each fully siloed (see the "Layout" section of
+`CLAUDE.md`). Two families of documents, therefore.
 
-**Les deux pages RACINE**, au-dessus des pièces, entrées Vite écrites en clair :
+**The two ROOT pages**, above the plays, literal Vite entries:
 
-| Entrée | Page | CSS propre |
+| Entry | Page | Own CSS |
 | --- | --- | --- |
-| `index.html` | Sélecteur de pièce de la troupe | `src/home/home.css` + `src/chooser/chooser.css` |
-| `respo.html` | Gestion des pièces du responsable (même `App.jsx`, drapeau `manage`) | idem |
+| `index.html` | The troupe's play chooser | `src/home/home.css` + `src/chooser/chooser.css` |
+| `respo.html` | The coordinator's play management (same `App.jsx`, `manage` flag) | same |
 
-Elles portent la MARQUE et pas un sceau de page : pas de clé `page.*`, pas de `desc`,
-le hero des accueils, et tout leur habillage vient de `home.css`.
+They carry the BRAND, not a page seal: no `page.*` key, no `desc`, the hero of the
+home pages, and all their styling comes from `home.css`.
 
-**Les sept pages d'une PIÈCE**, gabarits de `pages/` instanciés dans le dossier de
-chaque pièce par `vite.config.js` :
+**The seven pages of a PLAY**, templates from `pages/` instantiated into each
+play's folder by `vite.config.js`:
 
-| Gabarit | Page | CSS propre |
+| Template | Page | Own CSS |
 | --- | --- | --- |
-| `pages/index.html` | Accueil des acteurs de la pièce (Répétition, Enregistrement, Répartition) | `src/home/home.css` |
-| `pages/respo.html` | Accueil du responsable de la pièce (les 5 pages) | `src/home/home.css` (même `App.jsx`, autre liste de cartes) |
-| `pages/rehearsal.html` | Répétition | `src/rehearsal/rehearsal.css` |
-| `pages/recorder.html` | Enregistrement | `src/recorder/recorder.css` |
-| `pages/stats.html` | Répartition | `src/stats/stats.css` |
-| `pages/dashboard.html` | Avancement | `src/dashboard/dashboard.css` |
-| `pages/editor.html` | Édition | `src/editor/editor.css` |
+| `pages/index.html` | The play's actor home (Rehearsal, Recorder, Stats) | `src/home/home.css` |
+| `pages/respo.html` | The play's coordinator home (all 5 pages) | `src/home/home.css` (same `App.jsx`, other card list) |
+| `pages/rehearsal.html` | Rehearsal | `src/rehearsal/rehearsal.css` |
+| `pages/recorder.html` | Recorder | `src/recorder/recorder.css` |
+| `pages/stats.html` | Stats | `src/stats/stats.css` |
+| `pages/dashboard.html` | Dashboard | `src/dashboard/dashboard.css` |
+| `pages/editor.html` | Editor | `src/editor/editor.css` |
 
-À l'intérieur d'une pièce, aucun chemin ne change : `data/manifest.json` et
-`./rehearsal.html` sont des chemins relatifs qui résolvent dans son dossier. Quatre
-helpers de `src/shared/` connaissent la disposition `plays/<id>/`, et aucune PAGE :
-`chooserHref` (le lien « changer de pièce » au pied de l'accueil d'une pièce),
-`playHref` (le chemin qu'écrivent les cartes des deux pages racine), `githubRepoUrl`
-(qui doit reconnaître un site Pages racine dont le premier segment est `plays`) et
-`githubPlayFolderUrl`.
+Inside a play no path changes: `data/manifest.json` and `./rehearsal.html` are
+relative paths that resolve in its folder. Four `src/shared/` helpers know about
+the `plays/<id>/` layout, and no PAGE does: `chooserHref` (the "change play" link
+at the foot of a play's home), `playHref` (the path written by the cards of both
+root pages), `githubRepoUrl` (which must recognise a root Pages site whose first
+segment is `plays`) and `githubPlayFolderUrl`.
 
-**Sceaux (`--page-mark` / `--page-mark-soft`, classes `.page-<clé>` de
-`theme.css`)** : la marque, la Répétition, l'Enregistrement et la Répartition
-partagent **exactement** le même couple (bordeaux `#8b2635` sur sable `#f5eeda`) ;
-seuls l'Avancement (vert) et l'Édition (violet) ont leur couleur propre, parce
-qu'ils sont les deux modes du responsable. Deux teintes voisines mais distinctes
-entre pages de la troupe est un finding : ou c'est le même sceau, ou c'est
-franchement une autre couleur. Ce qui distingue ces pages entre elles est
-l'icône. Le favicon et le `theme-color` du `.html` redupliquent la couleur du
-sceau (une balise `<link>` ne lit pas une variable CSS) : les quatre `.html` de la
-troupe portent donc le même couple. Le favicon (et
-l'`apple-touch-icon.png` qui en dérive) **est** la pastille de sceau, tuile en
-`--page-mark-soft` et glyphe en `--page-mark` : un glyphe blanc sur tuile pleine
-est un finding, c'est le négatif du sceau et ces icônes servent de vignette au
-lien partagé. Le `theme-color`, lui, reste le `--page-mark` plein.
+**Seals (`--page-mark` / `--page-mark-soft`, `.page-<key>` classes in
+`theme.css`)**: the brand, Rehearsal, Recorder and Stats share **exactly** the
+same pair (burgundy `#8b2635` on sand `#f5eeda`); only the Dashboard (green) and
+the Editor (purple) have their own colour, because they are the coordinator's two
+modes. Two neighbouring but distinct hues between troupe pages is a finding:
+either it is the same seal, or it is frankly another colour. What tells these
+pages apart is the icon. The favicon and the `theme-color` of the `.html`
+duplicate the seal colour (a `<link>` tag cannot read a CSS variable), so the seven
+troupe `.html` files carry the same pair: the two root ones (`index.html`,
+`respo.html`) and the five templates of `pages/` that are not Progress or Editing. The favicon (and the
+`apple-touch-icon.png` derived from it) **is** the seal pill, tile in
+`--page-mark-soft` and glyph in `--page-mark`: a white glyph on a solid tile is a
+finding, it is the seal's negative and these icons serve as the thumbnail of a
+shared link. The `theme-color` stays the solid `--page-mark`.
 
 ## Tokens (`src/shared/theme.css`)
 
-Toutes les pages chargent `theme.css`. Les couleurs, rayons, ombres et fonts
-passent par les tokens du `:root` : `--paper`, `--paper-dark`, `--card`,
-`--ink`, `--ink-soft`, `--accent`, `--accent-dark` (hover des boutons pleins),
-`--accent-soft`, `--gold`, `--border`, `--ok(-soft)`, `--warn(-soft)`,
-`--radius`, `--shadow`, `--shadow-hover` (survol d'une carte cliquable, à ne
-consommer qu'à travers `.lift-hover`, voir ci-dessous), `--shadow-float`
-(calque qui FLOTTE au-dessus de la page, pas posé dessus : le modal et la pop-up
-« À vous… » de la Répétition, qui l'écrivaient chacun de leur côté),
-`--card-active` (carte de dialogue courante), `--focus-ring` /
-`--focus-ring-offset` (bague de focus des éléments qui n'en ont pas par
-défaut : slider, cartes, liens-cartes), `--notice-gutter` (gouttière latérale
-des cartes pleine page `.page-notice` et `.load-error`, qui se centrent en
-`margin: auto`), `--font-ui`, `--font-serif`, plus les
-tokens réservés `--header-accent` / `--header-serif` / `--header-shadow`
-(cf. plus bas) et `--ease-header` (courbe du repli du bandeau, neutralisée par
-le bloc `prefers-reduced-motion`).
+Every page loads `theme.css`. Colours, radii, shadows and fonts go through the
+`:root` tokens: `--paper`, `--paper-dark`, `--card`, `--ink`, `--ink-soft`,
+`--accent`, `--accent-dark` (hover of solid buttons), `--accent-soft`, `--gold`,
+`--border`, `--ok(-soft)`, `--warn(-soft)`, `--radius`, `--shadow`,
+`--shadow-hover` (hover of a clickable card, to be consumed only through
+`.lift-hover`, see below), `--shadow-float` (a layer that FLOATS above the page
+rather than sitting on it: the modal and Rehearsal's "your turn" pop-up, which
+each wrote it on their own side), `--card-active` (current dialogue card),
+`--focus-ring` / `--focus-ring-offset` (focus ring for elements that have none by
+default: slider, cards, card links), `--notice-gutter` (side gutter of the
+full-page `.page-notice` and `.load-error` cards, which centre with
+`margin: auto`), `--font-ui`, `--font-serif`, plus the reserved tokens
+`--header-accent` / `--header-serif` / `--header-shadow` (see below) and
+`--ease-header` (the header collapse curve, neutralised by the
+`prefers-reduced-motion` block).
 
-- Une page **peut** re-skinner des tokens dans un `:root` local à son CSS
-  (seul l'éditeur le fait, design « Rail » : accent `#7a5cc0`, fonts IBM
-  Plex/Spectral, neutres réchauffés).
-- **Invariant** : un re-skin ne doit jamais changer l'identité visible d'un
-  composant partagé — la marque et le titre du bandeau (PageHeader/
-  PlayHeader) rendent identiquement sur toutes les pages via les tokens
-  réservés `--header-accent`, `--header-serif` et `--header-shadow`, qu'aucune
-  page ne redéfinit. **`scripts/tests/test_contracts.py` le vérifie en CI** :
-  il lit la liste des `--header-*` dans theme.css, échoue si un CSS de page en
-  redéfinit un, et échoue aussi si une règle de bandeau consomme `--accent`,
-  `--font-serif`, `--shadow` (re-skinnés par l'éditeur) ou `--page-mark(-soft)`
-  (re-skinnés par CHAQUE page, via la classe `page-<clé>` que les deux bandeaux
-  posent sur leur racine). Le garde porte sur la REDÉFINITION, pas sur la
-  lecture : une page a le droit de LIRE un token réservé quand elle doit rendre
-  exactement comme le bandeau, et trois endroits le font, la Répartition dont la
-  barre de légende prend `--header-shadow` (deux bandes empilées portent la même
-  ombre) et, sur l'Édition, `.btn.primary` puis la tuile d'acte du plan du rail
-  (`--ed-tile-act`, un tint de `--header-accent` à 18 %), qui prennent tous deux le
-  vin. Ce dernier est le seul rouge que le `:root` de l'éditeur ne re-skinne pas,
-  donc le seul qui ne bougera pas sous le plan, et c'est précisément pourquoi la
-  tuile le lit plutôt que d'ajouter un hex. Ce n'est donc pas un
-  finding ; en redéfinir un, si. Une seule exemption, `.play-header-home*` : le retour
-  à l'accueil dit la marque et non la page, donc il porte lui-même `page-home`,
-  classe posée en JSX que ce garde, qui ne lit que du CSS, ne peut pas voir. C'est
-  exactement par là qu'une ombre de bandeau a disparu sur la seule page
-  Édition. Si l'identité d'un composant partagé (couleur d'accent, font,
-  taille) passe par un token re-skinnable, c'est un finding haute ; les
-  neutres re-skinnés « assortis » (`--card`, `--border`, `--ink-soft`) sont
-  tolérés dans les composants partagés tant qu'ils restent perceptuellement
-  équivalents. Première exception nommée, à ne pas rapporter : **`.flag-icon`**
-  (`theme.css`), les drapeaux des deux sélecteurs de langue. C'est la seule
-  image du dépôt qui ne soit ni en `currentColor` ni dimensionnée sur la
-  font-size : un drapeau a ses couleurs propres et une taille fixe (24x16).
-  Une seule règle pour ses deux consommateurs (le pied des accueils et le plan
-  du rail), le même motif que ci-dessous. Son filet est un `box-shadow`
-  extérieur et pas une `border` : sans lui la bande blanche du tricolore et le
-  fond blanc de l'Union Jack se fondent dans le papier crème.
-  Seconde exception nommée, à ne pas rapporter : `.confirm-quote`
-  (theme.css) consomme `--font-serif` **exprès**, comme son filet suit
-  `--border`. La citation d'une réplique doit se lire dans la serif des
-  répliques de SA page (Cormorant sur l'Enregistrement, Spectral sur
-  l'Édition) : c'est le contenu de la page qui est cité, pas le châssis
-  partagé. À l'inverse d'un bandeau, qui doit rendre pareil partout et prend
-  donc `--header-serif`. Corollaire : toute font consommée par un composant partagé
-  doit être chargée par le `<link>` Google Fonts de chaque `.html` concerné
-  (graisse comprise, sinon fausse graisse silencieuse).
-- **Survol des surfaces cliquables : `.lift-hover` (theme.css) et pas la paire
-  recopiée.** Le geste est un pas vers le haut plus `--shadow-hover`, et il vit
-  dans une classe unique, posée en JSX. Un `transform: translateY(…)` +
-  `box-shadow: var(--shadow-hover)` réécrit dans un CSS de page est donc un
-  finding `duplication` : c'était le cas sur les cartes des deux accueils, le
-  bouton de dépôt et le bouton du PDF, dans trois fichiers. Le pas se règle par
-  `--lift` sur l'élément (défaut `-1px`, `-3px` sur les cartes d'accueil, qui
-  sont hautes) : c'est le seul écart légitime, parce qu'il dépend de la taille de
-  la surface et non du geste. Deux pièges à connaître avant de rapporter :
-  la `transition` reste chez chaque surface (elle est UNE propriété, une
-  déclaration locale écraserait celle du fichier partagé), donc une surface qui
-  prend la classe doit lister `transform` et `box-shadow` dans sa propre
-  transition, et `.play-header-home` ne la prend **pas** (il garde le pas mais
-  remplace l'ombre par la nappe crème du sceau : autre geste, pas celui-ci mal
-  réglé).
-- **Classes partagées à préférer plutôt que de recopier leurs déclarations**,
-  toutes dans `theme.css` et toutes posées en JSX : `.truncate` (le triplet
-  overflow/ellipsis/nowrap d'un nom qui ne doit pas pousser ses voisins ; la
-  largeur maximale et le `flex`, eux, restent locaux, et l'appelant doit toujours
-  doubler d'un `title`), `.btn-tip` (l'enveloppe qui porte l'infobulle d'un bouton
-  qui s'ÉTEINT, un contrôle `disabled` ne recevant aucun événement souris : à
-  employer partout où un bouton peut être `disabled`, l'`aria-label` restant sur
-  le bouton), `.page-shell` / `.page-scroll` (coquille à la hauteur de la fenêtre
-  dont seul le contenu défile, réglée par `--shell-height` : `100vh` sur
-  l'Édition, le `100dvh` par défaut ailleurs), et la règle
-  `.checks-row label, .search-options label` (la géométrie d'une étiquette de case
-  à cocher). Réécrire l'une de ces déclarations dans un CSS de page est un finding
-  `duplication`.
-- **Invariant** : le fond de page reste le crème partagé — `--paper` vaut
-  `#faf6ef` sur toutes les pages, re-skin compris.
-- **Une couleur locale n'est pas forcément une duplication.** Avant de proposer
-  de faire dériver un token de page d'un token du thème de même sémantique,
-  vérifier le FOND sur lequel il est peint : `--rec-todo` / `--rec-fresh`
-  (`recorder.css`) ressemblent à `--warn` / `--ok` mais vivent sur la carte rose
-  « mes répliques » (`--accent-soft`), où `--ok` tombe à 4,31:1 et échoue l'AA. La
-  mesure est dans le commentaire du fichier, ce n'est pas un finding.
-- Pas de couleur/ombre/rayon en dur dans un CSS de page quand un token
-  équivalent existe. Les valeurs en dur sont réservées aux cas vraiment
-  locaux (et doivent rester harmonieuses sur fond crème).
+- A page **may** re-skin tokens in a `:root` local to its CSS (only the Editor
+  does, the "Rail" design: accent `#7a5cc0`, IBM Plex/Spectral fonts, warmed
+  neutrals).
+- **Invariant**: a re-skin must never change the visible identity of a shared
+  component. The brand and the header title (PageHeader/PlayHeader) render
+  identically on every page through the reserved tokens `--header-accent`,
+  `--header-serif` and `--header-shadow`, which no page redefines.
+  **`scripts/tests/test_contracts.py` enforces this in CI**: it reads the list of
+  `--header-*` in theme.css, fails if a page CSS redefines one, and fails too if a
+  header rule consumes `--accent`, `--font-serif`, `--shadow` (re-skinned by the
+  Editor) or `--page-mark(-soft)` (re-skinned by EVERY page, through the
+  `page-<key>` class both headers set on their root). The guard is about
+  REDEFINITION, not reading: a page may READ a reserved token when it must render
+  exactly like the header, and three places do — Stats, whose legend bar takes
+  `--header-shadow` (two stacked bands carry the same shadow) and, on the Editor,
+  `.btn.primary` then the act tile of the rail plan (`--ed-tile-act`, an 18% tint
+  of `--header-accent`), both taking the wine. That last one is the only red the
+  Editor's `:root` does not re-skin, hence the only one that will not shift under
+  the plan, and precisely why the tile reads it instead of adding a hex. So that
+  is not a finding; redefining one is. A single exemption, `.play-header-home*`:
+  the home link speaks the brand, not the page, so it carries `page-home` itself,
+  a class set in JSX that this guard, which reads only CSS, cannot see. That is
+  exactly how a header shadow disappeared on the Editor page alone. If a shared
+  component's identity (accent colour, font, size) goes through a re-skinnable
+  token, that is a high finding; re-skinned "matching" neutrals (`--card`,
+  `--border`, `--ink-soft`) are tolerated in shared components as long as they
+  stay perceptually equivalent.
 
-## Composants structurels
+  Two named exceptions, not to be reported. **`.flag-icon`** (`theme.css`), the
+  flags of both language switches: the only image in the repo that is neither
+  `currentColor` nor sized on the font-size, because a flag has its own colours
+  and a fixed size (24x16). One rule for its two consumers (the foot of the home
+  pages and the rail plan), the same pattern as below. Its outline is an outer
+  `box-shadow` and not a `border`: without it the white band of the tricolour and
+  the white ground of the Union Jack melt into the cream paper. And
+  **`.confirm-quote`** (`theme.css`), which consumes `--font-serif` **on
+  purpose**, as its rule follows `--border`: the quotation of a line must read in
+  the serif of ITS page's lines (Cormorant on the Recorder, Spectral on the
+  Editor), because what is quoted is the page's content, not the shared chassis.
+  Unlike a header, which must render the same everywhere and therefore takes
+  `--header-serif`. Corollary: every font consumed by a shared component must be
+  loaded by the Google Fonts `<link>` of each `.html` concerned (weight included,
+  otherwise a silent faux weight).
+- **Hover of clickable surfaces: `.lift-hover` (theme.css), not the copied
+  pair.** The gesture is a step upward plus `--shadow-hover`, and it lives in a
+  single class, set in JSX. A `transform: translateY(…)` + `box-shadow:
+  var(--shadow-hover)` rewritten in a page CSS is therefore a `duplication`
+  finding: that was the case on the cards of both home pages, the upload button
+  and the PDF button, across three files. The step is tuned by `--lift` on the
+  element (default `-1px`, `-3px` on the home cards, which are tall): that is the
+  only legitimate deviation, because it depends on the size of the surface and not
+  on the gesture. Two traps to know before reporting: the `transition` stays with
+  each surface (it is ONE property, so a local declaration would override the
+  shared file's), so a surface taking the class must list `transform` and
+  `box-shadow` in its own transition; and `.play-header-home` does **not** take it
+  (it keeps the step but replaces the shadow with the seal's cream wash: another
+  gesture, not this one mistuned).
+- **Shared classes to prefer over copying their declarations**, all in
+  `theme.css` and all set in JSX: `.truncate` (the overflow/ellipsis/nowrap triple
+  for a name that must not push its neighbours; the max width and the `flex` stay
+  local, and the caller must always double it with a `title`), `.btn-tip` (the
+  wrapper carrying the tooltip of a button that DISABLES, since a `disabled`
+  control receives no mouse event: to be used anywhere a button can be
+  `disabled`, the `aria-label` staying on the button), `.page-shell` /
+  `.page-scroll` (a shell the height of the window whose content alone scrolls,
+  tuned by `--shell-height`: `100vh` on the Editor, the default `100dvh`
+  elsewhere), and the `.checks-row label, .search-options label` rule (the
+  geometry of a checkbox label). Rewriting one of these in a page CSS is a
+  `duplication` finding.
+- **Invariant**: the page background stays the shared cream — `--paper` is
+  `#faf6ef` on every page, re-skin included.
+- **A local colour is not necessarily a duplication.** Before proposing to derive
+  a page token from a theme token of the same semantics, check the BACKGROUND it
+  is painted on: `--rec-todo` / `--rec-fresh` (`recorder.css`) look like `--warn`
+  / `--ok` but live on the pink "my lines" card (`--accent-soft`), where `--ok`
+  drops to 4.31:1 and fails AA. The measurement is in the file's comment; it is
+  not a finding.
+- No hardcoded colour/shadow/radius in a page CSS when an equivalent token
+  exists. Hardcoded values are reserved for genuinely local cases (and must stay
+  harmonious on cream).
 
-| Élément | Source | Pages |
+## Structural components
+
+| Element | Source | Pages |
 | --- | --- | --- |
-| Bandeau de marque (sceau + titre de la pièce en rangée du haut, marque et retour à l'accueil en pied) | `src/shared/PageHeader.jsx` — plus monté directement par aucune page : il ne sert que d'en-tête aux écrans de `PageState`, ceux qui n'ont pas de réglages à porter. **Même géométrie que `PlayHeader`, et le même `HomeLink` en pied** : ces écrans sont l'attente des cinq pages à bandeau de pièce, donc une marque placée ici en haut et là en bas sautait d'un bout à l'autre du bandeau à l'arrivée du manifest. Son `title` est le **titre de la pièce, et rien d'autre** ; il est facultatif, et le `<span>` n'est pas rendu sans lui (chargement, manifest illisible) : jamais de libellé de page ici, cf. plus bas. Sa typographie est la MÊME règle CSS que `.play-header-title`, pas une qui lui ressemble | via `PageState` uniquement |
-| Bandeau de pièce (sceau + titre de la pièce, repliable ; **pas** de libellé de page en toutes lettres, il encombrait la barre sur mobile : c'est le sceau qui dit la page) | `src/shared/PlayHeader.jsx` — la rangée du haut ne dit QUE le titre de la pièce, le bouton de repli l'avale en entier ; le mot « PrettyDrama » et le retour à l'accueil vivent en pied du bandeau déplié (`.play-header-home`, logo + mot, classe `page-home` posée sur le lien pour la nappe crème de son survol). Les sélecteurs acte/scène sont fournis en `children` par les pages qui en ont (`.selects-row`), car leurs variantes sont réelles : `disabled` pendant l'enregistrement, compteurs « à enregistrer ». **Deux pages n'en passent aucun**, l'Avancement et l'Édition : la seconde a déplacé tout son plan (titre de la pièce, acte/scène, « + Scène »/« + Acte ») dans la section « Structure » de son rail, parce qu'elle FAÇONNE la structure là où les deux autres la parcourent. **Le bandeau se replie sur les cinq pages, ces deux comprises** (qui n'ont pourtant aucun réglage) : leur zone dépliée ne contient alors que la doc et le retour à l'accueil, et une page qui ne se replierait pas serait la seule à garder son bandeau sous le pouce | Répétition, Enregistrement, Répartition, Édition, Avancement |
-| Barre de contrôle basse `.controls` + `.ctrl-btn` | CSS dans `theme.css` | Répétition, Enregistrement |
-| Slider de progression indexé | `src/shared/ProgressBar.jsx` | Répétition, Enregistrement |
-| Cartes de dialogue `.dialogue-card` (+ palette « mes répliques » `.mine` et bordure `.active` communes) | `theme.css` — les pages posent `.mine` à côté de leur classe sémantique et ne gardent que leurs vrais écarts | Répétition, Enregistrement |
-| Boutons `.btn` / `.btn.primary` | `theme.css` | toutes |
-| Retour à l'accueil (logo aux deux masques + le mot « PrettyDrama », entre deux filets courts) | `src/shared/HomeLink.jsx`, **un seul composant pour les deux bandeaux**. Porte `page-home` sur le lien lui-même : c'est ce qui donne au survol le crème de la marque (`--page-mark-soft`) au lieu du vert ou du violet du bandeau. `test_contracts.py` interdit les tokens de sceau aux règles de bandeau et exempte nommément `.play-header-home*`, cette classe posée en JSX lui étant invisible | les deux bandeaux, donc les cinq pages et leurs écrans d'attente |
-| Sceau de page (pastille ronde + icône) | `src/shared/PageMark.jsx` (+ `PAGES` de `src/shared/pages.js`) — la classe `page-<clé>` qu'il pose porte ses couleurs, il s'affiche donc juste partout, y compris hors d'un bandeau. Prop `label` quand le sceau ne désigne pas sa page (colonne Type du journal : le micro y veut dire « Voix »), et `label=""` quand il est **décoratif**, c'est-à-dire quand le mot est déjà écrit juste à côté (cartes de l'accueil, marque du hero, le retour à l'accueil en pied de bandeau qui porte déjà son `aria-label`, et le lien de page d'une phrase de doc `.hint-page-mark`) : sinon chaque lien s'annonce « Répétition, Répétition, Répétez… » | les deux bandeaux, les cartes de l'accueil, le bouton de dépôt de l'Avancement, et les DEUX colonnes d'icônes de son journal (la colonne Statut réutilise la pastille `.page-mark` avec les teintes `--ok`/`--warn` au lieu d'une couleur de page) |
-| Doc du bandeau `.header-hint` (une seule classe, les deux paragraphes ont le même style : c'est leur place qui les distingue) | `theme.css` pour le style, mais **rendue par `PlayHeader` lui-même**, jamais par les pages : le premier paragraphe est `PAGES[page].desc` (le même que la carte de l'accueil, un seul endroit pour les deux emplois), le second la prop `hint`, facultative. Les deux encadrent les réglages (`desc` en tête du bandeau déplié, `hint` en pied) | les cinq : `desc` partout, `hint` seulement sur Enregistrement et Édition |
-| Confirmation d'action destructive | `src/shared/ConfirmModal.jsx` — rendu en portail, Escape annule, focus initial sur le bouton à proposer. **Jamais de `window.confirm`** (dialogue natif hors thème). Citation de la réplique visée : `.confirm-quote` (`theme.css`) + `excerpt` (`data.js`) | Édition (réplique, scène, acte), Enregistrement (jeter une prise), et via `LeaveGuard` |
-| Garde de sortie de page (travail non téléchargé) | `src/shared/LeaveGuard.jsx` — clics de liens interceptés en capture + `beforeunload` en filet | Édition, Enregistrement |
-| Sélecteur de langue du SITE (deux drapeaux) | `src/shared/LocaleSwitch.jsx` — deux vrais liens portant `?lang=`, donc clic droit et nouvel onglet, et aucun état : c'est le chargement suivant qui mémorise le choix (`locale.js`). **Monté au pied des accueils et par eux SEULS** (les deux pages racine, qui sont l'entrée du site, et les deux accueils d'une pièce), et c'est une règle, pas un hasard : une langue est un réglage de SITE, donc elle se choisit en entrant, et le pied du bandeau partagé est une composition finie (le sceau seul et centré, encadré de deux filets courts) qu'un second objet décentrerait. Le nom d'une langue s'y écrit **dans cette langue** (`Français`, `English`), jamais traduit : c'est le seul littéral accentué que le garde CI exempte nommément. Ne pas le confondre avec la langue de la PIÈCE, qui montre les mêmes drapeaux dans le plan du rail mais est un CHAMP éditant `script.json`, avec un nom de langue traduit | les accueils |
-| Phrase portant du balisage | `src/shared/T.jsx` — `<T k="…" p={{ … }} />`, le morceau de JSX devenant un PARAMÈTRE de la phrase. Une phrase découpée en fragments dans le composant est un finding, cf. la section Langue | toutes celles qui citent un `<strong>`, un `<code>`, une icône ou un lien au milieu d'une phrase |
-| Libellés d'acte et de scène | `src/shared/structureLabels.js` — DÉRIVÉS du rang (`actLabel(t, i)`, `sceneLabel(t, i)`), les actes et les scènes ne portant aucun titre dans `script.json`. Pur, `t` reçu en argument, et c'est ce qui permet aux deux axes de langue de coexister : les quatre pages qui NAVIGUENT passent le `t` du lecteur, l'Édition un `t` lié à `script.language` (cf. la section Tokens, « Deux axes de langue »). Le Python en tient une seconde implémentation pour le papier (`STRUCTURE`, `roman_numeral` dans `build_script_pdf.py`), depuis la langue de la PIÈCE, donc le plan du rail et le papier disent le même mot, et `TestStructureLabels` interdit aux deux de diverger | les deux selects de portée, l'Avancement, la Répartition, la Recherche, le plan du rail, le PDF |
-| Compte de répliques d'un objet de la pièce | `src/editor/CountBadge.jsx` — chiffre nu à l'écran (la colonne des comptes doit s'aligner), la phrase dans l'`aria-label`, `role="img"` pour le rendre valable sur un `<span>`. Les deux panneaux du rail en avaient chacun leur copie, alors que leur CSS était déjà commun (`.character-count, .structure-count`) | les sections « Structure » et « Personnages » du rail de l'Édition |
-| Montage d'une page | `src/shared/mountPage.jsx` — `applyDocumentLanguage` puis `createRoot(...).render(...)`, et l'import de `theme.css`, dont l'ORDRE compte (avant le CSS de la page, qui le surcharge) : d'où l'import de ce module AVANT `App.jsx` dans chaque point d'entrée. Les entrées étaient autant de copies du même corps | les neuf points d'entrée (`main.jsx` / `respo.jsx`) |
-| Numérotation « (3/12) » de mes répliques | `src/shared/data.js` — `myLineNumbers` (la Map) et `myLineNumber` (le libellé, `t` reçu en argument : ce module est couvert par `node --test`). Le gabarit était écrit dans deux JSX, parenthèses et barre comprises | Répétition, Enregistrement |
-| Fetch manifest | `src/shared/useManifest.js` | Répétition, Enregistrement, Répartition, Avancement (l'accueil appelle `fetchManifest` directement : il n'a ni écran de chargement ni écran d'erreur, un manifest absent laisse juste le titre vide) |
-| Écran chargement/erreur plein-page | `src/shared/PageState.jsx` : les DEUX états prennent la carte partagée `.page-notice` (l'attente comme le message : c'est le même écran à deux moments, et le second succède presque toujours au premier) | toutes sauf accueil |
+| Brand header (seal + play title in the top row, brand and home link at the foot) | `src/shared/PageHeader.jsx` — no longer mounted directly by any page: it only serves as the header of `PageState` screens, the ones with no settings to carry. **Same geometry as `PlayHeader`, and the same `HomeLink` at the foot**: these screens are the waiting state of the five play-header pages, so a brand placed at the top here and at the bottom there jumped from one end of the header to the other when the manifest arrived. Its `title` is the **play title, and nothing else**; it is optional, and the `<span>` is not rendered without it (loading, unreadable manifest): never a page label here, see below. Its typography is the SAME CSS rule as `.play-header-title`, not one that resembles it | through `PageState` only |
+| Play header (seal + play title, collapsible; **no** page label written out, it crowded the bar on mobile: the seal says the page) | `src/shared/PlayHeader.jsx` — the top row says ONLY the play title, the collapse button swallows it whole; the word "PrettyDrama" and the home link live at the foot of the expanded header (`.play-header-home`, logo + word, class `page-home` set on the link for the cream wash of its hover). Act/scene selects are passed as `children` by the pages that have them (`.selects-row`), because their variants are real: `disabled` while recording, "to record" counters. **Two pages pass none**, the Dashboard and the Editor: the latter moved its whole plan (play title, act/scene, "+ Scene"/"+ Act") into the "Structure" section of its rail, because it SHAPES the structure where the other two walk through it. **The header collapses on all five pages, these two included** (which have no settings at all): their expanded area then holds only the doc and the home link, and a page that did not collapse would be the only one keeping its header under the thumb | Rehearsal, Recorder, Stats, Editor, Dashboard |
+| Bottom control bar `.controls` + `.ctrl-btn` | CSS in `theme.css` | Rehearsal, Recorder |
+| Indexed progress slider | `src/shared/ProgressBar.jsx` | Rehearsal, Recorder |
+| Dialogue cards `.dialogue-card` (+ shared "my lines" palette `.mine` and `.active` border) | `theme.css` — pages set `.mine` next to their semantic class and keep only their real deviations | Rehearsal, Recorder |
+| Buttons `.btn` / `.btn.primary` | `theme.css` | all |
+| Home link (logo in both masks + the word "PrettyDrama", between two short rules) | `src/shared/HomeLink.jsx`, **one component for both headers**. Carries `page-home` on the link itself: that is what gives the hover the brand cream (`--page-mark-soft`) instead of the header's green or purple. `test_contracts.py` forbids seal tokens to header rules and exempts `.play-header-home*` by name, that JSX-set class being invisible to it | both headers, so the five pages and their waiting screens |
+| Page seal (round pill + icon) | `src/shared/PageMark.jsx` (+ `PAGES` in `src/shared/pages.js`) — the `page-<key>` class it sets carries its colours, so it displays correctly anywhere, including outside a header. `label` prop when the seal does not designate its own page (the journal's Type column: the mic there means "Voice"), and `label=""` when it is **decorative**, i.e. when the word is already written right next to it (home cards, hero brand, the home link at the header foot which already carries its `aria-label`, and the page link of a `.hint-page-mark` doc sentence): otherwise every link announces itself twice | both headers, the home cards, the Dashboard's upload button, and BOTH icon columns of its journal (the Status column reuses the `.page-mark` pill with `--ok`/`--warn` hues instead of a page colour) |
+| Header doc `.header-hint` (one class only, both paragraphs share the style: their place is what tells them apart) | `theme.css` for the style, but **rendered by `PlayHeader` itself**, never by the pages: the first paragraph is `PAGES[page].desc` (the same one as the home card, one place for both uses), the second the optional `hint` prop. The two bracket the settings (`desc` at the top of the expanded header, `hint` at the foot) | all five: `desc` everywhere, `hint` only on Recorder and Editor |
+| Destructive-action confirmation | `src/shared/ConfirmModal.jsx` — rendered in a portal, Escape cancels, initial focus on the button being proposed. **Never `window.confirm`** (unthemed native dialog). Quotation of the targeted line: `.confirm-quote` (`theme.css`) + `excerpt` (`data.js`) | Editor (line, scene, act), Recorder (discard a take), and through `LeaveGuard` |
+| Page-exit guard (undownloaded work) | `src/shared/LeaveGuard.jsx` — link clicks intercepted in the capture phase + `beforeunload` as a net | Editor, Recorder |
+| SITE language switch (two flags) | `src/shared/LocaleSwitch.jsx` — two real links carrying `?lang=`, hence right-click and new tab, and no state: the next load is what stores the choice (`locale.js`). **Mounted at the foot of the home pages and by them ALONE** (the two root pages, which are the site's entrance, and a play's two home pages), and that is a rule, not an accident: a language is a SITE setting, so it is chosen on the way in, and the foot of the shared header is a finished composition (the seal alone and centred, framed by two short rules) that a second object would knock off-centre. A language's name is written **in that language** (`Français`, `English`), never translated: it is the only accented literal the CI guard exempts by name. Not to be confused with the PLAY's language, which shows the same flags in the rail plan but is a FIELD editing `script.json`, with a translated language name | the home pages |
+| Sentence carrying markup | `src/shared/T.jsx` — `<T k="…" p={{ … }} />`, the JSX fragment becoming a PARAMETER of the sentence. A sentence split into fragments in the component is a finding, see the Text section | every one quoting a `<strong>`, a `<code>`, an icon or a link mid-sentence |
+| Act and scene labels | `src/shared/structureLabels.js` — DERIVED from rank (`actLabel(t, i)`, `sceneLabel(t, i)`), acts and scenes carrying no title in `script.json`. Pure, `t` received as an argument, and that is what lets the two language axes coexist: the four NAVIGATING pages pass the reader's `t`, the Editor a `t` bound to `script.language` (see Text, "Two language axes"). Python holds a second implementation for paper (`STRUCTURE`, `roman_numeral` in `build_script_pdf.py`), from the PLAY's language, so the rail plan and the paper say the same word, and `TestStructureLabels` forbids the two to diverge | both scope selects, Dashboard, Stats, Search, rail plan, PDF |
+| Line count of a play object | `src/editor/CountBadge.jsx` — bare number on screen (the count column must align), the sentence in the `aria-label`, `role="img"` to make it valid on a `<span>`. Both rail panels each had their own copy, though their CSS was already shared (`.character-count, .structure-count`) | the "Structure" and "Characters" sections of the Editor rail |
+| Mounting a page | `src/shared/mountPage.jsx` — `applyDocumentLanguage` then `createRoot(...).render(...)`, and the `theme.css` import, whose ORDER matters (before the page CSS, which overrides it): hence importing this module BEFORE `App.jsx` in every entry point. The entries were so many copies of the same body | the nine entry points (`main.jsx` / `respo.jsx`) |
+| "(3/12)" numbering of my lines | `src/shared/data.js` — `myLineNumbers` (the Map) and `myLineNumber` (the label, `t` received as an argument: this module is covered by `node --test`). The template was written in two JSX files, parentheses and slash included | Rehearsal, Recorder |
+| Manifest fetch | `src/shared/useManifest.js` | Rehearsal, Recorder, Stats, Dashboard (the home page calls `fetchManifest` directly: it has neither a loading nor an error screen, a missing manifest just leaves the title empty) |
+| Full-page loading/error screen | `src/shared/PageState.jsx`: BOTH states take the shared `.page-notice` card (the wait as much as the message: it is the same screen at two moments, and the second almost always follows the first) | all but the home page |
 
-**Aucun bandeau n'écrit son libellé de page.** « Répétition », « Édition »,
-« Avancement », « Enregistrement » dans une rangée du haut sont un finding, sans
-exception : le sceau dit la page, et l'onglet du navigateur le répète. Le `title`
-des deux bandeaux ne dit QUE le titre de la pièce, et il est facultatif.
+**No header writes its page label.** A page name spelled out in a top row is a
+finding, without exception: the seal says the page, and the browser tab repeats
+it. The `title` of both headers says ONLY the play title, and it is optional.
 
-**Écran d'attente ou écran définitif** (la distinction que `PageState` ne fait
-pas toute seule) : un écran qu'on traverse (chargement, manifest illisible) ne
-connaît pas encore la pièce, donc son bandeau **ne dit rien** ; il ne se rabat
-pas sur le libellé de page. Le titre doit APPARAÎTRE à l'arrivée du manifest, et
-jamais en RECOUVRIR un autre : un libellé posé pendant le chargement clignotait à
-chaque ouverture de page. C'est gratuit, la hauteur de la rangée étant fixée par
-le sceau et pas par le titre. Un écran **définitif** est le contenu final de la
-page pour cet utilisateur, et il se tient au contrat des bandeaux : il nomme la
-pièce. Ce qui le sépare d'un écran d'attente n'est pas la gravité du message mais
-le fait qu'on y reste : un navigateur sans micro ne va pas s'en trouver un, donc
-cet écran-là **est** la page. Il y en a **trois**, tous rendus après le
-chargement exprès : l'Édition ouverte au doigt (`src/editor/App.jsx`),
-l'Enregistrement sur un navigateur qui ne sait pas enregistrer
-(`src/recorder/App.jsx`) et la Répétition d'une pièce encore vide
-(`src/rehearsal/App.jsx`). Le repli quand la pièce n'a pas de titre est
-« Pièce sans titre » sur tous, comme sur les cinq bandeaux. Corollaire à vérifier
-dans le code, pas seulement
-dans le rendu : la page doit **charger ce qu'il faut pour ça** (l'éditeur muré
-fait son `fetch` du script pour son seul titre) ; un `if (…) return` posé avant
-le chargement pour « économiser » une requête finit par se lire dans le bandeau,
-et c'est exactement le bug qui a produit « Édition » en haut de l'écran mobile.
+**Waiting screen or final screen** (the distinction `PageState` does not make on
+its own): a screen you pass through (loading, unreadable manifest) does not know
+the play yet, so its header **says nothing**; it does not fall back to the page
+label. The title must APPEAR when the manifest arrives, and never COVER another
+one: a label set during loading flickered on every page open. That is free, the
+row height being fixed by the seal and not by the title. A **final** screen is the
+page's final content for this user, and it holds to the header contract: it names
+the play. What separates it from a waiting screen is not the severity of the
+message but the fact that you stay there: a browser with no microphone is not
+going to find one, so that screen **is** the page. There are **three**, all
+rendered after loading on purpose: the Editor opened with a finger
+(`src/editor/App.jsx`), the Recorder on a browser that cannot record
+(`src/recorder/App.jsx`) and the Rehearsal of a still-empty play
+(`src/rehearsal/App.jsx`). The fallback when the play has no title is the same
+untitled-play label on all of them, as on the five headers. A corollary to check
+in the code and not only in the render: the page must **load what it takes for
+that** (the walled Editor does its script `fetch` for its title alone); an
+`if (…) return` placed before the load to "save" a request ends up readable in the
+header, and that is exactly the bug that produced a page label at the top of the
+mobile screen.
 
-Règles associées :
+Related rules:
 
-- Pas de tiret cadratin « — » dans les textes vus par l'utilisateur, headers
-  compris (convention de `CLAUDE.md` : deux-points, point-virgule, virgule,
-  parenthèses ou une phrase de plus).
-- Même palette rose/doré pour « mes répliques » côté Répétition (`.active`)
-  et Enregistrement (`.own`/`.active`).
-- Les pages n'implémentent jamais leur propre variante d'un de ces composants
-  (pas de deuxième bandeau, pas de barre basse maison, pas de slider de
-  progression recodé) ; quand une page a des selects acte/scène, ils restent
-  des `children` du bandeau partagé, et une page qui n'en passe pas garde le
-  bandeau tel quel plutôt que d'en dériver un (voir tableau ci-dessus).
+- No em dash in user-visible text, headers included (`CLAUDE.md` convention:
+  colon, semicolon, comma, parentheses or one more sentence).
+- Same pink/gold palette for "my lines" on Rehearsal (`.active`) and Recorder
+  (`.own`/`.active`).
+- Pages never implement their own variant of one of these components (no second
+  header, no homemade bottom bar, no re-coded progress slider); when a page has
+  act/scene selects they stay `children` of the shared header, and a page that
+  passes none keeps the header as is rather than deriving one (see table above).
 
-## Factorisation
+## Factorization
 
-- Un style utilisé par **au moins deux pages** vit dans `theme.css`, jamais
-  copié-collé entre deux CSS de page.
-- Un composant/hook/helper JSX utilisé par au moins deux pages vit dans
-  `src/shared/`.
-- Un CSS de page ne contient que ce qui est propre à la page ; s'il redéfinit
-  une classe de `theme.css`, c'est une variante volontaire, pas un doublon.
+- A style used by **at least two pages** lives in `theme.css`, never copy-pasted
+  between two page CSS files.
+- A JSX component/hook/helper used by at least two pages lives in `src/shared/`.
+- A page CSS contains only what is specific to the page; if it redefines a
+  `theme.css` class, that is a deliberate variant, not a duplicate.
 
-## Accessibilité
+## Accessibility
 
-- Focus visible sur tout élément interactif (le `:focus` global de
-  `theme.css` ou un équivalent par page).
-- Tout bouton-icône porte un `title` ou `aria-label`, et il vient du catalogue
-  (cf. « Textes ») : c'est le premier endroit où un texte oublié se cache, parce
-  qu'il ne se lit qu'au survol ou au lecteur d'écran.
-- Zones tactiles ≥ 40 px dans les barres de contrôle (usage mobile). Trois
-  exceptions assumées, à ne pas rouvrir : les étiquettes de case à cocher de la
-  Répétition restent à 32 px sous 800 px (`rehearsal.css`), parce que cette
-  hauteur EST l'interligne de la rangée et qu'à 40 px les deux lignes de cases
-  se lisaient comme deux groupes sans rapport ; la largeur cliquable, une phrase
-  entière, compense. Les deux légendes de camembert de la Répartition s'arrêtent
-  à 32 px pour la même raison (`stats.css`), et seule la barre de légende du haut
-  monte à 40 px : ces légendes sont d'abord des tableaux de nombres, et à dix
-  personnages 40 px par rangée ajoutaient 400 px à CHACUN des deux panneaux sur
-  un téléphone ; là aussi la rangée entière est la cible, d'un bord de la carte
-  à l'autre. Et l'Édition ne compte plus aucune cible tactile : la page
-  ne s'ouvre pas sur un pointeur `coarse` (`src/editor/useTouchPointer.js`).
-- Contrastes lisibles sur fond crème (`--ink-soft` est le minimum pour du
-  texte informatif ; pas de texte plus clair).
+- Visible focus on every interactive element (the global `:focus` of `theme.css`
+  or a per-page equivalent).
+- Every icon button carries a `title` or `aria-label`, and it comes from the
+  catalogue (see "Text"): it is the first place a forgotten string hides, because
+  it is only read on hover or by a screen reader.
+- Touch targets ≥ 40 px in the control bars (mobile use). Three assumed
+  exceptions, not to be reopened: Rehearsal's checkbox labels stay at 32 px below
+  800 px (`rehearsal.css`), because that height IS the row's line height and at
+  40 px the two rows of boxes read as two unrelated groups; the clickable width, a
+  whole sentence, compensates. Stats' two pie legends stop at 32 px for the same
+  reason (`stats.css`), and only the top legend bar goes to 40 px: those legends
+  are first of all tables of numbers, and with ten characters 40 px per row added
+  400 px to EACH of the two panels on a phone; there too the whole row is the
+  target, from one card edge to the other. And the Editor no longer has any touch
+  target: the page does not open on a `coarse` pointer
+  (`src/editor/useTouchPointer.js`).
+- Readable contrast on cream (`--ink-soft` is the minimum for informative text;
+  nothing lighter).
 
 ## Responsive
 
-- Chaque page est utilisable à 375 px de large : pas de scroll horizontal,
-  les barres et bandeaux se replient (media queries existantes vers 800 px).
-- Les acteurs utilisent surtout leur téléphone : Répétition et Enregistrement
-  sont prioritaires.
+- Every page is usable at 375 px wide: no horizontal scroll, bars and headers
+  collapse (existing media queries around 800 px).
+- Actors mostly use their phone: Rehearsal and Recorder come first.
 
-## Textes
+## Text
 
-Le site est **bilingue** (français par défaut, anglais), et c'est une contrainte
-de structure avant d'être une contrainte de style : **aucun texte visible ne vit
-dans un composant**. Tout passe par les catalogues `src/shared/locales/fr.js` et
-`en.js`, lus par `t()` / `<T>` (moteur `src/shared/i18n.js`, locale résolue par
+The site is **bilingual** (French by default, English), and that is a structural
+constraint before it is a style one: **no visible string lives in a component**.
+Everything goes through the `src/shared/locales/fr.js` and `en.js` catalogues,
+read by `t()` / `<T>` (engine `src/shared/i18n.js`, locale resolved by
 `src/shared/locale.js`).
 
-- **Zéro littéral visible dans `src/`**, hors catalogues : ni texte entre deux
-  balises, ni `title`, `aria-label`, `placeholder`, `alt`, ni prop qui porte du
-  texte (`hint`, `error`, `label`, `unit`, `confirmLabel`, `primaryLabel`,
-  `saveLabel`). Un `title="Renommer"` est un finding **haute**, pas un détail :
-  il ne se traduira jamais et rien à l'écran ne le montrera côté français.
-- **Une phrase reste une phrase.** Un texte qui porte du balisage au milieu
-  (`<strong>`, `<code>`, une icône, un lien, un `<span>` coloré) passe par
-  `<T k="…" p={{ … }} />`, le morceau de JSX devenant un PARAMÈTRE. Découper la
-  phrase en fragments JSX fige l'ordre des mots français dans le composant, et
-  c'est irréparable en traduction.
-- **Aucun pluriel bricolé.** Pas de `n > 1 ? "s" : ""` : une entrée de catalogue
-  `{ one, other }` et `t(clé, { count })`, le choix venant d'`Intl.PluralRules`
-  (« 0 réplique » en français, « 0 lines » en anglais, ce qu'un ternaire ne sait
-  pas faire). Même règle pour les pourcentages et les dates : `fmt.percent` /
-  `fmt.dateTime`, jamais un `.replace(".", ",")` ni un `"fr-FR"` en dur.
-- **Un nombre est groupé par sa locale**, « 10 307 » et « 10,307 ». Dans une
-  phrase, c'est le MOTEUR qui le fait : tout paramètre numérique de `t()` passe
-  par `Intl.NumberFormat`, donc il n'y a rien à écrire au point d'appel et rien
-  à oublier. `fmt.number` ne sert qu'aux nombres écrits SEULS, hors de toute
-  phrase (le total au centre de l'anneau de la Répartition, les décomptes de sa
-  légende) ; un nombre nu rendu directement en JSX est un finding.
-- **Les guillemets viennent de `fmt.quote`**, jamais des `«&nbsp;…&nbsp;»`
-  écrits à la main : le français veut ses insécables, l'anglais des guillemets
-  courbes.
-- **La typographie française vit DANS les chaînes** (insécable avant `?`, `!`,
-  `:`, guillemets), jamais dans le JSX : c'est un fait de langue, donc l'affaire
-  du traducteur, et l'anglais ne le porte pas.
-- **Un libellé partagé n'existe qu'une fois**, et cela vaut jusqu'à la
-  PONCTUATION : un séparateur, une parenthèse et une barre de fraction sont des
-  faits de langue, donc ils vivent dans la chaîne et jamais dans le JSX. Quand deux
-  endroits nomment la même chose, le second INTERPOLE la clé du premier (le vide de
-  la Répartition cite `stats.scopeAllOption`, l'aide d'une scène vide cite
-  `rail.characters`, le suffixe de scène `rehearsal.sceneLines` cite
-  `common.lineCount` pour ne régler le pluriel qu'à un endroit) ou les deux
-  partagent une clé commune (`common.actScene` nomme le couple acte + scène pour
-  la Répartition ET l'Avancement, qui y écrivait un « · » à la main ;
-  `common.myLineNumber` nomme « (3/12) » pour la Répétition et l'Enregistrement). Cas le plus lourd, et le seul tenu par la CI : le
-  **nom d'une page citée dans une phrase** passe par un `{page}` alimenté par
-  `t(pageLabelKey(...))`, jamais par le mot écrit en clair. Le garde de
-  `test_contracts.py` ne voit que la tournure « page X » / « mode X », et c'est
-  volontaire : en français les noms de page sont des noms communs, donc
-  « Enregistrement… » et « Avancement par personnage et par scène » sont
-  légitimes.
-- **Deux axes de langue, à ne pas confondre** : la locale de l'INTERFACE (choisie
-  par le lecteur, `LocaleSwitch`) et la langue de la PIÈCE (`script.language`,
-  choisie dans le plan du rail, qui pilote le PDF, la voix de synthèse et les
-  libellés d'acte et de scène de l'Édition). Le texte des répliques suit la
-  seconde. Un libellé d'acte ou de scène, lui, **dépend de la page**, et c'est le
-  seul texte du site dans ce cas : locale du LECTEUR sur les quatre pages qui ne
-  font que NAVIGUER (Répétition, Enregistrement, Avancement, Répartition), où
-  choisir une scène dans une pièce qu'on ne touche pas s'écrit dans la langue
-  qu'on lit ; langue de la PIÈCE sur l'Édition, où l'on façonne le document et où
-  « Acte II » est mot pour mot l'intertitre que le PDF imprimera. C'est ce qui
-  fait de `t` un PARAMÈTRE de `actLabel`/`sceneLabel` et non un import : l'Édition
-  passe un traducteur lié à `script.language` (`translator` dans `locale.js`).
-  Corollaire assumé, à ne pas rapporter comme un défaut : sur une pièce dont la
-  langue n'est pas celle du lecteur, la même scène s'appelle « Scene 3 » sur
-  l'Édition et « Scène 3 » sur l'Avancement, et la phrase qui CITE un libellé
-  reste dans la langue du lecteur (« Déplacer Act I »), un paramètre chaîne
-  traversant intact.
-- **Ce qu'un module pur ne fait jamais** : importer `locale.js`. Il lit l'URL, le
-  stockage et le navigateur dès son import, donc il casse `node --test`. Un
-  module couvert par les tests reçoit `t` en argument (`stats.js`) ou rend un
-  CODE que la page traduit (`useRecorder.js` et son `"mic"`).
-- Style, dans les deux langues : ton cohérent (tutoiement absent, infinitif ou
-  impératif de politesse), pas de tiret cadratin, et l'anglais ne traduit pas mot
-  à mot ce qui n'existe qu'en français (« répéter à l'italienne » → « run your
-  lines », « le responsable » → « the coordinator », jamais « your coordinator »).
+- **Zero visible literal in `src/`**, catalogues aside: no text between two tags,
+  no `title`, `aria-label`, `placeholder`, `alt`, no prop carrying text (`hint`,
+  `error`, `label`, `loading`, `unit`, `confirmLabel`, `primaryLabel`,
+  `saveLabel`). A
+  `title="Rename"` is a **high** finding, not a detail: it will never be
+  translated and nothing on screen shows it on the French side.
+- **A sentence stays a sentence.** Text carrying markup in the middle
+  (`<strong>`, `<code>`, an icon, a link, a coloured `<span>`) goes through
+  `<T k="…" p={{ … }} />`, the JSX fragment becoming a PARAMETER. Splitting the
+  sentence into JSX fragments freezes French word order in the component, and that
+  is unrepairable in translation.
+- **No hand-rolled plurals.** No `n > 1 ? "s" : ""`: a `{ one, other }` catalogue
+  entry and `t(key, { count })`, the choice coming from `Intl.PluralRules`
+  ("0 réplique" in French, "0 lines" in English, which a ternary cannot do). Same
+  rule for percentages and dates: `fmt.percent` / `fmt.dateTime`, never a
+  `.replace(".", ",")` nor a hardcoded `"fr-FR"`.
+- **A number is grouped by its locale**, "10 307" and "10,307". Inside a sentence
+  the ENGINE does it: every numeric parameter of `t()` goes through
+  `Intl.NumberFormat`, so there is nothing to write at the call site and nothing
+  to forget. `fmt.number` serves only numbers written ALONE, outside any sentence
+  (the total at the centre of the Stats ring, the counts in its legend); a bare
+  number rendered directly in JSX is a finding.
+- **Quotes come from `fmt.quote`**, never from hand-written `«&nbsp;…&nbsp;»`:
+  French wants its non-breaking spaces, English curly quotes.
+- **French typography lives INSIDE the strings** (non-breaking space before `?`,
+  `!`, `:`, guillemets), never in the JSX: it is a fact of the language, hence the
+  translator's business, and English does not carry it.
+- **A shared label exists only once**, and that goes down to PUNCTUATION: a
+  separator, a parenthesis and a fraction slash are facts of language, so they
+  live in the string and never in the JSX. When two places name the same thing,
+  the second INTERPOLATES the first's key (Stats' empty state quotes
+  `stats.scopeAllOption`, the empty-scene help quotes `rail.characters`, the scene
+  suffix `rehearsal.sceneLines` quotes `common.lineCount` so the plural is tuned
+  in one place only) or both share a common key (`common.actScene` names the
+  act + scene pair for Stats AND the Dashboard, which used to write a "·" by hand;
+  `common.myLineNumber` names "(3/12)" for Rehearsal and the Recorder). The
+  heaviest case, and the only one held by CI: the **name of a page quoted in a
+  sentence** goes through a `{page}` fed by `t(pageLabelKey(...))`, never through
+  the word written out. The `test_contracts.py` guard only sees the "page X" /
+  "mode X" turn of phrase, and that is deliberate: in French page names are common
+  nouns, so a sentence starting with one is legitimate.
+- **Two language axes, not to be confused**: the INTERFACE locale (chosen by the
+  reader, `LocaleSwitch`) and the PLAY's language (`script.language`, chosen in
+  the rail plan, which drives the PDF, the synthetic voice and the Editor's act
+  and scene labels). Line text follows the second. An act or scene label
+  **depends on the page**, and it is the only text on the site in that case:
+  READER locale on the four pages that only NAVIGATE (Rehearsal, Recorder,
+  Dashboard, Stats), where choosing a scene in a play you are not touching is
+  written in the language you read; PLAY language in the Editor, where you shape
+  the document and where "Acte II" is word for word the running head the PDF will
+  print. That is what makes `t` a PARAMETER of `actLabel`/`sceneLabel` and not an
+  import: the Editor passes a translator bound to `script.language` (`translator`
+  in `locale.js`). An assumed corollary, not to be reported as a defect: on a play
+  whose language is not the reader's, the same scene is called "Scene 3" in the
+  Editor and "Scène 3" on the Dashboard, and the sentence QUOTING a label stays in
+  the reader's language ("Déplacer Act I"), a string parameter passing through
+  intact.
+- **What a pure module never does**: import `locale.js`. It reads the URL,
+  storage and the navigator as soon as it is imported, so it breaks `node --test`.
+  A module covered by the tests receives `t` as an argument (`stats.js`) or
+  returns a CODE the page translates (`useRecorder.js` and its `"mic"`).
+- Style, in both languages: consistent tone (no `tutoiement`, infinitive or
+  polite imperative), no em dash, and English does not translate word for word
+  what only exists in French ("répéter à l'italienne" → "run your lines",
+  "le responsable" → "the coordinator", never "your coordinator").

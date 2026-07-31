@@ -2,24 +2,24 @@ import React from "react";
 import { t } from "./locale.js";
 import { PAGES, pageLabelKey } from "./pages.js";
 
-// Le « sceau » d'une page : pastille ronde colorée portant l'icône de la page.
-// Il remplace l'emoji 🎭 en tête des bandeaux partagés, sert de vignette aux
-// cartes de l'accueil et aux boutons de dépôt du tableau de bord. Il ne porte
-// jamais lui-même de clic : c'est une image porteuse de sens, d'où le
-// role/aria-label. Quand il vit DANS un lien (le retour à l'accueil en pied de
-// bandeau, le lien de page d'une phrase de doc), c'est le lien qui est
-// cliquable et le sceau qui passe décoratif, cf. `label=""` plus bas.
-// La classe `page-<clé>` qu'il pose sur lui-même porte ses couleurs, donc il
-// s'affiche correctement partout, y compris hors d'un bandeau coloré.
-// `label` : à passer quand le sceau ne désigne PAS sa page. Le journal des
-// dépôts s'en sert pour sa colonne Type, où le micro veut dire « Voix » et non
-// « Enregistrement » : sans lui, un lecteur d'écran y annonce le nom de la page.
+// The "seal" of a page: round coloured badge carrying the page icon. It
+// replaces the 🎭 emoji at the head of the shared headers, and serves as the
+// thumbnail of the home cards and of the dashboard's upload buttons. It never
+// carries a click itself: it is a meaning-bearing image, hence the
+// role/aria-label. When it lives INSIDE a link (the link back home in the
+// header foot, the page link of a doc sentence), it is the link that is
+// clickable and the seal that turns decorative, see `label=""` below.
+// The `page-<key>` class it sets on itself carries its colours, so it displays
+// correctly everywhere, including outside a coloured header.
+// `label`: to be passed when the seal does NOT designate its own page. The
+// upload journal uses it for its Type column, where the mic means "Voices" and
+// not "Recording": without it, a screen reader announces the page name there.
 //
-// `label=""` le rend DÉCORATIF (aria-hidden, plus de role) : à utiliser quand
-// le mot est déjà écrit juste à côté, comme sur les cartes de l'accueil, où
-// sinon chaque lien s'annonce « Répétition, Répétition, Répétez à
-// l'italienne… ». Une image qui redit son voisin n'informe personne, elle
-// double la longueur de l'annonce.
+// `label=""` makes it DECORATIVE (aria-hidden, no more role): to be used when
+// the word is already written right next to it, as on the home cards, where
+// otherwise every link announces itself "Rehearsal, Rehearsal, Rehearse
+// Italian-style…". An image that repeats its neighbour informs nobody, it
+// doubles the length of the announcement.
 export default function PageMark({ page, className = "", label }) {
   const { Icon } = PAGES[page];
   const decorative = label === "";

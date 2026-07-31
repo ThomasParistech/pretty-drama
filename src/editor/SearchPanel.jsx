@@ -6,15 +6,15 @@ import { matchExcerpt } from "./search.js";
 import { fmt, t, translator } from "../shared/locale.js";
 import { actLabel, sceneLabel } from "../shared/structureLabels.js";
 
-// Les deux décomptes du panneau, composés ensuite dans les phrases : le pluriel
-// vient d'`Intl.PluralRules` et plus d'un `n > 1 ? "s" : ""`, qui n'avait aucune
-// chance en anglais (« 0 matches ») et n'aurait pas passé une troisième langue.
+// The panel's two counts, composed into the sentences afterwards: the plural comes
+// from `Intl.PluralRules` and no longer from an `n > 1 ? "s" : ""`, which stood no
+// chance in English ("0 matches") and would not have survived a third language.
 const matchCount = (count) => t("search.matchCount", { count });
 const sceneCount = (count) => t("search.sceneCount", { count });
 
-// La section « Recherche » du rail. Purement présentationnelle : elle reçoit
-// l'état de recherche et des rappels, elle n'en garde aucun (changer de section
-// démonte ce composant, cf. useSearch.js).
+// The rail's "Search" section. Purely presentational: it receives the search state
+// and some callbacks, it keeps none of it (changing section unmounts this
+// component, see useSearch.js).
 export default function SearchPanel({
   characters,
   language,
@@ -43,8 +43,8 @@ export default function SearchPanel({
   const inputRef = useRef(null);
   const [confirmAll, setConfirmAll] = useState(false);
 
-  // À l'ouverture du panneau, et à chaque Ctrl+F (d'où le compteur : un panneau
-  // déjà ouvert ne change aucun état, il n'y aurait rien à observer).
+  // When the panel opens, and on every Ctrl+F (hence the counter: a panel that is
+  // already open changes no state, there would be nothing to watch).
   useEffect(() => {
     inputRef.current?.focus();
     inputRef.current?.select();
@@ -54,20 +54,20 @@ export default function SearchPanel({
 
   return (
     <>
-      {/* Ces réglages ne défilent pas avec les résultats : on relit la requête,
-          on recoche « Mot entier », on relance un remplacement en parcourant une
-          longue liste, et les faire remonter chercher en haut du panneau était
-          le geste le plus fréquent de l'écran. C'est `.editor-rail-body` qui
-          n'accorde le défilement qu'à `.search-results`. */}
+      {/* These settings do not scroll away with the results: one rereads the query,
+          reticks "Whole word", relaunches a replacement while browsing a long list,
+          and having to go back up the panel to find them was the most frequent
+          gesture of the screen. It is `.editor-rail-body` that grants scrolling to
+          `.search-results` alone. */}
       <div className="search-controls">
-        {/* Le libellé dit ce que la case fait, l'infobulle donne l'exemple : la
-            règle des quatre cases de la Répétition.
-            **Au-dessus du champ**, et c'est un déménagement : les deux cases
-            séparaient la requête de son remplacement, alors que ce sont les deux
-            champs qui vont ensemble (on tape l'un, on tape l'autre, on relit les
-            deux avant de remplacer). Deux cases qui règlent la recherche se lisent
-            très bien avant elle, un champ de remplacement à trois blocs de son
-            champ de requête ne se lisait pas comme sa suite. */}
+        {/* The label says what the checkbox does, the tooltip gives the example:
+            the rule of the Rehearsal page's four checkboxes.
+            **Above the field**, and that is a move: the two checkboxes used to
+            separate the query from its replacement, whereas it is the two fields
+            that belong together (one types one, one types the other, one rereads
+            both before replacing). Two checkboxes that tune the search read
+            perfectly well before it, a replacement field three blocks away from
+            its query field did not read as its continuation. */}
         <div className="search-options">
           <label title={t("search.caseSensitive.tip")}>
             <input
@@ -88,12 +88,12 @@ export default function SearchPanel({
         </div>
 
         <div className="search-query-row">
-          {/* Le dévoilement du remplacement est un chevron qui pivote, à GAUCHE du
-              champ, comme dans un éditeur de code : il commande ce qui apparaît
-              en dessous, donc il se lit avant. Il est ENCADRÉ au repos et haut
-              comme le champ, contrairement au chevron nu du premier essai : c'est
-              le seul chemin vers le remplacement, et un glyphe gris sans cadre au
-              bord d'un champ de saisie se lisait comme une décoration du champ. */}
+          {/* The replacement's disclosure is a chevron that pivots, to the LEFT of
+              the field, as in a code editor: it commands what appears below it, so
+              it is read first. It is FRAMED at rest and as tall as the field,
+              unlike the bare chevron of the first attempt: it is the only path to
+              the replacement, and a grey glyph with no frame at the edge of an
+              input read as a decoration of that input. */}
           <button
             className="search-replace-toggle"
             aria-label={t("search.replace")}
@@ -109,17 +109,17 @@ export default function SearchPanel({
             type="text"
             className="search-field"
             placeholder={t("search.placeholder")}
-            // L'étiquette dit le périmètre, que le placeholder n'a pas la place
-            // de dire : la recherche ne voit que les répliques, ni les titres
-            // d'acte ou de scène, ni les noms de personnages.
+            // The label states the scope, which the placeholder has no room to
+            // state: the search only sees the lines, neither act or scene titles
+            // nor character names.
             aria-label={t("search.label")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
-              // Entrée appartient au CHAMP et jamais à `window` : sur window elle
-              // tomberait aussi dans chaque textarea de réplique, où elle crée
-              // déjà la réplique suivante. Et elle ne prend pas le focus (cf.
-              // useSearch), pour rester répétable.
+              // Enter belongs to the FIELD and never to `window`: on window it
+              // would also land in every line textarea, where it already creates
+              // the next line. And it does not take the focus (see useSearch), so
+              // as to stay repeatable.
               if (e.key !== "Enter") return;
               e.preventDefault();
               if (e.shiftKey) prev();
@@ -128,13 +128,13 @@ export default function SearchPanel({
           />
         </div>
 
-        {/* Démonté et pas seulement masqué : le bandeau garde ses réglages
-            montés pour pouvoir animer une hauteur inconnue, ici il n'y a rien à
-            animer et rien ne doit rester dans le parcours au clavier. Le texte
-            déjà tapé survit quand même, il vit dans useSearch.
-            **Juste sous le champ de requête**, comme dans un éditeur de code : les
-            deux champs se lisent et se tabulent d'affilée, et le chevron qui
-            l'ouvre est à deux centimètres de ce qu'il fait apparaître. */}
+        {/* Unmounted and not merely hidden: the header keeps its settings mounted
+            in order to animate an unknown height, here there is nothing to animate
+            and nothing must stay in the keyboard path. The text already typed
+            survives all the same, it lives in useSearch.
+            **Right under the query field**, as in a code editor: the two fields are
+            read and tabbed through one after the other, and the chevron that opens
+            it is a couple of centimetres from what it makes appear. */}
         {replaceOpen && (
           <div className="search-replace" id="search-replace">
             <input
@@ -146,8 +146,8 @@ export default function SearchPanel({
               onChange={(e) => setReplacement(e.target.value)}
             />
 
-            {/* `.btn.small` et jamais `.btn.primary` : l'accent plein est le
-                bouton de téléchargement du site, partout. */}
+            {/* `.btn.small` and never `.btn.primary`: the solid accent is the
+                site's download button, everywhere. */}
             <div className="search-actions">
               <span
                 className="btn-tip"
@@ -183,13 +183,13 @@ export default function SearchPanel({
           </div>
         )}
 
-        {/* Le compte et les flèches ferment les réglages, juste au-dessus de la
-            liste qu'ils comptent et parcourent. */}
+        {/* The count and the arrows close the settings, right above the list they
+            count and browse. */}
         <div className="search-count-row">
-          {/* Seul le compte est vif : un aria-live sur la liste bavarderait à
-              chaque frappe. Pas de « 3 sur 12 » à côté des flèches, la liste est
-              toujours affichée et marque la ligne courante, donc la position se
-              voit (VSCode l'écrit parce que sa liste se replie). */}
+          {/* Only the count is live: an aria-live on the list would chatter on
+              every keystroke. No "3 of 12" next to the arrows, since the list is
+              always displayed and marks the current row, so the position can be
+              seen (VSCode writes it because its list collapses). */}
           <p className={`search-count ${searching ? "stale" : ""}`} aria-live="polite">
             {hasQuery
               ? total > 0
@@ -200,10 +200,10 @@ export default function SearchPanel({
                 : t("search.none")
               : ""}
           </p>
-          {/* Infobulles portées par une enveloppe et jamais par le bouton : un
-              contrôle `disabled` ne reçoit aucun événement souris, donc son
-              propre `title` ne s'afficherait pas au moment où il sert. Le nom
-              accessible, lui, reste sur le bouton et ne dépend pas de l'état. */}
+          {/* Tooltips carried by a wrapper and never by the button: a `disabled`
+              control receives no mouse event, so its own `title` would not show at
+              the moment it is useful. The accessible name, on the other hand, stays
+              on the button and does not depend on the state. */}
           <span className="search-nav">
             <span
               className="btn-tip"
@@ -247,9 +247,9 @@ export default function SearchPanel({
       )}
 
       {confirmAll && (
-        // Le geste est annulable en une étape, et il se confirme quand même,
-        // pour la raison qui fait confirmer une suppression d'acte : ce qu'on
-        // touche n'est pas à l'écran, et c'est le nombre qui surprend.
+        // The gesture can be undone in one step, and it is confirmed all the same,
+        // for the reason that makes an act deletion be confirmed: what it touches
+        // is not on screen, and it is the number that comes as a surprise.
         <ConfirmModal
           title={t("search.replaceAllTitle", { matches: matchCount(total) })}
           confirmLabel={t("search.replace")}
@@ -259,16 +259,16 @@ export default function SearchPanel({
             replaceAll();
           }}
         >
-          {/* `shownQuery` et pas `query` : le titre annonce un nombre issu du
-              rendu différé (cf. useSearch.js), et c'est cette requête-là que
-              `replaceAll` réécrit. Citer la frappe en cours ferait une phrase qui
-              compte une requête et en nomme une autre, le temps que le rendu
-              rattrape.
-              Les guillemets viennent de `fmt.quote` (donc les insécables en
-              français, des guillemets droits en anglais) et plus de `&nbsp;»`
-              écrits à la main. Un champ de remplacement vide est légitime
-              (supprimer un mot partout) : c'est la seconde phrase qui le dit,
-              plutôt que de laisser croire à un remplacement par rien. */}
+          {/* `shownQuery` and not `query`: the title announces a number that comes
+              from the deferred render (see useSearch.js), and it is that query
+              `replaceAll` rewrites. Quoting the keystrokes in progress would make a
+              sentence that counts one query and names another, for as long as the
+              render takes to catch up.
+              The quotation marks come from `fmt.quote` (so the non-breaking spaces
+              in French, straight quotes in English) and no longer from `&nbsp;»`
+              written by hand. An empty replacement field is legitimate (deleting a
+              word everywhere): it is the second sentence that says so, rather than
+              letting one believe in a replacement by nothing. */}
           <p>
             {replacement
               ? t("search.replaceAllInto", {
@@ -287,42 +287,43 @@ export default function SearchPanel({
   );
 }
 
-// Pas de virtualisation ? Impossible ici, et ce n'est pas un choix de confort :
-// afficher toutes les occurrences (6216 pour une requête d'un seul caractère sur la
-// vraie pièce) demandait à React de créer, puis de détruire à la frappe suivante,
-// des dizaines de milliers de nœuds. `useDeferredValue` (useSearch.js) a réglé le
-// rendu, qui est interruptible, mais la phase de COMMIT ne l'est pas : il restait
-// des tâches bloquantes de 76 à 134 ms, donc une frappe qui bégaie. Mesuré.
+// No virtualisation? Impossible here, and this is not a choice of comfort:
+// displaying every match (6216 for a single-character query on the real play) asked
+// React to create, then to destroy on the next keystroke, tens of thousands of
+// nodes. `useDeferredValue` (useSearch.js) fixed the render, which is
+// interruptible, but the COMMIT phase is not: blocking tasks of 76 to 134 ms
+// remained, so a stuttering keystroke. Measured.
 //
-// On ne rend donc que la tranche visible, et c'est la hauteur FIXE des rangées qui
-// le permet : la position de chacune se calcule sans l'avoir mesurée, donc la
-// hauteur totale est exacte dès le premier rendu et l'ascenseur ne mentira jamais
-// (c'est la même exigence que celle qui a valu la hauteur fixe, cf. editor.css).
+// So only the visible slice is rendered, and it is the FIXED height of the rows
+// that makes it possible: the position of each is computed without having measured
+// it, so the total height is exact from the very first render and the scrollbar will
+// never lie (that is the same requirement as the one that earned the fixed height,
+// see editor.css).
 //
-// Les deux hauteurs ci-dessous sont un CONTRAT avec editor.css : `.search-row`
-// fait 66 px (62 de rangée plus 4 de gouttière) et `.search-group-head` 30. Les
-// changer d'un côté sans l'autre décale la liste sous l'ascenseur.
+// The two heights below are a CONTRACT with editor.css: `.search-row` is 66 px (62
+// of row plus 4 of gutter) and `.search-group-head` 30. Changing them on one side
+// without the other shifts the list under the scrollbar.
 //
-// Prix assumé : un lecteur d'écran n'annonce que les éléments rendus, pas les 6216
-// de la liste. C'est le prix de toute liste fenêtrée ; le compte, lui, est dit en
-// clair juste au-dessus, et il est le seul `aria-live` du panneau.
+// Accepted price: a screen reader only announces the rendered items, not the 6216 of
+// the list. That is the price of any windowed list; the count, on the other hand, is
+// stated plainly just above, and it is the panel's only `aria-live`.
 const ROW_H = 66;
 const HEAD_H = 30;
-// De quoi couvrir un coup de molette entre deux rendus.
+// Enough to cover one flick of the wheel between two renders.
 const OVERSCAN = 6;
 
 function ResultList({ groups, characters, language, currentMatch, onSelect, searching }) {
   const boxRef = useRef(null);
-  // Les en-têtes de groupe nomment un acte et une scène du document, donc dans la
-  // langue de la PIÈCE, comme le plan du rail et le titre de la colonne
-  // (cf. structureLabels.js). Le compte de correspondances juste au-dessus reste
-  // dans celle du lecteur : c'est une phrase de l'interface.
+  // The group headers name an act and a scene of the document, therefore in the
+  // language of the PLAY, like the rail's plan and the column's title (see
+  // structureLabels.js). The match count just above stays in the reader's: it is a
+  // sentence of the interface.
   const tPlay = translator(language);
   const [view, setView] = useState({ top: 0, height: 0 });
 
-  // Une seule liste à plat : les en-têtes de scène y sont des éléments comme les
-  // autres. C'est ce qui rend l'arithmétique des positions triviale (un tableau
-  // cumulé), là où un fenêtrage par groupe demanderait de découper chaque groupe.
+  // One single flat list: the scene headers are items in it like any other. That is
+  // what makes the arithmetic of the positions trivial (a cumulative array), where
+  // windowing per group would require slicing every group.
   const items = useMemo(() => {
     const out = [];
     for (const group of groups) {
@@ -345,8 +346,8 @@ function ResultList({ groups, characters, language, currentMatch, onSelect, sear
 
   const totalH = offsets[items.length] ?? 0;
 
-  // La hauteur visible se mesure, elle ne se devine pas : le panneau se
-  // redimensionne (poignée du bord, fenêtre, dépliage du remplacement).
+  // The visible height is measured, it is not guessed: the panel gets resized (edge
+  // handle, window, unfolding of the replacement).
   useEffect(() => {
     const box = boxRef.current;
     if (!box) return;
@@ -357,8 +358,8 @@ function ResultList({ groups, characters, language, currentMatch, onSelect, sear
     return () => observer.disconnect();
   }, []);
 
-  // Amener la correspondance courante à l'écran : sans ça, « suivant » marquerait
-  // une rangée qui n'est pas rendue, donc invisible et introuvable.
+  // Bring the current match into view: without this, "next" would mark a row that
+  // is not rendered, therefore invisible and impossible to find.
   useEffect(() => {
     const box = boxRef.current;
     if (!box || !currentMatch) return;
@@ -376,8 +377,8 @@ function ResultList({ groups, characters, language, currentMatch, onSelect, sear
   const last = indexAt(offsets, view.top + view.height, items.length);
   const from = Math.max(0, first - OVERSCAN);
   const to = Math.min(items.length, last + 1 + OVERSCAN);
-  // Les deux cales sont le remplissage de la liste : aucun élément de plus à
-  // créer, et la hauteur totale reste exacte.
+  // The two shims are the list's padding: no extra element to create, and the total
+  // height stays exact.
   const padTop = offsets[from];
   const padBottom = totalH - offsets[to];
 
@@ -391,11 +392,11 @@ function ResultList({ groups, characters, language, currentMatch, onSelect, sear
         {items.slice(from, to).map((item) =>
           item.head ? (
             <li className="search-group-head" key={item.key}>
-              {/* Aucun séparateur écrit entre les deux libellés : à deux graisses
-                  différentes il n'y a rien à séparer, et une ponctuation entre eux
-                  serait à traduire pour rien. Ils sont dérivés du rang du groupe
-                  (structureLabels.js), les actes et les scènes n'ayant plus de
-                  titre. */}
+              {/* No separator written between the two labels: at two different
+                  weights there is nothing to separate, and a punctuation mark
+                  between them would have to be translated for nothing. They are
+                  derived from the group's rank (structureLabels.js), acts and
+                  scenes no longer having a title. */}
               <h3 className="search-group-title">
                 <span className="search-group-act">{actLabel(tPlay, item.head.actIndex)}</span>
                 <span className="search-group-scene">
@@ -419,8 +420,8 @@ function ResultList({ groups, characters, language, currentMatch, onSelect, sear
   );
 }
 
-// Le premier élément dont le bas dépasse `y`, par dichotomie sur les positions
-// cumulées (elles sont croissantes par construction).
+// The first item whose bottom goes past `y`, by binary search over the cumulative
+// positions (they are increasing by construction).
 function indexAt(offsets, y, count) {
   let lo = 0;
   let hi = count - 1;
@@ -432,15 +433,14 @@ function indexAt(offsets, y, count) {
   return lo;
 }
 
-// Rend le BOUTON seul, sans élément de liste : c'est `.search-row` qui est le
-// `<li>`. Un `<li>` de plus ici (il y en a eu un) était à la fois un élément de
-// liste imbriqué dans un élément de liste, donc du HTML invalide qu'un lecteur
-// d'écran annonce comme une liste de plus, et un bug visible : `.search-hit`
-// prend `height: 100%`, or un pourcentage se résout contre la hauteur du parent,
-// et ce parent-là n'en avait pas de fixée. La carte retombait donc à la hauteur de
-// son contenu, un extrait qui tient sur une ligne (ou une réplique dont le
-// personnage a disparu) laissait 14 à 18 px de crème sous elle, et l'interligne
-// de la liste avait l'air de changer d'une rangée à l'autre.
+// Renders the BUTTON alone, with no list item: `.search-row` is the `<li>`. One more
+// `<li>` here (there was one) was at once a list item nested inside a list item,
+// therefore invalid HTML that a screen reader announces as one more list, and a
+// visible bug: `.search-hit` takes `height: 100%`, and a percentage resolves against
+// the parent's height, and that parent had none set. So the card fell back to the
+// height of its content, an excerpt that fits on one line (or a line whose character
+// has disappeared) left 14 to 18 px of cream below it, and the list's leading looked
+// as though it changed from one row to the next.
 function Hit({ match, characters, isCurrent, onSelect }) {
   const { before, hit, after } = matchExcerpt(match);
   const character = characters.find((c) => c.id === match.characterId) ?? null;
@@ -451,20 +451,20 @@ function Hit({ match, characters, isCurrent, onSelect }) {
     <button
       type="button"
       className={`search-hit ${isCurrent ? "current" : ""}`}
-      // La correspondance courante n'est pas signalée par la seule couleur.
+      // The current match is not signalled by colour alone.
       aria-current={isCurrent ? "true" : undefined}
-      // Un clic focalise la réplique et y sélectionne le texte trouvé : on va
-      // éditer là, contrairement à Entrée et F3, qui laissent le clavier au champ.
+      // A click focuses the line and selects the found text in it: one is going to
+      // edit there, unlike Enter and F3, which leave the keyboard to the field.
       onClick={() => onSelect(match, true)}
     >
       {character && (
-        // Le nom est du texte en 11 px : c'est l'encre et pas l'aplat de la
-        // palette, qui est faite pour des surfaces (cf. `characterInk`).
+        // The name is text at 11 px: it is the ink and not the palette's flat
+        // colour, which is made for surfaces (see `characterInk`).
         <span className="search-hit-who" style={{ color: ink ?? undefined }}>
           {character.name}
         </span>
       )}
-      {/* `<mark>` est exact ici : c'est un extrait de texte, pas un textarea. */}
+      {/* `<mark>` is exactly right here: this is a text excerpt, not a textarea. */}
       <span className="search-hit-text">
         {before}
         <mark>{hit}</mark>

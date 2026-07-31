@@ -26,17 +26,17 @@ export function extensionForMimeType(mimeType) {
 // recorded Blob. A single line records at a time.
 //
 // The mic stream is reused across takes (so the browser asks permission
-// once per session), but release() stops the tracks — call it when the
+// once per session), but release() stops the tracks: call it when the
 // recording session is over (ZIP downloaded, component unmounted) so the
 // browser's mic-in-use indicator turns off.
 export default function useRecorder() {
   const [recordingLineId, setRecordingLineId] = useState(null);
   const [error, setError] = useState(null);
-  // Secondes écoulées de la prise en cours (0 hors enregistrement) : alimente
-  // le chrono affiché pour signaler clairement qu'on enregistre.
+  // Elapsed seconds of the current take (0 outside a recording): feeds the
+  // displayed timer, which makes it plain that recording is under way.
   const [elapsed, setElapsed] = useState(0);
-  // AnalyserNode branché sur le micro pendant la prise : sert à dessiner
-  // l'oscilloscope en direct. null hors enregistrement.
+  // AnalyserNode wired to the mic during the take: used to draw the live
+  // oscilloscope. null outside a recording.
   const [analyser, setAnalyser] = useState(null);
   const streamRef = useRef(null);
   const recorderRef = useRef(null);
@@ -52,8 +52,8 @@ export default function useRecorder() {
     setElapsed(0);
   }, []);
 
-  // Démonte le graphe Web Audio de l'aperçu (l'analyseur ne touche jamais aux
-  // pistes du micro : la capture reste pilotée par le MediaRecorder).
+  // Tears down the preview's Web Audio graph (the analyser never touches the
+  // mic's tracks: the capture stays driven by the MediaRecorder).
   const stopAnalyser = useCallback(() => {
     setAnalyser(null);
     if (audioCtxRef.current) {
@@ -69,7 +69,7 @@ export default function useRecorder() {
     }
   }, []);
 
-  // Stop capturing (and the chrono + aperçu) when the page unmounts.
+  // Stop capturing (and the timer + preview) when the page unmounts.
   useEffect(
     () => () => {
       stopTimer();
@@ -103,16 +103,16 @@ export default function useRecorder() {
       recorderRef.current = recorder;
       recorder.start();
       setRecordingLineId(lineId);
-      // Chrono en direct : recalé sur l'horloge à chaque tick (robuste au
-      // throttling des onglets en arrière-plan).
+      // Live timer: realigned on the clock at every tick (robust to the
+      // throttling of background tabs).
       const startedAt = Date.now();
       setElapsed(0);
       timerRef.current = setInterval(() => {
         setElapsed(Math.floor((Date.now() - startedAt) / 1000));
       }, 250);
-      // Aperçu du profil audio : branche un analyseur en dérivation du micro
-      // (jamais connecté à la sortie → aucun larsen). Optionnel : si Web Audio
-      // manque, on enregistre quand même, sans l'aperçu.
+      // Preview of the audio profile: wires an analyser as a tap off the mic
+      // (never connected to the output, hence no feedback howl). Optional: if Web
+      // Audio is missing, we record all the same, without the preview.
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (AudioCtx) {
@@ -126,13 +126,14 @@ export default function useRecorder() {
           setAnalyser(node);
         }
       } catch {
-        /* aperçu indisponible : sans conséquence sur la capture */
+        /* preview unavailable: of no consequence for the capture */
       }
     } catch (err) {
-      // Un CODE et pas une phrase : ce module est couvert par `node --test`
-      // (useRecorder.test.js tient le contrat de l'extension audio), donc il ne
-      // doit rien importer qui touche au DOM, et `locale.js` lit l'URL, le
-      // stockage et le navigateur dès son import. La page traduit ce code.
+      // A CODE and not a sentence: this module is covered by `node --test`
+      // (useRecorder.test.js holds the contract of the audio extension), so it
+      // must import nothing that touches the DOM, and `locale.js` reads the URL,
+      // the storage and the browser as soon as it is imported. The page
+      // translates this code.
       setError("mic");
       throw err;
     }

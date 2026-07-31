@@ -1,22 +1,22 @@
-// Contrat ZIP, côté navigateur : l'extension du membre audio.
+// The ZIP contract, browser side: the extension of the audio member.
 //
-// L'Action retrouve l'audio d'une réplique en cherchant un membre nommé
-// `{lineId}.{ext}`, avec `ext` validé par la regex `[0-9a-zA-Z]+` de
-// `parse_manifest` (scripts/process_uploads.py). Une extension qui sortirait
-// de cet alphabet (un `audio/webm;codecs=opus` recopié tel quel, un point, un
-// tiret) rendrait le clip introuvable : le ZIP entier serait refusé, et le
-// respo lirait « fichier audio introuvable » sans savoir pourquoi.
+// The Action finds a line's audio by looking for a member named
+// `{lineId}.{ext}`, with `ext` validated by the `[0-9a-zA-Z]+` regex of
+// `parse_manifest` (scripts/process_uploads.py). An extension that fell outside
+// that alphabet (an `audio/webm;codecs=opus` copied verbatim, a dot, a hyphen)
+// would make the clip impossible to find: the whole ZIP would be refused, and
+// the coordinator would read "audio file not found" without knowing why.
 import test from "node:test";
 import assert from "node:assert/strict";
 
 import { extensionForMimeType } from "./useRecorder.js";
 
-// Le miroir exact de LINE_ID_PATTERN côté extension, dans process_uploads.py :
+// The exact mirror of LINE_ID_PATTERN on the extension side, in process_uploads.py:
 //   re.fullmatch(re.escape(line_id) + r"\.[0-9a-zA-Z]+", n)
 const ACCEPTED_BY_THE_ACTION = /^[0-9a-zA-Z]+$/;
 
-// Ce que les navigateurs rendent réellement dans MediaRecorder.mimeType, plus
-// les valeurs limites.
+// What browsers actually return in MediaRecorder.mimeType, plus the boundary
+// values.
 const MIME_TYPES = [
   "audio/webm;codecs=opus",
   "audio/webm",
@@ -30,23 +30,23 @@ const MIME_TYPES = [
   undefined,
 ];
 
-test("toute extension produite est acceptée par l'Action", () => {
+test("every extension produced is accepted by the Action", () => {
   for (const mimeType of MIME_TYPES) {
     const ext = extensionForMimeType(mimeType);
-    assert.match(ext, ACCEPTED_BY_THE_ACTION, `type MIME : ${JSON.stringify(mimeType)}`);
+    assert.match(ext, ACCEPTED_BY_THE_ACTION, `MIME type: ${JSON.stringify(mimeType)}`);
   }
 });
 
-test("les conteneurs connus gardent leur extension d'usage", () => {
+test("known containers keep their customary extension", () => {
   assert.equal(extensionForMimeType("audio/webm;codecs=opus"), "webm");
   assert.equal(extensionForMimeType("audio/mp4"), "mp4");
   assert.equal(extensionForMimeType("audio/ogg;codecs=opus"), "ogg");
 });
 
-test("un type MIME absent ou inconnu retombe sur une extension, jamais sur rien", () => {
-  // ffmpeg lit le conteneur réel, pas l'extension : se tromper de nom coûte
-  // moins cher que d'écrire un membre sans extension, que l'Action ne
-  // retrouverait pas.
+test("a missing or unknown MIME type falls back to an extension, never to nothing", () => {
+  // ffmpeg reads the real container, not the extension: getting the name wrong
+  // costs less than writing a member with no extension, which the Action would
+  // not find.
   for (const mimeType of ["", null, undefined, "audio/x-inconnu"]) {
     assert.equal(extensionForMimeType(mimeType), "webm");
   }

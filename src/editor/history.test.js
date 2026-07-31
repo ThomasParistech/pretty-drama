@@ -1,10 +1,10 @@
-// Tests de la pile d'annulation de l'éditeur.
+// Tests for the editor's undo stack.
 //
-// Deux choses s'y jouent qui ne se voient pas à la relecture : la FUSION des
-// frappes clavier (sans elle, un Ctrl+Z = une lettre) et l'étiquette
-// « Modifications non téléchargées », qui n'est pas un drapeau mais une
-// comparaison `present !== saved`. Les deux reposent sur l'identité des
-// objets d'état, donc sur le fait qu'une action refusée n'empile rien.
+// Two things play out here that cannot be re-read by eye: the COALESCING of
+// keystrokes (without it, one Ctrl+Z = one letter) and the "Changes not
+// downloaded" label, which is not a flag but a `present !== saved`
+// comparison. Both rest on the identity of the state objects, hence on the
+// fact that a rejected action pushes nothing.
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -12,9 +12,9 @@ import { _coalesceKeyForTests, historyReducer, initHistory } from "./history.js"
 
 const PLAY = {
   title: "Le Misanthrope",
-  // La langue de la PIÈCE, comme tout script sanitisé en porte une : sans elle,
-  // l'aller-retour des deux tests d'étiquette repartait vers `undefined`, que le
-  // reducer refuse (`isLocale`), donc le retour n'avait pas lieu.
+  // The language of the PLAY, as every sanitised script carries one: without it,
+  // the round trip of the two label tests headed back to `undefined`, which the
+  // reducer rejects (`isLocale`), so the return leg never happened.
   language: "fr",
   characters: [{ id: "c-alceste", name: "Alceste", color: "#1f77b4" }],
   acts: [
@@ -28,8 +28,8 @@ const PLAY = {
   ],
 };
 
-// Deux répliques : un remplacement en touche plusieurs à la fois, c'est ce qui
-// le distingue d'une frappe.
+// Two lines: a replacement touches several at once, which is what tells it
+// apart from a keystroke.
 const DUO = {
   ...PLAY,
   acts: [
@@ -55,28 +55,27 @@ const type = (text) => ({
 });
 
 const textOf = (state) => state.present.acts[0].scenes[0].lines[0].text;
-// L'étiquette « Modifications non téléchargées » de l'éditeur, telle qu'App.jsx
-// la dérive.
+// The editor's "Changes not downloaded" label, exactly as App.jsx derives it.
 const dirty = (state) => state.present !== state.saved;
 
 const apply = (state, ...actions) => actions.reduce(historyReducer, state);
 
-test("au départ : rien à annuler, rien à télécharger", () => {
+test("at the start: nothing to undo, nothing to download", () => {
   const state = initHistory(PLAY);
   assert.equal(state.past.length, 0);
   assert.equal(state.future.length, 0);
   assert.equal(dirty(state), false);
 });
 
-test("une rafale de frappes sur la MÊME réplique ne fait qu'une étape", () => {
+test("a burst of keystrokes on the SAME line makes a single step", () => {
   const state = apply(initHistory(PLAY), type("L"), type("La"), type("Lai"), type("Laissez"));
   assert.equal(textOf(state), "Laissez");
-  assert.equal(state.past.length, 1, "une seule étape pour toute la rafale");
+  assert.equal(state.past.length, 1, "a single step for the whole burst");
   const undone = historyReducer(state, { type: "UNDO" });
-  assert.equal(textOf(undone), "", "un seul Ctrl+Z ramène avant la rafale");
+  assert.equal(textOf(undone), "", "one Ctrl+Z goes back to before the burst");
 });
 
-test("HISTORY_BREAK (champ quitté) ferme la rafale en cours", () => {
+test("HISTORY_BREAK (field left) closes the burst in progress", () => {
   const state = apply(
     initHistory(PLAY),
     type("La"),
@@ -87,7 +86,7 @@ test("HISTORY_BREAK (champ quitté) ferme la rafale en cours", () => {
   assert.equal(textOf(historyReducer(state, { type: "UNDO" })), "La");
 });
 
-test("une action d'une autre nature ferme la rafale", () => {
+test("an action of another kind closes the burst", () => {
   const state = apply(
     initHistory(PLAY),
     type("La"),
@@ -97,7 +96,7 @@ test("une action d'une autre nature ferme la rafale", () => {
   assert.equal(state.past.length, 3);
 });
 
-test("les frappes sur DEUX répliques différentes ne fusionnent pas", () => {
+test("keystrokes on TWO different lines do not coalesce", () => {
   const withTwo = {
     ...PLAY,
     acts: [
@@ -120,13 +119,13 @@ test("les frappes sur DEUX répliques différentes ne fusionnent pas", () => {
   assert.equal(state.past.length, 3);
 });
 
-// ------------------------------------------------------ le titre de la pièce
+// ------------------------------------------------------ the title of the play
 
-test("renommer la pièce à la frappe ne fait qu'UNE étape", () => {
-  // C'est un champ en clair, donc il se renomme lettre par lettre comme le texte
-  // d'une réplique : sans fusion, revenir sur un titre demanderait un Ctrl+Z par
-  // caractère. Le titre de la pièce est le SEUL nom qui reste, les actes et les
-  // scènes tirant leur libellé de leur rang.
+test("renaming the play by typing makes only ONE step", () => {
+  // It is a plain field, so it is renamed letter by letter like the text of a
+  // line: without coalescing, going back on a title would take one Ctrl+Z per
+  // character. The title of the play is the ONLY name left, acts and scenes
+  // deriving their label from their rank.
   const state = apply(
     initHistory(PLAY),
     { type: "SET_TITLE", title: "L" },
@@ -138,13 +137,13 @@ test("renommer la pièce à la frappe ne fait qu'UNE étape", () => {
   assert.equal(historyReducer(state, { type: "UNDO" }).present.title, PLAY.title);
 });
 
-test("aucune clé de fusion ne désigne son objet par un RANG", () => {
-  // L'invariant qui remplace une vieille précaution. Les renommages d'acte et de
-  // scène se cléaient sur un rang, faute d'id, et ça ne tenait que parce que tout
-  // ce qui déplace un rang ferme la rafale. Ils n'existent plus, donc plus une
-  // seule clé n'est un rang, et ça doit rester vrai : une action rank-cléée
-  // ajoutée sans cette précaution ferait fusionner deux objets différents dans la
-  // même étape d'annulation.
+test("no coalescing key identifies its object by a RANK", () => {
+  // The invariant that replaces an old precaution. Act and scene renames were
+  // keyed on a rank, for lack of an id, and that only held because everything
+  // that moves a rank closes the burst. They no longer exist, so not a single
+  // key is a rank any more, and that has to stay true: a rank-keyed action added
+  // without this precaution would coalesce two different objects into the same
+  // undo step.
   const suspects = [
     { type: "EDIT_TEXT", actIndex: 3, sceneIndex: 2, lineId: "l-1", text: "x" },
     { type: "SET_TITLE", title: "x" },
@@ -161,15 +160,15 @@ test("aucune clé de fusion ne désigne son objet par un RANG", () => {
       if (action[field] === undefined) continue;
       assert.ok(
         !key.includes(String(action[field])),
-        `${action.type} : la clé « ${key} » contient le rang ${field}=${action[field]}`
+        `${action.type}: the key "${key}" contains the rank ${field}=${action[field]}`
       );
     }
   }
 });
 
-test("changer la langue de la pièce est une étape à part entière", () => {
-  // C'est un select, pas une frappe : rien à fusionner, et il ne doit surtout pas
-  // se fondre dans la rafale du titre juste au-dessus de lui dans le panneau.
+test("changing the play's language is a step in its own right", () => {
+  // It is a select, not a keystroke: nothing to coalesce, and above all it must
+  // not melt into the burst of the title right above it in the panel.
   const state = apply(
     initHistory(PLAY),
     { type: "SET_TITLE", title: "Autre" },
@@ -180,28 +179,28 @@ test("changer la langue de la pièce est une étape à part entière", () => {
   assert.equal(state.present.language, "en");
 });
 
-test("un aller-retour sur la langue éteint « Modifications non téléchargées »", () => {
-  // Deux drapeaux dans le plan : choisir l'anglais puis revenir au français rend
-  // une pièce identique au fichier du dépôt, donc il n'y a plus rien à
-  // télécharger. L'étiquette étant un comparatif d'IDENTITÉ (`present !== saved`,
-  // cf. App.jsx), il ne suffit pas que le contenu soit égal : c'est l'objet
-  // `saved` lui-même qu'il faut reposer.
+test("a round trip on the language switches off \"Changes not downloaded\"", () => {
+  // Two flags in the outline: choosing English then coming back to French gives
+  // a play identical to the file in the repository, so there is nothing left to
+  // download. The label being an IDENTITY comparison (`present !== saved`, cf.
+  // App.jsx), it is not enough for the content to be equal: it is the `saved`
+  // object itself that has to be put back.
   const start = initHistory(PLAY);
   const away = apply(start, { type: "SET_LANGUAGE", language: "en" });
-  assert.notEqual(away.present, away.saved, "aller : il y a bien quelque chose à télécharger");
+  assert.notEqual(away.present, away.saved, "outbound: there is indeed something to download");
 
   const back = apply(away, { type: "SET_LANGUAGE", language: PLAY.language });
-  assert.equal(back.present, back.saved, "retour : plus rien à télécharger");
-  // L'aller-retour reste deux étapes annulables : on ne réécrit pas l'histoire,
-  // on ne rend que son identité à l'état de départ.
+  assert.equal(back.present, back.saved, "return: nothing left to download");
+  // The round trip remains two undoable steps: we do not rewrite history, we
+  // only give back its identity to the starting state.
   assert.equal(back.past.length, 2);
   assert.equal(historyReducer(back, { type: "UNDO" }).present.language, "en");
 });
 
-test("un aller-retour sur le titre éteint l'étiquette, même en pleine rafale", () => {
-  // Même mécanique sur un champ de saisie, où les frappes fusionnent : la
-  // substitution doit valoir aussi dans la branche de fusion, sinon le geste le
-  // plus courant (taper une lettre, se raviser, l'effacer) laissait l'étiquette.
+test("a round trip on the title switches the label off, even mid-burst", () => {
+  // Same mechanics on a text field, where keystrokes coalesce: the substitution
+  // has to hold in the coalescing branch too, otherwise the most common gesture
+  // (type a letter, think again, delete it) left the label on.
   const start = initHistory(PLAY);
   const state = apply(
     start,
@@ -209,13 +208,13 @@ test("un aller-retour sur le titre éteint l'étiquette, même en pleine rafale"
     { type: "SET_TITLE", title: PLAY.title }
   );
   assert.equal(state.present, state.saved);
-  assert.equal(state.past.length, 1, "une seule étape : la rafale a bien fusionné");
+  assert.equal(state.past.length, 1, "a single step: the burst did coalesce");
 });
 
-test("l'étiquette ne s'éteint QUE sur un état vraiment identique", () => {
-  // Le garde du garde : la substitution compare les champs à l'identité, donc une
-  // pièce dont le titre revient à sa valeur mais dont les répliques ont changé
-  // entre-temps ne doit surtout pas passer pour téléchargée.
+test("the label switches off ONLY on a truly identical state", () => {
+  // The guard's guard: the substitution compares the fields by identity, so a
+  // play whose title has come back to its value but whose lines have changed in
+  // the meantime must never pass for downloaded.
   const start = initHistory(PLAY);
   const state = apply(
     start,
@@ -226,13 +225,13 @@ test("l'étiquette ne s'éteint QUE sur un état vraiment identique", () => {
   assert.notEqual(state.present, state.saved);
 });
 
-test("annuler puis rétablir revient exactement au même état", () => {
+test("undo then redo comes back to exactly the same state", () => {
   const edited = apply(initHistory(PLAY), type("Laissez"));
   const roundTrip = apply(edited, { type: "UNDO" }, { type: "REDO" });
-  assert.equal(roundTrip.present, edited.present, "le même objet, pas une copie");
+  assert.equal(roundTrip.present, edited.present, "the same object, not a copy");
 });
 
-test("une nouvelle édition après un retour en arrière coupe la branche rétablissable", () => {
+test("a new edit after a step back cuts the redoable branch", () => {
   const state = apply(
     initHistory(PLAY),
     type("Laissez"),
@@ -242,15 +241,15 @@ test("une nouvelle édition après un retour en arrière coupe la branche rétab
   assert.equal(state.future.length, 0);
 });
 
-test("annuler sans passé, rétablir sans futur : rien ne bouge", () => {
+test("undo with no past, redo with no future: nothing moves", () => {
   const state = initHistory(PLAY);
   assert.equal(historyReducer(state, { type: "UNDO" }), state);
   assert.equal(historyReducer(state, { type: "REDO" }), state);
 });
 
-test("une action refusée par le reducer n'empile aucune étape", () => {
-  // Sinon Ctrl+Z aurait des étapes vides à traverser, et l'étiquette
-  // « Modifications non téléchargées » s'allumerait sans modification.
+test("an action rejected by the reducer pushes no step", () => {
+  // Otherwise Ctrl+Z would have empty steps to walk through, and the "Changes
+  // not downloaded" label would light up with nothing modified.
   const state = apply(
     initHistory(PLAY),
     { type: "ADD_CHARACTER", id: "c-neuf", name: "   " },
@@ -260,12 +259,12 @@ test("une action refusée par le reducer n'empile aucune étape", () => {
   assert.equal(dirty(state), false);
 });
 
-// ------------------------------------------- remplacement (recherche)
+// ------------------------------------------- replacement (search)
 
-test("un remplacement de plusieurs répliques ne fait qu'UNE étape d'annulation", () => {
-  // C'est toute la raison d'une action de lot : une boucle d'EDIT_TEXT en
-  // aurait fait une par réplique (les clés de fusion diffèrent par lineId),
-  // donc autant de Ctrl+Z que de répliques touchées.
+test("replacing across several lines makes only ONE undo step", () => {
+  // That is the whole reason for a batch action: a loop of EDIT_TEXT would have
+  // made one per line (the coalescing keys differ by lineId), hence as many
+  // Ctrl+Z as lines touched.
   const before = initHistory(DUO);
   const state = historyReducer(before, {
     type: "SET_LINE_TEXTS",
@@ -275,15 +274,15 @@ test("un remplacement de plusieurs répliques ne fait qu'UNE étape d'annulation
     ],
   });
   assert.equal(state.past.length, 1);
-  // La pile restitue l'OBJET d'avant, pas un équivalent : c'est ce qui permet
-  // à `dirty` de se comparer par identité.
+  // The stack restores the OBJECT from before, not an equivalent: that is what
+  // lets `dirty` compare by identity.
   assert.equal(historyReducer(state, { type: "UNDO" }).present, before.present);
 });
 
-test("un remplacement ne fusionne jamais avec une rafale de frappes", () => {
-  // Ni dans un sens ni dans l'autre. Avec un EDIT_TEXT à la place, le
-  // remplacement aurait laissé la rafale OUVERTE sur cette réplique, et un
-  // seul Ctrl+Z aurait annulé la frappe suivante avec lui.
+test("a replacement never coalesces with a burst of keystrokes", () => {
+  // Neither one way nor the other. With an EDIT_TEXT instead, the replacement
+  // would have left the burst OPEN on that line, and a single Ctrl+Z would have
+  // undone the next keystroke along with it.
   const state = apply(
     initHistory(PLAY),
     type("La"),
@@ -293,26 +292,26 @@ test("un remplacement ne fusionne jamais avec une rafale de frappes", () => {
   assert.equal(state.past.length, 3);
 });
 
-test("un remplacement sans occurrence n'empile rien et n'allume pas l'étiquette", () => {
+test("a replacement with no match pushes nothing and does not light the label", () => {
   const state = apply(initHistory(PLAY), { type: "SET_LINE_TEXTS", edits: [] });
   assert.equal(state.past.length, 0);
   assert.equal(dirty(state), false);
 });
 
-// -------------------------------- « Modifications non téléchargées »
+// -------------------------------- "Changes not downloaded"
 
-test("l'étiquette s'allume à la première vraie modification", () => {
+test("the label lights up on the first real modification", () => {
   assert.equal(dirty(apply(initHistory(PLAY), type("Laissez"))), true);
 });
 
-test("télécharger éteint l'étiquette", () => {
+test("downloading switches the label off", () => {
   const state = apply(initHistory(PLAY), type("Laissez"), { type: "MARK_SAVED" });
   assert.equal(dirty(state), false);
 });
 
-test("annuler jusqu'à l'état téléchargé éteint l'étiquette, pile non vide", () => {
-  // Éditer, télécharger, éditer, annuler : on est revenu à ce qui est publié,
-  // il n'y a donc rien à télécharger, même si le passé n'est pas vide.
+test("undoing back to the downloaded state switches the label off, stack not empty", () => {
+  // Edit, download, edit, undo: we are back to what is published, so there is
+  // nothing to download, even though the past is not empty.
   const state = apply(
     initHistory(PLAY),
     type("Laissez"),
@@ -325,10 +324,10 @@ test("annuler jusqu'à l'état téléchargé éteint l'étiquette, pile non vide
   assert.equal(dirty(state), false);
 });
 
-test("après un téléchargement, la frappe suivante ouvre une NOUVELLE étape", () => {
-  // MARK_SAVED remet lastKey à zéro : sans ça, la frappe suivante fusionnerait
-  // dans l'étape qui a produit `saved`, et aucun Ctrl+Z ne retomberait dessus
-  // (l'étiquette ne pourrait plus s'éteindre).
+test("after a download, the next keystroke opens a NEW step", () => {
+  // MARK_SAVED resets lastKey: without that, the next keystroke would coalesce
+  // into the step that produced `saved`, and no Ctrl+Z would ever land back on
+  // it (the label could no longer switch off).
   const state = apply(
     initHistory(PLAY),
     type("Laissez"),
@@ -339,7 +338,7 @@ test("après un téléchargement, la frappe suivante ouvre une NOUVELLE étape",
   assert.equal(dirty(historyReducer(state, { type: "UNDO" })), false);
 });
 
-test("charger le script publié réinitialise la pile et n'est pas une étape", () => {
+test("loading the published script resets the stack and is not a step", () => {
   const state = apply(
     initHistory(PLAY),
     type("Laissez"),
@@ -350,13 +349,13 @@ test("charger le script publié réinitialise la pile et n'est pas une étape", 
   assert.equal(dirty(state), false);
 });
 
-test("le passé est plafonné, et c'est le plus ancien qui part", () => {
+test("the past is capped, and it is the oldest that goes", () => {
   let state = initHistory(PLAY);
   for (let i = 0; i < 150; i++) {
     state = apply(state, { type: "SET_TITLE", title: `Titre ${i}` }, { type: "HISTORY_BREAK" });
   }
   assert.equal(state.past.length, 100);
   assert.equal(state.present.title, "Titre 149");
-  // La plus ancienne entrée gardée est bien une entrée récente, pas l'originale.
+  // The oldest entry kept really is a recent one, not the original.
   assert.notEqual(state.past[0].title, PLAY.title);
 });

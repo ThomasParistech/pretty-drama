@@ -85,6 +85,10 @@ export const EN = {
   "common.noCharacters":
     "No characters yet: the play has to be written in the {page} page first.",
 
+  // The other empty state of those same grids: a play can carry its whole cast and
+  // not a single scene. See the French entry for why it lives in `common.`.
+  "common.emptyPlay": "No lines in the play: it has to be written in the {page} page first.",
+
   // Key names as they are printed on the reader's keyboard.
   "common.keyEnter": "Enter",
   "common.keyShiftEnter": "Shift + Enter",
@@ -381,7 +385,6 @@ export const EN = {
 
   "stats.highlight": "Highlight a character",
 
-  "stats.emptyPlay": "No lines in the play: it has to be written in the {page} page first.",
   "stats.emptyScope":
     "No lines in this part of the play: choose another act, another scene, or {all}.",
 

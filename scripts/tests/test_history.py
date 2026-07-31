@@ -1,13 +1,13 @@
-"""Tests des journaux de dépôt : celui de chaque pièce (affiché par son Avancement) et
-celui de la racine (affiché par la page de gestion des pièces).
+"""Tests for the upload journals: each play's own (rendered by its Dashboard) and the
+root one (rendered by the play management page).
 
-C'est le SEUL canal d'erreur du projet (ni issue ni statut README), donc une
-entrée perdue est une erreur que le respo ne verra jamais, et sa forme est un
-contrat avec le front (`filesOf` / `detailOf` dans src/dashboard/App.jsx).
+It is the ONLY error channel of the project (no issue, no README status), so a lost
+entry is an error the coordinator will never see, and its shape is a contract with the
+front end (`filesOf` / `detailOf` in src/dashboard/App.jsx).
 
-`history-example.json` est le journal d'exemple partagé : jeu de test ici, et
-fichier à copier dans `data/` pour voir la page peuplée en dev. Il est donc tenu
-d'être exactement ce que l'Action écrit et ce que le front lit."""
+`history-example.json` is the shared example journal: a test fixture here, and the
+file to copy into `data/` to see the page populated in dev. It is therefore bound to
+be exactly what the Action writes and what the front end reads."""
 
 import io
 import json
@@ -64,31 +64,31 @@ class TestAddRun(unittest.TestCase):
             self.assertEqual(len(updated["runs"]), 1)
 
     def test_no_stale_script_hash_is_carried_over(self):
-        # scriptHash a disparu avec le dépôt direct dans data/ : la promotion du
-        # script est désormais un fichier du journal, pas une empreinte déduite.
+        # scriptHash went away with uploading straight into data/: promoting the
+        # script is now a file in the journal, not an inferred fingerprint.
         updated = add_run({"runs": [], "scriptHash": "abc"}, SCRIPT, "2026-07-27T10:00:00Z")
         self.assertNotIn("scriptHash", updated)
 
 
 class TestExampleJournal(unittest.TestCase):
-    """Le contrat de forme avec le front, vérifié sur l'exemple partagé : il
-    couvre exprès les quatre cas que la page sait afficher (voix réussies, voix
-    refusée, script promu, plusieurs fichiers dans un même dépôt)."""
+    """The shape contract with the front end, checked on the shared example: it
+    deliberately covers the four cases the page knows how to display (voices that
+    succeeded, voices refused, a promoted script, several files in one upload)."""
 
     FILE_KEYS = {"file", "kind", "clips", "error"}
     KINDS = {"voix", "script", "inconnu"}
 
     def test_runs_are_newest_first(self):
         dates = [run["at"] for run in EXAMPLE["runs"]]
-        # Format ISO à la seconde suffixé Z, donc l'ordre lexicographique est
-        # l'ordre chronologique (et `new Date()` le lit tel quel côté front).
+        # ISO format to the second, suffixed with Z, so lexicographic order is
+        # chronological order (and `new Date()` reads it as is on the front end).
         self.assertTrue(all(d.endswith("Z") for d in dates))
         self.assertEqual(dates, sorted(dates, reverse=True))
 
     def test_every_run_has_a_date_and_files(self):
         for run in EXAMPLE["runs"]:
             self.assertEqual(set(run), {"at", "files"})
-            self.assertTrue(run["files"], "un dépôt sans fichier ne devrait pas être consigné")
+            self.assertTrue(run["files"], "an upload with no file should not be logged")
 
     def test_every_file_carries_a_known_kind_and_nothing_unexpected(self):
         for file in self.files():
@@ -99,13 +99,13 @@ class TestExampleJournal(unittest.TestCase):
     def test_success_and_failure_are_exclusive(self):
         for file in self.files():
             if "error" in file:
-                self.assertNotIn("clips", file, "un fichier refusé n'a publié aucune réplique")
+                self.assertNotIn("clips", file, "a refused file published no line at all")
                 self.assertIsInstance(file["error"], str)
             elif file["kind"] == "voix":
-                # detailOf compte les répliques d'un ZIP réussi.
+                # detailOf counts the lines of a ZIP that succeeded.
                 self.assertIsInstance(file["clips"], int)
             else:
-                # Un script promu n'a rien à ajouter : le sceau le dit.
+                # A promoted script has nothing to add: the seal says it.
                 self.assertNotIn("clips", file)
 
     def test_the_example_covers_the_four_display_cases(self):
@@ -116,8 +116,8 @@ class TestExampleJournal(unittest.TestCase):
         self.assertTrue(any(len(run["files"]) > 1 for run in EXAMPLE["runs"]))
 
     def test_the_example_is_a_journal_add_run_could_have_written(self):
-        # Empilé sur lui-même, il reste bien formé : la fonction de l'Action et
-        # le fichier d'exemple ne peuvent pas diverger sans casser ce test.
+        # Stacked on top of itself, it stays well formed: the Action's function
+        # and the example file cannot diverge without breaking this test.
         updated = add_run(EXAMPLE, VOIX, "2026-07-28T10:00:00Z")
         self.assertEqual(updated["runs"][1:], EXAMPLE["runs"])
         self.assertEqual(set(updated), {"runs"})
@@ -127,12 +127,12 @@ class TestExampleJournal(unittest.TestCase):
 
 
 class TestMain(unittest.TestCase):
-    """Le script tel que le workflow l'appelle, sur de vrais fichiers.
+    """The script as the workflow calls it, on real files.
 
-    Un journal PAR PIÈCE (une pièce ignore les dépôts des autres, comme elle ignore
-    leurs répliques), plus un journal RACINE pour ce qu'aucune pièce ne réclame. Sans
-    ce dernier, un fichier posé sans identifiant lisible disparaîtrait sans un mot,
-    ce qui est exactement ce qu'un canal d'erreur ne doit jamais faire."""
+    One journal PER PLAY (a play ignores the other plays' uploads, as it ignores
+    their lines), plus a ROOT journal for whatever no play claims. Without the
+    latter, a file dropped with no readable identifier would vanish without a word,
+    which is exactly what an error channel must never do."""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -142,14 +142,14 @@ class TestMain(unittest.TestCase):
         self.result_path = Path(self.tmp.name) / "uploads_result.json"
 
     def run_main(self, result):
-        """Écrit un uploads_result.json puis joue main(). Rend le couple
-        (journaux par pièce, journal racine), chacun None s'il n'a rien été écrit."""
+        """Writes an uploads_result.json then runs main(). Returns the pair
+        (per-play journals, root journal), each None if nothing was written."""
         if result is not None:
             self.result_path.write_text(json.dumps(result), encoding="utf-8")
         else:
             self.result_path.unlink(missing_ok=True)
-        # `PLAYS_DIR` est patché dans common, où `play_data_dir` le relit à chaque
-        # appel : c'est ce qui déplace les journaux de pièce dans le dossier de test.
+        # `PLAYS_DIR` is patched in common, where `play_data_dir` re-reads it on
+        # every call: that is what moves the play journals into the test folder.
         with mock.patch.object(common, "PLAYS_DIR", self.plays), mock.patch.multiple(
             update_history, ROOT_HISTORY_PATH=self.root_history, RESULT_PATH=self.result_path
         ), redirect_stdout(io.StringIO()):
@@ -172,13 +172,13 @@ class TestMain(unittest.TestCase):
         self.assertRegex(
             journals["le-malade"]["runs"][0]["at"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$"
         )
-        # Rien à la racine : ce dépôt a trouvé sa pièce.
+        # Nothing at the root: this upload found its play.
         self.assertIsNone(root)
 
     def test_two_plays_get_two_journals_and_the_same_stamp(self):
-        # Deux fichiers déposés ensemble sont UN dépôt, même quand ils concernent deux
-        # pièces : la date doit être la même des deux côtés, sinon le journal
-        # raconterait deux dépôts qui n'ont pas eu lieu.
+        # Two files uploaded together are ONE upload, even when they concern two
+        # plays: the date must be the same on both sides, or the journal would
+        # report two uploads that never happened.
         journals, _ = self.run_main(
             {"plays": {"le-malade": VOIX, "transport": SCRIPT}, "unrouted": []}
         )
@@ -208,9 +208,9 @@ class TestMain(unittest.TestCase):
         self.assertEqual(len(journals["le-malade"]["runs"]), 1)
 
     def test_a_malformed_result_is_not_a_failure(self):
-        # uploads_result.json est écrit par la machine, mais le journal est un
-        # confort : une forme inattendue ne doit pas faire échouer le run, qui
-        # commiterait alors sans consigner les dépôts déjà fusionnés.
+        # uploads_result.json is machine-written, but the journal is a convenience:
+        # an unexpected shape must not make the run fail, since it would then
+        # commit without logging the uploads it has already merged.
         for bad in ({"plays": "nope", "unrouted": "nope"}, [1, 2, 3], {"plays": {"x": "nope"}}):
             journals, root = self.run_main(bad)
             self.assertEqual(journals, {})

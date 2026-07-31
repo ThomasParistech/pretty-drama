@@ -1,10 +1,10 @@
-/* Les deux gestes de la page, empilés et centrés en tête : déposer ce qu'on
-   reçoit, emporter le script imprimable. Ils ne se ressemblent PAS, et c'est
-   voulu : le dépôt est une carte blanche (une destination, on part sur GitHub),
-   le téléchargement est le bouton plein du site. Ils ont donc chacun leur
-   largeur, d'où `align-items: center` et non `stretch` : les aligner sur la
-   même largeur laisserait le bouton étiré sur toute la carte, ce qu'aucun
-   autre bouton du site ne fait. */
+/* The two gestures of the page, stacked and centred at the top: upload what you
+   receive, take away the printable script. They do NOT look alike, and that is
+   deliberate: the upload is a white card (a destination, you leave for GitHub),
+   the download is the solid button of the site. They therefore each have their own
+   width, hence `align-items: center` and not `stretch`: aligning them on the same
+   width would leave the button stretched across the whole card, which no other
+   button on the site does. */
 .dash-actions {
   display: flex;
   flex-direction: column;
@@ -13,62 +13,62 @@
   margin: 0 auto 26px;
 }
 
-/* Un seul des deux peut manquer, la carte de dépôt hors github.io : le bouton du
-   PDF, lui, est inconditionnel (cf. `ScriptPdfLink`), donc ce bloc n'est jamais
-   vide et n'a plus besoin de la règle `:empty` qui le masquait, du temps où le
-   bouton attendait de savoir si le fichier existait. */
+/* Only one of the two can be missing, the upload card outside github.io: the PDF
+   button, for its part, is unconditional (see `ScriptPdfLink`), so this block is
+   never empty and no longer needs the `:empty` rule that used to hide it, back when
+   the button waited to know whether the file existed. */
 
-/* Le PDF prend le bouton de téléchargement du site, `.btn.primary` : le même
-   que le ZIP des prises (Enregistrement) et que le script (Édition). Un
-   téléchargement se présente pareil partout, et l'aplat d'accent le distingue
-   d'emblée de la carte de dépôt juste au-dessus.
-   Ne restent ici que les deux choses que `.btn` ne prévoit pas, faute d'avoir
-   jamais servi sur un <a> : le soulignement que le navigateur pose sur un lien,
-   et le repli du libellé quand la fenêtre se resserre.
-   Le survol vient de `.lift-hover` (theme.css), la classe du geste commun à
-   toutes les surfaces cliquables du site : les deux gestes de la page réagissent
-   donc pareil sous la souris, même s'ils ne se ressemblent pas au repos. Ce qui
-   ne s'y reprend pas, c'est le filet teinté en accent de la carte de dépôt :
-   l'aplat du bouton a déjà sa bordure en accent, il n'y aurait rien à voir. Il
-   garde à la place l'assombrissement de `.btn.primary:hover`, ce que font les
-   boutons de téléchargement partout ailleurs. */
+/* The PDF takes the download button of the site, `.btn.primary`: the same one as
+   the ZIP of the takes (Recording) and as the script (Editor). A download presents
+   itself the same way everywhere, and the accent fill distinguishes it at once from
+   the upload card just above.
+   All that remains here are the two things `.btn` does not provide for, never
+   having served on an <a>: the underline the browser puts on a link, and the
+   wrapping of the label when the window narrows.
+   The hover comes from `.lift-hover` (theme.css), the class of the gesture common to
+   all clickable surfaces of the site: the two gestures of the page therefore react
+   the same way under the mouse, even though they do not look alike at rest. What is
+   not taken over from it is the accent-tinted rule of the upload card: the fill of
+   the button already has its accent border, there would be nothing to see. It keeps
+   instead the darkening of `.btn.primary:hover`, which is what download buttons do
+   everywhere else. */
 .dash-script-btn {
   text-decoration: none;
   text-align: center;
   text-wrap: balance;
-  /* `.btn` ne fait glisser que `background` et `border-color`, et une
-     déclaration de `transition` écrase la précédente au lieu de s'y ajouter :
-     c'est donc ici que `transform` et `box-shadow`, ceux de `.lift-hover`,
-     doivent être listés, sinon le soulèvement apparaît d'un coup. */
+  /* `.btn` only transitions `background` and `border-color`, and a `transition`
+     declaration overwrites the previous one instead of adding to it: it is
+     therefore here that `transform` and `box-shadow`, those of `.lift-hover`, must
+     be listed, otherwise the lift appears all at once. */
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 
-/* La bague partagée, comme la carte de dépôt juste au-dessus : les deux gestes
-   de la page s'annoncent pareil au clavier. Un `.btn` s'en passe partout
-   ailleurs (l'anneau du navigateur suffit sur un aplat), mais celui-ci est un
-   `<a>` posé à côté d'une carte qui, elle, porte la bague : deux anneaux
-   différents dans le même bloc se lisaient comme deux natures de contrôle.
-   L'accent sur le crème de la page reste visible, l'aplat du bouton étant à
-   l'intérieur du décalage. */
+/* The shared ring, like the upload card just above: the two gestures of the page
+   announce themselves the same way at the keyboard. A `.btn` does without it
+   everywhere else (the browser's ring is enough on a solid fill), but this one is an
+   `<a>` set beside a card which does carry the ring: two different rings in the same
+   block read as two natures of control.
+   The accent on the cream of the page stays visible, the fill of the button being
+   inside the offset. */
 .dash-script-btn:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
 
-/* Comme « (ZIP) » et « (JSON) » sur la carte de dépôt : l'extension est dite,
-   pas criée. Elle garde ici le blanc du libellé, la graisse et la taille
-   suffisent : une opacité sur l'aplat d'accent tomberait sous le seuil de
-   contraste (c'est déjà le motif du choix sur .dash-upload-format). */
+/* Like "(ZIP)" and "(JSON)" on the upload card: the extension is said, not
+   shouted. Here it keeps the white of the label, the weight and the size are
+   enough: an opacity on the accent fill would drop below the contrast threshold
+   (that is already the reason for the choice on .dash-upload-format). */
 .dash-script-format {
   font-weight: 400;
   font-size: 0.86em;
 }
 
-/* Un vrai bouton, largeur de son contenu : pleine largeur, les deux sceaux se
-   retrouvaient plaqués aux bords, à trente pixels du libellé qu'ils qualifient.
-   Ils l'encadrent donc de près (le micro de l'Enregistrement à gauche, la plume
-   de l'Édition à droite), et le bouton se réduit avec l'écran jusqu'à occuper
-   toute la largeur disponible. */
+/* A real button, the width of its content: at full width, the two seals ended up
+   flattened against the edges, thirty pixels away from the label they qualify.
+   They therefore frame it closely (the mic of Recording on the left, the quill of
+   Editing on the right), and the button shrinks with the screen until it takes
+   up all the available width. */
 .dash-upload {
   display: flex;
   align-items: center;
@@ -80,8 +80,9 @@
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 
-/* Le soulèvement et l'ombre viennent de `.lift-hover` (theme.css) ; ne reste ici
-   que ce qui est propre à cette carte, le filet qui passe en accent. */
+/* The lift and the shadow come from `.lift-hover` (theme.css); all that remains
+   here is what is specific to this card, the rule that switches to the accent
+   colour. */
 .dash-upload:hover {
   border-color: var(--accent);
 }
@@ -91,19 +92,19 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-/* Les sceaux des deux pages dont le dépôt reçoit le travail (micro pour les voix
-   enregistrées, plume pour le script écrit). `flex: none` est déjà porté par
-   .page-mark : ils ne se compriment pas, c'est le libellé qui se replie. */
+/* The seals of the two pages whose work the upload folder receives (mic for the
+   recorded voices, quill for the written script). `flex: none` is already carried by
+   .page-mark: they do not compress, it is the label that wraps. */
 .dash-upload-mark {
   width: 34px;
   height: 34px;
   font-size: 19px;
 }
 
-/* Le libellé est en noir : « Déposer » est le geste, il n'appartient à aucune
-   page. Seuls les deux groupes de mots qui nomment un fichier prennent la
-   couleur de leur page, via le --page-mark posé par la classe `page-<clé>` du
-   même span (la source de vérité reste theme.css). */
+/* The label is in black: "Upload" is the gesture, it belongs to no page. Only the
+   two groups of words that name a file take the colour of their page, through the
+   --page-mark set by the `page-<key>` class of the same span (the source of truth
+   stays theme.css). */
 .dash-upload-text {
   color: var(--ink);
   font-size: 15px;
@@ -112,25 +113,25 @@
   text-wrap: balance;
 }
 
-/* Chaque groupe reste insécable : « voix (ZIP) » coupé en fin de ligne laisserait
-   une parenthèse orpheline sous le mot qu'elle qualifie. */
+/* Each group stays unbreakable: "voices (ZIP)" broken at the end of a line would
+   leave an orphan parenthesis under the word it qualifies. */
 .dash-upload-word {
   color: var(--page-mark);
   white-space: nowrap;
 }
 
-/* L'extension : dite, pas criée. Elle ne concurrence pas le mot qu'elle suit.
-   La discrétion vient de la graisse et de la taille, JAMAIS d'une opacité : à
-   0.75 sur la couleur de page, « (JSON) » tombait à 3,1:1 sur la carte blanche
-   (sous le seuil AA pour ses ~13 px). */
+/* The extension: said, not shouted. It does not compete with the word it follows.
+   The discretion comes from the weight and the size, NEVER from an opacity: at 0.75
+   on the page colour, "(JSON)" fell to 3.1:1 on the white card (below the AA
+   threshold for its ~13 px). */
 .dash-upload-format {
   font-weight: 400;
   font-size: 0.86em;
 }
 
-/* Répliques orphelines : la seule alerte de la page. Un fichier refusé, lui, ne
-   se rappelle PAS en haut de page : sa ligne du journal, avec son statut et son
-   motif, suffit. */
+/* Orphan lines: the only alert of the page. A refused file, for its part, is NOT
+   recalled at the top of the page: its line in the log, with its status and its
+   reason, is enough. */
 .dash-orphans {
   padding: 14px 16px;
   margin-bottom: 16px;
@@ -154,13 +155,13 @@
   font-size: 15.5px;
 }
 
-/* Characters × scenes grid. The wrapper scrolls, never the page : sur un écran
-   étroit ce sont les scènes qui défilent sous la colonne des noms, restée figée
-   (cf. `position: sticky` plus bas). `overscroll-behavior-x: contain` pour que
-   le bout du défilement n'enchaîne pas sur le geste « page précédente » du
-   navigateur mobile. La zone est atteignable au clavier (`tabindex` posé par le
-   JSX) : elle défile et ne contient rien de focalisable, donc sans ça elle
-   serait inaccessible sans souris ni doigt. */
+/* Characters × scenes grid. The wrapper scrolls, never the page: on a narrow
+   screen it is the scenes that scroll under the column of names, which stays frozen
+   (see `position: sticky` further down). `overscroll-behavior-x: contain` so that
+   the end of the scroll does not chain into the "previous page" gesture of the
+   mobile browser. The area is reachable at the keyboard (`tabindex` set by the
+   JSX): it scrolls and contains nothing focusable, so without that it would be
+   unreachable without a mouse or a finger. */
 .dash-table-wrap {
   overflow-x: auto;
   overscroll-behavior-x: contain;
@@ -172,13 +173,13 @@
 }
 
 .dash-table {
-  /* Modèle SÉPARÉ, et pas `collapse` : sous `collapse` les filets sont peints
-     par le tableau et non par les cellules, donc ils ne suivent pas une cellule
-     `sticky` et la colonne des noms perdait toutes ses bordures dès le premier
-     pixel de défilement (elles restaient à leur place et glissaient dessous).
-     Chaque cellule porte donc son filet droit et bas, et les deux bords
-     extérieurs que le modèle séparé ne partage plus sont rendus juste après :
-     le résultat est identique à `collapse`, un filet d'1 px partout. */
+  /* SEPARATE model, and not `collapse`: under `collapse` the rules are painted by
+     the table and not by the cells, so they do not follow a `sticky` cell and the
+     column of names lost all its borders from the very first pixel of scrolling
+     (they stayed in place and slid underneath).
+     Each cell therefore carries its right and bottom rule, and the two outer edges
+     that the separate model no longer shares are rendered just after: the result is
+     identical to `collapse`, a 1 px rule everywhere. */
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
@@ -194,12 +195,12 @@
   background: var(--card);
 }
 
-/* Les bords sans voisin pour les porter : le filet gauche des noms (bord gauche
-   du tableau), le filet haut de la rangée des actes (elle n'a rien au-dessus) et
-   celui du premier nom (il n'a que le coin, sans bordure).
-   Le filet haut ne se pose SURTOUT pas sur tous les noms : hors modèle
-   `collapse`, il s'ajouterait au filet bas du nom précédent et donnerait une
-   ligne de 2 px entre chaque personnage. */
+/* The edges with no neighbour to carry them: the left rule of the names (left edge
+   of the table), the top rule of the row of acts (it has nothing above it) and that
+   of the first name (it only has the corner, with no border).
+   The top rule must ABOVE ALL not be laid on every name: outside the `collapse`
+   model, it would add to the bottom rule of the previous name and give a 2 px line
+   between each character. */
 .dash-table .dash-name {
   border-left: 1px solid var(--border);
 }
@@ -209,10 +210,10 @@
   border-top: 1px solid var(--border);
 }
 
-/* Colonne des noms figée à gauche : c'est elle qui dit de qui parle la rangée,
-   une case « 2/5 » toute seule à l'écran ne veut rien dire. Le coin appartient à
-   la même colonne et la suit donc, sinon les en-têtes d'actes et de scènes
-   passeraient à côté d'elle au défilement. */
+/* Column of names frozen on the left: it is what says whom the row is about, a
+   "2/5" cell all alone on the screen means nothing. The corner belongs to the same
+   column and therefore follows it, otherwise the act and scene headers would pass
+   beside it when scrolling. */
 .dash-table .dash-name,
 .dash-table .dash-corner {
   position: sticky;
@@ -220,19 +221,20 @@
   z-index: 2;
 }
 
-/* Pas d'ombre au bord de la colonne figée : essayée, elle salissait chaque nom
-   d'un dégradé gris. Ce qui sépare, c'est le filet continu du haut du tableau à
-   son pied (le `border-right` du coin puis celui des noms). */
+/* No shadow at the edge of the frozen column: it was tried, and it soiled every
+   name with a grey gradient. What separates is the continuous rule from the top of
+   the table down to its foot (the `border-right` of the corner then that of the
+   names). */
 
-/* Le coin reste vide (ni fond de carte ni filet autour : il ferme la grille en
-   haut à gauche), avec deux exceptions dues au figeage. Fond OPAQUE, celui de la
-   page : en `background: none` les numéros de scène défilaient visiblement
-   par-dessous. Et c'est LUI qui porte le filet gauche des deux rangées
-   d'en-tête, pas la première cellule d'acte ou de scène : celle-là part au
-   défilement (elle emmenait le bord gauche du haut du tableau avec elle, et les
-   en-têtes se retrouvaient ouverts à gauche), tandis que le coin ne bouge pas.
-   Il prolonge donc vers le haut le filet droit de la colonne des noms, exactement
-   comme le faisait la bordure partagée du modèle `collapse`. */
+/* The corner stays empty (neither card background nor rule around it: it closes the
+   grid at the top left), with two exceptions due to the freezing. An OPAQUE
+   background, that of the page: with `background: none` the scene numbers were
+   visibly scrolling underneath. And it is IT that carries the left rule of the two
+   header rows, not the first act or scene cell: that one leaves when scrolling (it
+   was taking the left edge of the top of the table with it, and the headers ended up
+   open on the left), whereas the corner does not move.
+   It therefore extends upwards the right rule of the column of names, exactly as the
+   shared border of the `collapse` model used to. */
 .dash-table .dash-corner {
   border: none;
   border-right: 1px solid var(--border);
@@ -255,15 +257,15 @@
 }
 
 /* Ratios read as a column of numbers: aligned digits, big numerator, the
-   total kept small so the eye scans "combien c'est fait", not "sur combien". */
+   total kept small so the eye scans "how much is done", not "out of how many". */
 .dash-table td {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   line-height: 1.1;
 }
 
-/* Le numérateur porte la couleur de statut, le dénominateur reste neutre :
-   pas d'opacité (elle délavait l'ambre sur le fond pêche, illisible). */
+/* The numerator carries the status colour, the denominator stays neutral: no
+   opacity (it washed out the amber on the peach background, illegible). */
 .dash-cell-ok {
   font-size: 15.5px;
   font-weight: 700;
@@ -284,21 +286,21 @@
   padding-right: 14px;
 }
 
-/* Le nom est enveloppé pour pouvoir se couper : la colonne étant figée, elle
-   mange la largeur des scènes, et un nom à rallonge ne doit pas laisser un
-   filet de grille pour tout le reste. Coupé, il reste lisible en entier dans
-   l'infobulle du `title` porté par la cellule.
-   La coupe elle-même est la classe partagée `.truncate` (theme.css), posée en JSX :
-   ne reste ici que ce qui est propre à cette colonne, sa largeur maximale. */
+/* The name is wrapped so that it can be cut: the column being frozen, it eats into
+   the width of the scenes, and a name that goes on and on must not leave a sliver of
+   grid for all the rest. Cut, it stays legible in full in the tooltip of the `title`
+   carried by the cell.
+   The cut itself is the shared class `.truncate` (theme.css), set in JSX: all that
+   remains here is what is specific to this column, its maximum width. */
 .dash-name-text {
   display: block;
   max-width: 12em;
 }
 
-/* Même teinte « en retard » / « tout enregistré » que les cases, portée aussi
-   par les actes, les numéros de scène et les noms : un acte, une colonne ou
-   une ligne entièrement verte se lit sans compter les cases. Teinte pleine
-   côté en-têtes (les cases sont éclaircies), pour marquer le résumé. */
+/* The same "behind" / "all recorded" tint as the cells, carried also by the acts,
+   the scene numbers and the names: an act, a column or a row that is entirely green
+   reads without counting the cells. Full tint on the header side (the cells are
+   lightened), to mark the summary. */
 .dash-table th.todo {
   color: var(--warn);
   background: var(--warn-soft);
@@ -313,8 +315,8 @@
   color: var(--ink-soft);
 }
 
-/* Fonds éclaircis vers le blanc : la teinte suffit à repérer la colonne en
-   retard, et le chiffre coloré garde tout son contraste par-dessus. */
+/* Backgrounds lightened towards white: the tint is enough to spot the column that
+   is behind, and the coloured figure keeps all its contrast on top of it. */
 .dash-table td.todo {
   color: var(--warn);
   background: color-mix(in srgb, var(--warn-soft) 65%, #fff);
@@ -325,8 +327,8 @@
   background: color-mix(in srgb, var(--ok-soft) 65%, #fff);
 }
 
-/* Aucune réplique dans la scène : case laissée vide, fond blanc par défaut —
-   elle s'efface d'elle-même entre les cases teintées. */
+/* No line in the scene: cell left empty, white background by default, so it fades
+   out by itself among the tinted cells. */
 
 .dash-legend {
   color: var(--ink-soft);
@@ -334,12 +336,12 @@
   margin-top: 10px;
 }
 
-/* Journal des dépôts, en pied de page : le seul endroit où le respo apprend ce
-   que l'Action a fait de ses fichiers, et le seul rappel des échecs (pas de
-   bandeau en haut de page). UNE LIGNE PAR FICHIER, en quatre colonnes fixes
-   (date, statut, type, détail) : chaque fichier a son propre sort. Les trois
-   premières colonnes ont une largeur réservée, donc les lignes s'alignent en
-   colonnes sans table ni grille (le détail prend le reste). */
+/* Upload log, at the foot of the page: the only place where the coordinator learns
+   what the Action did with his files, and the only reminder of the failures (no
+   banner at the top of the page). ONE ROW PER FILE, in four fixed columns (date,
+   status, type, detail): each file has its own fate. The first three columns have a
+   reserved width, so the rows line up in columns without a table or a grid (the
+   detail takes the rest). */
 .dash-journal {
   margin-top: 34px;
   border-top: 1px solid var(--border);
@@ -347,14 +349,14 @@
 }
 
 .dash-journal h2 {
-  /* font-family et font-weight viennent de la règle h1,h2,h3 de theme.css. */
+  /* font-family and font-weight come from the h1,h2,h3 rule of theme.css. */
   font-size: 18px;
   margin: 0 0 12px;
 }
 
-/* Le conteneur défile (les deux axes au besoin), jamais la page : une trentaine
-   de dépôts peut faire beaucoup de lignes, et l'Avancement ne doit pas
-   s'allonger sans fin. La hauteur laisse voir une petite dizaine de lignes. */
+/* The container scrolls (both axes if needed), never the page: some thirty uploads
+   can make a lot of rows, and the Progress page must not grow without end. The height
+   lets a little under ten rows be seen. */
 .dash-journal-wrap {
   max-height: 340px;
   overflow: auto;
@@ -363,8 +365,8 @@
   background: var(--card);
 }
 
-/* Bague identique à celle de la grille : les deux zones défilantes de la page
-   s'atteignent au clavier, elles doivent le dire de la même façon. */
+/* Ring identical to that of the grid: the two scrolling areas of the page are
+   reached at the keyboard, they must say so in the same way. */
 .dash-journal-wrap:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
@@ -372,14 +374,14 @@
 
 .dash-journal-table {
   width: 100%;
-  /* En dessous, les colonnes s'écraseraient : le conteneur défile plutôt. */
+  /* Below that, the columns would be crushed: the container scrolls instead. */
   min-width: 460px;
   border-collapse: collapse;
   font-size: 14px;
 }
 
-/* En-tête discret, collé en haut pendant le défilement : sans lui, les colonnes
-   d'icônes ne se nomment nulle part. */
+/* Discreet header, stuck to the top while scrolling: without it, the columns of
+   icons are named nowhere. */
 .dash-journal-table th {
   position: sticky;
   top: 0;
@@ -401,14 +403,13 @@
   vertical-align: middle;
 }
 
-/* Les trois premières colonnes se serrent autour de leur contenu, la dernière
-   ramasse toute la largeur restante. Le `width: 100%` du détail est ce qui tient
-   les trois autres ensemble : sans lui, la mise en page automatique répartit le
-   surplus au prorata du contenu, donc la date (la plus large des trois) en prend
-   une grosse part et le statut s'en va flotter loin d'elle.
-   Le `:not` écarte la ligne « aucun dépôt », seule cellule à traverser les
-   quatre colonnes : elle n'est pas la première d'une rangée normale et doit
-   pouvoir s'envelopper. */
+/* The first three columns tighten around their content, the last one gathers all
+   the remaining width. The `width: 100%` of the detail is what holds the three others
+   together: without it, the automatic layout spreads the surplus in proportion to the
+   content, so the date (the widest of the three) takes a big share of it and the
+   status goes off floating far away from it.
+   The `:not` sets aside the "no upload" row, the only cell to span the four columns:
+   it is not the first of a normal row and must be able to wrap. */
 .dash-journal-table th:nth-child(-n + 3),
 .dash-journal-table td:nth-child(-n + 3):not(.dash-journal-empty) {
   width: 1%;
@@ -420,8 +421,8 @@
   width: 100%;
 }
 
-/* Les deux colonnes d'icônes centrent leur dessin, en-tête compris (sinon la
-   pastille flotte sous un libellé plus large). */
+/* The two columns of icons centre their drawing, header included (otherwise the disc
+   floats under a wider label). */
 .dash-journal-table th:nth-child(2),
 .dash-journal-table th:nth-child(3),
 .dash-journal-table td:nth-child(2),
@@ -436,19 +437,19 @@
   white-space: nowrap;
 }
 
-/* Les deux colonnes d'icônes partagent la pastille des sceaux (`page-mark` de
-   theme.css), en plus petit que dans les bandeaux : le statut et le type se
-   lisent comme une même famille de ronds. Seules les teintes changent, et
-   aucune n'est figée en hex ici. */
+/* The two columns of icons share the disc of the seals (`page-mark` from
+   theme.css), smaller than in the headers: the status and the type read as one and the
+   same family of circles. Only the tints change, and none of them is frozen as a hex
+   here. */
 .dash-journal-mark {
   width: 26px;
   height: 26px;
   font-size: 15px;
 }
 
-/* Statut : mêmes vert et ambre que la grille au-dessus, donc rien de nouveau à
-   apprendre d'un écran à l'autre. Deux classes, donc ça bat le fond par défaut
-   de `.page-mark` (qui, lui, attend une couleur de page). */
+/* Status: the same green and amber as the grid above, hence nothing new to learn
+   from one screen to the next. Two classes, so it beats the default background of
+   `.page-mark` (which, for its part, expects a page colour). */
 .dash-journal-mark.ok {
   background: var(--ok-soft);
   color: var(--ok);
@@ -459,8 +460,8 @@
   color: var(--warn);
 }
 
-/* Un fichier ni ZIP ni script : aucune page ne le revendique, donc aucune
-   couleur de page, et un point d'interrogation à la place de l'icône. */
+/* A file that is neither a ZIP nor a script: no page claims it, hence no page
+   colour, and a question mark in place of the icon. */
 .dash-journal-mark.unknown {
   background: var(--paper-dark);
   color: var(--ink-soft);
@@ -468,16 +469,16 @@
   font-weight: 700;
 }
 
-/* Détail optionnel : nom du fichier et, selon le cas, nombre de répliques ou
-   motif du refus. Il prend le reste de la largeur et s'y enveloppe. */
+/* Optional detail: name of the file and, depending on the case, number of lines or
+   reason for the refusal. It takes the rest of the width and wraps in it. */
 .dash-journal-detail {
   color: var(--ink-soft);
   font-size: 13px;
 }
 
-/* Journal encore vide : le tableau et ses colonnes restent là (le respo doit
-   savoir où regarder avant son premier dépôt), une seule ligne en travers dit
-   pourquoi il n'y a rien. */
+/* Log still empty: the table and its columns stay there (the coordinator must know
+   where to look before his first upload), a single row across it says why there is
+   nothing. */
 .dash-journal-empty {
   color: var(--ink-soft);
   font-size: 13px;
@@ -486,8 +487,8 @@
   padding: 18px 12px;
 }
 
-/* Le tableau est plafonné : on le dit sous lui, sinon il s'arrête sans un mot
-   et se lit comme « il n'y a rien de plus ». */
+/* The table is capped: we say so under it, otherwise it stops without a word and
+   reads as "there is nothing more". */
 .dash-journal-more {
   color: var(--ink-soft);
   font-size: 12.5px;
@@ -495,10 +496,10 @@
   margin: 8px 0 0;
 }
 
-/* Le nom de fichier est suivi d'un complément (nombre de répliques ou motif du
-   refus) : la seule espace du JSX les collait, la mono étant plus serrée que le
-   texte autour. La marge s'ajoute à cette espace et ne la remplace pas, sinon
-   le retour à la ligne entre les deux ne serait plus permis. */
+/* The file name is followed by a complement (number of lines or reason for the
+   refusal): the single space of the JSX stuck them together, the mono being tighter
+   than the text around it. The margin adds to that space and does not replace it,
+   otherwise the line break between the two would no longer be allowed. */
 .dash-journal-detail code {
   font-size: 12.5px;
   color: var(--ink);
@@ -506,9 +507,9 @@
 }
 
 @media (max-width: 560px) {
-  /* Le libellé passe sur deux ou trois lignes : les sceaux rétrécissent pour
-     lui laisser la largeur, sans jamais passer sous le texte (c'est leur
-     position à gauche et à droite qui dit quel fichier va où). */
+  /* The label goes over two or three lines: the seals shrink to leave it the
+     width, without ever going under the text (it is their position on the left and
+     on the right that says which file goes where). */
   .dash-upload {
     gap: 9px;
     padding: 11px 12px;
@@ -524,18 +525,17 @@
     font-size: 14px;
   }
 
-  /* Les quatre colonnes tiennent au chausse-pied : on resserre les gouttières
-     plutôt que de laisser le tableau partir en défilement horizontal dès le
-     moindre téléphone. */
+  /* The four columns barely fit: we tighten the gutters rather than let the table
+     go off into horizontal scrolling on the slightest phone. */
   .dash-journal-table th,
   .dash-journal-table td {
     padding: 7px 8px;
   }
 
-  /* Grille d'avancement : la colonne figée coûte de la largeur à celles qui
-     défilent, donc c'est elle qu'on resserre d'abord (nom plus court, moins de
-     gouttière), et les cases ensuite. Le pas des scènes descend à 44 px, de quoi
-     tenir « 12/12 » sans écraser les chiffres. */
+  /* Progress grid: the frozen column costs width to the ones that scroll, so it is
+     the one we tighten first (shorter name, less gutter), and the cells afterwards.
+     The pitch of the scenes drops to 44 px, enough to hold "12/12" without crushing
+     the figures. */
   .dash-name-text {
     max-width: 6.5em;
   }
@@ -552,5 +552,16 @@
 
   .dash-table .dash-scene {
     min-width: 44px;
+  }
+}
+
+/* The file neutralizes its OWN animations, like every other CSS file of the site.
+   The page's two gestures are two card-links that lift on hover, and each declares
+   its own `transition` (the comment on `.dash-script-btn` says why it has to), so
+   theme.css cannot switch them off in our place. */
+@media (prefers-reduced-motion: reduce) {
+  .dash-script-btn,
+  .dash-upload {
+    transition-duration: 0s;
   }
 }

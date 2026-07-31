@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Usage: scripts/dev.sh [port]
-# Lance le serveur de dev et ouvre les DEUX entrées du site dans le navigateur : le
-# sélecteur de pièce de la troupe (la racine) et la gestion des pièces du responsable
-# (respo.html). Vite n'en ouvrirait qu'une avec --open, d'où ce script.
+# Starts the dev server and opens BOTH entries of the site in the browser: the
+# troupe's play selector (the root) and the coordinator's plays management page
+# (respo.html). Vite would only open one of them with --open, hence this script.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -11,9 +11,8 @@ url="http://localhost:$port"
 
 [ -d node_modules ] || npm install
 
-# Ouverture en tâche de fond dès que le serveur répond (60 s au plus). Sans
-# navigateur sous la main (SSH, CI), on ne dit rien : Vite affiche déjà les deux
-# URLs.
+# Opened in the background as soon as the server answers (60 s at most). With no
+# browser at hand (SSH, CI), we say nothing: Vite already prints both URLs.
 (
   for _ in $(seq 1 120); do
     curl -sf -o /dev/null "$url/" || { sleep 0.5; continue; }
@@ -27,8 +26,8 @@ url="http://localhost:$port"
   done
 ) &
 
-# Le binaire local via exec, pas `npm run dev` : Vite prend la place du script,
-# donc Ctrl+C arrête vraiment le serveur et libère le port (pas de wrapper npm ni
-# de pid à surveiller). --strictPort : sinon un port occupé fait glisser Vite sur
-# le suivant et on ouvrirait les onglets d'un serveur qui n'est pas le nôtre.
+# The local binary through exec, not `npm run dev`: Vite takes the script's place,
+# so Ctrl+C really stops the server and frees the port (no npm wrapper and no pid
+# to watch). --strictPort: otherwise a busy port makes Vite slide onto the next one
+# and we would open the tabs of a server that is not ours.
 exec ./node_modules/.bin/vite --port "$port" --strictPort

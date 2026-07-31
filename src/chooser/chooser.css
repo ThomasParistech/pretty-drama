@@ -1,36 +1,58 @@
-/* Les deux pages racine du site : le sélecteur de pièce de la troupe et la gestion
-   des pièces du responsable.
+/* The two root pages of the site: the troupe's play selector and the manager's
+   play management page.
 
-   Elles empruntent tout leur habillage à `home.css` (le hero de la marque, la grille
-   de cartes, le pied de page et son sélecteur de langue) : ce sont des accueils, et
-   l'entrée du site doit avoir la même tenue quelle que soit la porte. Ce fichier ne
-   porte donc QUE ce qui leur est propre, à savoir ce qu'une carte de pièce dit de son
-   avancement, le geste de création, et le relevé des dépôts sans pièce. */
+   They borrow all their styling from `home.css` (the brand hero, the card grid, the
+   footer and its language switch): they are home pages, and the entrance of the site
+   must have the same bearing whichever door you come through. This file therefore
+   carries ONLY what is specific to them, namely what a play card says about its
+   progress, the creation gesture, and the report of uploads with no play. */
 
-/* Le titre de la page prend la place du titre de la pièce sur l'accueil d'une pièce
-   (`.home-play-title`), à un corps près : ici c'est une question posée au lecteur, pas
-   le nom d'une œuvre, donc elle ne mérite pas les 44 px d'un titre de pièce. */
+/* The landmark holds all the content of the page, the grid of plays and, on the
+   management page, the two blocks that belong to it (see `App.jsx`). A flex column and
+   not a bare block: these blocks used to be direct children of `.home`, hence flex
+   items, and adjacent flex items do not collapse their vertical margins where blocks
+   do. Without this the grid's 20 px and the creation card's 10 px would have merged
+   into 20, moving the whole lower half of the management page by ten pixels for a
+   change meant to touch nothing but the landmarks. */
+.chooser-main {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The heading of the page takes the place of the play title on a play's home page
+   (`.home-play-title`), give or take one size: here it is a question put to the
+   reader, not the name of a work, so it does not deserve the 44 px of a play
+   title. */
 .chooser-heading {
   font-size: 30px;
   font-weight: 700;
   color: var(--ink);
 }
 
-/* Les cartes d'une pièce sont plus courtes que celles d'une page (un titre et deux
-   lignes, contre un sceau de 52 px et deux paragraphes) : elles resserrent donc leur
-   gouttière intérieure, le reste (largeur de base, survol, bague de focus) venant de
-   `.home-card`. Pas de `align-items` ici : un conteneur flex étire déjà ses éléments
-   par défaut, donc les cartes d'une rangée ont la même hauteur sans qu'on le demande
-   (une règle l'écrivait, elle ne faisait rien). */
+/* A play's cards are shorter than a page's (a title and two lines, against a 52 px
+   seal and two paragraphs): they therefore tighten their inner gutter, the rest (base
+   width, hover, focus ring) coming from `.home-card`. No `align-items` here: a flex
+   container already stretches its items by default, so the cards of a row have the
+   same height without being asked (a rule used to write it, it did nothing). */
 .chooser-card {
   gap: 4px;
 }
 
-/* Le titre est déjà en serif et à la couleur de la marque (`.home-card-title`) : il
-   ne reste qu'à défaire le soulignement du lien, sur une carte de gestion où le titre
-   EST le lien (sur le sélecteur, c'est la carte entière). */
+/* The title is already in serif and in the brand colour (`.home-card-title`): all
+   that remains is to undo the underline of the link, on a management card where the
+   title IS the link (on the selector, it is the whole card).
+   Undone at REST only: the management card is the one card of the site that does not
+   lift under the pointer (it is not itself a link, it carries three), so with the
+   underline gone for good, nothing but the colour said that the title was clickable,
+   and that colour is the very one the selector's inert titles wear. It comes back on
+   hover, which is the site's plainest affordance and the only one that does not rest
+   on colour alone. */
 .chooser-card-link {
   text-decoration: none;
+}
+
+.chooser-card-link:hover {
+  text-decoration: underline;
 }
 
 .chooser-card-link:focus-visible {
@@ -39,15 +61,15 @@
   border-radius: 4px;
 }
 
-/* La part enregistrée, le seul chiffre que la carte met en avant. En chiffres à
-   chasse fixe comme tous les nombres alignés du site (la grille de l'Avancement, les
-   décomptes de la Répartition) : deux cartes côte à côte se comparent alors sans que
-   les virgules se décalent.
-   À l'encre du texte et NON au vert de `--ok`, qui a été essayé et retiré : ce vert
-   est celui de la complétion sur tout le site (une case de la grille, une prise
-   enregistrée), donc il faisait lire « 0,7 % » comme une bonne nouvelle. Un chiffre
-   d'avancement est un fait, pas un état atteint ; la couleur du statut appartient à
-   l'Avancement de la pièce, qui la mesure par personnage et par scène. */
+/* The recorded share, the only figure the card puts forward. In fixed-width digits
+   like every aligned number on the site (the Progress grid, the Speaking share counts):
+   two cards side by side can then be compared without the decimal separators
+   shifting.
+   In the text ink and NOT in the green of `--ok`, which was tried and removed: that
+   green is the green of completion all over the site (a cell of the grid, a recorded
+   take), so it made "0.7 %" read as good news. A progress figure is a fact, not a
+   state reached; the colour of status belongs to the play's Progress page, which
+   measures it by character and by scene. */
 .chooser-card-share {
   font-size: 22px;
   font-weight: 600;
@@ -62,18 +84,18 @@
   color: var(--ink-soft);
 }
 
-/* Une pièce encore vide ne montre pas « 0 % » (cf. `Progress`) : la phrase prend la
-   place du chiffre, donc elle prend aussi sa hauteur de ligne pour que deux cartes
-   voisines gardent la même. */
+/* A still empty play does not show "0 %" (see `Progress`): the sentence takes the
+   place of the figure, so it also takes its line height so that two neighbouring
+   cards keep the same one. */
 .chooser-card-empty {
   font-style: italic;
   line-height: 33px;
 }
 
-/* Les deux liens de service d'une carte de gestion, en pied : ils sont la raison de
-   cette page (le responsable n'a pas à connaître GitHub), mais ils ne concurrencent
-   pas le titre, qui est la destination normale. Filet du haut plutôt qu'une marge
-   seule : ils forment un pied de carte, comme le pied du bandeau partagé. */
+/* The two service links of a management card, at the foot: they are the reason for
+   this page (the manager does not have to know GitHub), but they do not compete with
+   the title, which is the normal destination. A top rule rather than a margin alone:
+   they form a card footer, like the foot of the shared header. */
 .chooser-card-links {
   display: flex;
   flex-wrap: wrap;
@@ -94,28 +116,29 @@
   padding: 10px 0 20px;
 }
 
-/* Les deux blocs propres à la gestion. Ils vivent SOUS la grille et à la largeur du
-   contenu, pas dans la grille : ce ne sont pas des pièces, et une carte de la même
-   largeur qu'une pièce se lirait comme une pièce de plus. */
-/* Elles vivent SOUS la grille et à la largeur du contenu, pas dans la grille : ce ne
-   sont pas des pièces, et une carte de la même largeur qu'une pièce se lirait comme une
-   pièce de plus. La largeur maximale est celle de `.page-notice` (theme.css) et pas un
-   700 px nu : `.home` ne porte aucun remplissage latéral (c'est `.home-grid` qui a le
-   sien), donc sous 700 px ces deux cartes touchaient les deux bords de l'écran alors que
-   les cartes de pièces juste au-dessus restaient rentrées. */
+/* The two blocks specific to management. They live BELOW the grid and at the width of
+   the content, not in the grid: they are not plays, and a card of the same width as a
+   play would read as one more play.
+   The narrow-window inset is not a bare 700 px: `.home` carries no side padding (it is
+   `.home-grid` that has its own), so below 700 px these two cards were touching both
+   edges of the screen while the play cards just above stayed tucked in. And it is the
+   GRID's inset that is copied here, 20 px per side, not `--notice-gutter`, which is
+   worth 16: these blocks sit right under the play cards, in the same column, so an
+   edge four pixels off from theirs is read as a misalignment and not as a gutter of
+   its own. */
 .chooser-new,
 .chooser-unrouted {
   width: 100%;
-  max-width: min(700px, calc(100% - var(--notice-gutter)));
+  max-width: min(700px, calc(100% - 40px));
   margin: 10px auto;
   padding: 22px;
 }
 
-/* Ni `font-family` ni remplissage de champ ici : la serif des titres et la géométrie
-   des champs sont des règles d'ÉLÉMENT du thème (`h1, h2, h3` et
-   `select, input[type="text"], textarea`). Le `font-size: 16px` du thème sur un champ
-   porte de surcroît un contrat qu'on ne défait pas : en dessous, iOS zoome à la mise au
-   point, et ces deux pages s'ouvrent au téléphone. */
+/* Neither `font-family` nor field padding here: the serif of the headings and the
+   geometry of the fields are ELEMENT rules of the theme (`h1, h2, h3` and
+   `select, input[type="text"], textarea`). The theme's `font-size: 16px` on a field
+   moreover carries a contract that must not be undone: below that, iOS zooms on focus,
+   and these two pages are opened on a phone. */
 .chooser-new h2,
 .chooser-unrouted h2 {
   font-size: 22px;
@@ -129,9 +152,9 @@
   margin-bottom: 14px;
 }
 
-/* Le champ et le bouton sur une rangée, qui se replie d'elle-même sur une fenêtre
-   étroite : `flex-wrap` et jamais un nombre de colonnes fixé, comme les réglages de
-   la Répétition et les deux cases de la Recherche. */
+/* The field and the button on one row, which wraps by itself on a narrow window:
+   `flex-wrap` and never a fixed number of columns, like the Rehearsal settings and the
+   two checkboxes of the Search. */
 .chooser-new-row {
   display: flex;
   flex-wrap: wrap;
@@ -145,19 +168,22 @@
   gap: 4px;
   font-size: 13px;
   color: var(--ink-soft);
-  /* Le champ prend la place qui reste, mais il ne descend pas sous une largeur où un
-     titre de pièce ne se relit plus. */
+  /* The field takes the space that is left, but it does not go below a width where a
+     play title can no longer be read back. */
   flex: 1 1 240px;
 }
 
+/* Paragraphs, not flex boxes: `WarnIcon` already carries its own gutter and its own
+   baseline (`.warn-icon`, theme.css), which is how the four other warnings of the
+   site slip it in at the head of a sentence, and the link of `.chooser-new-done`
+   flows inline like any other. A flex box laid a second gutter on top of that margin
+   and, on a message that takes three lines at 375 px, centred the triangle on the
+   middle of the paragraph instead of sitting it on the first line. Same lesson as
+   `.stats-warning`, where it is written down. */
 .chooser-new-error,
 .chooser-new-done {
   margin-top: 12px;
   font-size: 13.5px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
 }
 
 .chooser-new-error {
@@ -168,9 +194,9 @@
   color: var(--accent);
 }
 
-/* Le relevé des dépôts sans pièce. Une liste et non le tableau à quatre colonnes du
-   journal d'une pièce : ces fichiers n'ont par définition rien réussi, donc une
-   colonne de statut ne dirait qu'une chose (cf. `Unrouted`). */
+/* The report of uploads with no play. A list and not the four-column table of a play's
+   log: these files have by definition succeeded at nothing, so a status column would
+   only say one thing (see `Unrouted`). */
 .chooser-unrouted ul {
   list-style: none;
   display: flex;
@@ -189,13 +215,13 @@
 
 .chooser-unrouted-file {
   font-weight: 600;
-  /* Un nom de fichier vient du dépôt, donc de personne de confiance : il peut être
-     long et sans espace, et sans cette coupure il élargirait la carte. */
+  /* A file name comes from an upload, hence from nobody trustworthy: it can be long
+     and without a space, and without this break it would widen the card. */
   overflow-wrap: anywhere;
 }
 
-/* Le motif du refus, à l'ambre des avertissements du site (AA sur le blanc de la
-   carte, cf. le commentaire de `--warn` dans theme.css). */
+/* The reason for the refusal, in the amber of the site's warnings (AA on the white of
+   the card, see the comment on `--warn` in theme.css). */
 .chooser-unrouted-why {
   color: var(--warn);
 }
@@ -211,15 +237,13 @@
   }
 }
 
-/* La panne de chargement de la liste, distincte du vide (cf. `App.jsx`) : à l'ambre
-   des avertissements du site, comme les cinq autres. */
+/* The failure to load the list, distinct from emptiness (see `App.jsx`): in the amber
+   of the site's warnings, like the five others.
+   A paragraph and not a flex box, for the reason written on `.chooser-new-error`:
+   `text-align: center` centres the lines, and the triangle stays at the head of the
+   first one instead of being centred on the height of the whole message. */
 .chooser-error {
   color: var(--warn);
   text-align: center;
   padding: 10px 20px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  flex-wrap: wrap;
 }

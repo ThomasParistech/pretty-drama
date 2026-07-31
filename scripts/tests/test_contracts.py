@@ -1,15 +1,15 @@
-"""Contrats que deux fichiers doivent tenir ENSEMBLE, vérifiés par la CI.
+"""Contracts that two files must hold TOGETHER, checked by CI.
 
-Le projet en compte plusieurs qui ne vivaient que dans un commentaire « keep in
-sync ». Un commentaire ne casse pas la CI : il se lit une fois, puis se périme
-en silence, et la panne arrive des mois plus tard chez une troupe.
+The project has several of them, which used to live only in a "keep in sync"
+comment. A comment does not break CI: it gets read once, then goes stale in
+silence, and the breakage lands months later at a theatre company.
 
-Ces tests ne vérifient donc pas un comportement mais une COHÉRENCE entre
-fichiers, et ils sont volontairement écrits en lisant les sources plutôt qu'en
-recopiant les valeurs attendues (recopier ne ferait que déplacer le problème).
+These tests therefore do not check a behaviour but a CONSISTENCY between
+files, and they are deliberately written by reading the sources rather than by
+copying the expected values (copying would only move the problem elsewhere).
 
-Ils tournent avec le reste de la suite Python, donc dans build.yml, donc à
-chaque push de code comme après chaque dépôt.
+They run with the rest of the Python suite, so in build.yml, so on every code
+push as well as after every deposit.
 """
 
 from __future__ import annotations
@@ -30,18 +30,22 @@ from process_uploads import LINE_ID_PATTERN
 SRC = REPO_ROOT / "src"
 THEME_CSS = SRC / "shared" / "theme.css"
 PAGES_JS = SRC / "shared" / "pages.js"
-# Les gabarits des sept pages d'une pièce, instanciés dans le dossier de chaque
-# pièce au build (cf. vite.config.js).
+# The templates for the seven pages of a play, instantiated in each play's
+# folder at build time (cf. vite.config.js).
 PAGES_DIR = REPO_ROOT / "pages"
 PLAYS_JS = SRC / "shared" / "plays.js"
 REDUCER_JS = SRC / "editor" / "reducer.js"
+# The two sides of the ZIP contract: the page that writes the archive and the script
+# that reads it back.
+RECORDER_JSX = SRC / "recorder" / "App.jsx"
+PROCESS_UPLOADS_PY = REPO_ROOT / "scripts" / "process_uploads.py"
 CHARACTER_COLORS_JS = SRC / "shared" / "characterColors.js"
 
-# Tokens qu'une règle de bandeau partagé ne doit pas consommer : chacun est
-# re-skinné quelque part, donc le bandeau ne rendrait plus pareil d'une page à
-# l'autre. `--accent`, `--font-serif` et `--shadow` le sont par l'éditeur
-# (direction « Rail ») ; `--page-mark` et `--page-mark-soft` le sont par CHAQUE
-# page, via la classe `page-<clé>` que les deux bandeaux posent sur leur racine.
+# Tokens that a shared header rule must not consume: each one is re-skinned
+# somewhere, so the header would no longer render the same way from one page to
+# the next. `--accent`, `--font-serif` and `--shadow` are re-skinned by the
+# editor ("Rail" direction); `--page-mark` and `--page-mark-soft` are re-skinned
+# by EVERY page, via the `page-<key>` class both headers put on their root.
 FORBIDDEN_IN_HEADER = (
     "--accent",
     "--font-serif",
@@ -50,12 +54,13 @@ FORBIDDEN_IN_HEADER = (
     "--page-mark-soft",
 )
 
-# Une seule exception, et elle est délibérée : le retour à l'accueil. Il dit la
-# MARQUE et non la page, donc il porte lui-même `page-home` (HomeLink.jsx), ce
-# qui ramène son sceau au sable des masques sur les quatre pages au lieu de
-# prendre le vert de l'Avancement ou le violet de l'Édition. Ce garde ne lit que
-# du CSS et ne peut pas voir cette classe posée en JSX : l'exemption est donc
-# écrite ici, ce qui vaut acte. Elle ne porte QUE sur les tokens de sceau.
+# A single exception, and it is deliberate: the link back to the home page. It
+# says the BRAND and not the page, so it carries `page-home` itself
+# (HomeLink.jsx), which brings its seal back to the sand of the masks on all
+# four pages instead of taking the green of Progress or the purple of Editing.
+# This guard only reads CSS and cannot see that class set in JSX: the exemption
+# is therefore written here, which stands as a decision. It covers ONLY the seal
+# tokens.
 HEADER_TOKEN_EXEMPT_PREFIX = ".play-header-home"
 EXEMPT_TOKENS = ("--page-mark", "--page-mark-soft")
 
@@ -65,12 +70,12 @@ def read(path: Path) -> str:
 
 
 def published_scripts():
-    """(identifiant, script) de chaque pièce du dépôt qui porte un script lisible.
+    """(id, script) for every play in the repo that carries a readable script.
 
-    Les gardes qui s'en servent inspectent l'ARBRE réel et pas du code : ils valent
-    donc pour toutes les pièces d'un coup, sans liste à tenir, et une pièce ajoutée
-    demain y entre d'elle-même. Une pièce sans script est sautée : le dossier peut
-    naître d'un dépôt refusé, et c'est son journal qui le raconte."""
+    The guards that use it inspect the real TREE and not code: they therefore hold
+    for every play at once, with no list to maintain, and a play added tomorrow
+    enters on its own. A play without a script is skipped: the folder can be born
+    of a refused deposit, and it is its journal that tells the story."""
     for play_id in play_ids():
         path = play_data_dir(play_id) / "script.json"
         if path.exists():
@@ -78,22 +83,22 @@ def published_scripts():
 
 
 def css(path: Path) -> str:
-    """CSS sans ses commentaires : ce fichier est très commenté, et un
-    commentaire qui cite un token ou une classe n'est pas une déclaration."""
+    """CSS without its comments: this file is heavily commented, and a comment
+    that quotes a token or a class is not a declaration."""
     return re.sub(r"/\*.*?\*/", "", read(path), flags=re.DOTALL)
 
 
 def js_without_comments(source: str) -> str:
-    """JS sans ses commentaires, en sautant les chaînes.
+    """JS without its comments, skipping over strings.
 
-    Un `re.sub` suffisait pour le CSS, pas ici : ce dépôt commente énormément, et
-    ses commentaires CITENT du code (T.jsx documente `<T k="key" …>`, ce qui
-    faisait relever une clé « key » qui n'existe pas). À l'inverse, découper
-    naïvement sur `//` couperait au milieu d'une URL dans une chaîne.
+    A `re.sub` was enough for the CSS, not here: this repo comments a great deal,
+    and its comments QUOTE code (T.jsx documents `<T k="key" …>`, which made the
+    scan pick up a "key" key that does not exist). Conversely, splitting naively
+    on `//` would cut in the middle of a URL inside a string.
 
-    Limite connue et acceptée : une expression régulière contenant un guillemet
-    serait prise pour le début d'une chaîne. Aucune source du dépôt n'en a, et le
-    seul effet serait un relevé partiel, jamais un faux positif.
+    Known and accepted limitation: a regular expression containing a quote would
+    be taken for the start of a string. No source in the repo has one, and the
+    only effect would be a partial scan, never a false positive.
     """
     out: list[str] = []
     i, n = 0, len(source)
@@ -127,26 +132,26 @@ def js_without_comments(source: str) -> str:
 
 
 class TestLineIdPattern(unittest.TestCase):
-    """Les ids de répliques nomment les mp3. Le navigateur les mint et les
-    valide (SAFE_ID), l'Action les revalide à l'arrivée (LINE_ID_PATTERN). Les
-    deux gardes doivent dire EXACTEMENT la même chose : plus stricte côté
-    Action, un acteur verrait son ZIP refusé pour des ids que l'éditeur lui a
-    donnés ; plus laxiste, un id hostile nommerait un fichier."""
+    """Line ids name the mp3 files. The browser mints them and validates them
+    (SAFE_ID), the Action revalidates them on arrival (LINE_ID_PATTERN). The two
+    guards must say EXACTLY the same thing: stricter on the Action side, an actor
+    would see their ZIP refused over ids the editor handed them; more permissive,
+    a hostile id would name a file."""
 
     def test_safe_id_and_line_id_pattern_are_the_same_expression(self):
         match = re.search(r"export const SAFE_ID = /(.+?)/;", read(REDUCER_JS))
-        self.assertIsNotNone(match, "SAFE_ID introuvable dans src/editor/reducer.js")
+        self.assertIsNotNone(match, "SAFE_ID not found in src/editor/reducer.js")
         self.assertEqual(
             match.group(1),
             LINE_ID_PATTERN.pattern,
-            "SAFE_ID (src/editor/reducer.js) et LINE_ID_PATTERN "
-            "(scripts/process_uploads.py) ont divergé : ils nomment les mêmes "
-            "fichiers mp3 et doivent rester identiques au caractère près.",
+            "SAFE_ID (src/editor/reducer.js) and LINE_ID_PATTERN "
+            "(scripts/process_uploads.py) have diverged: they name the same "
+            "mp3 files and must stay identical down to the character.",
         )
 
     def test_the_pattern_stays_anchored_and_bounded(self):
-        # Ancré aux deux bouts (sinon « ../x-1 » passerait par le milieu) et
-        # borné (un id nomme un fichier).
+        # Anchored at both ends (otherwise "../x-1" would slip through the
+        # middle) and bounded (an id names a file).
         pattern = LINE_ID_PATTERN.pattern
         self.assertTrue(pattern.startswith("^"))
         self.assertTrue(pattern.endswith("$"))
@@ -154,23 +159,23 @@ class TestLineIdPattern(unittest.TestCase):
 
 
 class TestPlayIdPattern(unittest.TestCase):
-    """L'identifiant d'une pièce nomme un DOSSIER du dépôt (`plays/<id>/`,
-    `uploads/<id>/`) et un segment d'URL du site publié. Le navigateur le mint et
-    le valide (SAFE_PLAY_ID), l'Action le revalide avant d'en faire un chemin
-    (PLAY_ID_PATTERN). Même contrat que les ids de répliques, à un détail près qui
-    compte : là où un id de réplique nomme un fichier, celui-ci nomme un dossier
-    qu'un fichier déposé désigne, donc les faire diverger ferait refuser un dépôt
-    pour un identifiant que le site vient lui-même d'écrire."""
+    """A play's id names a FOLDER of the repo (`plays/<id>/`, `uploads/<id>/`)
+    and a URL segment of the published site. The browser mints it and validates it
+    (SAFE_PLAY_ID), the Action revalidates it before turning it into a path
+    (PLAY_ID_PATTERN). Same contract as line ids, with one detail that matters:
+    where a line id names a file, this one names a folder that a deposited file
+    points at, so letting them diverge would refuse a deposit over an id the site
+    itself just wrote."""
 
     def test_safe_play_id_and_play_id_pattern_are_the_same_expression(self):
         match = re.search(r"export const SAFE_PLAY_ID = /(.+?)/;", read(PLAYS_JS))
-        self.assertIsNotNone(match, "SAFE_PLAY_ID introuvable dans src/shared/plays.js")
+        self.assertIsNotNone(match, "SAFE_PLAY_ID not found in src/shared/plays.js")
         self.assertEqual(
             match.group(1),
             PLAY_ID_PATTERN.pattern,
-            "SAFE_PLAY_ID (src/shared/plays.js) et PLAY_ID_PATTERN "
-            "(scripts/common.py) ont divergé : ils nomment les mêmes dossiers et "
-            "doivent rester identiques au caractère près.",
+            "SAFE_PLAY_ID (src/shared/plays.js) and PLAY_ID_PATTERN "
+            "(scripts/common.py) have diverged: they name the same folders and "
+            "must stay identical down to the character.",
         )
 
     def test_the_pattern_stays_anchored_and_bounded(self):
@@ -180,9 +185,10 @@ class TestPlayIdPattern(unittest.TestCase):
         self.assertIn("{0,", pattern)
 
     def test_the_pattern_accepts_what_slugify_produces(self):
-        # `slugify` (src/shared/data.js) est ce qui mint l'identifiant : minuscules,
-        # chiffres et tirets, sans tiret aux extrémités. Ce garde vaut acte que le
-        # motif ne refuse pas la sortie de la seule fonction qui l'alimente.
+        # `slugify` (src/shared/data.js) is what mints the id: lowercase letters,
+        # digits and hyphens, with no hyphen at either end. This guard stands as a
+        # record that the pattern does not refuse the output of the only function
+        # that feeds it.
         for good in ("transport-de-femmes", "le-malade-imaginaire", "piece2", "a"):
             self.assertIsNotNone(PLAY_ID_PATTERN.fullmatch(good), good)
         for bad in ("-tiret-en-tete", "Majuscule", "avec espace", "accentué", "a" * 65, ""):
@@ -190,14 +196,14 @@ class TestPlayIdPattern(unittest.TestCase):
 
 
 class TestCharacterPalette(unittest.TestCase):
-    """La couleur d'un personnage est écrite par l'éditeur (palette JS) et
-    recopiée par l'Action jusqu'au manifest (COLOR_PATTERN). La palette n'a
-    qu'une implémentation, en JS, et le Python n'en valide que la FORME : ce
-    garde vérifie que la forme acceptée couvre bien toute la palette.
+    """A character's colour is written by the editor (JS palette) and copied by
+    the Action all the way to the manifest (COLOR_PATTERN). The palette has only
+    one implementation, in JS, and the Python side validates only its FORM: this
+    guard checks that the accepted form does cover the whole palette.
 
-    Sans lui, ajouter une couleur écrite autrement (« #FFF », un nom CSS, un
-    `oklch()`) la ferait silencieusement tomber du manifest, et la page
-    Répartition colorerait ce personnage comme un personnage sans couleur."""
+    Without it, adding a colour written some other way ("#FFF", a CSS name, an
+    `oklch()`) would silently drop it from the manifest, and the Speaking share
+    page would colour that character like a character with no colour."""
 
     def palette(self) -> list[str]:
         body = re.search(
@@ -205,47 +211,47 @@ class TestCharacterPalette(unittest.TestCase):
             read(CHARACTER_COLORS_JS),
             re.DOTALL | re.MULTILINE,
         )
-        self.assertIsNotNone(body, "CHARACTER_COLORS introuvable dans characterColors.js")
+        self.assertIsNotNone(body, "CHARACTER_COLORS not found in characterColors.js")
         return re.findall(r'"(#[0-9a-fA-F]+)"', body.group(1))
 
     def test_the_palette_is_found_and_has_its_twenty_colours(self):
-        # Un garde qui passerait sur une liste vide ne garde rien. Vingt, parce
-        # que c'est Tableau 10 puis les dix teintes claires de tab20.
+        # A guard that would pass on an empty list guards nothing. Twenty, because
+        # it is Tableau 10 then the ten light shades of tab20.
         palette = self.palette()
-        self.assertEqual(len(palette), 20, f"palette lue : {palette}")
-        self.assertEqual(len(set(palette)), 20, "deux personnages ne peuvent pas être de la même couleur")
+        self.assertEqual(len(palette), 20, f"palette read: {palette}")
+        self.assertEqual(len(set(palette)), 20, "two characters cannot share the same colour")
 
     def test_every_palette_colour_survives_the_python_validation(self):
         for color in self.palette():
             self.assertIsNotNone(
                 COLOR_PATTERN.match(color),
-                f"{color} (src/shared/characterColors.js) est refusée par "
-                f"COLOR_PATTERN (scripts/build_manifest.py), donc elle ne "
-                f"traverserait pas le manifest.",
+                f"{color} (src/shared/characterColors.js) is refused by "
+                f"COLOR_PATTERN (scripts/build_manifest.py), so it would not "
+                f"make it through the manifest.",
             )
 
     def test_the_python_validation_stays_anchored(self):
-        # Sans ancre de fin, « #1f77b4; background: url(...) » passerait, et la
-        # valeur part dans un attribut `style`.
+        # Without an end anchor, "#1f77b4; background: url(...)" would pass, and
+        # the value ends up in a `style` attribute.
         self.assertTrue(COLOR_PATTERN.pattern.endswith(r"\Z"))
 
 
 class TestReservedHeaderTokens(unittest.TestCase):
-    """Le bandeau partagé rend identiquement sur toutes les pages, re-skin
-    « Rail » de l'éditeur compris. Ça tient à une convention : les tokens
-    `--header-*` sont déclarés dans theme.css et redéfinis nulle part.
+    """The shared header renders identically on every page, editor "Rail" re-skin
+    included. That rests on a convention: the `--header-*` tokens are declared in
+    theme.css and redefined nowhere.
 
-    La liste n'est pas écrite ici, elle est LUE dans theme.css : un nouveau
-    token réservé est couvert d'office."""
+    The list is not written here, it is READ from theme.css: a new reserved token
+    is covered automatically."""
 
     def reserved_tokens(self) -> set[str]:
         root = re.search(r":root\s*\{(.*?)\}", css(THEME_CSS), re.DOTALL)
-        self.assertIsNotNone(root, ":root introuvable dans theme.css")
+        self.assertIsNotNone(root, ":root not found in theme.css")
         return set(re.findall(r"(--header-[a-z-]+)\s*:", root.group(1)))
 
     def test_there_are_reserved_tokens_to_guard(self):
-        # Si la convention disparaissait, ce test échouerait au lieu de passer
-        # sur un ensemble vide (un garde qui ne garde rien est pire que rien).
+        # If the convention disappeared, this test would fail instead of passing
+        # on an empty set (a guard that guards nothing is worse than nothing).
         self.assertGreaterEqual(len(self.reserved_tokens()), 3)
 
     def test_no_page_css_redefines_them(self):
@@ -256,70 +262,70 @@ class TestReservedHeaderTokens(unittest.TestCase):
                 continue
             for token in reserved:
                 if re.search(rf"{re.escape(token)}\s*:", css(page_css)):
-                    offenders.append(f"{page_css.relative_to(REPO_ROOT)} redéfinit {token}")
+                    offenders.append(f"{page_css.relative_to(REPO_ROOT)} redefines {token}")
         self.assertEqual(
             offenders,
             [],
-            "Un token réservé au bandeau partagé est redéfini par une page : "
-            "le bandeau ne rendrait plus pareil d'un écran à l'autre. "
-            + " ; ".join(offenders),
+            "A token reserved for the shared header is redefined by a page: "
+            "the header would no longer render the same from one screen to the "
+            "next. " + " ; ".join(offenders),
         )
 
     def test_the_shared_header_never_consumes_a_reskinnable_token_for_its_identity(self):
-        # L'identité du bandeau (encre de la marque, serif du titre, ombre) doit
-        # passer par les tokens réservés. Les tokens surveillés sont re-skinnés
-        # par une page ou l'autre : les voir ici voudrait dire que le bandeau
-        # change d'aspect selon la page.
+        # The header's identity (brand ink, title serif, shadow) must go through
+        # the reserved tokens. The watched tokens are re-skinned by one page or
+        # another: seeing them here would mean the header changes appearance
+        # depending on the page.
         theme = css(THEME_CSS)
-        # Le retrait de tête est toléré des deux côtés de la règle : sans lui, le
-        # garde ne voyait que les règles de premier niveau et laissait passer
-        # tout ce qui vit dans un `@media`, où le bandeau a justement ses règles
-        # mobiles (taille des sceaux, dessin du logo de retour).
+        # Leading indentation is tolerated on both sides of the rule: without it,
+        # the guard only saw top-level rules and let through everything living in
+        # an `@media`, which is exactly where the header keeps its mobile rules
+        # (seal size, drawing of the home logo).
         header_rules = re.findall(
             r"^[ \t]*(\.page-header[^{]*|\.play-header[^{]*)\{(.*?)^[ \t]*\}",
             theme,
             re.DOTALL | re.MULTILINE,
         )
-        self.assertGreater(len(header_rules), 0, "aucune règle de bandeau trouvée")
+        self.assertGreater(len(header_rules), 0, "no header rule found")
         leaks = []
         for selector, body in header_rules:
             exempt = selector.strip().startswith(HEADER_TOKEN_EXEMPT_PREFIX)
             for token in FORBIDDEN_IN_HEADER:
                 if exempt and token in EXEMPT_TOKENS:
                     continue
-                # var(--shadow) ne doit pas être confondu avec var(--shadow-hover),
-                # ni var(--page-mark) avec var(--page-mark-soft) : la parenthèse
-                # fermante fait la différence.
+                # var(--shadow) must not be confused with var(--shadow-hover),
+                # nor var(--page-mark) with var(--page-mark-soft): the closing
+                # parenthesis makes the difference.
                 if re.search(rf"var\(\s*{re.escape(token)}\s*\)", body):
-                    leaks.append(f"{selector.strip()} consomme var({token})")
+                    leaks.append(f"{selector.strip()} consumes var({token})")
         self.assertEqual(
             leaks,
             [],
-            "Le bandeau partagé tire son identité d'un token qu'une page peut "
-            "re-skinner ; il faut un token réservé (--header-*). " + " ; ".join(leaks),
+            "The shared header draws its identity from a token a page can "
+            "re-skin; it needs a reserved token (--header-*). " + " ; ".join(leaks),
         )
 
 
 class TestPageSeals(unittest.TestCase):
-    """`PAGES` (pages.js) est la source de vérité de l'identité des pages, mais
-    leurs COULEURS vivent en CSS (`.page-<clé>` de theme.css). Rien dans le code
-    ne relie les deux : une page ajoutée sans sa classe rendrait un sceau
-    incolore, et personne ne le verrait avant de l'ouvrir."""
+    """`PAGES` (pages.js) is the source of truth for the identity of the pages,
+    but their COLOURS live in CSS (`.page-<key>` in theme.css). Nothing in the code
+    links the two: a page added without its class would render a colourless seal,
+    and nobody would see it before opening the page."""
 
     def page_keys(self) -> set[str]:
         body = re.search(r"export const PAGES = \{(.*?)^\};", read(PAGES_JS), re.DOTALL | re.MULTILINE)
-        self.assertIsNotNone(body, "PAGES introuvable dans src/shared/pages.js")
+        self.assertIsNotNone(body, "PAGES not found in src/shared/pages.js")
         return set(re.findall(r"^  ([a-zA-Z]+): \{", body.group(1), re.MULTILINE))
 
     def test_pages_are_found(self):
         self.assertGreaterEqual(len(self.page_keys()), 5)
 
     def seal_declarations(self) -> dict[str, set[str]]:
-        """{clé de page: variables déclarées} en lisant les blocs de theme.css.
+        """{page key: declared variables}, by reading the blocks of theme.css.
 
-        Les sélecteurs sont groupés (`.page-home, .page-rehearsal, …`), donc on
-        découpe la liste de sélecteurs de chaque bloc plutôt que de chercher
-        chaque classe une par une."""
+        The selectors are grouped (`.page-home, .page-rehearsal, …`), so we split
+        each block's selector list rather than looking for each class one by
+        one."""
         declared: dict[str, set[str]] = {}
         for selectors, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css(THEME_CSS)):
             variables = set(re.findall(r"(--page-mark(?:-soft)?)\s*:", body))
@@ -337,12 +343,12 @@ class TestPageSeals(unittest.TestCase):
         for key in sorted(self.page_keys()):
             for variable in ("--page-mark", "--page-mark-soft"):
                 if variable not in declared.get(key, set()):
-                    missing.append(f"{key} : {variable} manquant")
+                    missing.append(f"{key}: {variable} missing")
         self.assertEqual(
             missing,
             [],
-            "Une page n'a pas son sceau complet dans theme.css : son sceau "
-            "rendrait sans couleur. " + " ; ".join(missing),
+            "A page does not have its complete seal in theme.css: its seal "
+            "would render without colour. " + " ; ".join(missing),
         )
 
     def test_no_seal_colour_is_declared_for_a_page_that_does_not_exist(self):
@@ -350,12 +356,12 @@ class TestPageSeals(unittest.TestCase):
         self.assertEqual(
             orphans,
             [],
-            "theme.css colore une page absente de PAGES (page supprimée ?) : "
+            "theme.css colours a page that is absent from PAGES (page deleted?): "
             + ", ".join(orphans),
         )
 
     def seal_values(self) -> dict[str, dict[str, str]]:
-        """{clé de page: {variable: hex}}, en lisant theme.css comme ci-dessus."""
+        """{page key: {variable: hex}}, by reading theme.css as above."""
         values: dict[str, dict[str, str]] = {}
         for selectors, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css(THEME_CSS)):
             found_vars = dict(re.findall(r"(--page-mark(?:-soft)?)\s*:\s*(#[0-9a-fA-F]{6})", body))
@@ -368,53 +374,52 @@ class TestPageSeals(unittest.TestCase):
         return values
 
     def test_each_html_favicon_and_theme_colour_match_its_seal(self):
-        """Le favicon d'une page EST sa pastille de sceau : tuile en
-        `--page-mark-soft`, glyphe en `--page-mark`, et `theme-color` en
-        `--page-mark` plein. Les hex y sont forcément recopiés (une balise
-        `<link>` ne lit pas une variable CSS), donc rien n'empêchait le favicon de
-        garder la couleur de la page dont on l'a copié : c'est exactement ce qui
-        arrive quand on ajoute une page en dupliquant le `.html` d'une autre, et
-        ça ne se voit que dans l'onglet, ou pire, dans la vignette du lien que la
-        troupe se partage.
+        """A page's favicon IS its seal badge: tile in `--page-mark-soft`, glyph
+        in `--page-mark`, and `theme-color` in solid `--page-mark`. The hex values
+        are necessarily copied there (a `<link>` tag does not read a CSS
+        variable), so nothing prevented the favicon from keeping the colour of the
+        page it was copied from: that is exactly what happens when a page is added
+        by duplicating another one's `.html`, and it only shows up in the tab, or
+        worse, in the thumbnail of the link the company shares around.
 
-        La correspondance page <-> fichier passe par `PAGES[clé].href`, seule
-        source de vérité du lien entre les deux."""
+        The page <-> file correspondence goes through `PAGES[key].href`, the only
+        source of truth for the link between the two."""
         pages_js = read(PAGES_JS)
-        # {clé: fichier html}, lu dans PAGES et pas deviné depuis le nom.
+        # {key: html file}, read from PAGES and not guessed from the name.
         hrefs = dict(
             re.findall(r"^  ([a-zA-Z]+): \{\s*\n\s*href: \"\./([a-z]+\.html)\"", pages_js, re.MULTILINE)
         )
-        self.assertGreaterEqual(len(hrefs), 5, f"hrefs lus : {hrefs}")
+        self.assertGreaterEqual(len(hrefs), 5, f"hrefs read: {hrefs}")
         values = self.seal_values()
         problems = []
         for key, filename in sorted(hrefs.items()):
             seal = values.get(key)
             if not seal:
-                continue  # déjà couvert par test_every_page_has_its_two_seal_colours
+                continue  # already covered by test_every_page_has_its_two_seal_colours
             html = read(PAGES_DIR / filename)
-            # Les deux accueils partagent le favicon des masques, dont les aplats
-            # d'intérieur reprennent aussi la teinte douce : on ne vérifie que la
-            # PRÉSENCE des deux hex, pas leur nombre d'occurrences.
+            # The two home pages share the favicon of the masks, whose inner fills
+            # also take up the soft shade: we only check the PRESENCE of the two
+            # hex values, not how many times they occur.
             icon = re.search(r'rel="icon" href="([^"]*)"', html)
-            self.assertIsNotNone(icon, f"{filename} n'a pas de favicon")
+            self.assertIsNotNone(icon, f"{filename} has no favicon")
             icon_href = icon.group(1).lower()
             for variable in ("--page-mark", "--page-mark-soft"):
                 expected = seal[variable].lower().lstrip("#")
                 if f"%23{expected}" not in icon_href:
-                    problems.append(f"{filename} : le favicon n'emploie pas {variable} (#{expected})")
+                    problems.append(f"{filename}: the favicon does not use {variable} (#{expected})")
             theme = re.search(r'name="theme-color" content="(#[0-9a-fA-F]{6})"', html)
-            self.assertIsNotNone(theme, f"{filename} n'a pas de theme-color")
+            self.assertIsNotNone(theme, f"{filename} has no theme-color")
             if theme.group(1).lower() != seal["--page-mark"].lower():
                 problems.append(
-                    f"{filename} : theme-color {theme.group(1)} au lieu de "
-                    f"{seal['--page-mark']} (--page-mark de .page-{key})"
+                    f"{filename}: theme-color {theme.group(1)} instead of "
+                    f"{seal['--page-mark']} (--page-mark of .page-{key})"
                 )
-        self.assertEqual(problems, [], "Favicon ou theme-color désaccordé du sceau. " + " ; ".join(problems))
+        self.assertEqual(problems, [], "Favicon or theme-color out of tune with the seal. " + " ; ".join(problems))
 
     def test_every_page_has_its_apple_touch_icon(self):
-        """iOS ne lit ni les favicons SVG ni les `data:` URI : chaque page a son
-        PNG, et un `href` qui pointe vers un fichier absent laisse iOS inventer
-        une vignette (une capture de la page, illisible en petit)."""
+        """iOS reads neither SVG favicons nor `data:` URIs: every page has its
+        PNG, and an `href` pointing at a missing file lets iOS make up a thumbnail
+        (a screenshot of the page, unreadable at that size)."""
         pages_js = read(PAGES_JS)
         hrefs = dict(
             re.findall(r"^  ([a-zA-Z]+): \{\s*\n\s*href: \"\./([a-z]+\.html)\"", pages_js, re.MULTILINE)
@@ -423,144 +428,144 @@ class TestPageSeals(unittest.TestCase):
         for key, filename in sorted(hrefs.items()):
             found = re.search(r'rel="apple-touch-icon"[^>]*href="/([^"]+)"', read(PAGES_DIR / filename))
             if not found:
-                missing.append(f"{filename} : pas d'apple-touch-icon")
+                missing.append(f"{filename}: no apple-touch-icon")
             elif not (REPO_ROOT / "public" / found.group(1)).is_file():
-                missing.append(f"{filename} : public/{found.group(1)} absent")
+                missing.append(f"{filename}: public/{found.group(1)} missing")
         self.assertEqual(missing, [], " ; ".join(missing))
 
 
 class TestPageEntries(unittest.TestCase):
-    """Chaque page déclarée doit être une page qui existe : un `href` de PAGES
-    sans gabarit dans `pages/` est un lien mort dans l'accueil ou un bandeau, et
-    une entrée de vite.config.js sans .html casse le build."""
+    """Every declared page must be a page that exists: a PAGES `href` with no
+    template in `pages/` is a dead link in a home page or a header, and an entry
+    in vite.config.js with no .html breaks the build."""
 
     def test_every_pages_href_points_to_a_real_html_file(self):
         hrefs = re.findall(r'href: "\./([a-z]+\.html)"', read(PAGES_JS))
         self.assertGreaterEqual(len(hrefs), 5)
         for href in hrefs:
-            self.assertTrue((PAGES_DIR / href).is_file(), f"{href} déclaré dans PAGES mais absent")
+            self.assertTrue((PAGES_DIR / href).is_file(), f"{href} declared in PAGES but missing")
 
     def test_every_root_html_is_a_vite_entry(self):
-        """Les deux `.html` de la racine sont les seules entrées écrites en clair :
-        le sélecteur de pièce et la gestion des pièces. Une de plus sans entrée ne
-        serait jamais construite ni déployée."""
+        """The two root `.html` files are the only entries written out plainly:
+        the play selector and the play management page. One more without an entry
+        would never be built nor deployed."""
         config = read(REPO_ROOT / "vite.config.js")
         entries = set(re.findall(r'resolve\(ROOT, "([a-z]+\.html)"\)', config))
         on_disk = {p.name for p in REPO_ROOT.glob("*.html")}
         self.assertEqual(
             entries,
             on_disk,
-            "Les entrées racine de vite.config.js et les .html de la racine ont "
-            "divergé : une entrée sans fichier casse le build, un fichier sans "
-            "entrée n'est jamais construit ni déployé.",
+            "The root entries of vite.config.js and the root .html files have "
+            "diverged: an entry with no file breaks the build, a file with no "
+            "entry is never built nor deployed.",
         )
 
     def test_every_play_page_template_is_instantiated_by_the_build(self):
-        """Les sept pages d'une pièce sont des GABARITS (`pages/*.html`), instanciés
-        dans le dossier de chaque pièce par vite.config.js. La liste du config et les
-        gabarits sur le disque doivent coïncider exactement : un gabarit absent de la
-        liste ne serait jamais écrit, donc la page rendrait un 404 chez la troupe, et
-        un nom de la liste sans gabarit ferait échouer le build de toutes les pièces."""
+        """The seven pages of a play are TEMPLATES (`pages/*.html`), instantiated
+        in each play's folder by vite.config.js. The list in the config and the
+        templates on disk must coincide exactly: a template absent from the list
+        would never be written, so the page would render a 404 for the company, and
+        a name in the list with no template would fail the build of every play."""
         config = read(REPO_ROOT / "vite.config.js")
         declared = re.search(r"const PLAY_PAGES = \[([^\]]*)\]", config)
-        self.assertIsNotNone(declared, "PLAY_PAGES introuvable dans vite.config.js")
+        self.assertIsNotNone(declared, "PLAY_PAGES not found in vite.config.js")
         listed = set(re.findall(r'"([a-z]+)"', declared.group(1)))
         on_disk = {p.stem for p in PAGES_DIR.glob("*.html")}
         self.assertEqual(
             listed,
             on_disk,
-            "PLAY_PAGES (vite.config.js) et les gabarits de pages/ ont divergé.",
+            "PLAY_PAGES (vite.config.js) and the templates in pages/ have diverged.",
         )
 
     def test_the_play_pages_cover_every_page_of_the_site(self):
-        """Et ces gabarits sont exactement les pages que PAGES déclare, plus le second
-        accueil : sans ce garde, une page ajoutée à PAGES pourrait n'avoir de gabarit
-        pour personne, et ses cartes d'accueil mèneraient à un 404."""
+        """And those templates are exactly the pages PAGES declares, plus the second
+        home page: without this guard, a page added to PAGES could have a template
+        for nobody, and its home cards would lead to a 404."""
         keys = set(re.findall(r"^  ([a-zA-Z]+): \{", read(PAGES_JS), re.MULTILINE))
-        # `home` est l'accueil d'une pièce (`index.html`), `respo` son jumeau du
-        # responsable, qui n'est pas une entrée de PAGES.
+        # `home` is a play's home page (`index.html`), `coordinator` its coordinator
+        # twin, which is not a PAGES entry.
         expected = (keys - {"home"}) | {"index", "respo"}
         self.assertEqual(expected, {p.stem for p in PAGES_DIR.glob("*.html")})
 
 
 class TestCatalogues(unittest.TestCase):
-    """Les gardes de l'i18n, et c'est ici que se joue la sûreté du bilingue.
+    """The i18n guards, and this is where the safety of the bilingual site is won.
 
-    Le projet n'a AUCUN test de composant, par choix (cf. CLAUDE.md), donc rien
-    ne rend les pages pour vérifier leurs textes. Or une refonte de plusieurs
-    centaines de chaînes casse toujours de deux façons : une clé mal tapée, qui
-    s'affiche en clair à l'écran, et une chaîne oubliée, qui reste en français
-    dans l'UI anglaise. Les deux premiers tests forment une pince autour de la
-    première, les trois gardes de texte autour de la seconde, en lecture
-    statique, sans rendu et sans dépendance.
+    The project has NO component test at all, by choice (cf. CLAUDE.md), so
+    nothing renders the pages to check their texts. Yet a rework of several
+    hundred strings always breaks in two ways: a mistyped key, which shows up
+    verbatim on screen, and a forgotten string, which stays in French in the
+    English UI. The first two tests form a pincer around the former, the three
+    text guards around the latter, by static reading, with no rendering and no
+    dependency.
 
-    La parité entre les deux catalogues, elle, est vérifiée côté JS
-    (src/shared/locales/parity.test.js) : elle demande Intl.PluralRules, que
-    Python n'a pas.
+    Parity between the two catalogues is checked on the JS side
+    (src/shared/locales/parity.test.js): it needs Intl.PluralRules, which Python
+    does not have.
     """
 
     LOCALES_DIR = SRC / "shared" / "locales"
 
     def catalogue_keys(self, locale: str) -> set[str]:
-        """Les clés déclarées dans un catalogue, lues à plat.
+        """The keys declared in a catalogue, read flat.
 
-        On lit la source plutôt que d'exécuter le JS : la CI Python n'a pas de
-        moteur JS, et les clés sont des littéraux `"a.b.c":` en début de ligne.
+        We read the source rather than execute the JS: the Python CI has no JS
+        engine, and the keys are `"a.b.c":` literals at the start of a line.
         """
         source = read(self.LOCALES_DIR / f"{locale}.js")
         return set(re.findall(r'^  "([a-zA-Z0-9_.]+)":', source, re.MULTILINE))
 
     def test_catalogues_are_found_and_not_empty(self):
-        # Sans ça, tous les tests ci-dessous passeraient sur un ensemble vide.
+        # Without this, every test below would pass on an empty set.
         for locale in ("fr", "en"):
             self.assertGreaterEqual(
-                len(self.catalogue_keys(locale)), 10, f"catalogue {locale} introuvable ou vide"
+                len(self.catalogue_keys(locale)), 10, f"catalogue {locale} not found or empty"
             )
 
     def scanned_files(self):
-        """Les sources du front, hors tests et hors catalogues."""
+        """The front-end sources, excluding tests and catalogues."""
         for path in sorted(SRC.rglob("*.js*")):
             if path.name.endswith(".test.js") or path.parent == self.LOCALES_DIR:
                 continue
             yield path
 
     def used_keys(self) -> dict[str, set[str]]:
-        """{clé utilisée: {fichiers}} pour toute clé écrite en clair dans le code.
+        """{key used: {files}} for every key written out plainly in the code.
 
-        Une clé de catalogue voyage par exactement deux chemins, et c'est une
-        convention que ce relevé rend exécutoire :
+        A catalogue key travels by exactly two routes, and it is a convention that
+        this scan makes enforceable:
 
-        1. elle est passée à `t(…)` ou à `<T k="…">`, y compris au milieu d'une
-           expression (`t(canUndo ? "editor.undo.tip" : "editor.undo.none")`) :
-           d'où le balayage de l'appel ENTIER à parenthèses équilibrées, là où un
-           `t\\(\\s*"…"` ne voyait que le premier cas ;
-        2. elle vit dans une table dont le NOM dit qu'elle en contient
-           (`CHARACTER_COLOR_KEYS`, `KIND_LABEL_KEY`), parce que l'appariement
-           rang par rang avec des couleurs ou des types de fichier se vérifie là
-           où ces valeurs vivent, pas dans le JSX ;
-        3. elle est le libellé de page passé à `mountPage(…)`, qui le rend au
-           `<title>` du document (`applyDocumentLanguage`). Les sept pages d'une
-           pièce y passent une clé `page.<x>.label`, que le motif des clés composées
-           couvrait déjà par accident ; les deux pages RACINE, elles, n'ont pas de
-           clé `page.*` (elles ne sont pas des pages de pièce), et sans ce troisième
-           chemin leurs libellés se lisaient comme des clés orphelines.
+        1. it is passed to `t(…)` or to `<T k="…">`, including in the middle of an
+           expression (`t(canUndo ? "editor.undo.tip" : "editor.undo.none")`):
+           hence the sweep of the WHOLE call with balanced parentheses, where a
+           `t\\(\\s*"…"` only saw the first case;
+        2. it lives in a table whose NAME says it holds keys
+           (`CHARACTER_COLOR_KEYS`, `KIND_LABEL_KEY`), because the rank-by-rank
+           pairing with colours or file types is checked where those values live,
+           not in the JSX;
+        3. it is the page label passed to `mountPage(…)`, which renders it into the
+           document `<title>` (`applyDocumentLanguage`). The seven pages of a play
+           pass a `page.<x>.label` key there, which the composed-key pattern
+           already covered by accident; the two ROOT pages, however, have no
+           `page.*` key (they are not play pages), and without this third route
+           their labels read as orphan keys.
 
-        Reste invisible ici, et c'est assumé : une clé COMPOSÉE à l'exécution
-        (`page.${page}.label`, `rail.${key}.tip`). Elles sont couvertes par motif
-        dans `test_no_catalogue_key_is_declared_and_never_used`, et par
-        `test_every_page_key_has_its_label_and_desc` pour les pages.
+        One thing stays invisible here, and that is accepted: a key COMPOSED at
+        runtime (`page.${page}.label`, `rail.${key}.tip`). Those are covered by
+        pattern in `test_no_catalogue_key_is_declared_and_never_used`, and by
+        `test_every_page_key_has_its_label_and_desc` for the pages.
         """
         used: dict[str, set[str]] = {}
         for path in self.scanned_files():
-            # Sans les commentaires : T.jsx documente son propre usage avec un
-            # `<T k="key" …>` d'exemple, qui se relevait comme une vraie clé.
+            # Without the comments: T.jsx documents its own usage with a sample
+            # `<T k="key" …>`, which was picked up as a real key.
             source = js_without_comments(read(path))
             found = [
                 key
                 for callee in ("t", "mountPage")
                 for call in self.balanced_calls(source, callee)
-                # Au moins un point : toute clé de catalogue est dotée, et ce
-                # balayage voit aussi les littéraux qui ne sont pas des clés
+                # At least one dot: every catalogue key is dotted, and this sweep
+                # also sees literals that are not keys
                 # (`t(pageLabelKey("dashboard"))`).
                 for key in re.findall(r'"([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)+)"', call)
             ]
@@ -573,9 +578,9 @@ class TestCatalogues(unittest.TestCase):
 
     @staticmethod
     def balanced_calls(source: str, callee: str) -> list[str]:
-        """Le contenu de chaque `<callee>(…)`, parenthèses équilibrées : sans ça, un
-        argument qui contient lui-même un appel (`t(pageLabelKey("editor"))`) ou une
-        condition (`t(canUndo ? "a" : "b")`) échappait au relevé."""
+        """The contents of each `<callee>(…)`, with balanced parentheses: without
+        this, an argument that itself contains a call (`t(pageLabelKey("editor"))`)
+        or a condition (`t(canUndo ? "a" : "b")`) escaped the scan."""
         calls = []
         for match in re.finditer(rf"\b{re.escape(callee)}\(", source):
             depth, i = 1, match.end()
@@ -589,43 +594,43 @@ class TestCatalogues(unittest.TestCase):
         return calls
 
     def test_every_key_used_in_the_code_exists_in_both_catalogues(self):
-        # LE garde qui remplace le mieux les tests de composant absents : une clé
-        # mal tapée s'affiche telle quelle à l'écran, et seul un passage sur la
-        # page concernée le montrerait.
+        # THE guard that best replaces the missing component tests: a mistyped key
+        # shows up verbatim on screen, and only a visit to the page concerned
+        # would reveal it.
         used = self.used_keys()
-        self.assertGreaterEqual(len(used), 5, "aucun appel à t() trouvé : le relevé a-t-il cassé ?")
+        self.assertGreaterEqual(len(used), 5, "no call to t() found: has the scan broken?")
         missing = []
         for locale in ("fr", "en"):
             declared = self.catalogue_keys(locale)
             for key, files in sorted(used.items()):
                 if key not in declared:
-                    missing.append(f"{key} ({locale}) utilisée dans {', '.join(sorted(files))}")
+                    missing.append(f"{key} ({locale}) used in {', '.join(sorted(files))}")
         self.assertEqual(
             missing,
             [],
-            "Une clé utilisée dans le code n'est dans aucun catalogue : elle "
-            "s'affichera en clair à l'écran. " + " ; ".join(missing),
+            "A key used in the code is in no catalogue: it will show up verbatim "
+            "on screen. " + " ; ".join(missing),
         )
 
     def test_no_catalogue_key_is_declared_and_never_used(self):
-        """Le garde symétrique du précédent, et il s'est prouvé tout seul : une clé
-        écrite dans les deux catalogues mais jamais appelée signale une chaîne
-        qu'on a cru traduire et qui est restée en dur dans le JSX (c'est
-        exactement ce qui était arrivé à `common.loadingScript`, l'éditeur gardant
-        son « Chargement du script… » littéral).
+        """The mirror guard of the previous one, and it proved itself on its own: a
+        key written in both catalogues but never called signals a string we thought
+        we had translated and that stayed hardcoded in the JSX (that is exactly
+        what had happened to `common.loadingScript`, the editor keeping its literal
+        "Chargement du script…").
 
-        Le garde « toute clé utilisée existe » ne peut pas voir ce cas : il ne
-        regarde que dans un sens."""
+        The "every key used exists" guard cannot see that case: it only looks one
+        way."""
         used = set(self.used_keys())
-        # Les clés COMPOSÉES à l'exécution sont invisibles au relevé littéral : on
-        # les couvre par motif, ce qui vaut acte. Chacune est bâtie à un seul
-        # endroit, nommé ici :
+        # Keys COMPOSED at runtime are invisible to the literal scan: we cover them
+        # by pattern, which stands as a decision. Each one is built in a single
+        # place, named here:
         #   page.<x>.label|desc      pageLabelKey / pageDescKey (pages.js)
-        #   structure.language.<xx>  la liste LOCALES (StructurePanel.jsx)
-        #   rail.<x>[.tip]           la bande d'icônes (EditorRail.jsx)
-        #   recorder.status.<x>      l'étiquette d'une réplique (recorder/App.jsx)
-        # `test_every_page_key_has_its_label_and_desc` vérifie les premières par
-        # ailleurs.
+        #   structure.language.<xx>  the LOCALES list (StructurePanel.jsx)
+        #   rail.<x>[.tip]           the icon strip (EditorRail.jsx)
+        #   recorder.status.<x>      a line's label (recorder/App.jsx)
+        # `test_every_page_key_has_its_label_and_desc` checks the first ones
+        # separately.
         built_by_helper = re.compile(
             r"^(page\.[a-z]+\.(label|desc)"
             r"|structure\.language\.[a-z]{2}"
@@ -640,46 +645,47 @@ class TestCatalogues(unittest.TestCase):
         self.assertEqual(
             orphans,
             [],
-            "Clé déclarée dans les catalogues et jamais appelée : la chaîne "
-            "correspondante est probablement restée en dur dans le JSX. "
+            "Key declared in the catalogues and never called: the corresponding "
+            "string has probably stayed hardcoded in the JSX. "
             + ", ".join(orphans),
         )
 
     # ------------------------------------------------------------------------
-    # Les trois gardes « plus une chaîne oubliée ». Ils surveillent TOUT `src/`,
-    # sans liste de fichiers à tenir : une page neuve est donc couverte d'office.
-    # C'était l'inverse pendant la traduction (un ensemble MIGRATED qui grandissait
-    # phase par phase, pour ne pas garder une CI rouge tout un chantier), et cette
-    # liste est précisément ce qui a laissé passer cinq pages entières : les
-    # fichiers qu'on n'y avait pas inscrits n'étaient surveillés par rien.
+    # The three "no forgotten string" guards. They watch ALL of `src/`, with no
+    # list of files to maintain: a brand new page is therefore covered
+    # automatically. It was the other way round during the translation (a MIGRATED
+    # set that grew phase by phase, so as not to keep CI red for a whole worksite),
+    # and that list is precisely what let five entire pages slip through: the files
+    # not written into it were watched by nothing.
     #
-    # Trois angles complémentaires, parce qu'aucun ne suffit :
-    #   1. un littéral ACCENTUÉ (le français de ce site l'est presque partout) ;
-    #   2. un littéral dans un attribut ou une prop QUI PORTE DU TEXTE ;
-    #   3. un NŒUD DE TEXTE JSX.
-    # Le premier seul ne voyait ni « + Acte », ni « Personnages », ni « Date » ; les
-    # deux autres seuls ne voient pas un texte rangé dans une variable. Ensemble ils
-    # attrapent tout ce que la traduction avait oublié (vérifié en rejouant les
-    # trois sur l'arbre d'avant : 160 relevés, zéro après).
+    # Three complementary angles, because none of them is enough on its own:
+    #   1. an ACCENTED literal (the French of this site is accented almost
+    #      everywhere);
+    #   2. a literal in an attribute or a prop THAT CARRIES TEXT;
+    #   3. a JSX TEXT NODE.
+    # The first one alone saw neither "+ Acte", nor "Personnages", nor "Date"; the
+    # other two alone do not see a text tucked away in a variable. Together they
+    # catch everything the translation had forgotten (verified by replaying all
+    # three on the tree from before: 160 findings, zero afterwards).
 
-    # Littéraux accentués légitimes, avec leur motif. Toute addition ici est un
-    # acte : elle dit « ce texte ne se traduit pas ».
+    # Legitimate accented literals, with their reason. Any addition here is a
+    # decision: it says "this text does not get translated".
     ACCENT_ALLOWED = {
-        # Le nom d'une langue s'écrit DANS cette langue et ne se traduit jamais :
-        # « Français » reste « Français » dans l'UI anglaise, parce qu'on cherche
-        # sa langue avec son propre mot pour elle (LocaleSwitch.jsx).
+        # A language's name is written IN that language and is never translated:
+        # "Français" stays "Français" in the English UI, because you look for your
+        # language using your own word for it (LocaleSwitch.jsx).
         "Français",
-        # Les guillemets par locale de `makeFormats` : c'est de la donnée de
-        # locale, pas du texte d'interface, et i18n.js est justement l'endroit qui
-        # porte celle des deux langues (Intl n'expose pas celles de CLDR).
+        # The per-locale quotation marks of `makeFormats`: that is locale DATA, not
+        # interface text, and i18n.js is precisely the place that carries them for
+        # both languages (Intl does not expose the CLDR ones).
         "«\u00a0",
         "\u00a0»",
     }
 
-    # Les attributs HTML et les props de composant qui PORTENT DU TEXTE sur ce
-    # site. Un littéral y est forcément un texte d'interface : il n'y a rien
-    # d'autre à écrire dans un `title`. La liste est celle du dépôt, donc une prop
-    # de texte ajoutée à un composant partagé s'inscrit ici.
+    # The HTML attributes and component props that CARRY TEXT on this site. A
+    # literal in one of them is necessarily interface text: there is nothing else
+    # to write in a `title`. The list is the repo's own, so a text prop added to a
+    # shared component gets written in here.
     TEXT_ATTRS = (
         "title",
         "aria-label",
@@ -689,18 +695,22 @@ class TestCatalogues(unittest.TestCase):
         "label",
         "hint",
         "error",
+        # The waiting sentence of `PageState`, a prop like the four below it: it
+        # carries visible text, its default comes from the catalogue, and without it
+        # here a literal passed by a page would slip through all three guards.
+        "loading",
         "unit",
         "confirmLabel",
         "primaryLabel",
         "saveLabel",
     )
 
-    # Deux littéraux qui ne sont pas du texte d'interface : un nom de fichier et
-    # la marque. Ni l'un ni l'autre ne se traduit.
+    # Two literals that are not interface text: a file name and the brand. Neither
+    # of them gets translated.
     NOT_TEXT = {"script.json", "PrettyDrama"}
 
-    # Les mots-clés JS en tête de ligne : un `return` ou un `else` tombé entre un
-    # `>` et un `<` de comparaison n'est pas un nœud de texte.
+    # The JS keywords at the start of a line: a `return` or an `else` that fell
+    # between a comparison `>` and `<` is not a text node.
     JS_KEYWORDS = {
         "return", "else", "if", "const", "let", "var", "for", "while", "break",
         "continue", "try", "catch", "finally", "default", "case", "throw", "new",
@@ -709,41 +719,41 @@ class TestCatalogues(unittest.TestCase):
     }
 
     ACCENTED = re.compile(r"[àâäçéèêëîïôöùûüÀÂÄÇÉÈÊËÎÏÔÖÙÛÜœæ«»]")
-    # Deux minuscules d'affilée : ce qui distingue un mot d'un acronyme technique
-    # (« (ZIP) », « (PDF) ») ou d'un symbole (« ✕ », « ⠿ »), qui restent en clair.
+    # Two lowercase letters in a row: what tells a word apart from a technical
+    # acronym ("(ZIP)", "(PDF)") or a symbol ("✕", "⠿"), which stay verbatim.
     HAS_WORD = re.compile(r"[a-zà-ÿ]{2,}")
-    # Le contenu d'une interpolation n'est pas du littéral : `${scene.act}` est
-    # déjà un libellé traduit, il ne doit pas faire relever son propre nom.
+    # The contents of an interpolation are not a literal: `${scene.act}` is already
+    # a translated label, it must not get its own name reported.
     INTERPOLATION = re.compile(r"\$\{[^}]*\}")
-    # Les caractères qui trahissent du code dans un nœud de texte candidat.
+    # The characters that betray code inside a candidate text node.
     CODE_CHARS = set("={}()[];\"'`&|$#\\/*<>@,")
 
     def test_no_accented_literal_survives_outside_the_catalogues(self):
-        # Grossier mais efficace, et c'est le seul des trois qui voie un texte
-        # rangé dans une variable ou un tableau.
+        # Crude but effective, and it is the only one of the three that sees a text
+        # tucked away in a variable or an array.
         offenders = []
         for path in self.scanned_files():
             relative = path.relative_to(REPO_ROOT).as_posix()
-            # Sans les commentaires : il en reste beaucoup en français, et un
-            # commentaire n'est pas un texte affiché.
+            # Without the comments: many of them are still in French, and a comment
+            # is not a displayed text.
             source = js_without_comments(read(path))
             for quoted in re.findall(r'"([^"\n]*)"|\'([^\'\n]*)\'', source):
                 text = quoted[0] or quoted[1]
                 if text in self.ACCENT_ALLOWED:
                     continue
                 if self.ACCENTED.search(text):
-                    offenders.append(f"{relative} : {text[:60]}")
+                    offenders.append(f"{relative}: {text[:60]}")
         self.assertEqual(
             offenders,
             [],
-            "Un littéral français vit hors des catalogues : il ne se traduira "
-            "jamais. Déplacer dans src/shared/locales/, ou l'inscrire dans "
-            "ACCENT_ALLOWED avec son motif. " + " ; ".join(offenders),
+            "A French literal lives outside the catalogues: it will never be "
+            "translated. Move it to src/shared/locales/, or write it into "
+            "ACCENT_ALLOWED with its reason. " + " ; ".join(offenders),
         )
 
     def test_no_text_bearing_attribute_carries_a_literal(self):
-        # Le garde qui voit le français SANS accent, celui que le précédent ne
-        # pouvait pas voir : « Renommer », « Pause », « Mot entier ».
+        # The guard that sees French WITHOUT accents, the one the previous guard
+        # could not see: "Renommer", "Pause", "Mot entier".
         pattern = re.compile(
             r"\b(" + "|".join(self.TEXT_ATTRS) + r')=\{?\s*(["\'`])(.*?)(?<!\\)\2', re.S
         )
@@ -756,23 +766,23 @@ class TestCatalogues(unittest.TestCase):
                 if not text or text in self.NOT_TEXT:
                     continue
                 if self.HAS_WORD.search(text):
-                    offenders.append(f"{relative} : {match.group(1)}=« {text[:50]} »")
+                    offenders.append(f"{relative}: {match.group(1)}='{text[:50]}'")
         self.assertEqual(
             offenders,
             [],
-            "Un attribut qui porte du texte reçoit un littéral : il ne se "
-            "traduira jamais. Passer par t(). " + " ; ".join(offenders),
+            "An attribute that carries text receives a literal: it will never be "
+            "translated. Go through t(). " + " ; ".join(offenders),
         )
 
     def test_no_jsx_text_node_carries_a_literal(self):
-        """L'autre moitié du garde sans accent : le texte écrit entre deux balises.
+        """The other half of the accent-free guard: the text written between two tags.
 
-        Heuristique, et bornée exprès aux lignes qui ressemblent à de la prose (au
-        moins deux mots, ou une capitale initiale, ou un accent) et qui ne portent
-        aucun caractère de code. Elle ne voit donc pas un texte adjacent à une
-        accolade sur la même ligne, ce que seul un vrai analyseur JSX saurait
-        découper ; c'est le premier garde qui rattrape ce cas dès que le texte est
-        français. Ce qu'elle attrape, en revanche, elle l'attrape sans bruit.
+        Heuristic, and deliberately bounded to lines that look like prose (at least
+        two words, or an initial capital, or an accent) and that carry no code
+        character. It therefore does not see a text adjacent to a brace on the same
+        line, which only a real JSX parser could split apart; it is the first guard
+        that catches that case as soon as the text is French. What it does catch, on
+        the other hand, it catches without noise.
         """
         offenders = []
         for path in self.scanned_files():
@@ -786,27 +796,27 @@ class TestCatalogues(unittest.TestCase):
                     if self.CODE_CHARS & set(text):
                         continue
                     if self.HAS_WORD.search(text) and self.looks_like_prose(text):
-                        offenders.append(f"{relative} : « {text[:50]} »")
+                        offenders.append(f"{relative}: '{text[:50]}'")
         self.assertEqual(
             offenders,
             [],
-            "Un nœud de texte JSX est écrit en clair : il ne se traduira jamais. "
-            "Passer par t() ou par <T>. " + " ; ".join(offenders),
+            "A JSX text node is written out plainly: it will never be translated. "
+            "Go through t() or through <T>. " + " ; ".join(offenders),
         )
 
     @classmethod
     def looks_like_prose(cls, text: str) -> bool:
         if text.split()[0] in cls.JS_KEYWORDS:
             return False
-        # Plusieurs mots, une capitale initiale ou un accent : de quoi séparer
-        # « + Acte », « Personnages » et « insérer » d'un identifiant tombé là
-        # (`m.lineOrdinal`, `shiftEnter:`).
+        # Several words, an initial capital or an accent: enough to tell
+        # "+ Acte", "Personnages" and "insérer" apart from an identifier that
+        # landed there (`m.lineOrdinal`, `shiftEnter:`).
         return " " in text or text[0].isupper() or bool(re.search(r"[à-ÿÀ-Ý]", text))
 
     def test_every_page_key_has_its_label_and_desc(self):
-        # `PAGES` ne porte plus les mots, donc rien dans le code ne relie une page
-        # à ses deux textes : une page ajoutée sans eux afficherait sa clé.
-        # Même esprit que TestPageSeals, qui fait ce lien pour les couleurs.
+        # `PAGES` no longer carries the words, so nothing in the code links a page
+        # to its two texts: a page added without them would display its key.
+        # Same spirit as TestPageSeals, which makes that link for the colours.
         page_keys = TestPageSeals.page_keys(self)
         missing = []
         for locale in ("fr", "en"):
@@ -814,39 +824,39 @@ class TestCatalogues(unittest.TestCase):
             for page in sorted(page_keys):
                 if f"page.{page}.label" not in declared:
                     missing.append(f"page.{page}.label ({locale})")
-                # `home` est la seule page sans phrase de doc : elle n'a ni carte
-                # d'accueil ni bandeau de pièce, donc rien qui la rendrait.
+                # `home` is the only page with no doc sentence: it has neither a
+                # home card nor a play header, so nothing that would render it.
                 if page != "home" and f"page.{page}.desc" not in declared:
                     missing.append(f"page.{page}.desc ({locale})")
-        self.assertEqual(missing, [], "Textes de page manquants : " + ", ".join(missing))
+        self.assertEqual(missing, [], "Missing page texts: " + ", ".join(missing))
 
     def test_no_entry_names_a_page_instead_of_interpolating_its_label(self):
-        """Un libellé de page ne se recopie pas dans une phrase, il s'INTERPOLE.
+        """A page label is not copied into a sentence, it is INTERPOLATED.
 
-        Six entrées de chaque catalogue nommaient la page Édition (« la pièce doit
-        d'abord être saisie dans la page Édition ») : recopié, ce mot demandait
-        douze retouches au moindre renommage, et les deux catalogues pouvaient
-        dériver l'un de l'autre en silence. Ils passent maintenant par `{page}`,
-        alimenté depuis `page.editor.label`.
+        Six entries of each catalogue named the Editing page ("la pièce doit
+        d'abord être saisie dans la page Édition"): copied out, that word demanded
+        twelve edits at the slightest rename, and the two catalogues could drift
+        apart from one another in silence. They now go through `{page}`, fed from
+        `page.editor.label`.
 
-        Le garde est volontairement BORNÉ au motif « page X » / « mode X », et pas
-        à toute apparition du libellé : en français les noms de page sont des noms
-        communs, donc « Enregistrement… » (la prise en cours), « Enregistrement »
-        (l'étiquette du panneau) et « Avancement par personnage et par scène » sont
-        trois emplois parfaitement légitimes qu'une recherche large relevait. Un
-        garde qui demande une liste d'exemptions grandissant à chaque phrase n'aide
-        personne ; celui-ci ne voit que la tournure qui DÉSIGNE une page, qui est
-        exactement celle qu'on recopiait.
+        The guard is deliberately BOUNDED to the "page X" / "mode X" turn of
+        phrase, and not to every appearance of the label: in French, page names are
+        common nouns, so "Enregistrement…" (the take in progress),
+        "Enregistrement" (the panel's label) and "Avancement par personnage et par
+        scène" are three perfectly legitimate uses that a broad search reported. A
+        guard that demands a list of exemptions growing with every sentence helps
+        nobody; this one only sees the turn of phrase that DESIGNATES a page, which
+        is exactly the one that was being copied out.
         """
-        # « (dans la|de la|sur la) page Édition », « le mode Édition », « the
-        # Editing page », « the Editing screen ».
+        # "(dans la|de la|sur la) page Édition", "le mode Édition", "the Editing
+        # page", "the Editing screen".
         for locale, patterns in (
             ("fr", (r"\b(?:page|mode)\s+{label}\b",)),
             ("en", (r"\b{label}\s+(?:page|screen|mode)\b", r"\b(?:page|screen|mode)\s+{label}\b")),
         ):
             source = read(self.LOCALES_DIR / f"{locale}.js")
             labels = dict(re.findall(r'"page\.([a-z]+)\.label":\s*"([^"]+)"', source))
-            self.assertTrue(labels, f"aucun libellé de page lu dans {locale}.js")
+            self.assertTrue(labels, f"no page label read in {locale}.js")
             offenders = []
             for key, text in re.findall(r'^  "([a-zA-Z0-9_.]+)":\s*(.*)$', source, re.MULTILINE):
                 for page, label in labels.items():
@@ -854,39 +864,40 @@ class TestCatalogues(unittest.TestCase):
                         continue
                     for pattern in patterns:
                         if re.search(pattern.format(label=re.escape(label)), text):
-                            offenders.append(f"{locale} : {key} désigne la page « {label} »")
+                            offenders.append(f"{locale}: {key} designates the page '{label}'")
             self.assertEqual(
                 offenders,
                 [],
-                "Une entrée désigne une page par son nom recopié au lieu de "
-                "l'interpoler : passer par un paramètre alimenté par "
+                "An entry designates a page by its copied-out name instead of "
+                "interpolating it: go through a parameter fed by "
                 "`t(pageLabelKey(...))`. " + " ; ".join(offenders),
             )
 
     def test_the_static_html_title_matches_the_french_catalogue(self):
-        """Le `<title>` des .html est le repli AVANT exécution du JS (locale.js
-        le repose ensuite). C'est donc du français en dur, qui doit rester en
-        accord avec le catalogue : sinon un lecteur francophone voit le titre
-        changer au chargement, ce que ce repli existe précisément pour éviter."""
+        """The `<title>` of the .html files is the fallback BEFORE the JS runs
+        (locale.js sets it again afterwards). It is therefore hardcoded French,
+        which must stay in tune with the catalogue: otherwise a French-speaking
+        reader sees the title change on load, which is exactly what this fallback
+        exists to avoid."""
         source = read(self.LOCALES_DIR / "fr.js")
         template = re.search(r'"common\.docTitle":\s*"([^"]+)"', source)
-        self.assertIsNotNone(template, "common.docTitle introuvable dans fr.js")
+        self.assertIsNotNone(template, "common.docTitle not found in fr.js")
 
         def label(key):
             found = re.search(rf'"{re.escape(key)}":\s*"([^"]+)"', source)
-            self.assertIsNotNone(found, f"{key} absente de fr.js")
+            self.assertIsNotNone(found, f"{key} missing from fr.js")
             return found.group(1)
 
-        # Deux familles de documents, et c'est tout le découpage du site.
+        # Two families of documents, and that is the whole division of the site.
         #
-        # Les GABARITS de `pages/` sont les sept pages d'une pièce, instanciées dans
-        # le dossier de chaque pièce au build : leur libellé est celui de leur page
-        # (`respo.html` est le seul à ne pas porter le nom de sa clé, c'est le second
-        # accueil d'une pièce).
+        # The TEMPLATES in `pages/` are the seven pages of a play, instantiated in
+        # each play's folder at build time: their label is that of their page
+        # (`respo.html` is the only one not to bear the name of its key, it is a
+        # play's second home page).
         #
-        # Les deux `.html` de la RACINE vivent au-dessus des pièces (le sélecteur de la
-        # troupe et la gestion des pièces du responsable) : ce ne sont pas des pages de
-        # pièce, elles n'ont pas de clé `page.*` et leur libellé leur appartient.
+        # The two ROOT `.html` files live above the plays (the company's selector and
+        # the coordinator's play management page): they are not play pages, they have
+        # no `page.*` key and their label belongs to them.
         expected = {
             REPO_ROOT / "index.html": "chooser.label",
             REPO_ROOT / "respo.html": "manage.label",
@@ -899,28 +910,27 @@ class TestCatalogues(unittest.TestCase):
         for path, key in sorted(expected.items()):
             want = template.group(1).replace("{page}", label(key))
             found = re.search(r"<title>([^<]*)</title>", read(path))
-            self.assertIsNotNone(found, f"{path.name} : pas de <title>")
+            self.assertIsNotNone(found, f"{path.name}: no <title>")
             if found.group(1) != want:
                 where = path.relative_to(REPO_ROOT)
-                mismatches.append(f"{where} : « {found.group(1)} » au lieu de « {want} »")
+                mismatches.append(f"{where}: '{found.group(1)}' instead of '{want}'")
         self.assertEqual(
             mismatches,
             [],
-            "Le <title> statique a dérivé du catalogue français : le titre "
-            "changerait au chargement. " + " ; ".join(mismatches),
+            "The static <title> has drifted from the French catalogue: the title "
+            "would change on load. " + " ; ".join(mismatches),
         )
 
 
 class TestStructureLabels(unittest.TestCase):
-    """Les libellés d'acte et de scène sont DÉRIVÉS de leur rang, et deux
-    implémentations les dérivent : `structureLabels.js` pour l'écran, `STRUCTURE`
-    de build_script_pdf.py pour le papier.
+    """Act and scene labels are DERIVED from their rank, and two implementations
+    derive them: `structureLabels.js` for the screen, `STRUCTURE` in
+    build_script_pdf.py for paper.
 
-    Les faire diverger imprimerait « Acte II » sous un écran qui annonce
-    « Act II », ou pire, décalerait la numérotation entre la page et le script
-    qu'un acteur a en main. C'est le même genre de contrat que SAFE_ID et
-    LINE_ID_PATTERN, et il se vérifie de la même façon : en lisant les deux
-    sources.
+    Letting them diverge would print "Acte II" under a screen announcing
+    "Act II", or worse, would offset the numbering between the page and the script
+    an actor is holding. It is the same kind of contract as SAFE_ID and
+    LINE_ID_PATTERN, and it is checked the same way: by reading both sources.
     """
 
     LOCALES_DIR = SRC / "shared" / "locales"
@@ -928,73 +938,155 @@ class TestStructureLabels(unittest.TestCase):
     def js_template(self, locale: str, key: str) -> str:
         source = read(self.LOCALES_DIR / f"{locale}.js")
         found = re.search(rf'"{re.escape(key)}":\s*"([^"]+)"', source)
-        self.assertIsNotNone(found, f"{key} introuvable dans {locale}.js")
+        self.assertIsNotNone(found, f"{key} not found in {locale}.js")
         return found.group(1)
 
     def test_the_pdf_words_match_the_catalogues(self):
-        # `{n}` côté JS, `%s` côté Python : c'est la seule différence permise.
+        # `{n}` on the JS side, `%s` on the Python side: that is the only difference
+        # allowed.
         for locale, words in STRUCTURE.items():
             for kind, key in (("act", "structure.act"), ("scene", "structure.scene")):
                 self.assertEqual(
                     words[kind].replace("%s", "{n}"),
                     self.js_template(locale, key),
-                    f"{locale}/{kind} : le PDF et l'écran ne nommeraient pas pareil",
+                    f"{locale}/{kind}: the PDF and the screen would not name it the same way",
                 )
 
     def test_both_sides_know_the_same_languages(self):
         js = set(re.findall(r'"([a-z]{2})"', re.search(
             r"export const LOCALES = \[(.*?)\];", read(SRC / "shared" / "i18n.js"), re.DOTALL
         ).group(1)))
-        self.assertEqual(set(LANGUAGES), js, "LANGUAGES (Python) et LOCALES (JS) ont divergé")
-        self.assertEqual(set(STRUCTURE), js, "STRUCTURE du PDF ne couvre pas toutes les langues")
+        self.assertEqual(set(LANGUAGES), js, "LANGUAGES (Python) and LOCALES (JS) have diverged")
+        self.assertEqual(set(STRUCTURE), js, "the PDF's STRUCTURE does not cover every language")
         self.assertIn(DEFAULT_LANGUAGE, LANGUAGES)
 
     def test_the_roman_numerals_agree(self):
-        """Les deux implémentations sont indépendantes, donc comparées valeur par
-        valeur, y compris leur abandon au-delà de 39."""
+        """The two implementations are independent, so they are compared value by
+        value, including how they give up beyond 39."""
         js = read(SRC / "shared" / "structureLabels.js")
         tens = re.search(r'const TENS = \[(.*?)\];', js, re.DOTALL).group(1)
         units = re.search(r'const UNITS = \[(.*?)\];', js, re.DOTALL).group(1)
         js_tens = re.findall(r'"([A-Z]*)"', tens)
         js_units = re.findall(r'"([A-Z]*)"', units)
-        self.assertEqual(js_tens, list(_TENS), "les dizaines romaines ont divergé")
-        self.assertEqual(js_units, list(_UNITS), "les unités romaines ont divergé")
-        # Et le comportement, sur toute la plage utile plus ses bords.
+        self.assertEqual(js_tens, list(_TENS), "the Roman tens have diverged")
+        self.assertEqual(js_units, list(_UNITS), "the Roman units have diverged")
+        # And the behaviour, over the whole useful range plus its edges.
         expected = {1: "I", 4: "IV", 9: "IX", 10: "X", 14: "XIV", 39: "XXXIX", 40: "40", 0: "0"}
         for n, want in expected.items():
             self.assertEqual(roman_numeral(n), want, f"roman_numeral({n})")
 
     def test_no_act_or_scene_title_is_written_back_into_the_play(self):
-        """Aucun script publié ne doit porter de titre d'acte ni de scène : ce
-        serait une donnée dans une langue, et elle repartirait vers le PDF, les
-        colonnes de l'Avancement et la portée de la Répartition."""
+        """No published script must carry an act or scene title: it would be a
+        piece of data in one language, and it would travel back out to the PDF, the
+        Progress columns and the Speaking share scope."""
         for play_id, script in published_scripts():
             self.assertIn(
-                script.get("language"), LANGUAGES, f"{play_id} : la pièce doit dire sa langue"
+                script.get("language"), LANGUAGES, f"{play_id}: the play must state its language"
             )
             for ai, act in enumerate(script.get("acts", [])):
-                self.assertNotIn("title", act, f"{play_id}, acte {ai}")
+                self.assertNotIn("title", act, f"{play_id}, act {ai}")
                 for si, scene in enumerate(act.get("scenes", [])):
-                    self.assertNotIn("title", scene, f"{play_id}, acte {ai}, scène {si}")
+                    self.assertNotIn("title", scene, f"{play_id}, act {ai}, scene {si}")
+
+
+class TestZipFormat(unittest.TestCase):
+    """The ZIP of takes, written by the Recording page and read by the Action.
+
+    The one contract of this project whose two sides can never be checked by running
+    them together: the archive is built in a browser and opened in a workflow, weeks
+    apart, by way of a company's mailbox. Nothing fails when they fall out of step,
+    the Action simply refuses every ZIP an actor sends, with a format message, and the
+    company has no idea why. CLAUDE.md has been advertising this guard among the
+    cross-file contracts; it did not exist, and the format has just gained a field.
+
+    Read on BOTH sides, like every test in this file, and deliberately loose about
+    everything but the shape: the point is that a key added on one side gets added on
+    the other, not to freeze the way either one is written.
+    """
+
+    def manifest_keys_written(self) -> set:
+        """The keys the Recording page puts in manifest.json."""
+        source = js_without_comments(read(RECORDER_JSX))
+        found = re.search(
+            r'zip\.file\(\s*"manifest\.json"\s*,\s*JSON\.stringify\(\s*\{(.*?)\}', source, re.S
+        )
+        self.assertIsNotNone(found, "the call writing manifest.json is no longer recognisable")
+        # `{ play: manifest.id, clips }`: one entry per comma, and of each entry only
+        # the NAME, which is what precedes the colon (or the whole of it, for the
+        # shorthand). Reading the names with a bare `\w+` would also collect the
+        # `id` of the `manifest.id` on the value side.
+        keys = set()
+        for entry in found.group(1).split(","):
+            name = entry.split(":")[0].strip()
+            if name:
+                keys.add(name)
+        return keys
+
+    def manifest_keys_read(self) -> set:
+        """The keys `parse_manifest` looks for in it."""
+        source = read(PROCESS_UPLOADS_PY)
+        body = source[source.index("def parse_manifest") : source.index("def process_zip")]
+        # The two ways it names a key: `manifest.get("x")` and `"x" in manifest`.
+        pairs = re.findall(r'manifest\.get\("(\w+)"|"(\w+)" in manifest', body)
+        return {name for pair in pairs for name in pair if name}
+
+    def test_the_two_sides_name_the_same_manifest_keys(self):
+        written = self.manifest_keys_written()
+        read_back = self.manifest_keys_read()
+        self.assertEqual(
+            written,
+            read_back,
+            f"the Recording page writes {sorted(written)} into manifest.json while "
+            f"parse_manifest reads {sorted(read_back)}: every ZIP an actor sends would "
+            "be refused for a format reason, and nothing would say why.",
+        )
+
+    def test_the_audio_member_is_named_after_the_line_id(self):
+        """`{lineId}.{ext}`, and the extension is the recording browser's, which is why
+        the Action looks the member up by id rather than by name."""
+        written = js_without_comments(read(RECORDER_JSX))
+        # `assertRegex` on a whole file prints the whole file when it fails: we test
+        # the search ourselves so a drift reads as one sentence.
+        self.assertTrue(
+            re.search(r"zip\.file\(\s*`\$\{lineId\}\.\$\{take\.ext\}`", written),
+            "recorder/App.jsx no longer names the audio member {lineId}.{ext}: the "
+            "Action looks it up by id and would find nothing.",
+        )
+        source = read(PROCESS_UPLOADS_PY)
+        body = source[source.index("def parse_manifest") : source.index("def process_zip")]
+        # The Action rebuilds that same name from the id alone, the extension being
+        # whatever the browser chose: an alphanumeric run after the dot.
+        self.assertIn("re.escape(line_id)", body)
+        self.assertRegex(body, r'r"\\\.\[0-9a-zA-Z\]\+"')
+
+    def test_the_play_id_travels_verbatim_from_the_manifest(self):
+        """The field is a VERIFICATION and never a routing (the upload folder routes),
+        so what the page writes must be the play's own id, taken from the manifest it
+        is displaying, and nothing recomputed."""
+        source = js_without_comments(read(RECORDER_JSX))
+        self.assertTrue(
+            re.search(r"play:\s*manifest\.id", source),
+            "recorder/App.jsx no longer writes the play id straight from the manifest.",
+        )
 
 
 class TestPublishedPlays(unittest.TestCase):
-    """Les pièces réellement présentes dans le dépôt, contre la disposition que le
-    site et l'Action attendent d'elles. Ce n'est pas un test de comportement mais un
-    garde-fou d'ARBRE : une pièce mal rangée ne se voit pas en relisant du code, elle
-    se voit quand une page rend un 404 chez la troupe."""
+    """The plays actually present in the repo, against the layout the site and the
+    Action expect of them. This is not a behaviour test but a TREE safeguard: a
+    badly filed play does not show up when rereading code, it shows up when a page
+    renders a 404 for the company."""
 
     def test_no_play_script_claims_another_play_than_its_own_folder(self):
-        """Un script qui nomme une AUTRE pièce que son dossier ferait refuser tous les
-        dépôts de la pièce (`validate_script` compare les deux), donc le garde-fou se
-        retournerait contre la troupe.
+        """A script that names a play OTHER than its folder would make every deposit
+        of that play be refused (`validate_script` compares the two), so the
+        safeguard would turn against the company.
 
-        Il ne demande PAS que l'identifiant soit présent, et cet écart est
-        délibéré : `validate_script` accepte un script qui n'en porte pas (c'est le cas
-        d'un fichier téléchargé avant que ce champ existe, et le dossier décide alors
-        seul). Exiger la présence ici rendrait la CI rouge pour un dépôt que l'Action
-        accepte, donc arrêterait le déploiement du site sur un fichier parfaitement
-        utilisable, et ce silence est exactement ce que le projet redoute le plus."""
+        It does NOT require the id to be present, and that gap is deliberate:
+        `validate_script` accepts a script that does not carry one (that is the case
+        for a file downloaded before this field existed, and the folder then decides
+        on its own). Requiring its presence here would turn CI red for a deposit the
+        Action accepts, so it would stop the site's deployment over a perfectly
+        usable file, and that silence is exactly what the project dreads most."""
         for play_id, script in published_scripts():
             declared = script.get("id")
             if not declared:
@@ -1002,18 +1094,18 @@ class TestPublishedPlays(unittest.TestCase):
             self.assertEqual(
                 declared,
                 play_id,
-                f"plays/{play_id}/data/script.json déclare l'identifiant "
-                f"{declared!r} : ses dépôts seraient tous refusés.",
+                f"plays/{play_id}/data/script.json declares the id "
+                f"{declared!r}: all of its deposits would be refused.",
             )
 
     def test_every_play_has_a_deposit_zone(self):
-        """Elle doit EXISTER dans le dépôt avant que le respo clique le bouton de
-        dépôt de la pièce : GitHub ne sert sa page d'envoi que sur un dossier qu'il
-        connaît, et git ne versionne pas un dossier vide, d'où le `.gitkeep`."""
+        """It must EXIST in the repo before the coordinator clicks the play's deposit
+        button: GitHub only serves its upload page on a folder it knows about, and
+        git does not version an empty folder, hence the `.gitkeep`."""
         for play_id in play_ids():
             zone = REPO_ROOT / "uploads" / play_id
-            self.assertTrue(zone.is_dir(), f"uploads/{play_id}/ manque")
-            self.assertTrue((zone / ".gitkeep").exists(), f"uploads/{play_id}/.gitkeep manque")
+            self.assertTrue(zone.is_dir(), f"uploads/{play_id}/ is missing")
+            self.assertTrue((zone / ".gitkeep").exists(), f"uploads/{play_id}/.gitkeep is missing")
 
 
 if __name__ == "__main__":

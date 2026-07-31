@@ -36,14 +36,14 @@ import "./recorder.css";
 // `recorder.status.*`:
 //  - "todo"  : no take and no up-to-date published clip;
 //  - "fresh" : take made THIS session, and it STAYS so after the ZIP download
-//              ("already recorded" only becomes true once the respo has merged
+//              ("already recorded" only becomes true once the coordinator has merged
 //              the ZIP and the site was republished);
 //  - "done"  : up-to-date published clip (manifest only).
-// Les codes d'erreur que `useRecorder` peut rendre, et leur phrase. Le hook est
-// couvert par `node --test`, donc il ne peut pas importer `locale.js` (qui lit
-// l'URL, le stockage et le navigateur dès son import) : il rend un code, la page
-// le met en mots. Le nom en `_KEY` est aussi ce qui fait relever ces clés par le
-// garde de scripts/tests/test_contracts.py.
+// The error codes `useRecorder` can return, and their sentence. The hook is
+// covered by `node --test`, so it cannot import `locale.js` (which reads the URL,
+// the storage and the browser as soon as it is imported): it returns a code, the
+// page puts it into words. The `_KEY` name is also what makes these keys get
+// picked up by the guard in scripts/tests/test_contracts.py.
 const MIC_ERROR_KEY = { mic: "recorder.micError" };
 
 export default function App() {
@@ -70,8 +70,7 @@ export default function App() {
     () => (characterId === "" ? [] : lines.filter((l) => l.characterId === characterId)),
     [lines, characterId]
   );
-  // « Nom (n/total) » sur mes cartes — numérotation partagée avec la page
-  // Répétition.
+  // "Name (n/total)" on my cards: numbering shared with the Rehearsal page.
   const myNumbers = useMemo(() => myLineNumbers(lines, characterId), [lines, characterId]);
 
   const lineState = useCallback(
@@ -112,7 +111,7 @@ export default function App() {
         [line.id]: {
           blob,
           ext: extensionForMimeType(mimeType),
-          // RAW text captured at recording time — no normalization in the
+          // RAW text captured at recording time: no normalization in the
           // browser (single implementation lives in the GitHub Action, which
           // normalizes both sides when comparing).
           text: line.text,
@@ -123,10 +122,10 @@ export default function App() {
     setDownloaded(false);
   };
 
-  // Jeter une prise de la séance : la réplique reprend l'état qu'elle avait
-  // avant (« Déjà enregistrée » si un clip publié est à jour, sinon « À
-  // enregistrer »). Ne concerne QUE les prises en mémoire : un clip déjà
-  // publié ne se supprime pas depuis le navigateur, il vit dans le dépôt.
+  // Discarding a take from this session: the line goes back to the state it had
+  // before ("Already recorded" if a published clip is up to date, otherwise "To
+  // record"). Concerns ONLY the in-memory takes: an already published clip is not
+  // deleted from the browser, it lives in the repo.
   const deleteTake = (line) => {
     setTakes((prev) => {
       const take = prev[line.id];
@@ -135,10 +134,10 @@ export default function App() {
       const { [line.id]: _dropped, ...rest } = prev;
       return rest;
     });
-    // Comme après avoir refait une prise : le ZIP déjà téléchargé ne décrit
-    // plus la séance (il contient encore celle qu'on vient de jeter), donc il
-    // est à refaire. Si c'était la dernière prise, il ne reste rien à
-    // télécharger et l'avertissement ne s'affiche pas (takenCount === 0).
+    // As after redoing a take: the already downloaded ZIP no longer describes
+    // the session (it still contains the one just discarded), so it has to be
+    // redone. If that was the last take, there is nothing left to download and
+    // the warning is not shown (takenCount === 0).
     setDownloaded(false);
   };
 
@@ -158,21 +157,24 @@ export default function App() {
 
   const downloadZip = async () => {
     const zip = new JSZip();
-    // manifest.json is a bare {lineId: raw text} mapping — the audio member
-    // is always named {lineId}.{ext}, so the Action finds it from the id.
+    // The clips of the manifest: a {lineId: raw text} mapping, the audio member
+    // always being named {lineId}.{ext}, so the Action finds it from the id alone.
+    // (It used to be the manifest ITSELF, a bare mapping with nothing around it. The
+    // `play` field below wrapped it; `parse_manifest` still reads both forms, so the
+    // ZIPs downloaded before that field keep working.)
     const clips = {};
     for (const [lineId, take] of Object.entries(takes)) {
       zip.file(`${lineId}.${take.ext}`, take.blob);
       clips[lineId] = take.text;
     }
-    // `play` nomme la pièce dont ces voix sortent. Il ne sert PAS à router le
-    // dépôt : c'est le dossier `uploads/<id>/` où le respo pose le fichier qui le
-    // fait, sans quoi un ZIP abîmé (illisible, donc sans identifiant lisible non
-    // plus) n'aurait aucun journal où se dire. Il sert à le VÉRIFIER, et c'est ce
-    // qui fait refuser un ZIP déposé dans la zone d'une autre pièce avec un motif
-    // lisible, au lieu d'écrire les voix d'une pièce par-dessus une autre.
-    // Vide sur une pièce dont le script n'a pas encore d'identifiant : l'Action
-    // traite alors le ZIP sans rien vérifier, comme les ZIP d'avant ce champ.
+    // `play` names the play these voices come from. It does NOT serve to route the
+    // upload: it is the `uploads/<id>/` folder where the coordinator drops the file that
+    // does that, otherwise a damaged ZIP (unreadable, hence without a readable id
+    // either) would have no journal in which to say so. It serves to VERIFY it,
+    // and that is what makes a ZIP dropped in another play's folder be refused
+    // with a readable reason, instead of writing one play's voices over another's.
+    // Empty on a play whose script has no id yet: the Action then processes the
+    // ZIP without verifying anything, like the ZIPs from before this field.
     zip.file("manifest.json", JSON.stringify({ play: manifest.id, clips }, null, 2));
     const blob = await zip.generateAsync({ type: "blob" });
     // One session may record several characters: name the file after all of
@@ -182,13 +184,13 @@ export default function App() {
     const names = manifest.characters
       .filter((c) => recordedIds.has(c.id))
       .map((c) => slugify(c.name, t("recorder.characterSlug")));
-    // Le NOM du fichier suit la locale du lecteur, comme le reste : l'Action ne
-    // le lit jamais (le type vient de l'extension, les clips de leur id), donc
-    // le contrat du ZIP n'en dépend pas.
+    // The file's NAME follows the reader's locale, like everything else: the
+    // Action never reads it (the type comes from the extension, the clips from
+    // their id), so the ZIP contract does not depend on it.
     const stem = t("recorder.zipName", { names: names.join("-") || t("recorder.zipFallback") });
     downloadBlob(blob, `${stem}.zip`);
     // Line statuses do NOT change: a take stays `recorder.status.fresh` until
-    // the respo has merged the ZIP and the site was republished; only the
+    // the coordinator has merged the ZIP and the site was republished; only the
     // save-state note reacts here.
     setDownloaded(true);
     // Recording session is over: turn the mic-in-use indicator off.
@@ -204,12 +206,12 @@ export default function App() {
     return <PageState page="recorder" />;
   }
 
-  // Écran définitif (le navigateur n'enregistrera pas), et pas une attente :
-  // il nomme donc la pièce comme le bandeau de la page, ce qu'il peut faire
-  // puisqu'il vient après le chargement du manifest. Les deux états au-dessus, eux,
-  // ne nomment rien du tout : la pièce n'est pas encore connue, et `PageHeader` ne
-  // rend pas de titre sans titre (jamais un libellé de page à la place, il se
-  // ferait recouvrir par le titre une fraction de seconde plus tard).
+  // A final screen (the browser will not record), and not a wait: it therefore
+  // names the play like the page's header, which it can do since it comes after
+  // the manifest has loaded. The two states above, on the other hand, name nothing
+  // at all: the play is not known yet, and `PageHeader` renders no title when
+  // there is no title (never a page label in its place, it would get covered by
+  // the title a fraction of a second later).
   if (!supported) {
     return (
       <PageState
@@ -220,19 +222,20 @@ export default function App() {
     );
   }
 
-  // Sans personnage choisi, la liste laisse la place à l'encart d'accueil.
+  // With no character chosen, the list gives way to the intro card.
   const visibleLines = characterId === "" ? [] : lines;
 
-  // Sélectionne une de MES répliques (jamais en cours d'enregistrement).
+  // Selects one of MY lines (never while recording).
   const selectLine = (line) => {
     if (!isRecording) setMyIndex(myLines.findIndex((l) => l.id === line.id));
   };
 
   return (
     <div className="recorder-page">
-      {/* Le mode d'emploi n'est passé qu'une fois le personnage choisi : avant,
-          il vit dans l'encart d'accueil, à la place des répliques (pas de
-          doublon). La phrase compacte du bandeau, elle, reste toujours là. */}
+      {/* The instructions are only passed once the character is chosen: before
+          that, they live in the intro card, in place of the lines (no
+          duplication). The header's compact sentence, on the other hand, is
+          always there. */}
       <PlayHeader
         page="recorder"
         title={manifest.title || t("common.untitledPlay")}
@@ -290,12 +293,13 @@ export default function App() {
             ))}
           </select>
         </div>
-        {/* Le hook rend un CODE (cf. useRecorder.js, couvert par `node --test`) :
-            la phrase se compose ici, et elle se compose depuis le code REÇU. Le
-            rendre tel quel plutôt que d'afficher l'unique message d'aujourd'hui
-            est ce qui rend le seam réel : un second code afficherait sinon
-            l'erreur de micro. Repli sur ce même message si le code est inconnu,
-            une page sans phrase valant moins qu'une phrase approximative. */}
+        {/* The hook returns a CODE (cf. useRecorder.js, covered by `node --test`):
+            the sentence is composed here, and it is composed from the code
+            RECEIVED. Rendering it as such rather than displaying today's single
+            message is what makes the seam real: a second code would otherwise
+            display the mic error. Fallback on that same message if the code is
+            unknown, a page without a sentence being worth less than an
+            approximate sentence. */}
         {micError && (
           <p className="mic-error">{t(MIC_ERROR_KEY[micError] ?? MIC_ERROR_KEY.mic)}</p>
         )}
@@ -308,10 +312,10 @@ export default function App() {
         {downloaded && takenCount > 0 && (
           <p className="zip-note done">✓ {t("recorder.downloadedNote")}</p>
         )}
-        {/* Ce message vit dans le bandeau (et pas dans la liste) parce que le
-            bandeau est sticky : il reste sous les yeux pendant qu'on parcourt
-            les répliques des autres personnages. Il prend la place de la
-            légende des statuts, les deux étant exclusifs. */}
+        {/* This message lives in the header (and not in the list) because the
+            header is sticky: it stays in sight while one walks through the other
+            characters' lines. It takes the place of the status legend, the two
+            being mutually exclusive. */}
         {characterId !== "" && myLines.length === 0 && (
           <p className="no-lines-note">{t("recorder.noLinesInScene")}</p>
         )}
@@ -331,9 +335,9 @@ export default function App() {
       </PlayHeader>
 
       <main className="dialogue-container" ref={listRef}>
-        {/* Sans personnage, la page ne sert à rien (aucune réplique n'est
-            « mienne », le micro reste désactivé) : on remplace la liste par
-            un encart qui dit quoi faire, et qui fait faire. */}
+        {/* With no character, the page is of no use (no line is "mine", the mic
+            stays disabled): we replace the list with a card that says what to do,
+            and that gets it done. */}
         {characterId === "" && (
           <IntroCard
             characters={manifest.characters}
@@ -360,14 +364,13 @@ export default function App() {
               ]
                 .filter(Boolean)
                 .join(" ")}
-              // Raccourci au pointeur seulement : pas de role="button" ni de
-              // tabIndex ici. La carte contient déjà un vrai bouton (le lecteur
-              // de prise), et un contrôle dans un contrôle n'est pas exposé
-              // correctement aux technologies d'assistance. Le clavier a mieux
-              // de toute façon : les flèches « ma réplique » de la barre basse
-              // et le slider parcourent TOUTES mes répliques, là où tabuler de
-              // carte en carte obligeait à traverser toute la scène pour
-              // atteindre les commandes.
+              // Pointer shortcut only: no role="button" and no tabIndex here.
+              // The card already contains a real button (the take player), and a
+              // control inside a control is not exposed correctly to assistive
+              // technologies. The keyboard has better anyway: the "my line"
+              // arrows of the bottom bar and the slider walk through ALL my
+              // lines, where tabbing from card to card forced one to cross the
+              // whole scene to reach the controls.
               onClick={mine ? () => selectLine(line) : undefined}
             >
               <div className="dialogue-meta">
@@ -400,8 +403,8 @@ export default function App() {
                   seed={line.id}
                   fresh={state === "fresh"}
                   lineText={line.text}
-                  // Seule une prise de la séance se supprime (le lecteur sert
-                  // aussi à réécouter un clip publié, qui n'est pas à nous).
+                  // Only a take from this session can be deleted (the player also
+                  // serves to replay a published clip, which is not ours).
                   onDelete={take ? () => deleteTake(line) : null}
                   deleteDisabled={isRecording}
                 />
@@ -411,8 +414,8 @@ export default function App() {
         })}
       </main>
 
-      {/* Barre de contrôle masquée tant qu'aucun personnage n'est choisi :
-          elle n'offrirait qu'un micro et un téléchargement désactivés. */}
+      {/* Control bar hidden as long as no character is chosen: it would only
+          offer a disabled mic and a disabled download. */}
       {characterId !== "" && (
         <div className="controls">
           {isRecording && (
@@ -420,8 +423,8 @@ export default function App() {
               <span className="rec-live-dot" />
               <span className="rec-live-label">{t("recorder.recordingLabel")}</span>
               <LiveWaveform analyser={analyser} />
-              {/* aria-hidden : role="status" annonce « Enregistrement » une fois ;
-                  le chrono qui tourne ne doit pas être ré-énoncé chaque seconde. */}
+              {/* aria-hidden: role="status" announces "Recording" once; the
+                  running timer must not be read out again every second. */}
               <span className="rec-live-time" aria-hidden="true">{formatTime(elapsed)}</span>
             </div>
           )}
@@ -431,17 +434,16 @@ export default function App() {
             disabled={isRecording}
             onSeek={setMyIndex}
           />
-          {/* Les QUATRE boutons de cette rangée portent leur infobulle sur une
-              enveloppe `.btn-tip` (theme.css) et jamais sur eux-mêmes, pour la
-              raison qui l'a fait naître dans l'Édition : un contrôle `disabled`
-              ne reçoit aucun événement souris (Chrome, Safari), donc son propre
-              `title` ne s'affiche pas, et l'explication n'arrive jamais au moment
-              où elle sert. Ici les quatre s'éteignent (pendant une prise, en bout
-              de course, sans réplique choisie, sans prise à exporter), et le
-              bouton de téléchargement est en icône seule : sans cette enveloppe,
-              un utilisateur souris n'avait aucun moyen d'apprendre ce qu'il fait.
-              Le nom accessible, lui, reste sur le bouton : c'est l'`aria-label`,
-              qui ne dépend pas de son état. */}
+          {/* The FOUR buttons of this row carry their tooltip on a `.btn-tip`
+              wrapper (theme.css) and never on themselves, for the reason that gave
+              birth to it in the Editing page: a `disabled` control receives no
+              mouse event (Chrome, Safari), so its own `title` is not displayed, and
+              the explanation never arrives at the moment when it is useful. Here
+              all four go dark (during a take, at the end of the run, with no line
+              chosen, with no take to export), and the download button is icon
+              only: without this wrapper, a mouse user had no way of learning what
+              it does. The accessible name, on the other hand, stays on the button:
+              it is the `aria-label`, which does not depend on its state. */}
           <div className="buttons-row">
             <span className="controls-side">
               {myLines.length > 0 && (
@@ -450,8 +452,8 @@ export default function App() {
                 </span>
               )}
             </span>
-            {/* Ces flèches ne parcourent QUE mes répliques : même design que
-                les sauts « ma réplique » de la page Répétition (.my-jump). */}
+            {/* These arrows walk through MY lines only: same design as the "my
+                line" jumps of the Rehearsal page (.my-jump). */}
             <span className="btn-tip" title={t("common.prevMyLine")}>
               <button
                 className="ctrl-btn my-jump"
@@ -504,18 +506,18 @@ export default function App() {
         saveLabel={t("recorder.leaveSave")}
         onSave={downloadZip}
       >
-        {/* Le nombre de prises a quitté la phrase : le pluriel ne règle plus que
-            l'accord (cf. `recorder.leaveBody`). */}
+        {/* The number of takes has left the sentence: the plural now only settles
+            the agreement (cf. `recorder.leaveBody`). */}
         <p>{t("recorder.leaveBody", { count: takenCount })}</p>
       </LeaveGuard>
     </div>
   );
 }
 
-// Encart d'accueil, à la place des répliques tant qu'aucun personnage n'est
-// choisi : le mode d'emploi de la page, puis les personnages en boutons (le
-// select du bandeau seul se lisait comme une page bloquée). Le compteur « à
-// enregistrer » aide chacun à se reconnaître et montre le travail restant.
+// Intro card, in place of the lines as long as no character is chosen: the page's
+// instructions, then the characters as buttons (the header's select alone read as
+// a blocked page). The "to record" counter helps everyone recognise themselves and
+// shows the work left.
 function IntroCard({ characters, lines, isTodo, onPick }) {
   const stats = characters.map((c) => {
     const own = lines.filter((l) => l.characterId === c.id);
@@ -524,8 +526,8 @@ function IntroCard({ characters, lines, isTodo, onPick }) {
   return (
     <div className="intro-card card">
       <h2 className="intro-title">{t("common.whoDoYouPlay")}</h2>
-      {/* Le mot en gras est un PARAMÈTRE et pas un fragment de JSX : découper la
-          phrase autour du <strong> y figerait l'ordre des mots français. */}
+      {/* The bold word is a PARAMETER and not a JSX fragment: cutting the sentence
+          around the <strong> would freeze the French word order in it. */}
       <p className="intro-lead">
         <T
           k="recorder.intro.lead"
@@ -582,10 +584,10 @@ function IntroCard({ characters, lines, isTodo, onPick }) {
 // Live recording waveform: instead of a jittery oscilloscope, it accumulates
 // one amplitude bar at a regular cadence so the signal *builds up* left to
 // right (like a voice-memo), then scrolls once the canvas is full. Reads the
-// recorder's AnalyserNode only — never the stream. Colour = theme accent.
-const BAR_W = 3; // largeur d'une barre (px CSS)
-const BAR_GAP = 2; // espace entre barres (px CSS)
-const SAMPLE_MS = 55; // cadence d'ajout d'une barre → vitesse de « construction »
+// recorder's AnalyserNode only, never the stream. Colour = theme accent.
+const BAR_W = 3; // width of a bar (CSS px)
+const BAR_GAP = 2; // space between bars (CSS px)
+const SAMPLE_MS = 55; // cadence at which a bar is added, hence "build-up" speed
 
 function LiveWaveform({ analyser }) {
   const canvasRef = useRef(null);
@@ -595,24 +597,23 @@ function LiveWaveform({ analyser }) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     const dpr = window.devicePixelRatio || 1;
-    // Résolution physique = taille CSS × densité (net sur écrans HiDPI).
+    // Physical resolution = CSS size × density (sharp on HiDPI screens).
     const cssW = canvas.clientWidth || 240;
     const cssH = canvas.clientHeight || 26;
     canvas.width = Math.round(cssW * dpr);
     canvas.height = Math.round(cssH * dpr);
-    // La couleur du tracé vient de la propriété `color` du canvas, que
-    // recorder.css pose à `var(--accent)`. Lue sur l'ÉLÉMENT et pas comme variable
-    // sur `:root` : `color` est une propriété héritée et toujours résolue, donc il
-    // n'y a plus de repli à écrire, là où la lecture de `--accent` en demandait un
-    // et remettait le bordeaux de la marque en dur dans le JS avec un « à garder
-    // synchrone ». Un canvas n'hérite pas d'une couleur de tracé, mais il hérite
-    // bien de `color`.
+    // The stroke colour comes from the canvas's `color` property, which
+    // recorder.css sets to `var(--accent)`. Read on the ELEMENT and not as a
+    // variable on `:root`: `color` is an inherited property and always resolved, so
+    // there is no fallback left to write, where reading `--accent` required one and
+    // hardcoded the brand's burgundy back into the JS with a "keep in sync". A
+    // canvas does not inherit a stroke colour, but it does inherit `color`.
     const accent = getComputedStyle(canvas).color;
     const slot = (BAR_W + BAR_GAP) * dpr;
     const barW = BAR_W * dpr;
     const capacity = Math.floor(canvas.width / slot);
 
-    // Historique des niveaux (0..1), le plus récent en fin de tableau.
+    // History of the levels (0..1), the most recent at the end of the array.
     const levels = [];
 
     const drawBars = () => {
@@ -621,11 +622,11 @@ function LiveWaveform({ analyser }) {
       const mid = h / 2;
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = accent;
-      // Barres alignées à gauche : ça se remplit progressivement, puis défile.
+      // Bars aligned to the left: it fills up progressively, then scrolls.
       for (let i = 0; i < levels.length; i++) {
         const bh = Math.max(barW, levels[i] * (h * 0.9));
         const x = i * slot;
-        // Barre centrée verticalement (miroir), coins arrondis.
+        // Bar centred vertically (mirrored), rounded corners.
         ctx.beginPath();
         const r = barW / 2;
         ctx.roundRect(x, mid - bh / 2, barW, bh, r);
@@ -633,7 +634,7 @@ function LiveWaveform({ analyser }) {
       }
     };
 
-    // Pas d'analyseur (Web Audio absent) : ligne de repos discrète, figée.
+    // No analyser (Web Audio missing): a discreet, frozen rest line.
     if (!analyser) {
       ctx.fillStyle = accent;
       ctx.globalAlpha = 0.25;
@@ -648,7 +649,7 @@ function LiveWaveform({ analyser }) {
       raf = requestAnimationFrame(tick);
       if (now - last < SAMPLE_MS) return;
       last = now;
-      // Niveau RMS de la fenêtre courante (128 = silence).
+      // RMS level of the current window (128 = silence).
       analyser.getByteTimeDomainData(buf);
       let sum = 0;
       for (let i = 0; i < buf.length; i++) {
@@ -656,7 +657,7 @@ function LiveWaveform({ analyser }) {
         sum += v * v;
       }
       const rms = Math.sqrt(sum / buf.length);
-      // Gain + plafond : une voix normale remplit bien la hauteur.
+      // Gain + ceiling: a normal voice fills the height nicely.
       levels.push(Math.min(1, rms * 5));
       if (levels.length > capacity) levels.shift();
       drawBars();
@@ -700,7 +701,7 @@ function getAudioContext() {
 // (6%..100%) so silence still shows a sliver. Throws if fetch/decode fails.
 async function decodePeaks(src, count = WAVE_BARS) {
   const ctx = getAudioContext();
-  if (!ctx) throw new Error("Web Audio indisponible");
+  if (!ctx) throw new Error("Web Audio unavailable");
   const buf = await (await fetch(src)).arrayBuffer();
   // decodeAudioData detaches the buffer; slice() keeps a copy the caller owns.
   const audio = await ctx.decodeAudioData(buf.slice(0));
@@ -723,12 +724,12 @@ async function decodePeaks(src, count = WAVE_BARS) {
   return peaks.map((p) => (max > 0 ? floor + (100 - floor) * (p / max) : floor));
 }
 
-// « m:ss », le format universel d'un extrait court : il s'écrit pareil dans les
-// deux langues du site, et `Intl` n'expose pas de formateur de durée partout
-// (`Intl.DurationFormat` est trop récent pour les navigateurs d'une troupe). Ce
-// qui est du texte d'interface ici, c'est ce qui JOINT l'écoulé et le total, et
-// c'est passé au catalogue (`recorder.player.time`). Une prise ne dépassant pas
-// quelques minutes, il n'y a pas non plus de séparateur de milliers à grouper.
+// "m:ss", the universal format of a short excerpt: it is written the same way in
+// both languages of the site, and `Intl` does not expose a duration formatter
+// everywhere (`Intl.DurationFormat` is too recent for a troupe's browsers). What is
+// interface text here is what JOINS the elapsed time and the total, and that has
+// been handed to the catalogue (`recorder.player.time`). Since a take never goes
+// beyond a few minutes, there is no thousands separator to group either.
 function formatTime(seconds) {
   const s = Math.floor(seconds);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -750,7 +751,7 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
   // decoding or if decode fails.
   const [peaks, setPeaks] = useState(null);
   const bars = peaks ?? fallback;
-  // Fraction lue (0..1) : colore l'onde jusqu'à la tête de lecture.
+  // Fraction played (0..1): colours the waveform up to the playhead.
   const progress = duration > 0 ? Math.min(1, time / duration) : 0;
 
   useEffect(() => {
@@ -784,8 +785,9 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
       >
         {playing ? <PauseIcon /> : <PlayIcon />}
       </button>
-      {/* Les deux durées arrivent composées en « m:ss » (cf. formatTime) ; ce qui
-          les JOINT vient du catalogue, ça n'a pas à être un « / » écrit ici. */}
+      {/* The two durations arrive already composed as "m:ss" (cf. formatTime); what
+          JOINS them comes from the catalogue, it has no business being a "/"
+          written here. */}
       <span className="player-time">
         {t("recorder.player.time", { elapsed: formatTime(time), total: formatTime(duration) })}
       </span>
@@ -819,8 +821,8 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
             onDelete();
           }}
         >
-          {/* Rien de plus que la citation, comme la suppression de réplique de
-              l'éditeur : le titre dit le geste, la citation dit sur quoi. */}
+          {/* Nothing more than the quotation, like the editor's line deletion: the
+              title says the gesture, the quotation says on what. */}
           <p className="confirm-quote">{fmt.quote(excerpt(lineText))}</p>
         </ConfirmModal>
       )}
@@ -832,7 +834,7 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
         onPause={() => setPlaying(false)}
         onEnded={() => setTime(0)}
         // Take replaced (src swapped): reset the stale elapsed time and the
-        // play state — no pause event is guaranteed on a source change.
+        // play state; no pause event is guaranteed on a source change.
         onEmptied={() => {
           setPlaying(false);
           setTime(0);
@@ -840,7 +842,7 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
         onTimeUpdate={(e) => setTime(e.target.currentTime)}
         onLoadedMetadata={(e) => {
           // Chrome quirk: MediaRecorder blobs report an Infinity duration
-          // until seeked past the end — force it, then rewind.
+          // until seeked past the end: force it, then rewind.
           if (!Number.isFinite(e.target.duration)) e.target.currentTime = 1e7;
         }}
         onDurationChange={(e) => {

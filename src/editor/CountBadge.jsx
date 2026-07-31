@@ -1,29 +1,28 @@
 import React from "react";
 import { fmt, t } from "../shared/locale.js";
 
-// Le compte de répliques d'un objet de la pièce : un personnage dans la section
-// « Personnages » du rail, un acte ou une scène dans son plan.
+// The line count of an object of the play: a character in the rail's "Characters"
+// section, an act or a scene in its plan.
 //
-// **Un nombre nu ne dit pas ce qu'il compte.** À l'écran, la colonne des comptes
-// doit s'aligner d'une rangée à l'autre, donc seul le chiffre est écrit ; c'est
-// l'`aria-label` qui porte la phrase, et sans lui la voix annonçait « Marie, 12 »
-// et la souris n'apprenait rien du tout. Le `role="img"` posé à côté est ce qui
-// rend un `aria-label` valable sur un `<span>` : c'est le motif de `PageMark` et
-// des drapeaux du sélecteur de langue, le seul du dépôt.
+// **A bare number does not say what it counts.** On screen, the column of counts
+// has to line up from one row to the next, so only the figure is written; it is
+// the `aria-label` that carries the sentence, and without it the voice announced
+// "Marie, 12" and the mouse learned nothing at all. The `role="img"` set alongside
+// is what makes an `aria-label` valid on a `<span>`: it is the pattern of
+// `PageMark` and of the language selector's flags, the only one in the repo.
 //
-// Un seul composant pour les deux panneaux, et il vit ici plutôt que chez l'un
-// des deux : le même objet rendu par deux fichiers voisins finit par diverger sur
-// le détail qui compte (la clé de pluriel, ou le couple `role`/`aria-label`, dont
-// l'un sans l'autre ne dit plus rien). Leur CSS était déjà commun
-// (`.character-count, .structure-count` dans editor.css), ce qui disait bien
-// qu'il n'y avait qu'un objet ; les deux classes restent pour que chaque panneau
-// garde la main sur son gabarit.
-// Le chiffre passe par `fmt.number`, le formateur des nombres écrits SEULS, hors
-// de toute phrase. Ce n'est pas de la précaution : l'`aria-label` juste à côté est
-// une phrase, donc le moteur y groupe déjà le nombre lui-même, et sans ça le même
-// compte se lisait « 1144 » à l'écran et s'annonçait « 1 144 répliques » à la
-// voix. Les deux viennent du même `Intl.NumberFormat`, ils ne peuvent plus
-// diverger.
+// One single component for both panels, and it lives here rather than in one of
+// the two: the same object rendered by two neighbouring files ends up diverging on
+// the detail that matters (the plural key, or the `role`/`aria-label` pair, either
+// of which says nothing without the other). Their CSS was already common
+// (`.character-count, .structure-count` in editor.css), which said plainly that
+// there was only one object; the two classes remain so that each panel keeps
+// control of its own layout.
+// The figure goes through `fmt.number`, the formatter for numbers written ALONE,
+// outside any sentence. This is not a precaution: the `aria-label` right next to it
+// is a sentence, so the engine already groups the number there itself, and without
+// this the same count read "1144" on screen and was announced as "1,144 lines"
+// aloud. Both come from the same `Intl.NumberFormat`, they can no longer diverge.
 export default function CountBadge({ count, className }) {
   const label = t("common.lineCount", { count });
   return (

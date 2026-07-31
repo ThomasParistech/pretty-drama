@@ -1,71 +1,70 @@
-"""Process everything the respo drops in uploads/ : voice ZIPs and scripts.
+"""Process everything the coordinator drops in uploads/: voice ZIPs and scripts.
 
-**Une zone de dépôt par pièce**, `uploads/<id de la pièce>/`, et c'est le DOSSIER
-qui route le fichier, jamais son contenu. C'est ce qui fait qu'un ZIP abîmé, donc
-illisible, atterrit quand même dans le journal de sa pièce : un fichier qu'on ne
-peut pas ouvrir ne peut pas dire de quelle pièce il est. Le respo ne tape jamais ce
-chemin, il clique le bouton de dépôt de la pièce où il travaille.
+**One upload zone per play**, `uploads/<play id>/`, and it is the FOLDER that
+routes the file, never its content. That is what makes a damaged, therefore
+unreadable, ZIP land in its play's journal all the same: a file that cannot be
+opened cannot say which play it belongs to. The coordinator never types this path,
+they click the upload button of the play they are working on.
 
-L'identifiant que le fichier porte (le champ `id` d'un script, le champ `play` du
-manifest d'un ZIP) sert donc à VÉRIFIER et non à router : un fichier qui nomme une
-autre pièce que celle de sa zone de dépôt est refusé avec un motif lisible, plutôt
-que d'écrire les voix ou le script d'une pièce par-dessus une autre.
+The id the file carries (a script's `id` field, a ZIP manifest's `play` field)
+therefore serves to VERIFY and not to route: a file that names a play other than
+the one whose upload zone it sits in is refused with a readable reason, rather
+than writing one play's voices or script over another's.
 
-Le type est déduit de l'extension : `.zip` = voix d'un acteur, `.json` = script de
-la pièce. Les fichiers cachés sont laissés en place (`.gitkeep`, qui tient la zone
-de dépôt en vie dans git), tout autre fichier est signalé au journal puis retiré (le
-laisser le ferait re-signaler à chaque run).
+The kind is deduced from the extension: `.zip` = an actor's voices, `.json` = the
+play's script. Hidden files are left in place (`.gitkeep`, which keeps the upload
+zone alive in git), any other file is reported to the journal then removed
+(leaving it there would have it reported again on every run).
 
-**Une pièce naît d'un dépôt de script**, dans une zone de dépôt qui ne correspond
-encore à aucune pièce : le dossier est alors créé avec le script promu dedans. Deux
-chemins y mènent, et le second est un filet :
- - `uploads/<nouvel id>/script.json`, ce que propose la page de gestion des pièces ;
- - `uploads/script.json` à la racine, routé par le seul `id` du fichier, pour le cas
-   où GitHub refuserait de servir sa page d'envoi sur un dossier qu'il ne connaît pas
-   encore, et pour le respo qui déposerait par habitude à l'ancienne adresse.
-Un ZIP de voix, lui, n'est jamais accepté à la racine : des voix concernent toujours
-une pièce qui existe, et cette pièce porte son propre bouton de dépôt.
+**A play is born from a script upload**, in an upload zone that matches no play
+yet: the folder is then created with the promoted script inside. Two paths lead
+there, and the second one is a safety net:
+ - `uploads/<new id>/script.json`, what the plays management page offers;
+ - `uploads/script.json` at the root, routed by the file's `id` alone, for the case
+   where GitHub would refuse to serve its upload page on a folder it does not know
+   yet, and for the coordinator who would drop a file at the old address by habit.
+A voice ZIP, on the other hand, is never accepted at the root: voices always
+concern a play that exists, and that play carries its own upload button.
 
-Ce qu'aucune pièce ne réclame (fichier posé à la racine sans identifiant lisible,
-dossier de dépôt dont le nom n'est pas un identifiant valide) est consigné dans le
-journal RACINE, `data/history.json`, affiché par la page de gestion des pièces. Le
-journal est le seul canal de retour du projet : un fichier refusé se dit toujours
-quelque part, sans pour autant faire entrer les dépôts d'une pièce dans le journal
-d'une autre.
+What no play claims (a file dropped at the root with no readable id, an upload
+folder whose name is not a valid id) is recorded in the ROOT journal,
+`data/history.json`, displayed by the plays management page. The journal is the
+project's only feedback channel: a refused file always says so somewhere, without
+letting one play's uploads into another play's journal for that.
 
-Corollaire important : `script.json` n'est plus déposé à la main par-dessus la
-source de vérité. Il arrive dans une zone de dépôt, est **validé** ici, et n'est
-promu qu'ensuite (cf. `validate_script`). Un fichier illisible ou qui n'est pas
-un script devient donc une ligne de journal, plus un workflow en échec avec la
-pièce écrasée. Les octets sont écrits **verbatim** : passer par
-`sanitize_script` perdrait ce qu'il ignore (les couleurs des personnages).
+Important corollary: `script.json` is no longer dropped by hand over the source of
+truth. It arrives in an upload zone, is **validated** here, and is only promoted
+afterwards (cf. `validate_script`). An unreadable file, or one that is not a
+script, therefore becomes a journal line, no longer a failed workflow with the
+play overwritten. The bytes are written **verbatim**: going through
+`sanitize_script` would lose what it ignores (the character colours).
 
 For each ZIP:
- - read its manifest.json ({play: id de la pièce, clips: {line id: raw text}}) —
+ - read its manifest.json ({play: play id, clips: {line id: raw text}}):
    the text is the RAW line text at recording time; normalization happens ONLY
    here in the Action (single implementation), never in the browser. The audio
    member is named {id}.{ext} (extension chosen by the recording browser),
-   so it is located from the id alone. `play` ne route pas le dépôt (le dossier
-   où le fichier est posé le fait), il le VÉRIFIE : un ZIP qui nomme une autre
-   pièce que celle de sa zone de dépôt est refusé.
+   so it is located from the id alone. `play` does not route the upload (the
+   folder the file is dropped in does that), it VERIFIES it: a ZIP that names a
+   play other than the one whose upload zone it sits in is refused.
  - VALIDATE the whole manifest first, then transcode every clip with ffmpeg
    in a single pass (leading/trailing silence trim + loudness normalization +
    mp3 mono ~64 kbps) into a temp dir, and only if EVERY clip succeeded,
    publish the play's clips/{id}.mp3 and update its data/clips.json
    ({line id: raw text}).
-   A ZIP is merged entirely or not at all — never half.
+   A ZIP is merged entirely or not at all, never half.
  - delete the processed ZIP (idempotent merge: re-sending a clip for the same
    line id simply overwrites it)
 
 Faulty files (corrupted ZIP, missing manifest, ffmpeg failure, oversized,
-unreadable script) are also removed — otherwise they would fail on every
+unreadable script) are also removed, otherwise they would fail on every
 subsequent run. ANY exception on one file is contained: it must not block the
 other files nor lose the updates already merged in this run.
 
-Le sort de CHAQUE fichier (succès comme erreur) est écrit dans uploads_result.json,
-rangé par pièce, que update_history.py consigne dans le journal de chaque pièce (ou
-dans celui de la racine) : c'est le seul retour du respo, qui ne lit ni les logs de la
-CI ni les issues.
+The fate of EVERY file (success as well as error) is written to
+uploads_result.json, filed by play, which update_history.py records in each play's
+journal (or in the root one): it is the coordinator's only feedback, and they read
+neither the CI logs nor the issues.
 """
 
 from __future__ import annotations
@@ -90,17 +89,17 @@ from common import (
     write_json,
 )
 
-# Éphémère (gitignoré) : passé à update_history.py dans le même run.
+# Ephemeral (gitignored): handed to update_history.py within the same run.
 RESULT_PATH = REPO_ROOT / "uploads_result.json"
 
-# Ce résultat finit affiché sur la page Avancement, et il embarque des
-# fragments choisis par le ZIP (nom du fichier, extraits de manifest, sortie
-# ffmpeg) : tout est mis sur une ligne et plafonné ici, une fois pour toutes.
+# This result ends up displayed on the Progress page, and it embeds fragments
+# chosen by the ZIP (file name, manifest excerpts, ffmpeg output): everything is
+# put on a single line and capped here, once and for all.
 MAX_FILENAME_CHARS = 100
 MAX_ERROR_CHARS = 300
 
 # Line ids become clip filenames, so only accept strictly safe characters.
-# Mirror of SAFE_ID in src/editor/reducer.js — keep in sync. (Alphanumeric,
+# Mirror of SAFE_ID in src/editor/reducer.js, keep in sync. (Alphanumeric,
 # not just hex: hand-edited readable ids must not be rejected at this late
 # stage when the editor accepted them.)
 LINE_ID_PATTERN = re.compile(r"^[0-9a-zA-Z-]{1,64}$")
@@ -110,16 +109,16 @@ LINE_ID_PATTERN = re.compile(r"^[0-9a-zA-Z-]{1,64}$")
 MAX_CLIPS_PER_ZIP = 2000
 MAX_MANIFEST_BYTES = 2 * 1024 * 1024
 MAX_CLIP_BYTES = 50 * 1024 * 1024
-# Une pièce entière en JSON pèse quelques centaines de kilo-octets.
+# A whole play in JSON weighs a few hundred kilobytes.
 MAX_SCRIPT_BYTES = 5 * 1024 * 1024
 
 LOUDNORM = "loudnorm=I=-16:TP=-1.5:LRA=11"
 
 # The silence threshold is RELATIVE to the take's own peak, never an absolute
-# dBFS value: takes arrive at wildly different levels (distance au micro, AGC
-# du navigateur). A fixed -45 dBFS threshold leaves a second of dead air on a
-# loud take and eats the first word of a quiet one (mesuré : le même clip
-# atténué de 20 dB perdait 300 ms de parole).
+# dBFS value: takes arrive at wildly different levels (distance to the mic,
+# browser AGC). A fixed -45 dBFS threshold leaves a second of dead air on a
+# loud take and eats the first word of a quiet one (measured: the same clip
+# attenuated by 20 dB lost 300 ms of speech).
 TRIM_BELOW_PEAK_DB = 35.0
 # Sound must hold above the threshold this long to count as "the take has
 # started". Without it, trimming does nothing at all on most takes: browsers
@@ -128,19 +127,21 @@ TRIM_BELOW_PEAK_DB = 35.0
 TRIM_ONSET_SECONDS = 0.05
 # Silence kept on each side, so words neither start nor stop abruptly.
 TRIM_KEEP_SECONDS = 0.1
-# Under that peak the take holds no voice at all (micro coupé, mauvaise
-# entrée) : trimming it would remove everything and write an empty, unplayable
-# mp3, so it is transcoded as-is.
+# Under that peak the take holds no voice at all (muted mic, wrong input):
+# trimming it would remove everything and write an empty, unplayable mp3, so it
+# is transcoded as-is.
 SILENT_PEAK_DBFS = -60.0
 
 
 class UploadError(Exception):
-    """A problem with one uploaded file, described in French: the message is
-    shown as-is to the respo, in the journal of the Avancement page."""
+    """A problem with one uploaded file, described in French: the message is shown
+    as-is to the coordinator, in the journal of the Progress page. It is DATA
+    rendered by the bilingual UI, which is why it stays French for now; see the
+    "known gap" note in CLAUDE.md."""
 
 
 def short(text, limit: int) -> str:
-    """Texte non fiable prêt à être affiché : une seule ligne, plafonné."""
+    """Untrusted text made ready to display: a single line, capped."""
     text = " ".join(str(text).split())
     return text[:limit] + "…" if len(text) > limit else text
 
@@ -222,23 +223,23 @@ def parse_manifest(archive) -> tuple[str, list[tuple[str, str, str]]]:
     """Validate the ZIP's manifest and return (declared play id,
     (line_id, audio_member_name, raw_text) triples).
 
-    Deux formes acceptées, et c'est délibéré :
-     - `{"play": "<id>", "clips": {id de réplique: texte brut}}`, celle que la page
-       Enregistrement écrit ;
-     - le mapping NU `{id de réplique: texte brut}` des ZIP téléchargés avant que
-       le dépôt sache héberger plusieurs pièces. Un acteur peut avoir le sien dans
-       ses téléchargements depuis des semaines, et il n'y a rien à gagner à le lui
-       refuser : il rend un identifiant de pièce vide, donc aucune vérification, et
-       c'est le dossier de dépôt qui décide, comme pour tous les autres.
+    Two forms are accepted, and that is deliberate:
+     - `{"play": "<id>", "clips": {line id: raw text}}`, the one the Recording
+       page writes;
+     - the BARE mapping `{line id: raw text}` of the ZIPs downloaded before the repo
+       knew how to host several plays. An actor may have had theirs sitting in their
+       downloads for weeks, and there is nothing to gain by refusing it: it yields
+       an empty play id, therefore no verification, and it is the upload folder that
+       decides, as it does for all the others.
 
-    L'identifiant rendu est une VÉRIFICATION, jamais un routage (cf. `downloadZip`
-    dans src/recorder/App.jsx) : vide, il ne dit rien et ne bloque rien.
+    The id returned is a VERIFICATION, never a routing (cf. `downloadZip` in
+    src/recorder/App.jsx): empty, it says nothing and blocks nothing.
 
-    Limite connue et acceptée : un ZIP de l'ancienne forme dont une réplique
-    porterait l'id « play » ou « clips » serait lu comme la forme nommée, donc
-    refusé avec un motif de format. Les ids que l'éditeur mint sont des UUID, et le
-    prix d'un id hand-édité aussi malheureux est un message d'erreur, jamais un
-    mp3 écrit au mauvais endroit.
+    Known and accepted limit: a ZIP of the old form one of whose lines carried the
+    id "play" or "clips" would be read as the named form, therefore refused with a
+    format reason. The ids the editor mints are UUIDs, and the price of a
+    hand-edited id that unlucky is an error message, never an mp3 written in the
+    wrong place.
     """
     names = set(archive.namelist())
     if "manifest.json" not in names:
@@ -254,11 +255,11 @@ def parse_manifest(archive) -> tuple[str, list[tuple[str, str, str]]]:
     if not isinstance(manifest, dict):
         raise UploadError("le manifest.json du ZIP n'a pas le format attendu")
 
-    # Laquelle des deux formes ? La présence de l'une des deux clés nommées suffit
-    # à trancher, et elle donne un message de format franc quand l'autre manque, là
-    # où retomber sur le mapping nu ferait chercher un fichier audio nommé
-    # « clips.webm ». C'est aussi ce qui continue de refuser la forme d'avant
-    # celle-ci (`{character, clips: [...]}`), dont les clips étaient une LISTE.
+    # Which of the two forms? The presence of either named key is enough to settle
+    # it, and it gives a frank format message when the other one is missing, where
+    # falling back on the bare mapping would have it look for an audio file named
+    # "clips.webm". That is also what keeps refusing the form before this one
+    # (`{character, clips: [...]}`), whose clips were a LIST.
     if "play" in manifest or "clips" in manifest:
         play = manifest.get("play", "")
         clips = manifest.get("clips")
@@ -274,12 +275,12 @@ def parse_manifest(archive) -> tuple[str, list[tuple[str, str, str]]]:
     audio_names = names - {"manifest.json"}
     entries = []
     for line_id, text in clips.items():
-        # fullmatch et pas match : en Python, `$` accepte aussi un saut de ligne
-        # final (« abc\n » passerait), là où le SAFE_ID du navigateur le refuse.
-        # Les deux gardes doivent dire exactement la même chose.
+        # fullmatch and not match: in Python, `$` also accepts a trailing newline
+        # ("abc\n" would pass), where the browser's SAFE_ID rejects it. The two
+        # guards must say exactly the same thing.
         if not LINE_ID_PATTERN.fullmatch(line_id) or not isinstance(text, str):
             raise UploadError(f"une entrée du manifest est invalide : {str({line_id: text})[:200]}")
-        # The audio member is {id}.{ext} — the extension depends on the
+        # The audio member is {id}.{ext}, the extension depends on the
         # recording browser, so locate it by id (ids cannot contain dots,
         # and the fullmatch keeps the member name free of path tricks).
         matches = [n for n in audio_names if re.fullmatch(re.escape(line_id) + r"\.[0-9a-zA-Z]+", n)]
@@ -294,14 +295,14 @@ def parse_manifest(archive) -> tuple[str, list[tuple[str, str, str]]]:
 def process_zip(zip_path: Path, clips_index: dict, clips_dir: Path, expected_play: str = "") -> int:
     """All-or-nothing merge of one ZIP. Returns the number of clips merged.
 
-    `clips_dir` est le dossier de clips de la pièce (`plays/<id>/clips/`) : il arrive
-    en argument et n'est plus un chemin de module, chaque pièce ayant le sien.
+    `clips_dir` is the play's clips folder (`plays/<id>/clips/`): it arrives as an
+    argument and is no longer a module path, since every play has its own.
 
-    `expected_play` est la pièce dont ce ZIP alimente la zone de dépôt. Le ZIP est
-    refusé quand il en nomme une AUTRE : ses mp3 sont nommés par id de réplique,
-    donc les fusionner ici écrirait les voix d'une pièce sous les répliques d'une
-    autre, et personne ne s'en apercevrait avant la répétition. Vide (ZIP d'avant ce
-    champ, ou pièce sans identifiant), il n'y a rien à vérifier."""
+    `expected_play` is the play whose upload zone this ZIP feeds. The ZIP is refused
+    when it names ANOTHER one: its mp3s are named by line id, so merging them here
+    would write one play's voices under another play's lines, and nobody would
+    notice before the rehearsal. Empty (a ZIP from before this field, or a play with
+    no id), there is nothing to verify."""
     import zipfile
 
     try:
@@ -326,19 +327,19 @@ def process_zip(zip_path: Path, clips_index: dict, clips_dir: Path, expected_pla
             raw.write_bytes(read_member_capped(archive, file_name, MAX_CLIP_BYTES))
             out = tmp_dir / f"{line_id}.mp3"
             transcode(raw, out)
-            # La source ne sert plus (transcode l'a lue deux fois, une passe
-            # volumedetect puis la conversion) : elle quitte le disque tout de
-            # suite. Sans ça, le pic d'occupation du dossier temporaire est la
-            # SOMME des sources, soit MAX_CLIPS_PER_ZIP x MAX_CLIP_BYTES au pire,
-            # bien au-delà de ce qu'un runner a de libre. Un disque plein n'est
-            # pas contenu au fichier fautif comme le reste : il emporterait
-            # l'écriture de clips.json et le commit, donc les dépôts déjà fusionnés
-            # dans ce run. Les mp3 produits, eux, s'accumulent forcément (c'est le
-            # merge tout-ou-rien) mais pèsent 64 kbps mono.
+            # The source is of no further use (transcode read it twice, one
+            # volumedetect pass then the conversion): it leaves the disk right
+            # away. Without that, the temp folder's peak usage is the SUM of the
+            # sources, that is MAX_CLIPS_PER_ZIP x MAX_CLIP_BYTES at worst, well
+            # beyond what a runner has free. A full disk is not contained to the
+            # offending file the way the rest is: it would take down the writing
+            # of clips.json and the commit, therefore the uploads already merged
+            # in this run. The mp3s produced, on the other hand, necessarily pile
+            # up (that is the all-or-nothing merge) but weigh 64 kbps mono.
             raw.unlink(missing_ok=True)
             transcoded.append((line_id, out, text))
 
-        # Phase 2: everything succeeded — publish atomically-ish.
+        # Phase 2: everything succeeded, publish atomically-ish.
         clips_dir.mkdir(parents=True, exist_ok=True)
         for line_id, out, text in transcoded:
             shutil.move(str(out), str(clips_dir / f"{line_id}.mp3"))
@@ -353,14 +354,14 @@ def count_lines(script: dict) -> int:
 
 
 def validate_script(raw: bytes, current: dict, expected_play: str = "") -> None:
-    """Refuse un candidat qui n'est pas un script de pièce, AVANT qu'il ne
-    devienne la source de vérité.
+    """Refuse a candidate that is not a play script, BEFORE it becomes the source
+    of truth.
 
-    Volontairement plus strict que `sanitize_script`, qui est un lecteur
-    tolérant : ici on décide d'écraser le `script.json` d'une pièce. Un JSON valide mais
-    étranger (`[1, 2, 3]`, un export d'autre chose) se sanitiserait en pièce
-    vide et effacerait la pièce de la troupe, d'où le garde-fou : un candidat
-    sans aucune réplique ne remplace jamais une pièce qui en a."""
+    Deliberately stricter than `sanitize_script`, which is a lenient reader: here we
+    are deciding to overwrite a play's `script.json`. A valid but foreign JSON
+    (`[1, 2, 3]`, an export of something else) would sanitize into an empty play and
+    would erase the troupe's play, hence the guard rail: a candidate with no line at
+    all never replaces a play that has some."""
     if len(raw) > MAX_SCRIPT_BYTES:
         raise UploadError(f"le fichier est anormalement gros (plus de {MAX_SCRIPT_BYTES // (1024 * 1024)} Mo)")
     try:
@@ -373,11 +374,11 @@ def validate_script(raw: bytes, current: dict, expected_play: str = "") -> None:
         raise UploadError(
             "ce fichier n'a pas la forme d'un script de pièce (il ne vient pas de la page Édition ?)"
         )
-    # Même vérification que pour un ZIP de voix, et pour la même raison : le
-    # fichier nomme sa pièce, le dossier où il est posé la nomme aussi, et les
-    # faire se contredire écraserait le script d'une pièce par celui d'une autre.
-    # Un identifiant vide (script téléchargé avant que ce champ existe) ne dit rien
-    # et ne bloque rien : c'est le dossier qui décide.
+    # Same verification as for a voice ZIP, and for the same reason: the file names
+    # its play, the folder it is dropped in names one too, and letting the two
+    # contradict each other would overwrite one play's script with another's. An
+    # empty id (a script downloaded before this field existed) says nothing and
+    # blocks nothing: it is the folder that decides.
     declared = candidate.get("id") if is_play_id(candidate.get("id")) else ""
     if declared and expected_play and declared != expected_play:
         raise UploadError(
@@ -394,26 +395,26 @@ def validate_script(raw: bytes, current: dict, expected_play: str = "") -> None:
 def process_script(path: Path, script_path: Path, expected_play: str = "") -> None:
     """Promote an uploaded script to the play's script.json, or raise UploadError.
 
-    `script_path` est la destination (`plays/<id>/data/script.json`). Elle arrive en
-    argument et n'est plus un chemin de module : c'est le dossier de dépôt qui
-    désigne la pièce, et cette destination peut ne pas exister encore, un dépôt de
-    script étant ce qui CRÉE une pièce."""
+    `script_path` is the destination (`plays/<id>/data/script.json`). It arrives as an
+    argument and is no longer a module path: it is the upload folder that designates
+    the play, and this destination may not exist yet, a script upload being what
+    CREATES a play."""
     current = load_json(script_path, {})
     if not isinstance(current, dict):
         current = {}
     raw = path.read_bytes()
     validate_script(raw, current, expected_play)
-    # Octets verbatim : c'est le fichier produit par l'éditeur, et lui seul
-    # porte tout (couleurs des personnages comprises : sanitize_script en recopie
-    # bien la forme valide, mais il ignore tout ce qu'il ne connaît pas).
+    # Verbatim bytes: this is the file the editor produced, and it alone carries
+    # everything (character colours included: sanitize_script does copy the valid
+    # form of them, but it ignores everything it does not know about).
     script_path.parent.mkdir(parents=True, exist_ok=True)
     script_path.write_bytes(raw)
 
 
 def kind_of(path: Path) -> str:
-    """Type de dépôt déduit de la seule extension. Tolérant sur le nom : le
-    navigateur renomme volontiers en « script (1).json » ou « voix-serge (2).zip »
-    quand le fichier existe déjà dans les téléchargements."""
+    """Upload kind deduced from the extension alone. Lenient about the name: the
+    browser cheerfully renames files to "script (1).json" or "voix-serge (2).zip"
+    when the file already exists in the downloads."""
     suffix = path.suffix.lower()
     if suffix == ".zip":
         return "voix"
@@ -423,13 +424,13 @@ def kind_of(path: Path) -> str:
 
 
 def deposited_files(folder: Path) -> list[Path]:
-    """Les fichiers déposés dans une zone. Les fichiers cachés restent en place :
-    `.gitkeep` tient la zone en vie dans git, il n'est pas un dépôt du respo.
+    """The files dropped in one zone. Hidden files stay in place: `.gitkeep` keeps
+    the zone alive in git, it is not an upload from the coordinator.
 
-    Les scripts passent AVANT les voix, et ce n'est pas cosmétique : un script est ce
-    qui fait naître une pièce, donc dans un dépôt qui porte les deux, c'est lui qui
-    crée le dossier auquel les voix se rattachent. Dans l'ordre alphabétique nu, un
-    ZIP nommé « autre.zip » serait passé le premier et aurait été refusé."""
+    Scripts come BEFORE voices, and that is not cosmetic: a script is what brings a
+    play into being, so in an upload that carries both, it is the script that creates
+    the folder the voices attach to. In bare alphabetical order, a ZIP named
+    "autre.zip" would have come first and would have been refused."""
     if not folder.is_dir():
         return []
     files = (p for p in folder.iterdir() if p.is_file() and not p.name.startswith("."))
@@ -437,36 +438,35 @@ def deposited_files(folder: Path) -> list[Path]:
 
 
 def ensure_play_layout(play_id: str) -> None:
-    """Le silo d'une pièce qui vient de naître : son dossier de clips et sa zone de
-    dépôt.
+    """The silo of a play that has just come into being: its clips folder and its
+    upload zone.
 
-    Les `.gitkeep` ne sont pas cosmétiques. Git ne versionne pas un dossier vide, et
-    ces deux dossiers doivent EXISTER dans le dépôt avant qu'on en ait besoin : la
-    zone de dépôt parce que c'est elle que vise le bouton de dépôt de la pièce, et
-    GitHub ne sert sa page d'envoi que sur un dossier qu'il connaît ; le dossier de
-    clips parce que le site le recopie tel quel au déploiement."""
+    The `.gitkeep` files are not cosmetic. Git does not version an empty folder, and
+    both of these folders must EXIST in the repo before they are needed: the upload
+    zone because that is what the play's upload button points at, and GitHub only
+    serves its upload page on a folder it knows about; the clips folder because the
+    site copies it as-is at deployment."""
     for folder in (play_clips_dir(play_id), play_uploads_dir(play_id)):
         folder.mkdir(parents=True, exist_ok=True)
         (folder / ".gitkeep").touch()
 
 
 def consume(path: Path) -> None:
-    """Traité ou fautif, le fichier quitte la zone de dépôt : les merges sont
-    idempotents par id de réplique, et un fichier cassé ne doit pas échouer
-    indéfiniment à chaque run."""
+    """Processed or faulty, the file leaves the upload zone: merges are idempotent
+    by line id, and a broken file must not keep failing forever on every run."""
     try:
         path.unlink(missing_ok=True)
     except OSError as exc:
-        print(f"{path.name}: suppression impossible — {exc}", file=sys.stderr)
+        print(f"{path.name}: cannot delete: {exc}", file=sys.stderr)
 
 
 def record(entries: list[dict], path: Path, kind: str, work) -> int:
-    """Exécute le traitement d'UN fichier et consigne son sort, quoi qu'il arrive.
+    """Run the processing of ONE file and record its fate, whatever happens.
 
-    Rend le nombre de clips fusionnés (zéro pour un script). Toute exception est
-    contenue ici : un fichier fautif ne doit ni bloquer les autres fichiers, ni faire
-    perdre les dépôts déjà fusionnés dans ce run, et son motif finit affiché au respo
-    dans le journal de sa pièce."""
+    Returns the number of clips merged (zero for a script). Every exception is
+    contained here: a faulty file must neither block the other files nor lose the
+    uploads already merged in this run, and its reason ends up displayed to the
+    coordinator in the journal of its play."""
     entry = {"file": short(path.name, MAX_FILENAME_CHARS), "kind": kind}
     clips = 0
     try:
@@ -475,10 +475,10 @@ def record(entries: list[dict], path: Path, kind: str, work) -> int:
             entry["clips"] = clips
     except UploadError as exc:
         entry["error"] = short(exc, MAX_ERROR_CHARS)
-        print(f"{path.name}: ERREUR — {exc}", file=sys.stderr)
-    except Exception as exc:  # noqa: BLE001 — one bad file must not sink the run
+        print(f"{path.name}: ERROR: {exc}", file=sys.stderr)
+    except Exception as exc:  # noqa: BLE001, one bad file must not sink the run
         entry["error"] = f"erreur inattendue ({type(exc).__name__})"
-        print(f"{path.name}: ERREUR INATTENDUE — {exc!r}", file=sys.stderr)
+        print(f"{path.name}: UNEXPECTED ERROR: {exc!r}", file=sys.stderr)
     finally:
         entries.append(entry)
         consume(path)
@@ -486,17 +486,17 @@ def record(entries: list[dict], path: Path, kind: str, work) -> int:
 
 
 def process_play_zone(play_id: str, files: list[Path]) -> tuple[list[dict], int]:
-    """Traite la zone de dépôt d'une pièce. Rend (lignes de journal, clips fusionnés).
+    """Process one play's upload zone. Returns (journal lines, clips merged).
 
-    La pièce peut ne pas exister encore : une zone de dépôt qui ne correspond à
-    aucune pièce est le canal de CRÉATION, et seul un script y est accepté. Des voix y
-    sont refusées, il n'y a aucune réplique à quoi les rattacher.
+    The play may not exist yet: an upload zone that matches no play is the CREATION
+    channel, and only a script is accepted there. Voices are refused, there is no
+    line for them to attach to.
     """
     data = play_data_dir(play_id)
     script_json = data / "script.json"
     clips_json = data / "clips.json"
     clips_index = load_json(
-        clips_json, {}, f"plays/{play_id}/data/clips.json illisible — reparti de zéro"
+        clips_json, {}, f"plays/{play_id}/data/clips.json unreadable: started over from scratch"
     )
     if not isinstance(clips_index, dict):
         clips_index = {}
@@ -515,16 +515,16 @@ def process_play_zone(play_id: str, files: list[Path]) -> tuple[list[dict], int]
                         "de sa pièce"
                     )
                 count = process_zip(path, clips_index, play_clips_dir(play_id), play_id)
-                print(f"{path.name}: {count} clip(s) traités pour « {play_id} »")
+                print(f"{path.name}: {count} clip(s) processed for {play_id}")
                 return count
             if kind == "script":
                 created = not script_json.exists()
                 process_script(path, script_json, play_id)
                 if created:
                     ensure_play_layout(play_id)
-                    print(f"{path.name}: pièce « {play_id} » créée")
+                    print(f"{path.name}: play {play_id} created")
                 else:
-                    print(f"{path.name}: script promu dans plays/{play_id}/data/script.json")
+                    print(f"{path.name}: script promoted to plays/{play_id}/data/script.json")
                 return 0
             raise UploadError(
                 "type de fichier inconnu : seuls les ZIP de voix et le script de la pièce "
@@ -533,27 +533,27 @@ def process_play_zone(play_id: str, files: list[Path]) -> tuple[list[dict], int]
 
         total += record(entries, path, kind, work)
 
-    # Écrit seulement si la pièce EXISTE : sans ce garde, une zone de dépôt créée
-    # avec une faute de frappe et remplie d'un seul fichier fautif fabriquerait un
-    # dossier de pièce, donc une pièce fantôme dans le sélecteur de la troupe.
+    # Written only if the play EXISTS: without this guard, an upload zone created
+    # with a typo and filled with a single faulty file would manufacture a play
+    # folder, therefore a ghost play in the troupe's selector.
     if script_json.exists():
         write_json(clips_json, clips_index, sort_keys=True)
     return entries, total
 
 
 def claimed_play_id(path: Path) -> str:
-    """La pièce qu'un fichier posé à la RACINE d'`uploads/` revendique.
+    """The play a file dropped at the ROOT of `uploads/` claims to belong to.
 
-    C'est le seul endroit où le CONTENU route, faute d'un dossier pour le faire, et
-    seul un script sait le dire (son champ `id`). Rend la chaîne vide dès que le
-    fichier ne le dit pas lisiblement : l'appelant consigne alors la ligne dans le
-    journal racine, qui est fait pour ça.
+    This is the only place where the CONTENT routes, for lack of a folder to do it,
+    and only a script can say it (its `id` field). Returns the empty string as soon as
+    the file does not say it readably: the caller then records the line in the root
+    journal, which is made for that.
     """
     if kind_of(path) != "script":
         return ""
     try:
-        # Plafonné comme dans `validate_script` : ce fichier n'est pas fiable, et un
-        # candidat trop gros sera de toute façon refusé plus loin.
+        # Capped as in `validate_script`: this file is not trustworthy, and a
+        # candidate that is too big will be refused further on anyway.
         candidate = json.loads(path.read_bytes()[: MAX_SCRIPT_BYTES + 1].decode("utf-8"))
     except (OSError, ValueError):
         return ""
@@ -563,11 +563,11 @@ def claimed_play_id(path: Path) -> str:
 
 
 def process_root_zone(files: list[Path]) -> tuple[dict[str, list[dict]], list[dict], int]:
-    """La racine d'`uploads/` : le canal de création, et le filet du respo.
+    """The root of `uploads/`: the creation channel, and the coordinator's safety net.
 
-    Rend (lignes par pièce, lignes non routables, clips fusionnés). Un script y est
-    routé par son seul identifiant, vers une pièce existante comme vers une pièce à
-    créer. Tout le reste est non routable, et le dit.
+    Returns (lines by play, unroutable lines, clips merged). A script is routed there
+    by its id alone, towards an existing play as well as towards a play to create.
+    Everything else is unroutable, and says so.
     """
     by_play: dict[str, list[dict]] = {}
     unrouted: list[dict] = []
@@ -578,8 +578,8 @@ def process_root_zone(files: list[Path]) -> tuple[dict[str, list[dict]], list[di
         if play_id:
             entries, count = process_play_zone(play_id, [path])
             total += count
-            # La pièce existe forcément si le script a été promu ; refusé, elle n'a
-            # aucun journal où se dire et la ligne rejoint la racine.
+            # The play necessarily exists if the script was promoted; refused, it has
+            # no journal to speak in and the line joins the root one.
             if (play_data_dir(play_id) / "script.json").exists():
                 by_play.setdefault(play_id, []).extend(entries)
             else:
@@ -609,12 +609,12 @@ def process_root_zone(files: list[Path]) -> tuple[dict[str, list[dict]], list[di
 
 
 def discard_unnamed_zone(folder: str, files: list[Path]) -> list[dict]:
-    """Une zone de dépôt dont le nom n'est pas un identifiant de pièce valide.
+    """An upload zone whose name is not a valid play id.
 
-    Elle a été créée à la main : aucun fichier ne peut la désigner, et le site ne
-    saurait pas écrire l'URL de la pièce qu'elle prétend nommer. Ses fichiers sont
-    consignés puis retirés, comme tout dépôt fautif, et ils le sont dans le journal
-    racine, seul endroit qui puisse encore le dire au respo."""
+    It was created by hand: no file can designate it, and the site would not know how
+    to write the URL of the play it claims to name. Its files are recorded then
+    removed, like any faulty upload, and they are recorded in the root journal, the
+    only place still able to tell the coordinator about it."""
     entries: list[dict] = []
     for path in files:
 
@@ -632,8 +632,8 @@ def discard_unnamed_zone(folder: str, files: list[Path]) -> list[dict]:
 def main() -> None:
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Le relevé des zones AVANT tout traitement : une zone par dossier, plus la
-    # racine. Un dossier vide ne compte pas (il ne porte que son `.gitkeep`).
+    # The survey of the zones BEFORE any processing: one zone per folder, plus the
+    # root. An empty folder does not count (it carries only its `.gitkeep`).
     zones: dict[str, list[Path]] = {}
     unnamed: list[tuple[str, list[Path]]] = []
     for entry in sorted(UPLOADS_DIR.iterdir()):
@@ -651,18 +651,18 @@ def main() -> None:
     every = [p for files in zones.values() for p in files]
     every += root_files + [p for _, files in unnamed for p in files]
     if any(kind_of(p) == "voix" for p in every) and shutil.which("ffmpeg") is None:
-        print("ffmpeg introuvable", file=sys.stderr)
+        print("ffmpeg not found", file=sys.stderr)
         sys.exit(1)
 
-    # Le journal est tenu PAR PIÈCE (chaque pièce ignore les dépôts des autres), plus
-    # un journal racine pour ce qu'aucune pièce ne réclame.
+    # The journal is kept PER PLAY (each play ignores the others' uploads), plus a
+    # root journal for what no play claims.
     results: dict = {"plays": {}, "unrouted": []}
     total = 0
     for play_id, files in zones.items():
         entries, count = process_play_zone(play_id, files)
         total += count
-        # Une zone qui n'a pas réussi à faire naître sa pièce n'a pas de journal où
-        # écrire : ses lignes vont à la racine.
+        # A zone that failed to bring its play into being has no journal to write
+        # in: its lines go to the root one.
         if (play_data_dir(play_id) / "script.json").exists():
             results["plays"].setdefault(play_id, []).extend(entries)
         else:
@@ -677,11 +677,11 @@ def main() -> None:
     for folder, files in unnamed:
         results["unrouted"].extend(discard_unnamed_zone(folder, files))
 
-    # Toujours écrit, même vide : l'étape suivante du workflow le lit sans condition.
+    # Always written, even empty: the next workflow step reads it unconditionally.
     write_json(RESULT_PATH, results)
     lines = [e for entries in results["plays"].values() for e in entries] + results["unrouted"]
     failed = sum(1 for e in lines if "error" in e)
-    print(f"Terminé : {len(lines)} fichier(s), {total} clip(s), {failed} erreur(s)")
+    print(f"Done: {len(lines)} file(s), {total} clip(s), {failed} error(s)")
 
 
 if __name__ == "__main__":

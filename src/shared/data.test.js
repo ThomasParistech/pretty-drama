@@ -1,9 +1,9 @@
-// Tests des helpers purs partagés par les pages.
+// Tests for the pure helpers shared by the pages.
 //
-// `githubUploadUrl` est le geste quotidien du respo : une erreur ici et le
-// bouton de dépôt de l'Avancement mène à un 404 sur GitHub, sans que rien
-// dans le site ne le signale. Il se teste en posant un faux `window.location`,
-// la seule chose qu'il lise.
+// `githubUploadUrl` is the coordinator's daily gesture: one mistake here and the
+// upload button of the Progress page goes nowhere, with nothing in the site
+// reporting it. It is tested by setting a fake `window.location`, the only thing
+// it reads.
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -16,106 +16,118 @@ import {
   slugify,
 } from "./data.js";
 
-// Le module ne touche à `window` que dans le corps des fonctions : il suffit
-// donc de le poser avant l'appel. Les cas hors github.io s'appuient sur
-// `import.meta.env`, injecté par Vite et absent de Node : ils ne sont pas
-// couverts ici (le comportement voulu y est « rendre null », et l'appelant
-// masque alors la carte).
+// The module only touches `window` inside function bodies: it is therefore enough
+// to set it before the call. The cases outside github.io rely on
+// `import.meta.env`, injected by Vite and absent from Node: they are not covered
+// here (the intended behaviour there is "return null", and the caller then hides
+// the card).
 const atUrl = (href) => {
   const { hostname, pathname } = new URL(href);
   globalThis.window = { location: { hostname, pathname } };
 };
 
-test("site de projet : le dépôt est le premier segment du chemin", () => {
+test("project site: the repository is the first segment of the path", () => {
   atUrl("https://les-troubadours.github.io/mon-depot/plays/ma-piece/dashboard.html");
   assert.equal(
     githubUploadUrl("ma-piece"),
-    "https://github.com/les-troubadours/mon-depot/upload/master/uploads/ma-piece"
+    "https://github.com/les-troubadours/mon-depot/upload/main/uploads/ma-piece"
   );
 });
 
-test("site racine : le dépôt porte le nom du domaine, pas le nom de fichier", () => {
-  // Sans ce cas, le bouton pointait vers github.com/<owner>/dashboard.html.
+test("root site: the repository is named after the domain, not after the file", () => {
+  // Without this case, the button pointed at github.com/<owner>/dashboard.html.
   atUrl("https://les-troubadours.github.io/respo.html");
   assert.equal(
     githubUploadUrl(),
-    "https://github.com/les-troubadours/les-troubadours.github.io/upload/master/uploads"
+    "https://github.com/les-troubadours/les-troubadours.github.io/upload/main/uploads"
   );
 });
 
-test("site racine à la racine même : pas de segment à confondre avec un dépôt", () => {
+test("root site at the very root: no segment to mistake for a repository", () => {
   atUrl("https://les-troubadours.github.io/");
   assert.equal(
     githubUploadUrl(),
-    "https://github.com/les-troubadours/les-troubadours.github.io/upload/master/uploads"
+    "https://github.com/les-troubadours/les-troubadours.github.io/upload/main/uploads"
   );
 });
 
-test("site racine, page d'une pièce : « plays » n'est pas un nom de dépôt", () => {
-  // Le seul cas qui ne se voit pas à l'œil : deux niveaux plus bas, le premier
-  // segment ressemble à un nom de dépôt, et le bouton visait github.com/<owner>/plays.
+test("root site, a play's page: \"plays\" is not a repository name", () => {
+  // The only case invisible to the eye: two levels down, the first segment looks
+  // like a repository name, and the button aimed at github.com/<owner>/plays.
   atUrl("https://les-troubadours.github.io/plays/ma-piece/dashboard.html");
   assert.equal(
     githubUploadUrl("ma-piece"),
-    "https://github.com/les-troubadours/les-troubadours.github.io/upload/master/uploads/ma-piece"
+    "https://github.com/les-troubadours/les-troubadours.github.io/upload/main/uploads/ma-piece"
   );
 });
 
-test("l'URL de dépôt vise la zone de la PIÈCE, celle que son bouton désigne", () => {
-  // C'est le DOSSIER qui route le fichier vers sa pièce, jamais son contenu : un ZIP
-  // abîmé doit quand même atterrir dans le journal de sa pièce.
+test("the upload URL aims at the PLAY's area, the one its button designates", () => {
+  // It is the FOLDER that routes the file to its play, never its content: a
+  // damaged ZIP must still land in the log of its own play.
   atUrl("https://troupe.github.io/depot/plays/piece/dashboard.html");
-  assert.match(githubUploadUrl("piece"), /\/upload\/master\/uploads\/piece$/);
+  assert.match(githubUploadUrl("piece"), /\/upload\/main\/uploads\/piece$/);
 });
 
-test("sans pièce nommée, l'URL de dépôt vise la racine, le canal de création", () => {
+test("with no play named, the upload URL aims at the root, the creation channel", () => {
   atUrl("https://troupe.github.io/depot/respo.html");
-  assert.match(githubUploadUrl(), /\/upload\/master\/uploads$/);
+  assert.match(githubUploadUrl(), /\/upload\/main\/uploads$/);
 });
 
-test("le dossier d'une pièce sur GitHub, pour le seul geste que le site ne porte pas", () => {
+test("both GitHub URLs name the branch the fork really has", () => {
+  // The one thing about these URLs that nothing on the site can report. GitHub only
+  // serves `/upload/<branch>/<path>` for a branch that EXISTS: given a branch that
+  // does not, it drops the upload form AND the path and lands on the repository's
+  // home page, so the coordinator sees a plausible GitHub page and no error. The
+  // `/tree/` view, on the other hand, aliases `master` to the default branch, which
+  // is what let the wrong branch survive unnoticed: the folder link kept working.
+  atUrl("https://troupe.github.io/depot/respo.html");
+  assert.match(githubUploadUrl("piece"), /\/upload\/main\//);
+  assert.match(githubPlayFolderUrl("piece"), /\/tree\/main\//);
+});
+
+test("a play's folder on GitHub, for the only gesture the site does not carry", () => {
   atUrl("https://troupe.github.io/depot/respo.html");
   assert.equal(
     githubPlayFolderUrl("ma-piece"),
-    "https://github.com/troupe/depot/tree/master/plays/ma-piece"
+    "https://github.com/troupe/depot/tree/main/plays/ma-piece"
   );
 });
 
 // ------------------------------------------------------------------ slugify
 
-test("slugify rend un nom de fichier sûr et lisible", () => {
+test("slugify returns a safe and readable file name", () => {
   assert.equal(slugify("Serge", "x"), "serge");
   assert.equal(slugify("Éléonore d'Aquitaine", "x"), "eleonore-d-aquitaine");
   assert.equal(slugify("  Jean-Baptiste  ", "x"), "jean-baptiste");
 });
 
-test("slugify ne rend jamais une chaîne vide ni de caractère hasardeux", () => {
+test("slugify never returns an empty string nor a risky character", () => {
   for (const name of ["", "   ", "!!!", "日本語", "../.."]) {
     const slug = slugify(name, "repli");
-    assert.match(slug, /^[a-z0-9-]+$/, `nom : ${JSON.stringify(name)}`);
+    assert.match(slug, /^[a-z0-9-]+$/, `name: ${JSON.stringify(name)}`);
   }
   assert.equal(slugify("!!!", "repli"), "repli");
 });
 
-test("le repli de slugify se choisit par appelant, et sur le résultat", () => {
-  // Il n'a PAS de valeur par défaut, et c'est ce qui l'a fait disparaître : le
-  // repli finit dans le nom du fichier, donc c'est du texte d'interface, qui vit
-  // dans les catalogues et suit la locale du lecteur. Le PDF de la pièce ne peut
-  // pas s'appeler « personnage.pdf » non plus. Le piège est qu'un titre peut être
-  // non vide ET ne rien laisser au slug (« ??? » passe un test sur l'entrée),
-  // donc c'est bien le résultat qui décide du repli.
+test("slugify's fallback is chosen per caller, and on the result", () => {
+  // It has NO default value, and that is what made it disappear: the fallback
+  // ends up in the file name, so it is interface text, which lives in the
+  // catalogues and follows the reader's locale. The play's PDF cannot be called
+  // "personnage.pdf" either. The trap is that a title can be non-empty AND leave
+  // nothing to the slug ("???" passes a test on the input), so it really is the
+  // result that decides the fallback.
   assert.equal(slugify("Transport de Femmes", "script"), "transport-de-femmes");
   assert.equal(slugify("", "script"), "script");
   assert.equal(slugify("???", "script"), "script");
   assert.equal(slugify("   ", "script"), "script");
-  // Et une pièce réellement intitulée « Personnage » garde son nom : le repli
-  // n'est pas une valeur sentinelle qu'on reconnaîtrait après coup.
+  // And a play genuinely titled "Personnage" keeps its name: the fallback is not
+  // a sentinel value one would recognise afterwards.
   assert.equal(slugify("Personnage", "script"), "personnage");
 });
 
 // ------------------------------------------------------------ myLineNumbers
 
-test("myLineNumbers numérote MES répliques dans l'ordre de la scène", () => {
+test("myLineNumbers numbers MY lines in the order of the scene", () => {
   const lines = [
     { id: "a", characterId: "c1" },
     { id: "b", characterId: "c2" },
@@ -125,27 +137,27 @@ test("myLineNumbers numérote MES répliques dans l'ordre de la scène", () => {
   assert.equal(numbers.get("a"), 1);
   assert.equal(numbers.get("c"), 2);
   assert.equal(numbers.get("b"), undefined);
-  assert.equal(numbers.size, 2, "le total affiché « (n/total) »");
+  assert.equal(numbers.size, 2, "the total displayed as \"(n/total)\"");
 });
 
-test("sans personnage choisi, personne n'est numéroté", () => {
+test("with no character chosen, nobody is numbered", () => {
   const lines = [{ id: "a", characterId: "c1" }];
   assert.equal(myLineNumbers(lines, "").size, 0);
 });
 
 // ------------------------------------------------------------------- excerpt
 
-test("excerpt cite une réplique courte telle quelle, sans points de suite", () => {
+test("excerpt quotes a short line as it is, with no ellipsis", () => {
   assert.equal(excerpt("  Être ou ne pas être.  "), "Être ou ne pas être.");
   assert.equal(excerpt(""), "");
-  assert.equal(excerpt(undefined), "", "réplique sans texte : citation vide, pas de crash");
+  assert.equal(excerpt(undefined), "", "line with no text: empty quotation, no crash");
 });
 
-test("excerpt raccourcit une tirade et le dit", () => {
+test("excerpt shortens a long speech and says so", () => {
   const tirade = "a".repeat(EXCERPT_MAX + 50);
   const quoted = excerpt(tirade);
-  assert.equal(quoted.length, EXCERPT_MAX + 1, "les points de suite en plus de la coupe");
+  assert.equal(quoted.length, EXCERPT_MAX + 1, "the ellipsis on top of the cut");
   assert.ok(quoted.endsWith("…"));
-  // Une tirade juste à la limite n'est pas marquée comme coupée.
+  // A speech right at the limit is not marked as cut.
   assert.equal(excerpt("a".repeat(EXCERPT_MAX)), "a".repeat(EXCERPT_MAX));
 });
