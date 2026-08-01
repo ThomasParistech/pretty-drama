@@ -4,6 +4,15 @@
   "language": "fr",
   "history": [
     {
+      "at": "2026-08-01T14:29:06Z",
+      "files": [
+        {
+          "file": "script (21).json",
+          "kind": "script"
+        }
+      ]
+    },
+    {
       "at": "2026-08-01T14:12:28Z",
       "files": [
         {
@@ -37,43 +46,53 @@
   "characters": [
     {
       "id": "ecfd3c65-fccb-4c87-9fd2-bd7bf486d6d2",
-      "name": "Annie"
+      "name": "Annie",
+      "color": "#1f77b4"
     },
     {
       "id": "8c5ae733-a9ae-4824-b7c6-458ab41aceed",
-      "name": "Serge"
+      "name": "Serge",
+      "color": "#ff7f0e"
     },
     {
       "id": "0efe8009-ad49-476e-9a4b-2e95963314d2",
-      "name": "Charlotte"
+      "name": "Charlotte",
+      "color": "#2ca02c"
     },
     {
       "id": "e3e61184-12c9-4ab2-bae9-5cc2202e6969",
-      "name": "Napo"
+      "name": "Napo",
+      "color": "#d62728"
     },
     {
       "id": "bf322abc-6909-494e-af19-c18a79d9df71",
-      "name": "Sarah"
+      "name": "Sarah",
+      "color": "#9467bd"
     },
     {
       "id": "fe9da9fa-c939-4ad4-b369-7d72ea1d05f4",
-      "name": "Catherine"
+      "name": "Catherine",
+      "color": "#8c564b"
     },
     {
       "id": "6a5fe942-585c-4675-a776-814d658d1268",
-      "name": "Marthe"
+      "name": "Marthe",
+      "color": "#e377c2"
     },
     {
       "id": "e1917829-1e99-4deb-93eb-7d8cb2b981f2",
-      "name": "Capitaine"
+      "name": "Capitaine",
+      "color": "#7f7f7f"
     },
     {
       "id": "1d779705-2ca0-4c69-812d-5fd998f9229c",
-      "name": "Docteur"
+      "name": "Docteur",
+      "color": "#bcbd22"
     },
     {
       "id": "75592213-21ba-468b-b056-4772657679e2",
-      "name": "Tim"
+      "name": "Tim",
+      "color": "#17becf"
     }
   ],
   "acts": [
@@ -11566,9 +11585,6 @@
               "sceneIndex": 0
             }
           ]
-        },
-        {
-          "lines": []
         }
       ]
     }
