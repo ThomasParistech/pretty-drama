@@ -54,13 +54,97 @@ function filesOf(run) {
       kind: f.kind === "voix" || f.kind === "script" ? f.kind : "inconnu",
       error: typeof f.error === "string" ? f.error : null,
       clips: Number.isFinite(f.clips) ? f.clips : 0,
+      // What a promoted script CHANGED (scripts/script_diff.py). It defaults to
+      // null and not to `{}`, and the difference is the whole reason it is spelled
+      // out: an empty object is a real answer ("this promotion moved nothing", which
+      // the row says in words), whereas null means the entry was written before the
+      // Action diffed anything at all, and those old rows must keep looking exactly
+      // as they did rather than suddenly claim a play never changed.
+      changes:
+        f.changes && typeof f.changes === "object" && !Array.isArray(f.changes)
+          ? f.changes
+          : null,
     }));
 }
 
-// A row's detail, optional: the badge and the status already say the essential.
-// A successful script therefore has nothing to add (its file name says nothing);
-// a voices file names its ZIP and counts its lines; a failure names the file and
-// gives its reason, the only text that comes from the Action.
+// Everything a promoted script can publish, each field paired with the sentence that
+// reads it, and the ORDER of this object is the order they are read in: the birth of
+// the play, then the lines, then the cast, then the document, then the catch-all.
+//
+// The field names are the ones scripts/script_diff.py writes (plus `created`, which
+// `promote_script` adds), and `TestScriptDiffFields` in scripts/tests/test_contracts.py
+// holds the two sides together by reading both: renamed here alone, a change would
+// simply stop being displayed, with no error anywhere to notice it by, on the one row
+// of this table the whole diff exists to fill.
+//
+// An object and not an array of pairs, and that is not a style choice: the i18n scan of
+// test_contracts.py reads the literals of a table whose name ends in KEYS and stops at
+// the first closing bracket, so a nested array would hide every key but the first from
+// the guard that checks they exist in both catalogues.
+const CHANGE_LABEL_KEYS = {
+  created: "dashboard.journal.changeCreated",
+  linesAdded: "dashboard.journal.changeAdded",
+  linesRemoved: "dashboard.journal.changeRemoved",
+  linesEdited: "dashboard.journal.changeEdited",
+  linesReassigned: "dashboard.journal.changeReassigned",
+  castAdded: "dashboard.journal.changeCastAdded",
+  castRemoved: "dashboard.journal.changeCastRemoved",
+  castRenamed: "dashboard.journal.changeCastRenamed",
+  title: "dashboard.journal.changeTitle",
+  language: "dashboard.journal.changeLanguage",
+  other: "dashboard.journal.changeOther",
+};
+
+// The diff of a script promotion, as one enumeration: "12 répliques ajoutées,
+// 3 supprimées, 5 modifiées".
+//
+// Each part is a WHOLE phrase from the catalogue and they are joined by `fmt.list`,
+// never by a separator written here: the translator gets to decide whether the noun is
+// repeated ("3 lines removed") or elided ("3 removed"), and how a language strings a
+// list together is that language's business. Plurals come from the engine, so
+// "1 réplique ajoutée" needs nothing on this side.
+//
+// A field is a COUNT or a FLAG, and the value says which: `true` renders the sentence
+// bare ("pièce créée", "titre modifié"), a number renders it with `{count}`. Reading
+// that off the data rather than off a second table is what keeps ONE ordered list here:
+// there is nothing to keep in step, and `created` stopped being a case of its own. It
+// is also the guard against a hand-edited journal, `{count}` being meaningless on a
+// boolean and a count of zero having nothing to say.
+//
+// The birth of the play is a part like the others: a `.json` that creates a play both
+// brings it into being and fills it, so the row reads "pièce créée, 120 répliques
+// ajoutées", which is exactly what happened. A play born from a title has nothing to
+// count, and that lone mention is what stops its row from being blank.
+//
+// Nothing left to say means the promotion changed nothing the site reads, and the row
+// SAYS so. That is the whole point: a blank cell reads as "the tool has no idea what
+// became of your file". It is also why `script_changes` carries an `other` field, so
+// that this sentence can never be a lie (see the long note there).
+function changesOf(changes) {
+  const parts = [];
+  for (const [field, key] of Object.entries(CHANGE_LABEL_KEYS)) {
+    const value = changes[field];
+    if (value === true) parts.push(t(key));
+    else if (Number.isFinite(value) && value > 0) parts.push(t(key, { count: value }));
+  }
+  return parts.length > 0 ? fmt.list(parts) : t("dashboard.journal.changeNone");
+}
+
+// A row's detail: a voices file names its ZIP and counts its lines; a script names it
+// and says what it CHANGED; a failure names the file and gives its reason, the only
+// text that comes from the Action.
+//
+// The script row used to return null here, on the grounds that the seal said enough
+// and the file name said nothing. It was the one empty cell of the table, and it fell
+// on the upload the coordinator has the least intuition about: a voice ZIP announces
+// itself (they received it, they know whose it is), where `script.json` is a file they
+// downloaded from the Editing page minutes ago and cannot tell apart from the previous
+// one. So the promotion is diffed in the Action and the counts land here.
+//
+// Same SHAPE as the voices row, deliberately: file name in `<code>`, then what the
+// upload did, both as parameters of one entry so the order stays the translator's.
+// A row from a journal written before the diff existed keeps returning null, which is
+// what it looked like then.
 function detailOf(row) {
   if (row.error) {
     return (
@@ -70,7 +154,15 @@ function detailOf(row) {
       />
     );
   }
-  if (row.kind === "script") return null;
+  if (row.kind === "script") {
+    if (row.changes == null) return null;
+    return (
+      <T
+        k="dashboard.journal.detailScript"
+        p={{ file: <code>{row.file}</code>, changes: changesOf(row.changes) }}
+      />
+    );
+  }
   // The file name is a PARAMETER and not a fragment placed before the count:
   // juxtaposed in the JSX, their order and the space between them were frozen
   // in the component.

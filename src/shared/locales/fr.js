@@ -95,6 +95,16 @@ export const FR = {
     other: "{count} répliques",
   },
 
+  // The note an `<option>` of a scope select carries beside its label, brackets and
+  // nothing else, what goes inside being INTERPOLATED. One entry and not one per
+  // page: Rehearsal puts a line count in it (`common.lineCount`) and Recording what
+  // is left to record (`recorder.toRecord`, `recorder.noLines`), but the brackets and
+  // the space before them are the same piece of punctuation, and a language that
+  // wrote them differently would have to be told twice. It is IN the catalogue at
+  // all because, left in the component beside a translated label, it produced
+  // "Scene 1 (3 répliques)".
+  "common.optionNote": " ({note})",
+
   // The act + scene pair, everywhere the two are named together: the Speaking
   // share scope, the Progress column and the tooltip on its heading. A single
   // entry for all three: the separator is a fact of language, and it was a comma
@@ -116,7 +126,7 @@ export const FR = {
   // "Nom (3/12)" on my dialogue cards: my rank among MY lines in the scene. Two
   // pages show it (Rehearsal and Recording) and each wrote this template on its
   // own side, brackets and slash included. The leading space is in the string, as
-  // for `rehearsal.sceneLines`: it is a suffix stuck to a name, not a sentence of
+  // for `common.optionNote`: it is a suffix stuck to a name, not a sentence of
   // its own.
   "common.myLineNumber": " ({n}/{total})",
 
@@ -193,13 +203,17 @@ export const FR = {
   "structure.act": "Acte {n}",
   "structure.scene": "Scène {n}",
 
-  // The suffix stuck to a scene's label in the Rehearsal and Recording selects. It
-  // is IN the catalogue: left in French beside a translated label, it produced
-  // "Scene 1 (3 répliques)". The count itself is INTERPOLATED from
-  // `common.lineCount` and never copied, so the plural is settled in one place
-  // only; this entry now says nothing but the brackets.
-  "rehearsal.sceneLines": " ({lines})",
-  "recorder.sceneTodo": " ({count} à enregistrer)",
+  // The tick the Recording menus put on an act, a scene or a character with nothing
+  // left to record, and NOT "(0 à enregistrer)": that is the one line of a menu
+  // nobody needs to read, since what it says is exactly that there is nothing to do
+  // there. A bare glyph, with no colour and no disc around it: an `<option>` is drawn
+  // by the BROWSER and not by the page, it holds no element of ours, and a background
+  // laid on it is honoured by some engines and ignored by others. So the mark has to
+  // be one of the monochrome characters that follow the font, like the `✓ ✕ ↓ ▼` of
+  // the rest of the site. What goes in the OTHER two cases is interpolated into
+  // `common.optionNote` (`recorder.toRecord`, `recorder.noLines`), so those sentences
+  // are written once and the intro card reads the very same ones.
+  "recorder.optionDone": " ✓",
 
   "structure.moveAct": "Déplacer {act}",
   "structure.moveScene": "Déplacer {scene}",
@@ -510,9 +524,13 @@ export const FR = {
     "Quand vous avez terminé (un ou plusieurs personnages, ou même seulement une partie de vos " +
     "répliques), appuyez sur le bouton {icon} pour sauvegarder vos prises et les envoyer au " +
     "responsable.",
-  "recorder.intro.noLines": "aucune réplique",
   "recorder.intro.allDone": "tout est enregistré",
-  "recorder.intro.todo": "{count} à enregistrer",
+
+  // Said twice on this page, and therefore written once: under a character on the
+  // intro card, and inside the brackets of `common.optionNote` in the three menus
+  // of the header.
+  "recorder.noLines": "aucune réplique",
+  "recorder.toRecord": "{count} à enregistrer",
 
   // Elapsed and total time of the take being played back. Both durations arrive
   // already composed as "m:ss" (the universal format for a short excerpt,
@@ -641,6 +659,83 @@ export const FR = {
   // to cover, and nothing guarantees that a language puts the file before its
   // count.
   "dashboard.journal.detailVoices": "{file} {count}",
+
+  // A promoted script: its file name, then what the upload CHANGED in the play. Same
+  // shape as the voices row just above, two parameters and no fragment in the JSX:
+  // the order of the two belongs to the language.
+  // This cell showed nothing at all until the Action started comparing the two
+  // versions of the script (scripts/script_diff.py): it was the one empty cell of
+  // the table.
+  "dashboard.journal.detailScript": "{file} {changes}",
+  // The counts, each a WHOLE phrase and not a piece of one: the translator is the one
+  // who decides whether to repeat the noun or elide it, and the comma that joins them
+  // comes from the locale (`fmt.list`), never from the JSX. Plurals come from the
+  // engine.
+  // Every entry NAMES its noun, and the shorter elided forms ("3 supprimées", "5
+  // modifiées") were tried and dropped. They only read when a phrase naming the noun
+  // precedes them, and `script_changes` omits its empty fields: the most ordinary
+  // promotion of all, a round of typo fixes, publishes `linesEdited` ALONE, and the
+  // journal's only cell for that run then read "script.json 5 modifiées", a phrase
+  // hanging off nothing in the project's single feedback channel. Repeating the noun
+  // costs a longer row when all three fire at once; eliding it costs a sentence with
+  // no subject on the common case.
+  "dashboard.journal.changeAdded": {
+    one: "{count} réplique ajoutée",
+    other: "{count} répliques ajoutées",
+  },
+  "dashboard.journal.changeRemoved": {
+    one: "{count} réplique supprimée",
+    other: "{count} répliques supprimées",
+  },
+  // "modifiée" and not "à réenregistrer": the count is measured on normalized text,
+  // so it does say the line changed, but a line edited before anyone recorded it asks
+  // for nothing extra. The grid above the journal is what says what to redo, play by
+  // play.
+  "dashboard.journal.changeEdited": {
+    one: "{count} réplique modifiée",
+    other: "{count} répliques modifiées",
+  },
+  // This is the one change the site says nowhere else: the clip is keyed by line id,
+  // so it stays attached and the grid keeps showing the line green, in the previous
+  // character's voice.
+  "dashboard.journal.changeReassigned": {
+    one: "{count} réplique change de personnage",
+    other: "{count} répliques changent de personnage",
+  },
+  // The cast is counted apart because no line count reveals it: twelve lines handed
+  // to a new role read as "+12" and nothing else.
+  "dashboard.journal.changeCastAdded": {
+    one: "{count} personnage ajouté",
+    other: "{count} personnages ajoutés",
+  },
+  "dashboard.journal.changeCastRemoved": {
+    one: "{count} personnage supprimé",
+    other: "{count} personnages supprimés",
+  },
+  "dashboard.journal.changeCastRenamed": {
+    one: "{count} personnage renommé",
+    other: "{count} personnages renommés",
+  },
+  // The title and the language of the play: one of each, so a flag and not a count
+  // (`changesOf` reads the type of the value). The language is the one the play is
+  // WRITTEN in, not the interface's: it drives the PDF and the synthetic voice, which
+  // is why it is reported.
+  "dashboard.journal.changeTitle": "titre modifié",
+  "dashboard.journal.changeLanguage": "langue de la pièce modifiée",
+  // The safety net, and it only ever speaks alone: something moved in the script (a
+  // character colour, an added scene, a line moved, some punctuation) that none of the
+  // mentions above covers. It is what stops "aucun changement" from being a lie, and
+  // an expensive one: the coordinator would conclude their upload failed.
+  "dashboard.journal.changeOther": "autres retouches",
+  // The birth of the play, first item of the enumeration: a script that creates its
+  // play fills it in the same gesture, and the row then reads "pièce créée, 120
+  // répliques ajoutées". A play born from a title has nothing to count, and that lone
+  // mention is what keeps its row from being blank.
+  "dashboard.journal.changeCreated": "pièce créée",
+  // The upload changed nothing: we SAY so. That is the whole point of this detail, an
+  // empty cell reading as "the tool has no idea what became of your file".
+  "dashboard.journal.changeNone": "aucun changement",
+
   // The detail of a failure. `{reason}` is the reason returned by the Action, still
   // French because those strings are DATA and not interface text: translating them
   // would only swap one hardcoded language for another (see the "known gap" note in

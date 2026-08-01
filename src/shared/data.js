@@ -93,6 +93,30 @@ export function myLineNumber(t, numbers, lineId) {
   return n == null ? "" : t("common.myLineNumber", { n, total: numbers.size });
 }
 
+// Which scenes of an act the scene menu offers, as INDEXES into `scenes` (the
+// menu's `<option value>` is that index, and nothing downstream is renumbered:
+// hiding an option must never move the ones that stay). Shared by the Rehearsal
+// and Recording headers.
+//
+// Once a character is chosen, only the scenes where they actually speak: an actor
+// walking their own part has no use for the twelve scenes they are absent from,
+// and on a long play that is most of the menu.
+//
+// **Two deliberate falls back to the whole act.** With no character chosen, there
+// is nobody to filter for. And when the chosen character speaks nowhere in the act,
+// filtering would leave an EMPTY menu, a field that opens onto nothing and offers
+// no way out of the act it is stuck in; the full list, plus the "no lines in this
+// scene" note the two pages already show, says the same thing and leaves the reader
+// able to move.
+export function sceneChoices(scenes, characterId) {
+  const all = scenes.map((_, i) => i);
+  if (characterId === "") return all;
+  const mine = all.filter((i) =>
+    scenes[i].lines.some((line) => line.characterId === characterId)
+  );
+  return mine.length > 0 ? mine : all;
+}
+
 // Warn before closing the tab when there is unsaved in-memory work.
 export function setBeforeUnloadGuard(enabled) {
   window.onbeforeunload = enabled

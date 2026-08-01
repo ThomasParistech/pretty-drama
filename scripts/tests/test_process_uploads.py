@@ -404,11 +404,15 @@ class TestCreatePlay(unittest.TestCase):
         return path
 
     def script(self, title: str, name: str = "titre.txt") -> dict:
-        play_id = create_play(self.file(f"{title}\n", name))
+        play_id, _ = create_play(self.file(f"{title}\n", name))
         return json.loads((self.plays / play_id / "data" / "script.json").read_text("utf-8"))
 
     def test_the_identifier_is_derived_from_the_title(self):
-        self.assertEqual(create_play(self.file("L'École des femmes\n")), "l-ecole-des-femmes")
+        play_id, changes = create_play(self.file("L'École des femmes\n"))
+        self.assertEqual(play_id, "l-ecole-des-femmes")
+        # A brand new play is empty, so there is nothing to count: `created` alone is
+        # the whole of what the journal row has to say.
+        self.assertEqual(changes, {"created": True})
 
     def test_the_name_of_the_file_is_never_read(self):
         # The one property the whole creation zone rests on: on GitHub's page the name is
@@ -446,7 +450,7 @@ class TestCreatePlay(unittest.TestCase):
         # Both `.gitkeep` files matter: git does not version an empty folder, and the
         # upload zone must exist before the coordinator clicks the button of their new
         # play.
-        play_id = create_play(self.file("Antigone\n"))
+        play_id, _ = create_play(self.file("Antigone\n"))
         self.assertTrue((self.plays / play_id / "clips" / ".gitkeep").exists())
 
     def test_a_title_that_leaves_no_address_is_rejected(self):
@@ -738,14 +742,72 @@ class TestMain(unittest.TestCase):
         results = self.entries_of(self.run_main(), "le-malade")
 
         self.assertEqual(set(results), {"script.json", "voix-lea.zip", "notes.txt"})
-        # The script is promoted, verbatim (the malformed colour survived).
-        self.assertEqual(results["script.json"], {"file": "script.json", "kind": "script"})
+        # The script is promoted, verbatim (the malformed colour survived). Its `changes`
+        # are EMPTY and the key is there all the same: the play already carried this exact
+        # script, so nothing moved, and the journal says "no change" rather than showing
+        # the blank cell that sent us diffing promotions in the first place. The absence
+        # of the key means something else entirely (a journal written before the diff
+        # existed), which is why the empty dict is written out.
+        self.assertEqual(
+            results["script.json"], {"file": "script.json", "kind": "script", "changes": {}}
+        )
         self.assertEqual((self.data("le-malade") / "script.json").read_bytes(), raw)
         # Every file carries ITS own failure, with its own reason.
         self.assertEqual(results["voix-lea.zip"]["kind"], "voix")
         self.assertIn("ZIP", results["voix-lea.zip"]["error"])
         self.assertEqual(results["notes.txt"]["kind"], "inconnu")
         self.assertIn("inconnu", results["notes.txt"]["error"])
+
+    def test_a_promoted_script_publishes_what_it_changed(self):
+        # End to end, because the diff crosses four places between the upload zone and the
+        # coordinator's eyes (`promote_script` takes it, `record` merges it,
+        # update_history.py copies it, build_manifest.py carries it into the manifest), and
+        # each of them handles it without knowing what is inside. Only a real run says the
+        # fields arrive intact.
+        self.existing_play()
+        updated = {
+            **self.PLAY,
+            "characters": self.PLAY["characters"] + [{"id": "c2", "name": "Annie"}],
+            "acts": [
+                {
+                    "scenes": [
+                        {
+                            "lines": [
+                                # Kept, and edited.
+                                {"id": "l1", "characterId": "c1", "text": "Silence, enfin !"},
+                                # Brand new.
+                                {"id": "l2", "characterId": "c2", "text": "J'arrive."},
+                            ]
+                        }
+                    ]
+                }
+            ],
+        }
+        (self.zone("le-malade") / "script.json").write_text(
+            json.dumps(updated, ensure_ascii=False), encoding="utf-8"
+        )
+
+        results = self.entries_of(self.run_main(), "le-malade")
+
+        self.assertEqual(
+            results["script.json"]["changes"],
+            {"linesAdded": 1, "linesEdited": 1, "castAdded": 1},
+        )
+
+    def test_a_script_that_creates_its_play_says_so_in_the_journal(self):
+        # There is nothing to compare against, so the row carries `created` plus the size
+        # of what arrived: this upload is both the birth of the play and its first text.
+        new = {**self.PLAY, "id": "antigone"}
+        (self.zone("antigone") / "script.json").write_text(
+            json.dumps(new, ensure_ascii=False), encoding="utf-8"
+        )
+
+        results = self.entries_of(self.run_main(), "antigone")
+
+        self.assertEqual(
+            results["script.json"]["changes"],
+            {"linesAdded": 1, "castAdded": 1, "created": True},
+        )
 
     def test_the_drop_zone_is_emptied_except_hidden_files(self):
         self.existing_play()

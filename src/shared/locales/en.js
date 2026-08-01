@@ -73,6 +73,8 @@ export const EN = {
     other: "{count} lines",
   },
 
+  "common.optionNote": " ({note})",
+
   "common.actScene": "{act}, {scene}",
 
   "common.format.zip": "(ZIP)",
@@ -131,8 +133,7 @@ export const EN = {
   "structure.act": "Act {n}",
   "structure.scene": "Scene {n}",
 
-  "rehearsal.sceneLines": " ({lines})",
-  "recorder.sceneTodo": " ({count} to record)",
+  "recorder.optionDone": " ✓",
 
   "structure.moveAct": "Move {act}",
   "structure.moveScene": "Move {scene}",
@@ -376,9 +377,10 @@ export const EN = {
   "recorder.intro.outro":
     "When you are done (one character or several, or even only some of your lines), press the " +
     "{icon} button to save your takes and send them to the coordinator.",
-  "recorder.intro.noLines": "no lines",
   "recorder.intro.allDone": "all recorded",
-  "recorder.intro.todo": "{count} to record",
+
+  "recorder.noLines": "no lines",
+  "recorder.toRecord": "{count} to record",
 
   "recorder.player.time": "{elapsed} / {total}",
   "recorder.player.play": "Play",
@@ -463,6 +465,64 @@ export const EN = {
     other: "{count} older uploaded files not shown.",
   },
   "dashboard.journal.detailVoices": "{file} {count}",
+
+  // A promoted script: its file name, then what the upload CHANGED in the play. Same
+  // two-parameter shape as the voices row above, so the order stays the translator's.
+  "dashboard.journal.detailScript": "{file} {changes}",
+  // Each count is a WHOLE phrase, joined by `fmt.list` (the comma is the locale's).
+  // Every entry names its noun: the shorter elided forms ("3 removed", "5 edited")
+  // only read when a phrase naming the noun precedes them, and `script_changes` omits
+  // its empty fields, so a round of typo fixes publishes `linesEdited` alone and the
+  // row read "script.json 5 edited". Plurals come from the engine, hence the
+  // { one, other } pairs.
+  "dashboard.journal.changeAdded": {
+    one: "{count} line added",
+    other: "{count} lines added",
+  },
+  "dashboard.journal.changeRemoved": {
+    one: "{count} line removed",
+    other: "{count} lines removed",
+  },
+  // "edited" and not "to record again": the count is measured on normalized text, so it
+  // does say the line changed, but a line edited before anyone recorded it asks for
+  // nothing extra. The grid above the journal is what says what to redo.
+  "dashboard.journal.changeEdited": {
+    one: "{count} line edited",
+    other: "{count} lines edited",
+  },
+  // This is the one change the site says nowhere else: the clip is keyed by line id, so
+  // it stays attached and the grid keeps the line green, in the previous character's
+  // voice.
+  "dashboard.journal.changeReassigned": {
+    one: "{count} line changes character",
+    other: "{count} lines change character",
+  },
+  // The cast is counted apart because no line count reveals it: twelve lines handed to a
+  // new role read as "+12" and nothing else.
+  "dashboard.journal.changeCastAdded": {
+    one: "{count} character added",
+    other: "{count} characters added",
+  },
+  "dashboard.journal.changeCastRemoved": {
+    one: "{count} character removed",
+    other: "{count} characters removed",
+  },
+  "dashboard.journal.changeCastRenamed": {
+    one: "{count} character renamed",
+    other: "{count} characters renamed",
+  },
+  // One title and one language, so a flag rather than a count (`changesOf` reads the
+  // type of the value). The language is the one the play is WRITTEN in, not the
+  // interface's: it drives the PDF and the synthetic voice, which is why it is reported.
+  "dashboard.journal.changeTitle": "title changed",
+  "dashboard.journal.changeLanguage": "language of the play changed",
+  // The safety net, and it only ever speaks alone: something moved in the script (a
+  // character colour, an added scene, a line moved, some punctuation) that none of the
+  // mentions above covers. It is what stops "no change" from being a lie, and an
+  // expensive one: the coordinator would conclude their upload failed.
+  "dashboard.journal.changeOther": "other edits",
+  "dashboard.journal.changeCreated": "play created",
+  "dashboard.journal.changeNone": "no change",
   // `{reason}` comes from the Action and stays French: the REPOSITORY is French,
   // and the coordinator reads their own repository, not a locale. A mixed
   // sentence here is deliberate.

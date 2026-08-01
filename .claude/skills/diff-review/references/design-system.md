@@ -170,7 +170,7 @@ full-page `.page-notice` and `.load-error` cards, which centre with
 | Element | Source | Pages |
 | --- | --- | --- |
 | Brand header (seal + play title in the top row, brand and home link at the foot) | `src/shared/PageHeader.jsx` — no longer mounted directly by any page: it only serves as the header of `PageState` screens, the ones with no settings to carry. **Same geometry as `PlayHeader`, and the same `HomeLink` at the foot**: these screens are the waiting state of the five play-header pages, so a brand placed at the top here and at the bottom there jumped from one end of the header to the other when the manifest arrived. Its `title` is the **play title, and nothing else**; it is optional, and the `<span>` is not rendered without it (loading, unreadable manifest): never a page label here, see below. Its typography is the SAME CSS rule as `.play-header-title`, not one that resembles it | through `PageState` only |
-| Play header (seal + play title, collapsible; **no** page label written out, it crowded the bar on mobile: the seal says the page) | `src/shared/PlayHeader.jsx` — the top row says ONLY the play title, the collapse button swallows it whole; the word "PrettyDrama" and the home link live at the foot of the expanded header (`.play-header-home`, logo + word; the class it sets on itself is described in the Home link row below, the single place for it). Act/scene selects are passed as `children` by the pages that have them (`.selects-row`), because their variants are real: `disabled` while recording, "to record" counters. **Two pages pass none**, the Dashboard and the Editor: the latter moved its whole plan (play title, act/scene, "+ Scene"/"+ Act") into the "Structure" section of its rail, because it SHAPES the structure where the other two walk through it. **The header collapses on all five pages, these two included** (which have no settings at all): their expanded area then holds only the doc and the home link, and a page that did not collapse would be the only one keeping its header under the thumb | Rehearsal, Recorder, Stats, Editor, Dashboard |
+| Play header (seal + play title, collapsible; **no** page label written out, it crowded the bar on mobile: the seal says the page) | `src/shared/PlayHeader.jsx` — the top row says ONLY the play title, the collapse button swallows it whole; the word "PrettyDrama" and the home link live at the foot of the expanded header (`.play-header-home`, logo + word; the class it sets on itself is described in the Home link row below, the single place for it). Act/scene selects are passed as `children` by the pages that have them (`.selects-row`), because their variants are real: `disabled` while recording, "to record" counters. Both scene menus are FILTERED by `sceneChoices` (`shared/data.js`) once a character is chosen, to the scenes that character speaks in, the `<option value>` staying the scene's rank in the ACT (hiding an option never renumbers the ones that stay) and the whole act coming back when they speak nowhere in it, an empty menu offering no way out. The Recorder's three menus then carry `optionSuffix`, THREE cases and not two: `(n à enregistrer)`, a bare `✓` when all are done, and `(aucune réplique)` where the character never speaks, a tick there claiming finished work that never existed. The mark is a monochrome glyph because an `<option>` is drawn by the BROWSER and holds no element of ours. **Two pages pass none**, the Dashboard and the Editor: the latter moved its whole plan (play title, act/scene, "+ Scene"/"+ Act") into the "Structure" section of its rail, because it SHAPES the structure where the other two walk through it. **The header collapses on all five pages, these two included** (which have no settings at all): their expanded area then holds only the doc and the home link, and a page that did not collapse would be the only one keeping its header under the thumb | Rehearsal, Recorder, Stats, Editor, Dashboard |
 | Bottom control bar `.controls` + `.ctrl-btn` | CSS in `theme.css` | Rehearsal, Recorder |
 | Indexed progress slider | `src/shared/ProgressBar.jsx` | Rehearsal, Recorder |
 | Dialogue cards `.dialogue-card` (+ shared "my lines" palette `.mine` and `.active` border) | `theme.css` — pages set `.mine` next to their semantic class and keep only their real deviations | Rehearsal, Recorder |
@@ -293,16 +293,31 @@ read by `t()` / `<T>` (engine `src/shared/i18n.js`, locale resolved by
   number rendered directly in JSX is a finding.
 - **Quotes come from `fmt.quote`**, never from hand-written `«&nbsp;…&nbsp;»`:
   French wants its non-breaking spaces, English curly quotes.
+- **An ENUMERATION of already-translated phrases is joined by `fmt.list`**
+  (`Intl.ListFormat`, `type: "unit"`), never by a `", "` written in the component
+  nor by a catalogue entry made of one comma: how a language strings a list
+  together is a fact of that language, exactly like the space before a French `?`.
+  The upload journal's script row is the case (`changesOf`, `dashboard/App.jsx`).
+  `type: "unit"` and not the default `"conjunction"`, which in English adds a
+  spoken ", and" that turns a row of measurements into a sentence about them; the
+  two agree in French. Measured, not assumed.
 - **French typography lives INSIDE the strings** (non-breaking space before `?`,
   `!`, `:`, guillemets), never in the JSX: it is a fact of the language, hence the
   translator's business, and English does not carry it.
 - **A shared label exists only once**, and that goes down to PUNCTUATION: a
   separator, a parenthesis and a fraction slash are facts of language, so they
-  live in the string and never in the JSX. When two places name the same thing,
+  live in the string and never in the JSX (`recorder.lineCounter` is "{n}/{total}"
+  in both catalogues, French included, which is what settles the slash). **One
+  named exception**, `CellMark` in `dashboard/App.jsx`: its two numbers must be two
+  elements to carry two weights, so routing their slash through the catalogue would
+  mean one `<T>` per CELL, several hundred on a play of twenty characters and forty
+  scenes, in exchange for a character both languages write the same way. The code
+  says so at the site; do not re-open it. When two places name the same thing,
   the second INTERPOLATES the first's key (Stats' empty state quotes
-  `stats.scopeAllOption`, the empty-scene help quotes `rail.characters`, the scene
-  suffix `rehearsal.sceneLines` quotes `common.lineCount` so the plural is tuned
-  in one place only) or both share a common key (`common.actScene` names the
+  `stats.scopeAllOption`, the empty-scene help quotes `rail.characters`, the
+  option suffix `common.optionNote` quotes `common.lineCount` on Rehearsal and
+  `recorder.toRecord` on Recording, so the brackets are written once and the
+  plural tuned in one place only) or both share a common key (`common.actScene` names the
   act + scene pair for Stats AND the Dashboard, which used to write a "·" by hand;
   `common.myLineNumber` names "(3/12)" for Rehearsal and the Recorder). The
   heaviest case, and the only one held by CI: the **name of a page quoted in a

@@ -6,7 +6,14 @@ import PlayHeader from "../shared/PlayHeader.jsx";
 import ProgressBar from "../shared/ProgressBar.jsx";
 import LeaveGuard from "../shared/LeaveGuard.jsx";
 import ConfirmModal from "../shared/ConfirmModal.jsx";
-import { downloadBlob, slugify, myLineNumbers, myLineNumber, excerpt } from "../shared/data.js";
+import {
+  downloadBlob,
+  slugify,
+  myLineNumbers,
+  myLineNumber,
+  sceneChoices,
+  excerpt,
+} from "../shared/data.js";
 import {
   PlayIcon,
   PauseIcon,
@@ -46,6 +53,44 @@ import "./recorder.css";
 // picked up by the guard in scripts/tests/test_contracts.py.
 const MIC_ERROR_KEY = { mic: "recorder.micError" };
 
+// How many of a character's lines a set of lines holds, and how many of THOSE are
+// still to record. The two travel together because an option needs both: nothing
+// left to record and nothing to record at all are not the same claim (see
+// `optionSuffix`). Over the WHOLE play for the character menu: the same scope and
+// the same figure as the intro card, which is on screen at the very same moment
+// (no character chosen yet), so the two cannot say different things.
+function countLines(lines, characterId, isTodo) {
+  const own = lines.filter((l) => l.characterId === characterId);
+  return { own: own.length, todo: own.filter(isTodo).length };
+}
+
+// What the THREE menus of the header stick to a label, act, scene and character
+// alike: how many lines are still to record there, a tick when they are all done,
+// or "no lines" when the character never speaks there. `null` for the act and the
+// scene menus as long as no character is chosen, and then nothing is stuck at all:
+// there is no "left to record" for nobody yet.
+//
+// The three cases, and NOT two: a tick on an act one has no line in claims the work
+// there is finished, when the truth is that there was never any. That reading costs
+// an actor the one thing this menu exists to give them, which act to open, and the
+// distinction has to hold everywhere the suffix is used, not only under the
+// character menu where it was first written.
+//
+// The three stay plain `<select>`s, and that is a decision rather than a
+// leftover. A hand-built listbox was written, and dropped: an `<option>` is drawn
+// by the BROWSER, so on a phone the field opens the system picker, which is worth
+// more to an actor than anything we could draw, and the act menu next door could
+// never have been made to match a list of ours. The price is that the mark can
+// only be a character, an option holding no element of ours and a background laid
+// on it being honoured by some engines and ignored by others: hence the bare `✓`
+// of `recorder.optionDone`, and no colour anywhere in these menus.
+function optionSuffix(counts) {
+  if (counts == null) return "";
+  if (counts.own === 0) return t("common.optionNote", { note: t("recorder.noLines") });
+  if (counts.todo === 0) return t("recorder.optionDone");
+  return t("common.optionNote", { note: t("recorder.toRecord", { count: counts.todo }) });
+}
+
 export default function App() {
   const { manifest, error: loadError } = useManifest();
 
@@ -64,7 +109,8 @@ export default function App() {
   const listRef = useRef(null);
 
   const acts = manifest?.acts ?? [];
-  const scene = acts[actIndex]?.scenes?.[sceneIndex] ?? null;
+  const scenes = useMemo(() => acts[actIndex]?.scenes ?? [], [acts, actIndex]);
+  const scene = scenes[sceneIndex] ?? null;
   const lines = useMemo(() => scene?.lines ?? [], [scene]);
   const myLines = useMemo(
     () => (characterId === "" ? [] : lines.filter((l) => l.characterId === characterId)),
@@ -81,6 +127,17 @@ export default function App() {
     [takes]
   );
   const isTodo = useCallback((line) => lineState(line) === "todo", [lineState]);
+
+  // The scenes the menu offers: once a character is chosen, only the ones where
+  // they speak (`sceneChoices`, shared with the Rehearsal header).
+  const choices = useMemo(() => sceneChoices(scenes, characterId), [scenes, characterId]);
+
+  // Choosing a character can hide the scene one is standing in. Left alone, the
+  // `<select>` would then carry a value no option holds, which a browser renders
+  // as a blank field: we move to the first scene the menu still offers.
+  useEffect(() => {
+    if (choices.length > 0 && !choices.includes(sceneIndex)) setSceneIndex(choices[0]);
+  }, [choices, sceneIndex]);
 
   const safeMyIndex = Math.max(0, Math.min(myIndex, myLines.length - 1));
   const currentLine = myLines[safeMyIndex] ?? null;
@@ -251,11 +308,26 @@ export default function App() {
               setSceneIndex(0);
             }}
           >
-            {acts.map((_, i) => (
-              <option key={i} value={i}>
-                {actLabel(t, i)}
-              </option>
-            ))}
+            {acts.map((a, i) => {
+              // An act counts what all its scenes still owe, so the reader can go
+              // straight to the act where the work is without opening the scene
+              // menu of each one in turn. An act they are absent from says so
+              // rather than showing the tick of an act they have finished.
+              const counts =
+                characterId === ""
+                  ? null
+                  : countLines(
+                      a.scenes.flatMap((s) => s.lines),
+                      characterId,
+                      isTodo
+                    );
+              return (
+                <option key={i} value={i}>
+                  {actLabel(t, i)}
+                  {optionSuffix(counts)}
+                </option>
+              );
+            })}
           </select>
           <select
             aria-label={t("common.sceneSelect")}
@@ -263,15 +335,19 @@ export default function App() {
             disabled={isRecording}
             onChange={(e) => setSceneIndex(Number(e.target.value))}
           >
-            {(acts[actIndex]?.scenes ?? []).map((s, i) => {
-              const remaining =
-                characterId === ""
-                  ? null
-                  : s.lines.filter((l) => l.characterId === characterId && isTodo(l)).length;
+            {choices.map((i) => {
+              // Scenes the character is absent from are normally hidden, so the
+              // "no lines" case only surfaces here in `sceneChoices`' fallback,
+              // where the whole act is offered because they speak nowhere in it.
+              // That is exactly when it has something to say.
+              const counts =
+                characterId === "" ? null : countLines(scenes[i].lines, characterId, isTodo);
               return (
+                // The value is the scene's rank in the ACT, not its rank in this
+                // list: the menu hides scenes, it never renumbers them.
                 <option key={i} value={i}>
                   {sceneLabel(t, i)}
-                  {remaining != null ? t("recorder.sceneTodo", { count: remaining }) : ""}
+                  {optionSuffix(counts)}
                 </option>
               );
             })}
@@ -287,8 +363,12 @@ export default function App() {
           >
             <option value="">{t("common.whoDoYouPlay")}</option>
             {manifest.characters.map((c) => (
+              // Over the whole play, and not over the scene on screen: one reads
+              // this menu to find oneself, before knowing where one will start.
+              // Same three cases, and the same words, as the intro card just below.
               <option key={c.id} value={c.id}>
                 {c.name}
+                {optionSuffix(countLines(manifest.lines, c.id, isTodo))}
               </option>
             ))}
           </select>
@@ -563,14 +643,14 @@ function IntroCard({ characters, lines, isTodo, onPick }) {
             >
               <span className="intro-character-name">{character.name}</span>
               {total === 0 ? (
-                <span className="intro-character-count">{t("recorder.intro.noLines")}</span>
+                <span className="intro-character-count">{t("recorder.noLines")}</span>
               ) : todo === 0 ? (
                 <span className="intro-character-count done">
                   <span className="st-pill done">✓</span> {t("recorder.intro.allDone")}
                 </span>
               ) : (
                 <span className="intro-character-count todo">
-                  <span className="st-dot" /> {t("recorder.intro.todo", { count: todo })}
+                  <span className="st-dot" /> {t("recorder.toRecord", { count: todo })}
                 </span>
               )}
             </button>

@@ -35,6 +35,7 @@ from common import (
     play_ids,
 )
 from process_uploads import LINE_ID_PATTERN, NEW_PLAY_DIR, TITLE_SEPARATOR
+from script_diff import script_changes
 
 SRC = REPO_ROOT / "src"
 THEME_CSS = SRC / "shared" / "theme.css"
@@ -648,6 +649,90 @@ class TestPageEntries(unittest.TestCase):
         # twin, which is not a PAGES entry.
         expected = (keys - {"home"}) | {"index", "respo"}
         self.assertEqual(expected, {p.stem for p in PAGES_DIR.glob("*.html")})
+
+
+class TestScriptDiffFields(unittest.TestCase):
+    """The counts a promoted script publishes: Python names them, the front reads them.
+
+    `script_changes` (scripts/script_diff.py) writes them into the journal and
+    `CHANGE_LABEL_KEYS` (src/dashboard/App.jsx) pairs each with the sentence that says
+    it. A field renamed on one side alone breaks NOTHING: the row simply stops showing
+    that count, on the one row of the journal this whole diff exists to fill, and there
+    is no error anywhere to notice it by.
+
+    Both sides are READ, never copied: the expected list comes from calling the real
+    function, and from the one flag `promote_script` adds on top of it.
+    """
+
+    def python_fields(self) -> set[str]:
+        was = {
+            "characters": [{"id": "c1", "name": "Serge"}, {"id": "c2", "name": "Annie"}],
+            "acts": [
+                {
+                    "scenes": [
+                        {
+                            "lines": [
+                                {"id": "l1", "characterId": "c1", "text": "Un"},
+                                {"id": "l2", "characterId": "c1", "text": "Deux"},
+                                # Gone in `now`: `linesRemoved`.
+                                {"id": "l3", "characterId": "c2", "text": "Trois"},
+                            ]
+                        }
+                    ]
+                }
+            ],
+        }
+        now = {
+            "title": "Le Malade imaginaire",
+            "language": "en",
+            "characters": [{"id": "c1", "name": "Sergio"}, {"id": "c3", "name": "Tim"}],
+            "acts": [
+                {
+                    "scenes": [
+                        {
+                            "lines": [
+                                {"id": "l1", "characterId": "c1", "text": "Un, mais autrement"},
+                                # Kept, same text, other character: `linesReassigned`.
+                                {"id": "l2", "characterId": "c3", "text": "Deux"},
+                                {"id": "l4", "characterId": "c3", "text": "Quatre"},
+                            ]
+                        }
+                    ]
+                }
+            ],
+        }
+        # Three calls, because two of the fields are exclusive with the rest by design.
+        # `other` only speaks when nothing else does, so it takes a pair that changes
+        # something with no name of its own (a character colour); `created` replaces
+        # almost everything, a birth having nothing to compare against. All three read
+        # the real function.
+        # The whole cast is kept, names included: only a colour moves, which is a change
+        # with no name of its own. Dropping a character here instead would fire
+        # `castRemoved` and `other` would never be reached.
+        recoloured = {
+            **was,
+            "characters": [
+                {"id": "c1", "name": "Serge", "color": "#e15759"},
+                {"id": "c2", "name": "Annie"},
+            ],
+        }
+        fields = (
+            set(script_changes(was, now))
+            | set(script_changes(was, recoloured))
+            | set(script_changes({}, now, created=True))
+        )
+        # The fixtures have to exercise them ALL, or the comparison below would pass by
+        # agreeing on a short list.
+        self.assertGreaterEqual(len(fields), 11, "the fixtures no longer trigger every field")
+        return fields
+
+    def test_the_front_has_a_sentence_for_every_count_the_action_writes(self):
+        body = re.search(
+            r"const CHANGE_LABEL_KEYS = \{(.*?)\};", read(SRC / "dashboard" / "App.jsx"), re.S
+        )
+        self.assertIsNotNone(body, "CHANGE_LABEL_KEYS not found in dashboard/App.jsx")
+        front = set(re.findall(r"^  ([a-zA-Z]+):", body.group(1), re.MULTILINE))
+        self.assertEqual(front, self.python_fields())
 
 
 class TestCatalogues(unittest.TestCase):

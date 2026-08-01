@@ -221,8 +221,24 @@ export function makeFormats(locale) {
   // on both sides, so the two cannot disagree.
   const number = new Intl.NumberFormat(locale);
 
+  // Joining an ENUMERATION of already translated phrases, for the upload log's script
+  // row ("12 lines added, 3 removed, 5 edited"). How a language strings a list
+  // together is a fact of that language, exactly like the no-break space before a
+  // French `?`, so it comes from the locale and never from a `", "` written in the
+  // component or from a catalogue entry made of one comma.
+  // The two languages do NOT come out symmetrical, and that is the point rather than
+  // a defect: French closes its list with "et" before the last item and English here
+  // stays on commas. Measured, not assumed.
+  // `type: "unit"` and not the default `"conjunction"`: they agree in French, and in
+  // English conjunction adds a spoken ", and" that turns a row of measurements into a
+  // sentence about them. `style: "narrow"` was the other candidate and is unusable,
+  // French dropping the commas altogether ("12 ajoutées 3 supprimées"). Measured on
+  // both locales, hence the default `style` left alone here.
+  const list = new Intl.ListFormat(locale, { type: "unit" });
+
   return {
     number: (n) => number.format(n),
+    list: (parts) => list.format(parts),
     // Takes a RATIO (0.124), not a percentage: Intl wants the fraction, and
     // handing it 12.4 would silently render "1 240 %".
     percent: (ratio) => percent.format(ratio),

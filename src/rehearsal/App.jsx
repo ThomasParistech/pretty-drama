@@ -3,7 +3,7 @@ import PageState from "../shared/PageState.jsx";
 import useScrollToActiveCard from "../shared/useScrollToActiveCard.js";
 import PlayHeader from "../shared/PlayHeader.jsx";
 import ProgressBar from "../shared/ProgressBar.jsx";
-import { myLineNumbers, myLineNumber } from "../shared/data.js";
+import { myLineNumbers, myLineNumber, sceneChoices } from "../shared/data.js";
 import {
   PlayIcon,
   PauseIcon,
@@ -65,8 +65,13 @@ export default function App() {
   const listRef = useRef(null);
 
   const acts = manifest?.acts ?? [];
-  const scene = acts[actIndex]?.scenes?.[sceneIndex] ?? null;
+  const scenes = useMemo(() => acts[actIndex]?.scenes ?? [], [acts, actIndex]);
+  const scene = scenes[sceneIndex] ?? null;
   const lines = useMemo(() => scene?.lines ?? [], [scene]);
+
+  // The scenes the menu offers: once a character is chosen, only the ones where
+  // they speak (`sceneChoices`, shared with the Recording header).
+  const choices = useMemo(() => sceneChoices(scenes, characterId), [scenes, characterId]);
 
   // Refs mirroring the values the imperative engine needs.
   const engineRef = useRef({});
@@ -242,6 +247,16 @@ export default function App() {
     setIndex(0);
   };
 
+  // Choosing a character can hide the scene one is standing in. Left alone, the
+  // `<select>` would carry a value no option holds, which a browser renders as a
+  // blank field: we move to the first scene the menu still offers. Through
+  // `changeScene`, so that playback stops and the position rewinds exactly as if
+  // the reader had picked that scene themselves.
+  useEffect(() => {
+    if (choices.length > 0 && !choices.includes(sceneIndex)) changeScene(choices[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [choices, sceneIndex]);
+
   useScrollToActiveCard(listRef, [index, actIndex, sceneIndex]);
 
   useEffect(() => () => clearPending(), []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -291,19 +306,27 @@ export default function App() {
             value={sceneIndex}
             onChange={(e) => changeScene(Number(e.target.value))}
           >
-            {(acts[actIndex]?.scenes ?? []).map((s, i) => {
+            {choices.map((i) => {
               const count =
                 characterId === ""
                   ? null
-                  : s.lines.filter((l) => l.characterId === characterId).length;
+                  : scenes[i].lines.filter((l) => l.characterId === characterId).length;
               return (
+                // The value is the scene's rank in the ACT, not its rank in this
+                // list: the menu hides scenes, it never renumbers them.
                 <option key={i} value={i}>
                   {sceneLabel(t, i)}
-                  {/* The count is interpolated from `common.lineCount`: the plural
-                      is settled in one place only, and this key now says nothing
-                      but the parentheses. */}
+                  {/* The count is interpolated into `common.optionNote`, the
+                      brackets shared with the Recording menus: the plural is
+                      settled in one place only and the punctuation in another.
+                      A count and NOT the Recording page's "aucune réplique": this
+                      menu answers how many lines you have in a scene, so zero
+                      belongs to the same series as three ("0 réplique", "3
+                      répliques"), where over there the suffix reports work left
+                      and has to tell "nothing to do" from "nothing to do it on".
+                      Two questions, two wordings, deliberately. */}
                   {count != null
-                    ? t("rehearsal.sceneLines", { lines: t("common.lineCount", { count }) })
+                    ? t("common.optionNote", { note: t("common.lineCount", { count }) })
                     : ""}
                 </option>
               );

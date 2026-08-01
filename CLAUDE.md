@@ -107,6 +107,19 @@ its title (what follows `---` is a note for the coordinator, never data). Then, 
    `script.json`), filed as kind `script` by the ZONE since `kind_of` never sees it;
    deletes each file even on error; writes `uploads_result.json`. A refused creation
    reports to the ROOT journal, the management page's own.
+   `work()` returns **the journal fields of its kind** and `record` merges them blind:
+   `clips` for a ZIP, `changes` for a script. Those changes are `script_diff.py` diffing
+   the promotion **by line id** (added / removed / edited / reassigned, then the cast,
+   then `title` and `language`), empty values omitted. Being the single door,
+   `promote_script` is the only place still holding both versions AND the only one that
+   knows whether there was a script at that address, which it hands down as `created`
+   (a birth then reports its SIZE and nothing else: a title is initial state, not a
+   change). Without any of this a promoted script published nothing but its name, and
+   its journal row was the one empty cell of the table.
+   **An empty `changes` renders as "aucun changement", so it must never be a lie**:
+   `other` fires when the two SANITIZED documents still differ and nothing else did (a
+   colour, an added scene, a line moved, punctuation). It is a floor, not an audit, so it
+   only ever speaks alone.
 2. `update_history.py`: one entry per affected play plus the root journal, one timestamp
    per run. Written by `uploads.yml` only, so a journal holds only uploads.
 3. `build_manifest.py`: joins `script.json` and `clips.json` into `manifest.json`, **the
@@ -139,12 +152,16 @@ copying expected values. Breaking a pair breaks CI.
 | Every `PAGES` key has its two seal variables | `shared/pages.js`, `theme.css` |
 | Colour is only validated as `#rrggbb`, never repaired | `build_manifest.py` |
 | i18n: every `t()`/`<T>` key exists in both catalogues, no key unused, no visible literal in `src/` | all of `src/` |
+| The fields of a script promotion | `script_changes` (`script_diff.py`) writes them, `CHANGE_LABEL_KEYS` (`dashboard/App.jsx`) has a sentence for each, in display order. Renamed on one side, the change silently stops showing. A field's VALUE says whether it is a count (`{count}`) or a flag (bare sentence), so there is no second table to keep in step |
 
 ## Invariants
 
-- **Text normalization has one implementation**, `scripts/normalize.py`, called only
-  from `build_manifest.compute_status`. The browser ships **raw** text. The folding in
-  `editor/search.js` is not this.
+- **Text normalization has one implementation**, `scripts/normalize.py`, with exactly two
+  callers: `build_manifest.compute_status` (is a recording stale) and
+  `script_diff.script_changes` (was a line really edited). Deliberately the same rule for
+  both: the journal's "edited" count is read as "these have to be recorded again", so a
+  curly apostrophe must not appear in it while the grid keeps the line green. The browser
+  ships **raw** text. The folding in `editor/search.js` is not this.
 - **Line ids are never recycled** (they name the mp3s). **Play ids are never re-minted**
   (they name a folder and a URL). Validate a play id **before** building a path. A play
   id is minted in **one** place, `mint_play_id` on arrival of the `.txt`; the front's
@@ -200,10 +217,10 @@ multi-page site, and switching language navigates.
 | A play's 2 home pages | `src/home/App.jsx` + `ACTOR_CARDS`/`RESPO_CARDS` (`shared/pages.js`); the actor list omits the editor |
 | Headers | `shared/PlayHeader.jsx` (five pages), `shared/PageHeader.jsx` (manifest-less, via `PageState`), `shared/HomeLink.jsx` (at the header foot, not the top row) |
 | Shared look | `shared/theme.css`: `.dialogue-card`, `.page-shell`/`.page-scroll`, `.truncate`, `.btn-tip`, `.lift-hover`, `.page-notice`, `.confirm-quote`, `.flag-icon`, `.upload-tile`, `--shadow-float` |
-| Rehearsal / Recorder | `shared/ProgressBar.jsx`, `shared/useScrollToActiveCard.js`, `recorder/useRecorder.js`, `downloadZip` (`recorder/App.jsx`) |
+| Rehearsal / Recorder | `shared/ProgressBar.jsx`, `shared/useScrollToActiveCard.js`, `recorder/useRecorder.js`, `downloadZip` (`recorder/App.jsx`). Both scene menus offer `sceneChoices` (`shared/data.js`): once a character is chosen, only the scenes they speak in, as INDEXES into the act (hiding an option never renumbers the ones that stay), and the whole act when they speak nowhere in it rather than an empty menu. Each page then moves off a scene the menu no longer holds, the Recorder with `setSceneIndex`, Rehearsal through `changeScene` so playback stops too |
 | Colours | `shared/characterColors.js` (Tableau 10, stored per character; lightness is what distinguishes). Filling has one implementation: the front's `assignColors` |
 | Stats | `src/stats/stats.js` (pure, tested) does all the maths; `App.jsx` only draws |
-| Dashboard | `dashboard/App.jsx`: `ProgressTable`, `Journal`, `githubUploadUrl` (`shared/data.js`); its tile takes the VOICES only. Second page after the Editor to re-skin `--accent` on its own `:root` (the seal's navy, so the body can reach a colour the `<header>`-scoped seal tokens do not carry) |
+| Dashboard | `dashboard/App.jsx`: `ProgressTable`, `Journal` (`detailOf` per kind; a script row reads its `changes` through `CHANGE_LABEL_KEYS` + `changesOf`, each field a WHOLE catalogue phrase joined by `fmt.list`, and `changes: null` means a journal written before the diff existed, so it stays blank), `githubUploadUrl` (`shared/data.js`); its tile takes the VOICES only. Second page after the Editor to re-skin `--accent` on its own `:root` (the seal's navy, so the body can reach a colour the `<header>`-scoped seal tokens do not carry) |
 | Editor | its upload tile downloads `script.json` then opens the play's upload page (`upload`, `App.jsx`); `editor/EditorRail.jsx` (one section open at a time), `StructurePanel` (the plan; only the play has a name, acts and scenes derive labels from rank), `history.js` (wraps a pure `scriptReducer`; `dirty = present !== saved`), `search.js` (pure; no regex; length-preserving folding) |
 | File tiles | `shared/UploadTile.jsx` + `.upload-tile` (`theme.css`): ONE look for "a file passes between the coordinator and the repo", both ways. A link on the Dashboard (voices), a button in the Editor (script, downloaded first), and the Dashboard's PDF download composing the same classes (`.dash-script-tile`). The direction is in the opening drawing and the verb, never the shape; the coloured word takes the page one READS (`tone` on `PageMark` keeps the mic of Recording on a navy Dashboard tile) |
 | Guards | `shared/LeaveGuard.jsx` (capture-phase clicks + `beforeunload`), `shared/ConfirmModal.jsx` (portal, replaces `window.confirm`; `bodyTakesFocus` for the one box that is a FORM and not a question, so its field keeps the focus) |

@@ -98,6 +98,7 @@ from common import (
     play_uploads_dir,
     write_json,
 )
+from script_diff import script_changes
 
 # Ephemeral (gitignored): handed to update_history.py within the same run.
 RESULT_PATH = REPO_ROOT / "uploads_result.json"
@@ -391,15 +392,19 @@ def count_lines(script: dict) -> int:
     return sum(len(scene["lines"]) for act in script["acts"] for scene in act["scenes"])
 
 
-def validate_script(raw: bytes, current: dict, expected_play: str = "") -> None:
+def validate_script(raw: bytes, current: dict, expected_play: str = "") -> dict:
     """Refuse a candidate that is not a play script, BEFORE it becomes the source
-    of truth.
+    of truth. Returns the parsed candidate.
 
     Deliberately stricter than `sanitize_script`, which is a lenient reader: here we
     are deciding to overwrite a play's `script.json`. A valid but foreign JSON
     (`[1, 2, 3]`, an export of something else) would sanitize into an empty play and
     would erase the troupe's play, hence the guard rail: a candidate with no line at
-    all never replaces a play that has some."""
+    all never replaces a play that has some.
+
+    It RETURNS what it parsed rather than throwing it away, so that `promote_script`
+    can diff the promotion for the journal without decoding the same bytes twice. The
+    callers that only care about the verdict ignore it."""
     if len(raw) > MAX_SCRIPT_BYTES:
         raise UploadError(f"le fichier est anormalement gros (plus de {MAX_SCRIPT_BYTES // (1024 * 1024)} Mo)")
     try:
@@ -428,6 +433,7 @@ def validate_script(raw: bytes, current: dict, expected_play: str = "") -> None:
             "ce script ne contient aucune réplique alors que la pièce en compte : "
             "refusé pour ne pas effacer la pièce"
         )
+    return candidate
 
 
 def read_title(path: Path) -> str:
@@ -483,7 +489,7 @@ def read_title(path: Path) -> str:
     return title
 
 
-def promote_script(raw: bytes, script_path: Path, expected_play: str = "") -> None:
+def promote_script(raw: bytes, script_path: Path, expected_play: str = "") -> dict:
     """Validate a candidate script and write it as the play's source of truth.
 
     The single door to `plays/<id>/data/script.json`, whether the candidate arrived as a
@@ -493,22 +499,36 @@ def promote_script(raw: bytes, script_path: Path, expected_play: str = "") -> No
     The bytes are written VERBATIM. For a `.json` that is the whole point (it is the file
     the editor produced, and it alone carries everything, character colours included:
     `sanitize_script` copies the valid form of them but ignores whatever it does not
-    know about)."""
+    know about).
+
+    Returns what the promotion CHANGED, for the journal (see scripts/script_diff.py).
+    Being the single door, this is the only place that still holds both versions at
+    once, which is why the diff is taken here and not by the caller. It is also the only
+    one that knows whether there was a script at this address at all, a different
+    question from "was the old document empty" (a play can exist and carry no title),
+    hence the flag handed down rather than inferred over there."""
     current = load_json(script_path, {})
     if not isinstance(current, dict):
         current = {}
-    validate_script(raw, current, expected_play)
+    existed = script_path.exists()
+    candidate = validate_script(raw, current, expected_play)
     script_path.parent.mkdir(parents=True, exist_ok=True)
     script_path.write_bytes(raw)
+    return script_changes(current, candidate, created=not existed)
 
 
-def process_script(path: Path, script_path: Path, expected_play: str = "") -> None:
-    """Promote an uploaded `.json` script, or raise UploadError."""
-    promote_script(path.read_bytes(), script_path, expected_play)
+def process_script(path: Path, script_path: Path, expected_play: str = "") -> dict:
+    """Promote an uploaded `.json` script, or raise UploadError.
+
+    Returns the journal fields of this file, `record`'s contract."""
+    return {"changes": promote_script(path.read_bytes(), script_path, expected_play)}
 
 
-def create_play(path: Path) -> str:
-    """Bring a play into being from one file of the creation zone. Returns its id.
+def create_play(path: Path) -> tuple[str, dict]:
+    """Bring a play into being from one file of the creation zone.
+
+    Returns (its id, what the promotion changed) so the caller can both route the
+    journal line to the new play and let that line say what happened.
 
     The identifier is minted HERE and nowhere else, and this is the moment it is fixed
     forever: it names the play's folder and its address on the site, so renaming the
@@ -549,13 +569,16 @@ def create_play(path: Path) -> str:
             "titre, ou modifiez la pièce existante depuis la page Édition"
         )
     script = new_play_script(play_id, title, DEFAULT_LANGUAGE)
-    promote_script(
+    changes = promote_script(
         json.dumps(script, ensure_ascii=False, indent=2).encode("utf-8") + b"\n",
         script_path,
         play_id,
     )
     ensure_play_layout(play_id)
-    return play_id
+    # The changes come back with the id, so this creation reads in the journal like the
+    # promotion it is. There is nothing to count here (a brand new play is empty), so
+    # what the row will show is `created` alone, which is the whole of what happened.
+    return play_id, changes
 
 
 def kind_of(path: Path) -> str:
@@ -618,13 +641,22 @@ def record(entries: list[dict], path: Path, kind: str, work) -> int:
     Returns the number of clips merged (zero for a script). Every exception is
     contained here: a faulty file must neither block the other files nor lose the
     uploads already merged in this run, and its reason ends up displayed to the
-    coordinator in the journal of its play."""
+    coordinator in the journal of its play.
+
+    `work()` returns the fields ITS kind publishes in the journal, and this function
+    merges them without knowing any of them: `clips` for a voice ZIP, `changes` for a
+    promoted script. It used to read `if kind == "voix"` here and pick the count out of
+    a plain integer, which is exactly the branch that had to grow a second arm the day
+    a script had something to say. What stays here is the shape every kind shares
+    (`file`, `kind`, and `error` on the way out), and the clip count it hands back to
+    the caller for the run's summary line.
+    """
     entry = {"file": short(path.name, MAX_FILENAME_CHARS), "kind": kind}
     clips = 0
     try:
-        clips = work() or 0
-        if kind == "voix":
-            entry["clips"] = clips
+        fields = work() or {}
+        entry.update(fields)
+        clips = fields.get("clips", 0)
     except UploadError as exc:
         entry["error"] = short(exc, MAX_ERROR_CHARS)
         print(f"{path.name}: ERROR: {exc}", file=sys.stderr)
@@ -668,16 +700,17 @@ def process_play_zone(play_id: str, files: list[Path]) -> tuple[list[dict], int]
                     )
                 count = process_zip(path, clips_index, play_clips_dir(play_id), play_id)
                 print(f"{path.name}: {count} clip(s) processed for {play_id}")
-                return count
+                return {"clips": count}
             if kind == "script":
                 created = not script_json.exists()
-                process_script(path, script_json, play_id)
+                fields = process_script(path, script_json, play_id)
                 if created:
                     ensure_play_layout(play_id)
                     print(f"{path.name}: play {play_id} created")
                 else:
                     print(f"{path.name}: script promoted to plays/{play_id}/data/script.json")
-                return 0
+                print(f"{path.name}: {fields['changes']}")
+                return fields
             raise UploadError(
                 "type de fichier inconnu : seuls les ZIP de voix et le script de la pièce "
                 "(.json) sont attendus ici"
@@ -716,9 +749,9 @@ def process_new_play_zone(files: list[Path]) -> tuple[dict[str, list[dict]], lis
         outcome: dict[str, str] = {}
 
         def work(path=path, outcome=outcome):
-            outcome["play"] = create_play(path)
+            outcome["play"], changes = create_play(path)
             print(f"{path.name}: play {outcome['play']} created")
-            return 0
+            return {"changes": changes}
 
         # The kind comes from the ZONE and not from `kind_of`: the file may well be named
         # "Antigone" with no extension at all, and the journal must not show the "?" of an

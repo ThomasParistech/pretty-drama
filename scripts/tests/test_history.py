@@ -72,11 +72,34 @@ class TestAddRun(unittest.TestCase):
 
 class TestExampleJournal(unittest.TestCase):
     """The shape contract with the front end, checked on the shared example: it
-    deliberately covers the four cases the page knows how to display (voices that
-    succeeded, voices refused, a promoted script, several files in one upload)."""
+    deliberately covers every case the page knows how to display (voices that succeeded,
+    voices refused, a script promotion with its diff, one that changed nothing, the birth
+    of the play, several files in one upload)."""
 
-    FILE_KEYS = {"file", "kind", "clips", "error"}
+    FILE_KEYS = {"file", "kind", "clips", "error", "changes"}
     KINDS = {"voix", "script", "inconnu"}
+    # The counts `script_changes` publishes, plus the flag `promote_script` adds. Written
+    # out here because this class checks the EXAMPLE file, which is a fixture and not a
+    # source: what holds the counts to the front that reads them is
+    # `TestScriptDiffFields` in test_contracts.py, which reads both real sides.
+    CHANGE_FIELDS = {
+        "linesAdded",
+        "linesRemoved",
+        "linesEdited",
+        "linesReassigned",
+        "castAdded",
+        "castRemoved",
+        "castRenamed",
+        "title",
+        "language",
+        "other",
+        "created",
+    }
+    # The ones that are FLAGS and not counts: there is one title, one language, one birth,
+    # and `other` is a yes or no. `changesOf` on the front reads the type of the value to
+    # know whether to interpolate a `{count}`, so a flag written as a number (or the other
+    # way round) renders the wrong sentence or none at all.
+    CHANGE_FLAGS = {"title", "language", "other", "created"}
 
     def test_runs_are_newest_first(self):
         dates = [run["at"] for run in EXAMPLE["runs"]]
@@ -105,15 +128,50 @@ class TestExampleJournal(unittest.TestCase):
                 # detailOf counts the lines of a ZIP that succeeded.
                 self.assertIsInstance(file["clips"], int)
             else:
-                # A promoted script has nothing to add: the seal says it.
+                # A promoted script counts what it CHANGED instead: no clip merged, and
+                # the diff `promote_script` took between the two versions.
                 self.assertNotIn("clips", file)
+                self.assertIsInstance(file["changes"], dict)
 
-    def test_the_example_covers_the_four_display_cases(self):
+    def test_a_refused_file_publishes_no_diff_either(self):
+        # Nothing was written, so there is nothing to have changed. The front would
+        # render the reason anyway (the error wins over the detail), but a diff sitting
+        # beside a failure in the repository would read as a promotion that happened.
+        for file in self.files():
+            if "error" in file:
+                self.assertNotIn("changes", file)
+
+    def test_a_diff_carries_only_known_fields_and_real_counts(self):
+        for file in self.files():
+            changes = file.get("changes")
+            if changes is None:
+                continue
+            self.assertLessEqual(set(changes), self.CHANGE_FIELDS)
+            for field, value in changes.items():
+                if field in self.CHANGE_FLAGS:
+                    self.assertIs(value, True)
+                else:
+                    # Zeros are OMITTED, not written: the entry reads by eye in the
+                    # repository, and the front treats a missing count as none. A zero
+                    # written out would also make an unchanged promotion look like a
+                    # diff that found nothing rather than one that says so.
+                    self.assertIsInstance(value, int)
+                    self.assertGreater(value, 0)
+
+    def test_the_example_covers_every_display_case(self):
         files = self.files()
         self.assertTrue(any(f["kind"] == "voix" and "clips" in f for f in files))
         self.assertTrue(any(f["kind"] == "voix" and "error" in f for f in files))
         self.assertTrue(any(f["kind"] == "script" and "error" not in f for f in files))
         self.assertTrue(any(len(run["files"]) > 1 for run in EXAMPLE["runs"]))
+        # Every shape a script row can take, because each renders a different sentence and
+        # the example is what a screenshot of this page is taken from: counts, flags, the
+        # catch-all, the birth of the play, and the promotion that moved nothing.
+        self.assertTrue(any(isinstance(v, int) for f in files for v in f.get("changes", {}).values()))
+        self.assertTrue(any(f.get("changes", {}).get("title") for f in files))
+        self.assertTrue(any(f.get("changes", {}).get("other") for f in files))
+        self.assertTrue(any(f.get("changes", {}).get("created") for f in files))
+        self.assertTrue(any(f.get("changes") == {} for f in files))
 
     def test_the_example_is_a_journal_add_run_could_have_written(self):
         # Stacked on top of itself, it stays well formed: the Action's function

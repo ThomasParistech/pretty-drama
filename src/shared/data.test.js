@@ -13,6 +13,7 @@ import {
   githubNewPlayUrl,
   githubUploadUrl,
   myLineNumbers,
+  sceneChoices,
   slugify,
 } from "./data.js";
 import { isPlayId } from "./plays.js";
@@ -209,6 +210,39 @@ test("myLineNumbers numbers MY lines in the order of the scene", () => {
 test("with no character chosen, nobody is numbered", () => {
   const lines = [{ id: "a", characterId: "c1" }];
   assert.equal(myLineNumbers(lines, "").size, 0);
+});
+
+// -------------------------------------------------------------- sceneChoices
+
+const ACT = [
+  { lines: [{ characterId: "c1" }, { characterId: "c2" }] },
+  { lines: [{ characterId: "c2" }] },
+  { lines: [{ characterId: "c2" }, { characterId: "c1" }] },
+];
+
+test("sceneChoices keeps only the scenes where the character speaks", () => {
+  assert.deepEqual(sceneChoices(ACT, "c1"), [0, 2]);
+});
+
+test("sceneChoices returns INDEXES into the act, never a renumbering", () => {
+  // The menu's `<option value>` is this number and it selects the scene: were
+  // the kept scenes renumbered 0,1 the reader would land on scene 2 when asking
+  // for scene 3.
+  const kept = sceneChoices(ACT, "c1");
+  assert.equal(kept[1], 2);
+});
+
+test("with no character chosen, sceneChoices offers the whole act", () => {
+  assert.deepEqual(sceneChoices(ACT, ""), [0, 1, 2]);
+});
+
+test("a character silent in the whole act gets the whole act, not an empty menu", () => {
+  // A field that opens onto nothing offers no way out of the act it is stuck in.
+  assert.deepEqual(sceneChoices(ACT, "ghost"), [0, 1, 2]);
+});
+
+test("sceneChoices takes an act with no scene at all", () => {
+  assert.deepEqual(sceneChoices([], "c1"), []);
 });
 
 // ------------------------------------------------------------------- excerpt
