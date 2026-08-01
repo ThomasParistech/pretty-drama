@@ -41,6 +41,15 @@ concurrency:
 jobs:
   process:
     runs-on: ubuntu-latest
+    # The push that CREATES main is the template being copied, and it lands here because
+    # that commit adds `uploads/.gitkeep` and `uploads/<id>/.gitkeep`, which match the
+    # `paths` filter above. There is nothing to process in those zones, ever: the run is
+    # a proven no-op (no journal line, `commit_push.sh` finds an empty index). All it
+    # could produce is a green "Successful" on the initial commit, reading as an upload
+    # that was handled when none existed. Skipped instead, and `site` follows since it
+    # `needs` this job, so a fresh copy of the template shows grey everywhere rather than
+    # ticks it has not earned. Same reasoning, same one-liner, in build.yml.
+    if: github.event.created != true
     # This job only writes to the repo; it has nothing to do with Pages. The
     # `pages`/`id-token` permissions in the block above exist only so they can be
     # delegated to the `site` job (a called workflow can never obtain more than its

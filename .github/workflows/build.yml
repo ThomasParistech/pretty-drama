@@ -40,13 +40,19 @@ jobs:
   # workflow token cannot even ask for (hence the `enablement` input of configure-pages
   # wanting a PAT or a GitHub App). So this job does not try. It looks, and it explains.
   #
-  # It is a SEPARATE JOB, and that is the whole point: a job-level `if` is the only thing
-  # in Actions that turns a runtime answer into a SKIPPED job rather than a failed one.
-  # The run then ends green with `build` greyed out, and GitHub sends no e-mail. Failing
-  # would have been easier and is wrong here: a coordinator who has not reached step 2 of
-  # the README yet has done nothing wrong, and an English "Run failed" in their inbox is
-  # a scare, not information. The message waits for them inside the run instead, where
-  # the install protocol already sends them.
+  # It FAILS the run when publishing is off, and the e-mail GitHub then sends is wanted,
+  # not tolerated. The one case where that e-mail would have been unfair is the push that
+  # creates the repository, and that push is skipped below, so every run that reaches
+  # here belongs to a repository whose install protocol is over: an upload that cannot go
+  # online, or a manual publish that cannot publish, is a real problem, and this project
+  # has no other way to say so (the Dashboard journal is on the very site that is
+  # missing). Silence, or a green tick over a site that never went up, would be worse
+  # than a scare.
+  #
+  # A SEPARATE JOB, not a first step of `build`: it fails in four seconds instead of
+  # after tests, npm build and LaTeX, GitHub names the failing job in the e-mail, so
+  # "Is the site allowed to be published" is already the diagnosis, and `build` shows as
+  # skipped rather than dragging a red herring of its own.
   #
   # `build_type` and not mere existence: Pages switched on but publishing FROM A BRANCH
   # would let the deploy fail much later AND serve the repository root, whose index.html
@@ -59,8 +65,15 @@ jobs:
   pages-check:
     name: Is the site allowed to be published
     runs-on: ubuntu-latest
-    outputs:
-      ready: ${{ steps.check.outputs.ready }}
+    # The push that CREATES main, i.e. the template being copied, is the ONE run this
+    # check does not judge, and skipping it is what earns the right to fail all the
+    # others. At that instant the repository is seconds old, Pages cannot be on yet, and
+    # nothing is supposed to publish: the README's step 2 has not happened. Failing there
+    # would mail an English "Run failed" to someone doing exactly as told, and succeeding
+    # there would put a green tick on the initial commit of a repository that has no
+    # site. Grey is the only honest answer, and a job-level `if` is the only way to get
+    # it, since this job cannot skip itself on an answer that exists only at runtime.
+    if: github.event.created != true
     steps:
       - id: check
         env:
@@ -70,10 +83,8 @@ jobs:
           # `gh api` exits non-zero, which would fail the step before it can explain.
           build_type="$(gh api "repos/${{ github.repository }}/pages" --jq .build_type 2>/dev/null || true)"
           if [ "$build_type" = "workflow" ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          echo "ready=false" >> "$GITHUB_OUTPUT"
 
           if [ -z "$build_type" ]; then
             title="GitHub Pages is not switched on yet"
@@ -101,16 +112,19 @@ jobs:
             echo "without having to upload anything."
           } >> "$GITHUB_STEP_SUMMARY"
 
-          # A warning, not an error: nothing is broken, something is waiting for a human.
-          # It also puts a yellow banner on the run, so the green tick of a skipped build
-          # cannot be read as "the site is live".
-          echo "::warning title=$title::Settings > Pages > Source > GitHub Actions, then Actions > build > Run workflow. Full instructions in this run's summary."
+          # The annotation carries the whole fix, because it is what shows on the run page
+          # and in the checks list without opening anything. The summary above is the
+          # same thing with room to breathe.
+          echo "::error title=$title::Settings > Pages > Source > GitHub Actions, then Actions > build > Run workflow. Full instructions in this run's summary."
+          exit 1
 
   build:
     runs-on: ubuntu-latest
-    # Skipped, never failed, while publishing is off. See pages-check above.
+    # No `if`: `needs` alone is the gate. pages-check failing (publishing off) or being
+    # skipped (the repository being created) both leave this job skipped, which is what
+    # should show in the checks list either way. The distinction the coordinator needs is
+    # carried by pages-check's own row, red or grey.
     needs: pages-check
-    if: needs.pages-check.outputs.ready == 'true'
     steps:
       # Explicit `ref`: when called from uploads.yml we run inside the run of a push
       # made BEFORE the commit that workflow just pushed. Without this, checkout would
