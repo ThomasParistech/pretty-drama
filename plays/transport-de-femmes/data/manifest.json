@@ -4,6 +4,16 @@
   "language": "fr",
   "history": [
     {
+      "at": "2026-08-01T14:30:42Z",
+      "files": [
+        {
+          "file": "voix-annie-napo.zip",
+          "kind": "voix",
+          "clips": 2
+        }
+      ]
+    },
+    {
       "at": "2026-08-01T14:29:06Z",
       "files": [
         {
@@ -135,8 +145,8 @@
               "characterId": "e3e61184-12c9-4ab2-bae9-5cc2202e6969",
               "character": "Napo",
               "text": "S'il vous plaît, j'veux pas y aller.",
-              "status": "manquant",
-              "clip": null,
+              "status": "ok",
+              "clip": "clips/ba04651a-d584-4043-807c-211e13599c7c.mp3",
               "actIndex": 0,
               "sceneIndex": 0
             },
@@ -195,8 +205,8 @@
               "characterId": "ecfd3c65-fccb-4c87-9fd2-bd7bf486d6d2",
               "character": "Annie",
               "text": "Va savoir.",
-              "status": "manquant",
-              "clip": null,
+              "status": "ok",
+              "clip": "clips/76a961d9-bb59-48a5-bf49-b38ea2eb3d09.mp3",
               "actIndex": 0,
               "sceneIndex": 0
             },
@@ -11625,8 +11635,8 @@
       "characterId": "e3e61184-12c9-4ab2-bae9-5cc2202e6969",
       "character": "Napo",
       "text": "S'il vous plaît, j'veux pas y aller.",
-      "status": "manquant",
-      "clip": null,
+      "status": "ok",
+      "clip": "clips/ba04651a-d584-4043-807c-211e13599c7c.mp3",
       "actIndex": 0,
       "sceneIndex": 0
     },
@@ -11685,8 +11695,8 @@
       "characterId": "ecfd3c65-fccb-4c87-9fd2-bd7bf486d6d2",
       "character": "Annie",
       "text": "Va savoir.",
-      "status": "manquant",
-      "clip": null,
+      "status": "ok",
+      "clip": "clips/76a961d9-bb59-48a5-bf49-b38ea2eb3d09.mp3",
       "actIndex": 0,
       "sceneIndex": 0
     },
