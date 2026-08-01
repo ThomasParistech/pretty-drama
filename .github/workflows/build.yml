@@ -50,7 +50,7 @@ jobs:
   # than a scare.
   #
   # A SEPARATE JOB, not a first step of `build`: it fails in four seconds instead of
-  # after tests, npm build and LaTeX, GitHub names the failing job in the e-mail, so
+  # after tests, npm ci and the site build, GitHub names the failing job in the mail, so
   # "Is the site allowed to be published" is already the diagnosis, and `build` shows as
   # skipped rather than dragging a red herring of its own.
   #
@@ -172,33 +172,19 @@ jobs:
           python scripts/build_manifest.py
           python scripts/build_plays_index.py
 
-      # The script PDF is a convenience, never a deployment condition: hence the
-      # continue-on-error here, and the exit code 0 that build_script_pdf.py returns
-      # even when LaTeX fails. Without those two nets, one malformed line would make
-      # the whole site disappear with no warning to the coordinator (this workflow writes
-      # neither issue nor journal, so it has no way to tell them).
+      # No LaTeX here, and no PDF built: `plays/<id>/data/script.pdf` is COMMITTED data
+      # now, typeset by uploads.yml the moment a script is promoted, and the `rsync`
+      # below carries it into dist/ like any other file of the play. It used to be
+      # gitignored and rebuilt right here, which meant every deployment paid 45 s of apt
+      # to re-typeset documents that had not changed, including the very first
+      # deployment of a copy of the template that has no play at all. The install now
+      # runs where the work is: on a script upload, a few times in a play's life.
       #
-      # Distro TeX packages, and nothing else. tectonic was tried and dropped: it is
-      # faster in steady state (a 26 MB static binary, ~0.5 s of compilation against
-      # 0.25 s here, against ~300 MB of packages), but it required a pinned release
-      # URL, a sha256 to carry forward on every version bump, and an `actions/cache`
-      # to avoid re-paying 40 s of TeX file downloads. Three things that rot, in a
-      # repo meant to be forked by a troupe and left alone for years, all to save
-      # under a minute on a job that runs about once a week. The apt packages are
-      # signed by the distro, still resolve in ten years, and add no trust
-      # relationship.
-      - name: Install LaTeX (script PDF)
-        continue-on-error: true
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            texlive-latex-recommended texlive-lang-french texlive-fonts-recommended lmodern
-
-      # Writes plays/<id>/data/script.pdf, which the copy of plays/ below carries into
-      # dist/. So it must stay BEFORE "Build site".
-      - name: Build the printable script of every play
-        continue-on-error: true
-        run: python scripts/build_script_pdf.py
+      # Bought with one guarantee lost, and it is written down beside the other one it
+      # breaks: manifest.json and plays.json are rebuilt just above SO THAT a hand edit
+      # in the repo cannot leave the site stale, and the PDF no longer enjoys that. A
+      # script.json edited directly on GitHub keeps its old PDF until the next upload.
+      # Same note in .gitignore and in scripts/build_script_pdf.py.
 
       # `npm run build` writes the seven pages of each play itself, from the templates
       # in `pages/` (see vite.config.js), so dist/plays/<id>/ already exists when we

@@ -5,18 +5,22 @@ __pycache__/
 .mypy_cache/
 .DS_Store
 uploads_result.json
-# Derived from the play's script on every deployment, never a piece of data. This
-# line carries weight: uploads.yml commits the whole of `plays`, so without it a
-# 150 kB binary would enter the history on every script upload.
-plays/*/data/script.pdf
-# The temporary file of the dev download (`ensureScriptPdf` in vite.config.js
-# writes `.part` then renames, so a concurrent request cannot land on a
-# half-written PDF). It only survives an interrupted write (full disk, server
-# killed between the two calls), and that is precisely where it must not show up
-# in the `git status` of a folder the Action commits whole.
+# `plays/*/data/script.pdf` is NOT here on purpose: it is derived, like manifest.json
+# next to it, and committed for the same reason. It is the only derived file whose
+# rebuild costs 45 s of LaTeX install, so it is typeset once by uploads.yml when a
+# script is actually promoted, rather than on every deployment. ~150 kB per promotion
+# enters the history; the mp3s beside it cost far more, and it buys every deploy back.
+# The counterpart, and the reason this comment exists: nothing refreshes it at deploy
+# time. A script.json edited by hand IN THE REPO leaves a PDF that no longer matches
+# the play (cf. scripts/build_script_pdf.py).
+#
+# The temporary file of the typesetting (`.part` written then renamed, so no reader
+# lands on a half-written PDF) stays out: it only survives an interrupted write (full
+# disk, runner killed between the two calls), and that is precisely where it must not
+# show up in the `git status` of a folder the Action commits whole.
 plays/*/data/script.pdf.part
 # A play's pages are GENERATED from the templates in `pages/` (one per play and
-# per page), in dev as at build time: cf. vite.config.js. They are derived like
-# the PDF, and for the same reason they do not enter the history, which every new
-# play would otherwise fill with seven files identical to its neighbour's.
+# per page), in dev as at build time: cf. vite.config.js. Derived and NOT committed,
+# unlike the PDF above: seven files per play, identical to its neighbour's, rewritten
+# at every config load, and free to rebuild.
 plays/*/*.html

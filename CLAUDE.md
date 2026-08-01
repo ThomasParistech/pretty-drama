@@ -29,8 +29,9 @@ plays/<id>/
   *.html                    GENERATED at build from pages/, gitignored
   data/script.json          source of truth, committed, carries the play id
   data/{clips,history,manifest}.json   committed
-  data/script.pdf           derived, gitignored
+  data/script.pdf           derived, COMMITTED (typeset on promotion, not on deploy)
   clips/<lineId>.mp3        committed
+plays/dev/                  the site's TEST BENCH, a play like the others but unlisted
 uploads/<id>/               that play's upload zone
 uploads/_new-play/          the play-CREATION zone: file = title, `---`, note
 uploads/                    root: safety net for a script naming its own play
@@ -55,6 +56,18 @@ data/history.json           journal for uploads no play claimed
   (leading `_`), so it can never collide with a play's zone. Deleting a play needs a
   commit, so it happens by hand on GitHub. Migrating a fork:
   `python3 scripts/migrate_to_plays.py <id>`.
+- **`plays/dev/` is the site's test bench**, and the ONLY play missing from
+  `data/plays.json`: `listed_play_ids` (`build_plays_index.py`) drops it, so neither root
+  page offers it and only a hand-written URL (`plays/dev/rehearsal.html`) reaches it.
+  Everywhere else it is an ordinary play: same pipeline, seven pages built and deployed,
+  its own upload zone. It exists so a page can be tried on real data without writing
+  test uploads into the troupe's journal, which every fork of this template inherits. Its
+  script covers on purpose what a real one shows by accident: an empty scene, a line with
+  no text, a character with no colour and one with no line, a tirade that overflows, the
+  three recording states, and a stale line next to one whose apostrophe alone changed.
+  Its clips are tones, one pitch per character, in the pipeline's own format.
+  `DEV_PLAY_ID` is an address no troupe can take: the creation box refuses it
+  (`NewPlay.jsx`) and `create_play` would refuse it too.
 
 ## Architecture
 
@@ -78,6 +91,39 @@ deadlock); `paths-ignore: uploads/**` in `build.yml`; its checkout on
 feedback channel is the Dashboard's upload journal, so a failed run goes unreported and
 the commit precedes the deploy.
 
+**One exception, the one the journal cannot cover**: publishing off means the journal
+sits on a site that does not exist. Hence the `pages-check` JOB opening `build.yml`. **No
+workflow can switch Pages on** (it needs `administration:write`, absent from the
+`permissions:` scopes, which is why `enablement:` is deliberately not set on
+`configure-pages`), so it checks instead: Pages on AND `build_type == "workflow"`, since
+publishing from a branch serves the repo root and answers a blank page rather than a 404.
+When it is off it writes the fix and the repo's own settings link into
+`$GITHUB_STEP_SUMMARY`, raises an `::error::` carrying the same fix in one line, and
+**fails**. `build` needs it, so it shows as skipped. A separate JOB and not a first step:
+it fails in four seconds instead of after tests, npm ci and the build, and GitHub names
+the failing job in its e-mail, so "Is the site allowed to be published" is already the
+diagnosis. In English, like every workflow; walking the coordinator through it is the
+README's job.
+
+**Failing is the point, and the push that CREATES main is what pays for it.** Both
+workflows skip that push (`if: github.event.created != true`, on `pages-check` and on
+`process`). A fresh copy of the template triggers both (its initial commit adds
+`uploads/**/.gitkeep`, matching one filter, and everything else, defeating the other),
+yet there is nothing to publish and nothing to process: step 2 of the README has not
+happened, so failing would mail an English "Run failed" to someone doing as told, and
+succeeding would put a green tick on the initial commit of a repository that has no site.
+`pages-check` cannot skip itself (its answer exists only at runtime), hence the
+job-level `if`, the only construct that can. Every run that DOES reach the check
+therefore belongs to a repository whose install is over, where a publish that cannot
+publish is a real problem and the e-mail is wanted: silence here would be silence about
+a site that never went up, and this project has no other channel to say it (the journal
+is on the missing site). Publishing the first time is step 3 of the README, by hand.
+
+**`workflow_dispatch` on `build.yml` is the republish button**, and the README names it
+as such: it rebuilds and redeploys the whole site from the repo, uploading nothing. It is
+step 3 of the install protocol (nothing runs by itself once Pages is switched on: that
+setting fires no event) and the answer to a site that looks stale.
+
 ## Commands
 
 - `npm run dev` (middleware serves repo data with real 404s), `npm start`,
@@ -89,9 +135,12 @@ the commit precedes the deploy.
 - `npm test` = `node --test` **with no argument** (Node 22+ reads a positional as a
   file; bare, the default patterns work from Node 20 to 24). **Pure** front logic only,
   no test dependency, no React rendering, so DOM work is checked by hand.
-- Test a page without building: hand-edit `plays/<id>/data/manifest.json`, `npm run dev`.
-  Populate a journal: `cp scripts/tests/history-example.json
-  plays/<id>/data/history.json && python3 scripts/build_manifest.py`.
+- Try a page: the test bench, which no link on the site leads to (cf. Layout). Both
+  servers PRINT it next to Chooser and Manage (`printHomeUrls`, `vite.config.js`) and
+  `npm start` opens it as a third tab (`scripts/dev.sh`), both only if `plays/dev/` is
+  still there. Edit its `data/script.json` or `data/history.json`, `python3
+  scripts/build_manifest.py`, reload. Do that on the troupe's play and the diff is a
+  play's real data.
 
 ## Pipeline
 
@@ -129,8 +178,18 @@ its title (what follows `---` is a note for the coordinator, never data). Then, 
    (the pages sort by title with `Intl.Collator`). Carries what a card says: cast size,
    length in words (`count_words`, twin of `countWords` in `stats.js`), lines and
    recorded.
-5. `build_script_pdf.py`: `data/script.pdf`, gitignored, built by `build.yml` only, and
-   it **cannot fail the deploy**.
+5. `build_script_pdf.py`: `data/script.pdf`, **committed**, and the only derived file
+   `build.yml` does not rebuild. `uploads.yml` typesets it, on the runs that promoted a
+   script and for those plays only (`git status --porcelain -uall` on
+   `plays/*/data/script.json` names them, which also makes a byte-identical promotion
+   typeset nothing), deleting the old PDF FIRST so a failed typesetting commits an
+   absence rather than a document that disagrees with the play. It **cannot fail the
+   run**. Committed because it is the one derived file whose rebuild costs 45 s of apt:
+   paid on the rare promotion instead of on every deployment, including the first one of
+   a copy of the template that has no play yet. **The counterpart**: nothing refreshes it
+   at deploy time, so a `script.json` edited by hand IN THE REPO keeps its old PDF until
+   the next upload. That trade is written at all four sites (`.gitignore`, `build.yml`,
+   `uploads.yml`, `build_script_pdf.py`).
 
 ## Cross-file contracts
 
@@ -144,6 +203,7 @@ copying expected values. Breaking a pair breaks CI.
 | Title -> play id, through `scripts/tests/play-id-cases.json` (read by both suites) | `mintPlayId` (`shared/plays.js`) announces, `mint_play_id` (`common.py`) decides |
 | Fields of a brand new play | `EMPTY_SCRIPT` (`editor/reducer.js`), `new_play_script` (`common.py`) |
 | Creation zone `_new-play`, never a valid play id | `NEW_PLAY_DIR` (`shared/data.js`), `NEW_PLAY_DIR` (`process_uploads.py`) |
+| The test bench `dev`, a real play id no title may take (it is absent from `plays.json`, so the creation box cannot read it there) | `DEV_PLAY_ID` (`shared/plays.js`) refuses the title, `DEV_PLAY_ID` (`common.py`) hides the play |
 | `---` closes the title and opens the note | `TITLE_SEPARATOR` (`shared/data.js`) writes it, (`process_uploads.py`) reads it |
 | Act/scene labels, roman numerals | `shared/structureLabels.js`, `build_script_pdf.py` |
 | Vite entries = root `.html` files | `vite.config.js` |
@@ -225,7 +285,7 @@ multi-page site, and switching language navigates.
 | File tiles | `shared/UploadTile.jsx` + `.upload-tile` (`theme.css`): ONE look for "a file passes between the coordinator and the repo", both ways. A link on the Dashboard (voices), a button in the Editor (script, downloaded first), and the Dashboard's PDF download composing the same classes (`.dash-script-tile`). The direction is in the opening drawing and the verb, never the shape; the coloured word takes the page one READS (`tone` on `PageMark` keeps the mic of Recording on a navy Dashboard tile) |
 | Guards | `shared/LeaveGuard.jsx` (capture-phase clicks + `beforeunload`), `shared/ConfirmModal.jsx` (portal, replaces `window.confirm`; `bodyTakesFocus` for the one box that is a FORM and not a question, so its field keeps the focus) |
 | Python shared | `scripts/common.py`: `REPO_ROOT`, `write_json`, `load_json`, the play layout helpers, and a play's identity (`PLAY_ID_PATTERN`, `mint_play_id`, `new_play_script`), the Python side of `shared/plays.js` |
-| Dev server | `serveRepoData` and `ensureScriptPdf` in `vite.config.js` |
+| Dev server | `serveRepoData` in `vite.config.js`. It serves the PDF from the repo like everything else; the download-it-from-the-published-site path is gone with the gitignore line, and so is the need for LaTeX to see the button work |
 
 ## Traps
 
