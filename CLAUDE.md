@@ -89,38 +89,43 @@ deadlock); `paths-ignore: uploads/**` in `build.yml`; its checkout on
 `ref: github.ref_name`, not the run SHA, **in both jobs that check out**.
 
 **The site's address is not knowable before a deployment** (`<owner>.github.io/<repo>/`,
-and both halves change when the template is copied), so the README cannot carry it and a
-fresh copy carried the ORIGINAL author's, which resolves and looks right. Hence the
-`readme` JOB closing `build.yml`: it feeds `deploy`'s `page_url` to
-`scripts/ci/update_readme_urls.py`, which substitutes it for the address recorded in the
-README's `<!-- prettydrama:site … -->` marker, everywhere in the file at once, then
-commits only if something changed. **The README's French is never generated**: the script
-owns one URL and the marker is what makes it idempotent. The README's opening table lists
-**three** addresses (chooser, `respo.html`, and the test bench `plays/<DEV_PLAY_ID>/respo.html`),
-all of them the recorded one plus a suffix, which is the only reason a single substitution
-moves all three; `test_readme.py` holds that, the DEV_PLAY_ID spelling included. The `build`
-job prints the same three into `$GITHUB_STEP_SUMMARY`, the test bench only when
-`plays/<id>/` still exists and with its id read from `common.py`, never spelled in the YAML. A separate JOB with its own
-`contents: write` (so `build` stays read-only, and so `uploads.yml`'s `site` job has to
-delegate `contents: write` in turn: a called workflow never gets more than its caller),
-`continue-on-error` so a convenience can never redden a run that PUBLISHED, and a no-op
-from the second run on. No loop, by the `GITHUB_TOKEN` rule above. A fork that deletes
-the marker has opted out and the script exits 0, so `test_readme.py` is what holds the
-marker in place.
+and both halves change when the template is copied), so the README ships its site links on
+`example.com` placeholders. Each carries an invisible `<!-- ref: SITE_… -->` naming the
+PAGE it wants, and the `readme` JOB closing `build.yml` feeds `deploy`'s `page_url` to
+`scripts/ci/update_readme_urls.py`, which rewrites the target of every ref it knows
+(`PATHS`: `SITE_HOME` -> ``, `SITE_RESPO` -> `respo.html`) and commits only if something
+changed. **The README's French is never generated**: the script replaces targets, never
+display text, and touches nothing outside the parentheses.
 
-**Every link into GitHub in the README is RELATIVE, `../../…`**, and covers the window
-before that first deployment (a fresh copy still names the ORIGINAL site, which resolves
-and looks right). A root README renders at `/<owner>/<repo>/blob/<branch>/README.md`, so
-`../../x` is `/<owner>/<repo>/x` in whichever copy is being read: it needs neither half
-of an address the file cannot know. `../../settings/pages` is then the address that is
-true from second zero, with no workflow at all. Only routes GitHub really serves:
-`/deployments/<environment>` is NOT one (measured 404; the environment view is
-`/deployments/activity_log?environment=…`), and a relative link at a dead path renders
-exactly like a live one. The depth is the contract and
-`test_readme.py` checks it, along with no branch name in the target and no absolute link
-back to this repository (which would send every troupe to the template's Settings rather
-than their own). Only github.com resolves them; read anywhere else they are dead, which
-is accepted.
+The ref names the DESTINATION and not the current value, so **there is no memory to keep
+in step** and idempotence is arithmetic, not bookkeeping: the second run computes the same
+address. `SITE_` is the claimed namespace, so a fork may use `ref:` for its own purposes;
+a `SITE_…` ref absent from `PATHS` stops the run rather than silently never updating.
+**Only pages present in EVERY copy belong in `PATHS`** (this prose is written once and
+never regenerated, so a page a fork can delete would leave a 404 in every inherited
+README). `test_readme.py` holds `PATHS` and the README to the same set of refs, in both
+directions. The `build` job prints the same two addresses into `$GITHUB_STEP_SUMMARY`,
+which is what a coordinator sees at install time and must not depend on the README step
+having worked.
+
+A separate JOB with its own `contents: write` (so `build` stays read-only, and so
+`uploads.yml`'s `site` job has to delegate `contents: write` in turn: a called workflow
+never gets more than its caller), `continue-on-error` so a convenience can never redden a
+run that PUBLISHED, and a no-op from the second run on. No loop, by the `GITHUB_TOKEN`
+rule above. The address has two sources, `page_url` then the Pages API (`pages: read`),
+because losing it leaves the links on `example.com` until another deployment. A fork that
+removes the links has opted out and the script exits 0.
+
+**Any link into GitHub the README carries is RELATIVE, `../../…`.** A root README
+renders at `/<owner>/<repo>/blob/<branch>/README.md`, so `../../x` is `/<owner>/<repo>/x`
+in whichever copy is being read: it names the reader's own repository without knowing
+either half of the address. An absolute one sends every troupe to the template's Settings
+instead of theirs. Only routes GitHub really serves: `/deployments/<environment>` is NOT
+one (measured 404; the environment view is `/deployments/activity_log?environment=…`),
+and a relative link at a dead path renders exactly like a live one, which no test can
+reach from CI. `test_readme.py` checks the depth, the absence of a branch name in the
+target, and that no absolute link names a repository sub-page; it requires no such link
+to exist, since the prose is the troupe's.
 
 **The install is the only moment the coordinator is on GitHub at all**, so it is the only
 moment a workflow speaks to them there, and it does so in ONE channel, `$GITHUB_STEP_SUMMARY`:

@@ -1,15 +1,24 @@
 """What README.md has to keep true, because nothing at runtime would notice.
 
 The README is the only page a coordinator reads before the site exists, and it
-is COPIED VERBATIM into every troupe's repository by "Use this template". So it
-carries two things that cannot be written as a literal: the address of the
-site, filled in after each deployment (`ci/update_readme_urls.py`), and every
-link into GitHub, written relative so it resolves against the reader's own copy.
+is COPIED VERBATIM into every troupe's repository by "Use this template". So the
+links it carries cannot be written as literals: the site's address is built from
+the owner and the repository name, both unknown here. Each one is a placeholder
+plus an invisible `<!-- ref: SITE_… -->`, and `ci/update_readme_urls.py` fills
+them in after every deployment.
 
-Both fail silently. The address freezes if the marker goes (the script exits 0
-by design, a fork may rewrite its front page), and a relative link at the wrong
-depth still renders, still looks like a link, and quietly sends a troupe to a
-404 or, worse, to this repository instead of theirs.
+That fails silently. A ref that stops matching leaves a link on `example.com`
+that renders exactly like a working one.
+
+**These tests run inside build.yml, so inside EVERY copy, where a failure fails
+that troupe's deployment.** That bounds what they may assert: only what stays
+true when a troupe edits their own front page, which is theirs to edit. So
+absence is never an error here. Removing a link is allowed and rewriting the
+prose is allowed. What IS checked is that whatever remains is coherent, and
+that the script and this file still agree on the set of refs. The cost is that
+an accidental deletion
+upstream goes unnoticed; the alternative was breaking the deploy of troupes who
+did nothing wrong.
 """
 
 from __future__ import annotations
@@ -19,72 +28,104 @@ import sys
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "ci"))
 
-from common import DEV_PLAY_ID
-from update_readme_urls import MARKER, README, normalize
+from update_readme_urls import LINK, PATHS, README, SITE_URL, update
 
-# Markdown inline links, `[text](target)`. Enough for this file, which has no
-# reference-style links and no image.
-LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
+# Any `ref:` comment, ours or not, so a ref that stopped being matched by LINK
+# (a stray space, a renamed namespace) is visible here instead of vanishing.
+ANY_REF = re.compile(r"<!--\s*ref:\s*([A-Za-z0-9_]+)\s*-->")
+
+TEXT = README.read_text(encoding="utf-8")
+REFS = [match.group(4) for match in LINK.finditer(TEXT)]
 
 
-class TestSiteAddress(unittest.TestCase):
-    def setUp(self):
-        self.text = README.read_text(encoding="utf-8")
+class TestTheRegexItself(unittest.TestCase):
+    """Guards the pattern everything below trusts.
 
-    def test_carries_exactly_one_marker(self):
-        self.assertEqual(len(MARKER.findall(self.text)), 1)
+    A README it cannot parse any more would make every other test here pass
+    vacuously, and that is the failure nobody sees.
+    """
 
-    def test_the_recorded_address_is_one_the_script_would_write(self):
-        recorded = MARKER.search(self.text).group(1)
-        self.assertEqual(normalize(recorded), recorded)
+    def test_link_splits_text_target_and_ref(self):
+        found = LINK.search("[Le site](https://x.test/y) <!-- ref: SITE_HOME -->")
+        self.assertEqual(found.group(1), "[Le site](")
+        self.assertEqual(found.group(2), "https://x.test/y")
+        self.assertEqual(found.group(4), "SITE_HOME")
 
-    def test_the_prose_actually_names_the_recorded_address(self):
-        # Otherwise a deployment would update the marker and nothing visible.
-        recorded = MARKER.search(self.text).group(1)
-        self.assertGreaterEqual(self.text.count(recorded), 2)
+    def test_link_ignores_a_ref_outside_the_site_namespace(self):
+        self.assertIsNone(LINK.search("[x](https://y.test) <!-- ref: OTHER_001 -->"))
 
-    def test_the_three_addresses_are_all_built_on_the_recorded_one(self):
-        """Chooser, management, test bench.
+    def test_link_ignores_a_link_with_no_ref(self):
+        self.assertIsNone(LINK.search("[x](https://y.test) et du texte"))
 
-        Each is the recorded address plus a suffix, which is the ONLY reason a
-        deployment updates all three: the script substitutes one string. Write
-        one of them differently and it silently keeps the old site's address
-        while its two neighbours move.
+
+class TestSiteLinks(unittest.TestCase):
+    def test_every_site_ref_is_one_the_script_knows(self):
+        # The one thing that must never be wrong: an unknown SITE_ ref stops the
+        # deployment's README step, so it would be caught late and loudly instead
+        # of here.
+        for ref in REFS:
+            with self.subTest(ref=ref):
+                self.assertIn(ref, PATHS)
+
+    def test_no_site_ref_was_left_unmatched_by_the_link_pattern(self):
+        # A ref the script cannot see is a link that never updates. This catches
+        # the shapes LINK deliberately does not match, e.g. a ref on its own line.
+        loose = [r for r in ANY_REF.findall(TEXT) if r.startswith("SITE_")]
+        self.assertEqual(sorted(loose), sorted(REFS))
+
+    def test_each_ref_appears_at_most_once(self):
+        # Allowed by the script, but in this README a duplicate means a copy-paste.
+        self.assertEqual(len(REFS), len(set(REFS)))
+
+    def test_the_troupe_and_management_links_are_both_there(self):
+        # The two a coordinator cannot work without, and the ones the run summary
+        # promises are written here. Also the whole of PATHS, so a ref added to the
+        # script without a link in the README shows up as a failure rather than as
+        # a feature nobody can see.
+        self.assertEqual(sorted(REFS), sorted(PATHS))
+
+    def test_every_ref_target_is_an_absolute_address(self):
+        """Placeholder or real, it has to be a URL.
+
+        A relative target here would render as a link into the REPOSITORY rather
+        than the site, and the script would happily overwrite it either way.
         """
-        base = MARKER.search(self.text).group(1)
-        for suffix in ("", "respo.html", f"plays/{DEV_PLAY_ID}/respo.html"):
-            with self.subTest(suffix=suffix):
-                self.assertIn(f"<{base}{suffix}>", self.text)
+        for match in LINK.finditer(TEXT):
+            with self.subTest(ref=match.group(4)):
+                self.assertTrue(SITE_URL.fullmatch(match.group(2)), match.group(2))
 
-    def test_the_test_bench_address_is_the_one_the_dev_server_opens(self):
-        # `plays/<id>/respo.html`, same as scripts/dev.sh (test_contracts.py holds
-        # that side). Hard-coding `dev` here would let a renamed DEV_PLAY_ID leave
-        # a 404 in the README of every troupe.
-        self.assertIn(f"plays/{DEV_PLAY_ID}/respo.html", self.text)
+    def test_a_deployment_would_rewrite_every_one_of_them(self):
+        """The end-to-end check, run against the real file.
+
+        Everything above is structure; this is the behaviour. It proves each
+        link lands on its own page of one site, and that a second deployment
+        would change nothing.
+        """
+        site = "https://troupe.github.io/piece/"
+        out = update(TEXT, site)
+        for ref in REFS:
+            with self.subTest(ref=ref):
+                self.assertIn(f"]({site}{PATHS[ref]})", out)
+        self.assertIsNone(update(out, site))
 
 
 class TestGitHubLinks(unittest.TestCase):
-    """A root README renders at `/<owner>/<repo>/blob/<branch>/README.md`.
+    """Links into GitHub are RELATIVE, so they resolve against the reader's copy.
 
-    So `../../x` is `/<owner>/<repo>/x`, in whichever copy is being read, and
-    that is the only way this file can point at the reader's own repository. The
-    depth is the whole contract: one `../` too few or too many resolves
-    somewhere else entirely.
+    A root README renders at `/<owner>/<repo>/blob/<branch>/README.md`, so
+    `../../x` is `/<owner>/<repo>/x` in whichever copy is being read. The depth
+    is the whole contract: one `../` too few or too many resolves somewhere else.
+    Nothing requires such a link to EXIST; these hold the ones that do.
     """
 
     def setUp(self):
-        text = README.read_text(encoding="utf-8")
-        self.targets = [t for t in LINK.findall(text) if t.startswith(".")]
-
-    def test_there_are_relative_links_to_check(self):
-        # Guards the rest of this class against a regex that stopped matching.
-        self.assertGreater(len(self.targets), 3)
+        self.targets = re.findall(r"\[[^\]]*\]\(([^)\s]+)\)", TEXT)
+        self.relative = [t for t in self.targets if t.startswith(".")]
 
     def test_every_relative_link_climbs_exactly_two_levels(self):
-        for target in self.targets:
+        for target in self.relative:
             with self.subTest(target=target):
                 self.assertTrue(target.startswith("../../"), "wrong depth")
                 self.assertFalse(target[len("../../"):].startswith("../"), "too deep")
@@ -92,18 +133,21 @@ class TestGitHubLinks(unittest.TestCase):
     def test_no_relative_link_names_a_branch(self):
         # `/<owner>/<repo>/tree/main/...` would pin the branch, and these links
         # exist precisely to assume nothing about the copy they are read in.
-        for target in self.targets:
+        for target in self.relative:
             with self.subTest(target=target):
-                rest = target[len("../../"):]
-                self.assertNotIn("main", rest.split("/"))
+                self.assertNotIn("main", target[len("../../"):].split("/"))
 
-    def test_no_absolute_link_to_this_very_repository(self):
-        # The mistake this whole scheme exists to prevent: a troupe clicking
-        # "Settings" in their README and landing in the template's repository.
-        text = README.read_text(encoding="utf-8")
-        for target in LINK.findall(text):
-            with self.subTest(target=target):
-                self.assertNotRegex(target, r"github\.com/[^/]+/pretty-drama")
+    def test_no_absolute_link_to_a_page_of_ones_own_repository(self):
+        # The mistake this scheme exists to prevent: a troupe clicking "Settings"
+        # in their README and landing in somebody else's repository. Only these
+        # pages are forbidden absolutely; a fork linking to the original project
+        # to credit it is doing something legitimate.
+        own = ("settings", "actions", "deployments", "issues", "pulls")
+        for target in self.targets:
+            found = re.match(r"https?://github\.com/[^/]+/[^/]+/([^/?#]+)", target)
+            if found:
+                with self.subTest(target=target):
+                    self.assertNotIn(found.group(1), own)
 
 
 if __name__ == "__main__":

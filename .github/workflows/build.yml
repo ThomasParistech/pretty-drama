@@ -256,17 +256,15 @@ jobs:
       #
       # English, like every workflow here, and for the same reason: the README is what
       # walks the coordinator to this screen and it tells them what they will find.
-      # The test bench is listed third and only when it is really there: a fork is free
-      # to delete `plays/<dev>/`, and this project does not advertise addresses that
-      # answer 404. Its id comes from common.py rather than being spelled here, so the
-      # cross-file contract on DEV_PLAY_ID keeps covering it (the README's copy of the
-      # same address is held by test_readme.py, which cannot reach into a workflow).
+      # The same two addresses the `readme` job writes into the README, which is the
+      # only reason they are hard-coded here rather than read from PATHS: this table is
+      # what a coordinator sees at install time, and it must not depend on the README
+      # step having worked. Add a page here and it belongs in PATHS too.
       - name: Print the site's addresses in the run summary
         env:
           PAGE_URL: ${{ steps.deploy.outputs.page_url }}
         run: |
           base="${PAGE_URL%/}"
-          dev="$(python -c 'import sys; sys.path.insert(0, "scripts"); import common; print(common.DEV_PLAY_ID)')"
           {
             echo "## The site is online"
             echo
@@ -274,21 +272,18 @@ jobs:
             echo "| --- | --- |"
             echo "| <$base/> | the troupe. This is the link you share. |"
             echo "| <$base/respo.html> | you: managing the plays. Bookmark it, nothing links to it from the other address. |"
-            if [ -d "plays/$dev" ]; then
-              echo "| <$base/plays/$dev/respo.html> | the test bench: a demonstration play, absent from the list, to watch the site work without touching yours. |"
-            fi
             echo
             echo "They are written into this repository's README as well, so you never"
             echo "have to come back here to find them."
           } >> "$GITHUB_STEP_SUMMARY"
 
-  # Writes the site's address into the README, and it is the ONE place this workflow
-  # touches the repository. The reason it has to: that address is
+  # Points the README's site links at the site, and it is the ONE place this workflow
+  # touches the repository. The reason it has to: the address is
   # `<owner>.github.io/<repo>/`, so it is unknown until a copy of this template exists
-  # and has deployed once. The template cannot carry it, and a fresh copy carried the
-  # ORIGINAL author's address, which resolves, looks right, and is not the troupe's site.
-  # The coordinator's only recourse was Settings > Pages, a place the README otherwise
-  # spends its length keeping them out of. So the deployment writes down where it landed.
+  # and has deployed once. The template ships those links on `example.com` placeholders,
+  # each tagged with an invisible `<!-- ref: SITE_… -->` naming the page it wants; the
+  # script fills the targets in. Without this the coordinator's only recourse was
+  # Settings > Pages, a place the README otherwise spends its length keeping them out of.
   #
   # A SEPARATE JOB, like `pages-check`, and for the same kind of reason: `build` keeps
   # `contents: read`, the commit is visibly one gesture with one permission, and the
@@ -301,9 +296,9 @@ jobs:
   #
   # `continue-on-error`, so it can never redden a run that PUBLISHED. Same trade as the
   # printable PDF in uploads.yml: the site is what matters, the convenience beside it is
-  # not worth an English "Run failed" in the coordinator's mailbox. A push that loses a
-  # race here is retried by the next deployment anyway, since the README still names the
-  # wrong address and the script fires again.
+  # not worth an English "Run failed" in the coordinator's mailbox. Nothing is lost by
+  # giving up either: the links still point at the placeholder, so the next deployment
+  # tries again.
   readme:
     name: Write the site address into the README
     needs: build
@@ -311,9 +306,10 @@ jobs:
     continue-on-error: true
     # The only `contents: write` of this workflow, and the reason uploads.yml has to
     # delegate it on its `site` job: a called workflow can never obtain more than its
-    # caller granted.
+    # caller granted. `pages: read` is for the fallback below.
     permissions:
       contents: write
+      pages: read
     steps:
       # `ref` for the same reason as the build's checkout: called from uploads.yml we
       # run inside the run of a push made BEFORE the commit that workflow pushed, and
@@ -323,15 +319,34 @@ jobs:
         with:
           ref: ${{ github.ref_name }}
 
+      # Two sources for one address, because losing it here means the README keeps
+      # pointing at `example.com` and only another deployment can fix that. `page_url`
+      # is the deployment's own answer and the one to trust; the Pages API is asked only
+      # if that came back empty, which is what a renamed output of a future
+      # deploy-pages would look like. An empty result from both is a real failure and
+      # says so, rather than handing the script a blank it would reject anyway.
+      #
       # Through `env:`, not interpolated into the script: `${{ }}` inside `run:` is
-      # substituted before bash sees it. The value comes from GitHub here, not from the
-      # repo, but the habit is the protection.
-      - name: Write the address the deployment answered on
+      # substituted before bash sees it. The values come from GitHub here, not from the
+      # repo, but the habit is the protection. `$GITHUB_REPOSITORY` is a built-in, so
+      # there is no third interpolation to write.
+      - name: Point the README's links at the address the deployment answered on
         env:
           PAGE_URL: ${{ needs.build.outputs.page_url }}
-        run: python3 scripts/ci/update_readme_urls.py "$PAGE_URL"
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          url="$PAGE_URL"
+          if [ -z "$url" ]; then
+            echo "deploy-pages returned no page_url; asking the Pages API instead."
+            url="$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq .html_url 2>/dev/null || true)"
+          fi
+          if [ -z "$url" ]; then
+            echo "::error title=README site links::the site's address could not be determined."
+            exit 1
+          fi
+          python3 scripts/ci/update_readme_urls.py "$url"
 
-      # No-op when the README already names the site, which is every run but the first
+      # No-op when the links already point at the site, which is every run but the first
       # of a copy of the template: `commit_push.sh` finds an empty index and stops.
-      - name: Commit the README if its address changed
+      - name: Commit the README if its links changed
         run: bash scripts/ci/commit_push.sh "🤖 Write the site address into the README" README.md
