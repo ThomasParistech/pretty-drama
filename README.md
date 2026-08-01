@@ -7,6 +7,47 @@ seule, et vous dites vos répliques au bon moment.
 
 **Aucune installation, aucun logiciel : tout se passe dans le navigateur.**
 
+## Les adresses de ce site
+
+<!-- prettydrama:site https://exemple.github.io/les-troubadours/ -->
+
+| Adresse | Pour qui |
+|---------|----------|
+| <https://exemple.github.io/les-troubadours/> | **la troupe** : elle y choisit une pièce, puis Répétition, Enregistrement ou Répartition. C'est ce lien que vous partagez. |
+| <https://exemple.github.io/les-troubadours/respo.html> | **vous** : la gestion des pièces, et les cinq pages de chacune. **Mettez-le en favori**, rien n'y mène depuis l'autre adresse. |
+| <https://exemple.github.io/les-troubadours/plays/dev/respo.html> | **le banc d'essai** : une pièce de démonstration absente de la liste, pour regarder le site fonctionner sans toucher à la vôtre. |
+
+Ces adresses s'écrivent toutes seules : chaque mise en ligne les réinscrit ici. Dans
+une copie toute neuve du modèle, elles désignent encore le site d'origine jusqu'à la
+première mise en ligne (étape 3 ci-dessous). En cas de doute,
+[**Settings → Pages**](../../settings/pages) redonne la première.
+
+<!--
+  Maintainer note, in English like the rest of the repo. Every link into GitHub in
+  this file is RELATIVE and starts with `../../`, and that is the whole trick: a root
+  README is rendered as if it sat at `/<owner>/<repo>/blob/<branch>/README.md`, so
+  `../../x` resolves to `/<owner>/<repo>/x`. The link therefore points at the reader's
+  OWN copy, in a file that is copied verbatim by "Use this template" and cannot know
+  either half of that address. Absolute links would send every troupe to this
+  repository instead of theirs. `../../` is the exact depth; `../` or `../../../`
+  land somewhere else and are what scripts/tests/test_readme.py checks. What no test
+  can check is that the TARGET is a route GitHub really serves: it cannot be reached
+  from CI, and a link at a dead path renders exactly like a live one. Verified by hand,
+  once, on a real repository. `/deployments/<environment>` is one of the dead ones.
+  Only github.com resolves these: read elsewhere, they are dead. Accepted, the README
+  is read on GitHub.
+
+  The site addresses just above are the other half, and they are absolute because they
+  are meant to be COPIED (into a WhatsApp message, a bookmark), not clicked from here.
+  A relative link cannot do that. They are rewritten after every deployment by
+  ci/update_readme_urls.py, which substitutes the address recorded in the
+  `prettydrama:site` marker throughout this file: the three rows follow because each
+  one starts with it. Add a fourth and it follows too, for free. The `plays/dev/` row
+  is the one that can rot on its own: a troupe that deletes the test bench keeps the
+  link. Left in anyway, the fork that does that is the fork that reads this comment.
+-->
+
+
 ---
 
 ## Les cinq pages d'une pièce
@@ -38,15 +79,20 @@ un compte GitHub gratuit.
 1. **Créez votre copie du site.** En haut de cette page : **« Use this template »**
    → **« Create a new repository »**, donnez-lui le nom de votre troupe
    (par exemple `les-troubadours`), puis **« Create repository »**.
-2. **Activez la publication.** Dans **votre** dépôt : onglet **Settings** →
-   **Pages** → sous **« Source »**, choisissez **GitHub Actions**.
-   Si rien ne se passe : onglet **Actions** → **build** → **« Run workflow »**.
-3. **Notez vos deux adresses**, indiquées sur **Settings → Pages** :
-
-   | Adresse | Pour qui |
-   |---------|----------|
-   | `…github.io/les-troubadours/` | la troupe : elle y choisit une pièce, puis Répétition, Enregistrement ou Répartition. C'est ce lien que vous partagez. |
-   | `…github.io/les-troubadours/respo.html` | vous : la **gestion des pièces**, et les cinq pages de chacune. **Mettez-le en favori**, rien n'y mène depuis l'autre adresse. |
+2. **Activez la publication.** Dans **votre** dépôt :
+   [**Settings → Pages**](../../settings/pages) → sous **« Source »**, choisissez
+   **GitHub Actions**. C'est la seule étape que personne ne peut faire à votre
+   place : GitHub l'interdit aux automates.
+3. **Lancez la première mise en ligne.** [**Actions → build**](../../actions/workflows/build.yml)
+   → **« Run workflow »**, et comptez deux minutes. Le site part en ligne, et son
+   adresse s'inscrit toute seule en haut de ce README. Si l'étape 2 a été oubliée, le
+   **build** s'arrête en rouge au bout de quelques secondes et affiche la marche à
+   suivre (en anglais) : rien n'est cassé, rien n'est perdu, il reste à activer la
+   publication puis à relancer.
+4. **Notez vos adresses.** Le **build** de l'étape 3 les affiche en haut de son
+   compte rendu, et vient de les écrire tout en haut de ce README :
+   [remontez-y](#les-adresses-de-ce-site). Partagez la première avec la troupe,
+   gardez la deuxième en favori.
 
 C'est fini : le site est en ligne, avec une pièce d'exemple que vous allez
 remplacer par la vôtre.
@@ -117,8 +163,16 @@ pourquoi : pour un ZIP abîmé pendant l'envoi, il n'y a rien à réparer, deman
 simplement une nouvelle prise à l'acteur ; pour un script refusé, la pièce en
 ligne n'a pas changé, re-téléchargez-le depuis l'Édition et redéposez-le. Si
 aucune nouvelle ligne n'apparaît quelques minutes après un dépôt, allez voir
-l'onglet **Actions** de votre dépôt (le site, lui, continue de fonctionner avec
-sa version précédente).
+[l'onglet **Actions**](../../actions) de votre dépôt (le site, lui, continue de
+fonctionner avec sa version précédente).
+
+**Tout republier** : [**Actions → build**](../../actions/workflows/build.yml) →
+**« Run workflow »**. Le
+site entier est reconstruit et remis en ligne à partir de ce que contient le
+dépôt, sans rien envoyer et sans rien perdre. C'est le même bouton qu'à
+l'installation, et c'est la réponse à « le site n'a pas l'air à jour » : à
+utiliser aussi après avoir activé la publication en retard, ou après une
+modification faite à la main sur GitHub.
 
 ---
 

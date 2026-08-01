@@ -3,7 +3,7 @@ import ConfirmModal from "../shared/ConfirmModal.jsx";
 import { WarnIcon } from "../shared/icons.jsx";
 import { githubNewPlayUrl, githubRepoUrl } from "../shared/data.js";
 import { t } from "../shared/locale.js";
-import { mintPlayId } from "../shared/plays.js";
+import { DEV_PLAY_ID, mintPlayId } from "../shared/plays.js";
 
 // Creating a play: a title, a button, and the play is on its way.
 //
@@ -105,7 +105,13 @@ export default function NewPlay({ taken, onClose }) {
     // folder); two plays with the same title would furthermore be impossible to tell
     // apart in the chooser. So we ask for another title rather than suffixing a
     // number behind the coordinator's back.
-    if (taken.some((play) => play.id === id)) {
+    //
+    // The site's own test bench is cited on top of the list: it is a play like the
+    // others, it holds that address, but it is absent from data/plays.json, which is
+    // where `taken` comes from (cf. DEV_PLAY_ID, shared/plays.js). It is the same
+    // refusal because it is the same fact, and the Action would answer it too, only
+    // minutes later and in the journal.
+    if (id === DEV_PLAY_ID || taken.some((play) => play.id === id)) {
       setError(t("manage.new.taken"));
       return;
     }

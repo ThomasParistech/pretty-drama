@@ -1,0 +1,179 @@
+{
+  "id": "dev",
+  "title": "Dev",
+  "language": "fr",
+  "characters": [
+    {
+      "id": "dev-c-alceste",
+      "name": "Alceste",
+      "color": "#1f77b4"
+    },
+    {
+      "id": "dev-c-eleonore",
+      "name": "Éléonore de Trois-Rivières",
+      "color": "#ff7f0e"
+    },
+    {
+      "id": "dev-c-choeur",
+      "name": "Le Chœur",
+      "color": "#2ca02c"
+    },
+    {
+      "id": "dev-c-un",
+      "name": "Un",
+      "color": "#d62728"
+    },
+    {
+      "id": "dev-c-ingenue",
+      "name": "L'Ingénue",
+      "color": "#9467bd"
+    },
+    {
+      "id": "dev-c-souffleur",
+      "name": "Le Souffleur"
+    }
+  ],
+  "acts": [
+    {
+      "scenes": [
+        {
+          "lines": [
+            {
+              "id": "dev-l01",
+              "characterId": "dev-c-alceste",
+              "text": "Qui va là ? Cette pièce n'est jouée par personne."
+            },
+            {
+              "id": "dev-l02",
+              "characterId": "dev-c-eleonore",
+              "text": "Personne, en effet : nous sommes le banc d'essai du site."
+            },
+            {
+              "id": "dev-l03",
+              "characterId": "dev-c-choeur",
+              "text": "Nous n'existons que pour être affichés, comptés et relus."
+            },
+            {
+              "id": "dev-l04",
+              "characterId": "dev-c-alceste",
+              "text": "Tenons-nous droit : quelqu'un regarde la grille d'avancement."
+            },
+            {
+              "id": "dev-l05",
+              "characterId": "dev-c-eleonore",
+              "text": "« Enregistrée », « À refaire », « Manquante » : les trois états tiennent dans cet acte."
+            },
+            {
+              "id": "dev-l06",
+              "characterId": "dev-c-choeur",
+              "text": "Et la barre ne doit jamais atteindre le bout."
+            },
+            {
+              "id": "dev-l07",
+              "characterId": "dev-c-alceste",
+              "text": "Plus fort, on ne t'entend pas au fond du casque."
+            },
+            {
+              "id": "dev-l08",
+              "characterId": "dev-c-eleonore",
+              "text": "C'est que ma réplique n'a pas encore de voix."
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l09",
+              "characterId": "dev-c-un",
+              "text": "Moi ?"
+            },
+            {
+              "id": "dev-l10",
+              "characterId": "dev-c-choeur",
+              "text": "Toi. Ton nom tient en deux lettres : il éprouve les colonnes étroites."
+            },
+            {
+              "id": "dev-l11",
+              "characterId": "dev-c-un",
+              "text": "Bien."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scenes": [
+        {
+          "lines": [
+            {
+              "id": "dev-l12",
+              "characterId": "dev-c-eleonore",
+              "text": "Écoutez-moi jusqu'au bout, car cette tirade est ici pour occuper la place : elle déborde d'une ligne, elle déborde de deux, elle finira par déborder de la carte elle-même, et c'est très bien ainsi, puisqu'il faut bien qu'une réplique quelque part vérifie que le texte s'enroule proprement, que la carte grandit avec lui, que la colonne du tableau d'avancement le tronque sans le couper au milieu d'un mot, et que le PDF ne la laisse pas seule en bas d'une page."
+            },
+            {
+              "id": "dev-l13",
+              "characterId": "dev-c-alceste",
+              "text": ""
+            },
+            {
+              "id": "dev-l14",
+              "characterId": "dev-c-un",
+              "text": "Une réplique sans texte vient de passer : la carte doit rester lisible."
+            },
+            {
+              "id": "dev-l15",
+              "characterId": "dev-c-alceste",
+              "text": "Et celle-ci a changé de mots depuis son enregistrement."
+            },
+            {
+              "id": "dev-l16",
+              "characterId": "dev-c-eleonore",
+              "text": "Une apostrophe qui s’enjolive n’est pas une correction."
+            },
+            {
+              "id": "dev-l17",
+              "characterId": "dev-c-choeur",
+              "text": "Le souffleur, lui, n'a pas une seule réplique."
+            },
+            {
+              "id": "dev-l18",
+              "characterId": "dev-c-alceste",
+              "text": "Il compte tout de même dans la distribution."
+            }
+          ]
+        },
+        {
+          "lines": []
+        }
+      ]
+    },
+    {
+      "scenes": [
+        {
+          "lines": [
+            {
+              "id": "dev-l19",
+              "characterId": "dev-c-ingenue",
+              "text": "J'arrive au dernier acte, et je n'ai parlé nulle part ailleurs."
+            },
+            {
+              "id": "dev-l20",
+              "characterId": "dev-c-alceste",
+              "text": "Le menu des scènes ne te proposera donc que celle-ci."
+            },
+            {
+              "id": "dev-l21",
+              "characterId": "dev-c-ingenue",
+              "text": "Et l'acte entier à qui ne parle pas du tout."
+            },
+            {
+              "id": "dev-l22",
+              "characterId": "dev-c-choeur",
+              "text": "Rideau. Rien de tout cela n'est arrivé."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

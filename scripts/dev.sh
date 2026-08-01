@@ -3,11 +3,30 @@
 # Starts the dev server and opens BOTH entries of the site in the browser: the
 # troupe's play selector (the root) and the coordinator's plays management page
 # (respo.html). Vite would only open one of them with --open, hence this script.
+#
+# Plus the test bench when it is there. `plays/dev/` is the play the site keeps for
+# itself: it is missing from data/plays.json on purpose, so the chooser just opened does
+# not link to it and nothing else does either. Its coordinator home is therefore opened
+# directly, that being the page from which its six others are reachable.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 port="${1:-5173}"
 url="http://localhost:$port"
+
+# The pages to open, in the order they are wanted on screen. The play id is written
+# here as plain text (a shell script imports nothing): it is `DEV_PLAY_ID`,
+# src/shared/plays.js and scripts/common.py, and a guard in
+# scripts/tests/test_contracts.py keeps the three from drifting apart.
+#
+# An `if` and not `[ -d … ] && pages+=(…)`: the script runs under `set -e`, where that
+# one-liner would ABORT it whenever the folder is missing, its non-zero test being the
+# status of the whole line. Only the fork that deleted the play would be hit, and it
+# would lose its dev server over a tab.
+pages=("" "respo.html")
+if [ -d plays/dev ]; then
+  pages+=("plays/dev/respo.html")
+fi
 
 [ -d node_modules ] || npm install
 
@@ -18,8 +37,9 @@ url="http://localhost:$port"
     curl -sf -o /dev/null "$url/" || { sleep 0.5; continue; }
     for opener in xdg-open open wslview; do
       command -v "$opener" >/dev/null || continue
-      "$opener" "$url/" >/dev/null 2>&1 || true
-      "$opener" "$url/respo.html" >/dev/null 2>&1 || true
+      for page in "${pages[@]}"; do
+        "$opener" "$url/$page" >/dev/null 2>&1 || true
+      done
       break
     done
     break

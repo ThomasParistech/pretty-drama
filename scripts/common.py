@@ -38,6 +38,21 @@ def is_play_id(value) -> bool:
     return isinstance(value, str) and PLAY_ID_PATTERN.fullmatch(value) is not None
 
 
+# The play that belongs to no troupe: the site's own test bench, whose script covers on
+# purpose what a real play only shows by accident (an empty scene, a line with no text,
+# a character with no colour, the three recording states side by side).
+#
+# It is a play in EVERY respect, with a valid id, its own silo and the whole pipeline
+# available to it: that is the point, since what it is for is trying a page on real data
+# without touching the troupe's play, whose journal would then carry the traces. The one
+# thing that sets it apart is that `build_plays_index` leaves it out of data/plays.json,
+# so neither root page lists it and only a hand-written URL reaches it.
+#
+# Mirror of `DEV_PLAY_ID` (src/shared/plays.js), where it serves to refuse the title that
+# would mint it: the creation box reads the list of plays, and this one is not in it.
+# A guard in scripts/tests/test_contracts.py holds the two together.
+DEV_PLAY_ID = "dev"
+
 # The bound of the pattern above, written once: `mint_play_id` truncates to the same
 # length, otherwise a long title would produce an identifier this very module would
 # refuse a line later.

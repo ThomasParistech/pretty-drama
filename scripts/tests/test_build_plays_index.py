@@ -20,7 +20,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import common
-from build_plays_index import count_words, play_entry
+from build_plays_index import count_words, listed_play_ids, play_entry
 
 MANIFEST = {
     "id": "le-malade",
@@ -136,6 +136,19 @@ class TestPlayList(unittest.TestCase):
                 # `Majuscule` is not a valid play id, so it names no play: the order
                 # is by id and the front end is what sorts by title.
                 self.assertEqual(common.play_ids(), ["malade", "transport", "zebre"])
+
+    def test_the_test_bench_is_a_play_everywhere_but_in_the_list(self):
+        """`plays/dev/` is built, deployed and reachable by URL like the others; it is
+        only the two root pages that must not offer it, so that a company sees nothing
+        but its own plays. The pipeline still sees it, which is what lets a developer try
+        a page on it without leaving traces in the troupe's journal."""
+        with tempfile.TemporaryDirectory() as tmp:
+            plays = Path(tmp) / "plays"
+            for name in (common.DEV_PLAY_ID, "malade", "transport"):
+                (plays / name / "data").mkdir(parents=True)
+            with mock.patch.object(common, "PLAYS_DIR", plays):
+                self.assertIn(common.DEV_PLAY_ID, common.play_ids())
+                self.assertEqual(listed_play_ids(), ["malade", "transport"])
 
 
 if __name__ == "__main__":

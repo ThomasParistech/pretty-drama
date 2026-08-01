@@ -174,10 +174,15 @@ jobs:
             plays data uploads
 
   # Publishes the result. Jobs in the same run: the coordinator sees one green line.
+  #
+  # `contents: write` and not `read`: build.yml's last job writes the published site's
+  # address into the README, and a called workflow can never obtain more than its caller
+  # granted it. Called with `read`, that job would fail its push. Nothing else in
+  # build.yml touches the repository.
   site:
     needs: process
     permissions:
-      contents: read
+      contents: write
       pages: write
       id-token: write
     uses: ./.github/workflows/build.yml

@@ -659,16 +659,15 @@ function ScriptPdfLink({ title }) {
   // upload card rather than forging a 404. That cost two things. On the published
   // site, the coordinator's only download button arrived AFTER the page, so it pushed
   // the table downwards under their eyes at every opening; in dev, where the PDF
-  // is gitignored, it never arrived at all, and the page did not show half of
-  // what it has to show. The price paid for that was theoretical: a missing file
-  // in production presupposes that the LaTeX install or the compilation failed
-  // (build.yml's two steps are in `continue-on-error`), and a 404 named
-  // "transport-de-femmes.pdf" can be diagnosed, whereas a button that does not
-  // exist is not even looked for.
+  // was gitignored back then, it never arrived at all, and the page did not show
+  // half of what it has to show. The price paid for that was theoretical: a missing
+  // file presupposes that the LaTeX install or the compilation failed (both steps
+  // are in `continue-on-error`), and a 404 named "transport-de-femmes.pdf" can be
+  // diagnosed, whereas a button that does not exist is not even looked for.
   // The file's production therefore follows the button, and not the other way
-  // round: build.yml builds it before deploying, and in dev the middleware
-  // downloads it from the published site on the first request (`ensureScriptPdf`
-  // in vite.config.js), the PDF being nowhere in the repo.
+  // round: the PDF is committed beside the play's script.json, typeset by
+  // uploads.yml when a script is promoted, and served from the repo in dev as it is
+  // from dist/ in production. A missing one is a typesetting that failed.
   //
   // The slug's fallback is MANDATORY and is chosen per caller: "???" is a
   // non-empty title of which nothing remains after cleaning, and a character's

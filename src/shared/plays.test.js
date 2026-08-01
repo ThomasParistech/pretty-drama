@@ -10,7 +10,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { MAX_PLAY_ID_LENGTH, isPlayId, mintPlayId } from "./plays.js";
+import { DEV_PLAY_ID, MAX_PLAY_ID_LENGTH, isPlayId, mintPlayId } from "./plays.js";
 
 // The shared table, read by this file and by scripts/tests/test_contracts.py: it is
 // the CONTRACT between the two implementations, so a case is added once and checked on
@@ -37,6 +37,15 @@ test("everything mintPlayId returns is accepted by the project's guard", () => {
     assert.ok(isPlayId(id), `${name}: "${title}" gave "${id}"`);
     assert.ok(id.length <= MAX_PLAY_ID_LENGTH, `${name}: ${id.length} characters`);
   }
+});
+
+test("the test bench holds a real address, which is why no title may mint it", () => {
+  // `plays/dev/` is missing from data/plays.json and from nothing else: it owns its
+  // folder, its upload area and its URL segment like any other play. The creation box
+  // therefore has to refuse the title that lands on it (cf. NewPlay.jsx), and this is
+  // the case that says the constant is a usable address rather than a marker.
+  assert.ok(isPlayId(DEV_PLAY_ID));
+  assert.equal(mintPlayId("Dev"), DEV_PLAY_ID);
 });
 
 test("a title that leaves nothing returns an empty string, never an invented name", () => {

@@ -38,6 +38,21 @@ export function isPlayId(value) {
   return typeof value === "string" && SAFE_PLAY_ID.test(value);
 }
 
+// The play that belongs to no troupe: the site's own test bench, the one a developer
+// opens to see a page on real data without touching the troupe's play.
+//
+// It lives in the repository like any other (`plays/dev/`), but `build_plays_index.py`
+// leaves it out of data/plays.json, so it appears in neither root page and only a
+// hand-written URL reaches it. Which is exactly why this constant has to exist HERE too:
+// the creation box refuses a title whose address is already taken, and it reads that
+// list from plays.json, where this one is missing. Without it the coordinator would be
+// told the address is free, would commit their title, and would only learn minutes later
+// from the journal that the Action refused it.
+//
+// Mirror of `DEV_PLAY_ID` (scripts/common.py), held by a guard in
+// scripts/tests/test_contracts.py.
+export const DEV_PLAY_ID = "dev";
+
 // The bound of the pattern above, written once: `mintPlayId` must truncate to the
 // same length, otherwise an overlong title would produce an identifier the site
 // has just minted and the Action would refuse.

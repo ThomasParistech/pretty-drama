@@ -1,9 +1,12 @@
 name: build
 
-# Builds the site and deploys it to GitHub Pages. Nothing else: this workflow NEVER
-# writes to the repo (no commit, no journal). The only writer is uploads.yml, which
-# processes uploads and then calls this one (`workflow_call`), because a commit pushed
-# with the GITHUB_TOKEN triggers no workflow.
+# Builds the site and deploys it to GitHub Pages, then writes the address it was
+# published at into the README. Nothing else: no journal is ever written here, and the
+# `build` job itself stays read-only (the one commit lives in its own `readme` job, with
+# its own `contents: write`, and is explained there). The journals have a single writer,
+# uploads.yml, which processes uploads and then calls this workflow (`workflow_call`),
+# because a commit pushed with the GITHUB_TOKEN triggers no workflow. That same rule is
+# what keeps the README commit from looping back into a build.
 #
 # `paths-ignore: uploads/**`: an upload is uploads.yml's business, and it ends up
 # calling us. Without this filter an upload would trigger both in parallel and publish
@@ -120,6 +123,11 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    # The address Pages actually answered on, handed to the `readme` job below. It is
+    # only knowable at this point: it is built from the owner and the repository name,
+    # and both change the moment the template is copied.
+    outputs:
+      page_url: ${{ steps.deploy.outputs.page_url }}
     # No `if`: `needs` alone is the gate. pages-check failing (publishing off) or being
     # skipped (the repository being created) both leave this job skipped, which is what
     # should show in the checks list either way. The distinction the coordinator needs is
@@ -233,3 +241,97 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deploy
         uses: actions/deploy-pages@v5
+
+      # The two addresses, on the page the coordinator is ALREADY looking at. Step 3 of
+      # the README leaves them watching this run; without this they then had to walk to
+      # Settings > Pages to learn where their own site went, and the management address
+      # is not written there at all (it is the site's address plus `respo.html`, which
+      # only this project knows). GitHub does show the deploy URL on the run page, in
+      # the environment chip beside this job, which is small, unlabelled and easy to miss.
+      #
+      # `$GITHUB_STEP_SUMMARY` and not an `::notice::`: this is not a problem to report,
+      # it is the answer to "where is my site", it deserves room, and the summary is what
+      # opens at the top of the run. Same channel as `pages-check`'s failure, so the two
+      # things this workflow ever says to a human are said in the same place.
+      #
+      # English, like every workflow here, and for the same reason: the README is what
+      # walks the coordinator to this screen and it tells them what they will find.
+      # The test bench is listed third and only when it is really there: a fork is free
+      # to delete `plays/<dev>/`, and this project does not advertise addresses that
+      # answer 404. Its id comes from common.py rather than being spelled here, so the
+      # cross-file contract on DEV_PLAY_ID keeps covering it (the README's copy of the
+      # same address is held by test_readme.py, which cannot reach into a workflow).
+      - name: Print the site's addresses in the run summary
+        env:
+          PAGE_URL: ${{ steps.deploy.outputs.page_url }}
+        run: |
+          base="${PAGE_URL%/}"
+          dev="$(python -c 'import sys; sys.path.insert(0, "scripts"); import common; print(common.DEV_PLAY_ID)')"
+          {
+            echo "## The site is online"
+            echo
+            echo "| Address | For whom |"
+            echo "| --- | --- |"
+            echo "| <$base/> | the troupe. This is the link you share. |"
+            echo "| <$base/respo.html> | you: managing the plays. Bookmark it, nothing links to it from the other address. |"
+            if [ -d "plays/$dev" ]; then
+              echo "| <$base/plays/$dev/respo.html> | the test bench: a demonstration play, absent from the list, to watch the site work without touching yours. |"
+            fi
+            echo
+            echo "They are written into this repository's README as well, so you never"
+            echo "have to come back here to find them."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Writes the site's address into the README, and it is the ONE place this workflow
+  # touches the repository. The reason it has to: that address is
+  # `<owner>.github.io/<repo>/`, so it is unknown until a copy of this template exists
+  # and has deployed once. The template cannot carry it, and a fresh copy carried the
+  # ORIGINAL author's address, which resolves, looks right, and is not the troupe's site.
+  # The coordinator's only recourse was Settings > Pages, a place the README otherwise
+  # spends its length keeping them out of. So the deployment writes down where it landed.
+  #
+  # A SEPARATE JOB, like `pages-check`, and for the same kind of reason: `build` keeps
+  # `contents: read`, the commit is visibly one gesture with one permission, and the
+  # checkout it commits from is a clean one rather than the build's worktree full of
+  # rebuilt manifests and a dist/.
+  #
+  # No loop: a push made with the GITHUB_TOKEN triggers no workflow (the same rule that
+  # forces uploads.yml to call this file explicitly). And even without it there would be
+  # nothing to loop on, `update_readme_urls.py` being a no-op from the second run on.
+  #
+  # `continue-on-error`, so it can never redden a run that PUBLISHED. Same trade as the
+  # printable PDF in uploads.yml: the site is what matters, the convenience beside it is
+  # not worth an English "Run failed" in the coordinator's mailbox. A push that loses a
+  # race here is retried by the next deployment anyway, since the README still names the
+  # wrong address and the script fires again.
+  readme:
+    name: Write the site address into the README
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    # The only `contents: write` of this workflow, and the reason uploads.yml has to
+    # delegate it on its `site` job: a called workflow can never obtain more than its
+    # caller granted.
+    permissions:
+      contents: write
+    steps:
+      # `ref` for the same reason as the build's checkout: called from uploads.yml we
+      # run inside the run of a push made BEFORE the commit that workflow pushed, and
+      # committing on top of that older SHA would mean rebasing away a whole upload.
+      - name: Checkout (head of the branch, not the triggering SHA)
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+
+      # Through `env:`, not interpolated into the script: `${{ }}` inside `run:` is
+      # substituted before bash sees it. The value comes from GitHub here, not from the
+      # repo, but the habit is the protection.
+      - name: Write the address the deployment answered on
+        env:
+          PAGE_URL: ${{ needs.build.outputs.page_url }}
+        run: python3 scripts/ci/update_readme_urls.py "$PAGE_URL"
+
+      # No-op when the README already names the site, which is every run but the first
+      # of a copy of the template: `commit_push.sh` finds an empty index and stops.
+      - name: Commit the README if its address changed
+        run: bash scripts/ci/commit_push.sh "🤖 Write the site address into the README" README.md

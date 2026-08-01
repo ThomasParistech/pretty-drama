@@ -15,7 +15,10 @@ Two things not to undo.
 1. **The list comes from the FOLDERS** (`play_ids`) and not from the manifests: a play
    whose manifest is missing or damaged still shows up, with whatever could be read of
    it. A play VANISHING from the chooser is the worst possible display, since the
-   coordinator then has no path left to its upload page to repair it.
+   coordinator then has no path left to its upload page to repair it. The one play left
+   out is the site's own test bench (`DEV_PLAY_ID`), and it is left out here rather than
+   anywhere else precisely so that this file stays the ONLY place where a play can be
+   missing from the list.
 
 2. **The order is by id, not by title.** Sorting on the title would mean comparing
    accented strings, so choosing a locale, and a machine file has no business knowing
@@ -28,7 +31,7 @@ from __future__ import annotations
 
 import re
 
-from common import REPO_ROOT, load_json, play_data_dir, play_ids, write_json
+from common import DEV_PLAY_ID, REPO_ROOT, load_json, play_data_dir, play_ids, write_json
 
 INDEX_PATH = REPO_ROOT / "data" / "plays.json"
 
@@ -93,8 +96,26 @@ def play_entry(play_id: str) -> dict:
     }
 
 
+def listed_play_ids() -> list[str]:
+    """The plays the two root pages offer, that is every play but the test bench.
+
+    `plays/dev/` is a play like the others everywhere else in the pipeline: it is
+    transcoded, promoted, manifested and built into the site, and its seven pages are
+    deployed. It is only absent from THIS list, so that a URL still reaches it while the
+    troupe's chooser shows nothing but the troupe's plays. A developer of the site opens
+    `plays/dev/rehearsal.html` by hand; a company that forked the repository never meets
+    it, and its own play's journal stays free of test uploads.
+
+    Hiding a play is the one thing this file is otherwise built never to do (cf. the
+    module docstring), hence a function rather than a condition slipped into `main`: the
+    exception is named, and it can only ever remove a play that no troupe can own, since
+    `DEV_PLAY_ID` is an address the creation box and the Action both refuse.
+    """
+    return [play_id for play_id in play_ids() if play_id != DEV_PLAY_ID]
+
+
 def main() -> None:
-    plays = [play_entry(play_id) for play_id in play_ids()]
+    plays = [play_entry(play_id) for play_id in listed_play_ids()]
     write_json(INDEX_PATH, {"plays": plays})
     print(f"data/plays.json: {len(plays)} play(s)")
 

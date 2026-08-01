@@ -1,12 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve, extname, relative, isAbsolute, sep } from "path";
-import { spawnSync } from "child_process";
 import fs from "fs";
 // The play id pattern, imported and never copied over: it is what makes building
 // the paths below safe (it accepts neither a dot nor a slash, so no folder can
 // escape `plays/`).
-import { SAFE_PLAY_ID } from "./src/shared/plays.js";
+import { DEV_PLAY_ID, SAFE_PLAY_ID } from "./src/shared/plays.js";
 
 const ROOT = __dirname;
 
@@ -66,94 +65,19 @@ function buildInputs(ids) {
   return inputs;
 }
 
-// plays/<id>/data/script.pdf is DERIVED from the play's script, gitignored, and
-// built by build.yml right before deploying: it is therefore nowhere in the repo, it
-// only exists on the PUBLISHED SITE. Yet the Progress page's button always offers
-// it, it is not optional (cf. `ScriptPdfLink`), so the dev server goes and fetches
-// it where it lives rather than recompiling it: one download, once, on the first
-// request, written into the play's folder (where it stays gitignored) so that the
-// following requests and sessions serve it from disk.
+// plays/<id>/data/script.pdf is DERIVED from the play's script, and COMMITTED beside
+// it: uploads.yml typesets it when a script is promoted, so the repo always carries
+// the PDF of the script it carries, and the middleware below serves it like any other
+// file of the play. Nothing to build and nothing to fetch here.
 //
-// A developer thus needs no LaTeX distribution at all to see the button work. What
-// they get is the PDF of the PUBLISHED play, so not the one of the local
-// script.json if they have just edited it; a file that is there is served as is and
-// never revalidated, and running `python3 scripts/build_script_pdf.py` by hand
-// remains the way to see one's own changes (its output simply takes the place of
-// the download).
-function scriptPdfPath(playId) {
-  return resolve(ROOT, "plays", playId, "data", "script.pdf");
-}
-
-// The published site's URL, deduced from the git remote: this is the counterpart of
-// `githubUploadUrl()` (src/shared/data.js), which deduces the upload URL from the
-// page's URL, and it covers the same two forms of Pages site, project
-// (owner.github.io/repo) and root (the repo is named owner.github.io).
-function publishedSiteUrl() {
-  const run = spawnSync("git", ["remote", "get-url", "origin"], {
-    cwd: ROOT,
-    encoding: "utf8",
-  });
-  const remote = run.status === 0 ? run.stdout.trim() : "";
-  // The two spellings of a GitHub remote: SSH (git@github.com:owner/repo.git)
-  // and HTTPS (https://github.com/owner/repo).
-  const m = remote.match(/github\.com[:/]([^/]+)\/(.+?)(?:\.git)?$/);
-  if (!m) return null;
-  const owner = m[1].toLowerCase();
-  const repo = m[2];
-  const host = `https://${owner}.github.io`;
-  return repo.toLowerCase() === `${owner}.github.io` ? host : `${host}/${repo}`;
-}
-
-// A single download per play and per session, in flight or already finished: we keep
-// the promise. A failure (Pages not deployed yet, no network, a fork without a site)
-// is therefore not retried, otherwise every opening of the Progress page would wait
-// for a timeout; the message names the fallback. One entry per play, each having its
-// own PDF: without that, the first play opened would have decided for the others.
-const pdfFetches = new Map();
-
-function ensureScriptPdf(playId) {
-  if (fs.existsSync(scriptPdfPath(playId))) return null;
-  if (!pdfFetches.has(playId)) pdfFetches.set(playId, fetchScriptPdf(playId));
-  return pdfFetches.get(playId);
-}
-
-async function fetchScriptPdf(playId) {
-  const site = publishedSiteUrl();
-  const url = site && `${site}/plays/${playId}/data/script.pdf`;
-  // The message names the PAGE and the file, never the button's label: that one
-  // lives in the catalogues (`dashboard.pdf`), so copying it here would make the dev
-  // server lie at the first rename, and it is anyway written in one language only
-  // whereas the page reads in two.
-  const fallback =
-    " The PDF download on the Progress page will return a 404;" +
-    " `python3 scripts/build_script_pdf.py` writes the file locally.";
-  const label = `plays/${playId}/data/script.pdf`;
-  if (!url) {
-    console.warn(`  ${label}: no GitHub remote to download it from.${fallback}`);
-    return;
-  }
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const body = Buffer.from(await res.arrayBuffer());
-    // The signature and not the status code alone: a site deployed without a PDF
-    // (build.yml's two LaTeX steps are in `continue-on-error`) answers with its 404
-    // page, and we do not want to write HTML into a .pdf file.
-    if (!body.subarray(0, 5).equals(Buffer.from("%PDF-"))) {
-      throw new Error("the response is not a PDF");
-    }
-    // Write then rename: a concurrent request cannot land on a half-written file
-    // (`existsSync` alone would be enough to let it through).
-    const target = scriptPdfPath(playId);
-    const tmp = `${target}.part`;
-    fs.mkdirSync(resolve(target, ".."), { recursive: true });
-    fs.writeFileSync(tmp, body);
-    fs.renameSync(tmp, target);
-    console.log(`  ${label} downloaded from ${url} (${Math.round(body.length / 1024)} kB)`);
-  } catch (err) {
-    console.warn(`  ${label} not found at ${url} (${err.message}).${fallback}`);
-  }
-}
+// This used to be a download. The file was gitignored and built by build.yml at deploy
+// time, so it existed only on the published site, while the Progress page's button
+// offers it unconditionally (cf. `ScriptPdfLink`); the dev server fetched it from the
+// site once per play and wrote it to disk. All of that went away with the gitignore
+// line. What a developer loses with it: nothing, they no longer need LaTeX NOR a
+// published site to see the button work. What they still owe: after editing a local
+// script.json, `python3 scripts/build_script_pdf.py <play>` is what re-typesets it,
+// exactly as before, because a file that is there is served as is.
 
 // In production, the GitHub Action copies data/ and every play folder into dist/.
 // In dev, this middleware serves them straight from the repo so every page
@@ -170,17 +94,13 @@ function serveRepoData() {
     ".json": "application/json; charset=utf-8",
     ".mp3": "audio/mpeg",
     // A play's script.pdf, which the button on its Progress page downloads:
-    // gitignored, hence taken from the published site by `ensureScriptPdf` then
-    // served as in prod.
+    // committed beside its script.json, so served from the repo like the rest.
     ".pdf": "application/pdf",
   };
   return {
     name: "serve-repo-data",
     configureServer(server) {
-      // Asynchronous for the sole `await` of `ensureScriptPdf`: everything else is
-      // synchronous, and this function has no rejection to propagate (the
-      // download catches its own errors and lets the 404 happen).
-      server.middlewares.use(async (req, res, next) => {
+      server.middlewares.use((req, res, next) => {
         const pathname = req.url.split("?")[0];
         const play = pathname.match(/^\/plays\/([^/]+)\/(data|clips)\/(.+)$/);
         const root = pathname.match(/^\/(data)\/(.+)$/);
@@ -205,9 +125,6 @@ function serveRepoData() {
           res.end("Forbidden");
           return;
         }
-        // The only file the repo does not carry: we take it from the published
-        // site before answering, cf. `ensureScriptPdf`.
-        if (play && file === scriptPdfPath(play[1])) await ensureScriptPdf(play[1]);
         if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
           res.statusCode = 404;
           res.end("Not found");
@@ -233,6 +150,13 @@ function serveRepoData() {
 // actors' play chooser at the root and the play management page on respo.html. We
 // therefore extend its list of URLs, in dev as in preview, so nobody has to remember
 // the path of the hidden page.
+//
+// A third one joins them when the test bench is there: `plays/dev/` is absent from
+// data/plays.json, so the chooser does not link to it and there is no path to it anywhere
+// in the site. Printing it is what makes it reachable at all without going and reading
+// CLAUDE.md, and it is its coordinator home that is named, the one page that links to the
+// other six. Guarded on the folder: a company that forked the repository and deleted the
+// play must not be shown a URL that 404s.
 function printHomeUrls() {
   const green = (s) => `\x1b[32m${s}\x1b[0m`;
   const bold = (s) => `\x1b[1m${s}\x1b[0m`;
@@ -247,10 +171,14 @@ function printHomeUrls() {
       // play chooser, `respo.html` is the play management page. These two labels are
       // dev-server output, so they stay in the repo's language and never go through
       // the catalogues, which hold what the SITE says.
-      for (const [label, path] of [
+      const entries = [
         ["Chooser:", ""],
         ["Manage:", "respo.html"],
-      ]) {
+      ];
+      // Short label so the column stays the one Vite itself uses ("Local:" padded to
+      // nine): the URL says the rest.
+      if (PLAY_IDS.includes(DEV_PLAY_ID)) entries.push(["Dev:", `plays/${DEV_PLAY_ID}/respo.html`]);
+      for (const [label, path] of entries) {
         // Same template as Vite's own lines: "Local:   " then the URL.
         console.log(`  ${green("➜")}  ${bold(label.padEnd(9))}${green(base + path)}`);
       }

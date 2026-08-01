@@ -1,0 +1,602 @@
+{
+  "id": "dev",
+  "title": "Dev",
+  "language": "fr",
+  "history": [
+    {
+      "at": "2026-07-26T18:12:00Z",
+      "files": [
+        {
+          "file": "voix-charlotte.zip",
+          "kind": "voix",
+          "error": "le fichier n'est pas un ZIP valide (peut-être abîmé pendant l'envoi ?)"
+        }
+      ]
+    },
+    {
+      "at": "2026-07-24T20:41:00Z",
+      "files": [
+        {
+          "file": "voix-annie.zip",
+          "kind": "voix",
+          "clips": 2
+        },
+        {
+          "file": "voix-serge.zip",
+          "kind": "voix",
+          "clips": 2
+        }
+      ]
+    },
+    {
+      "at": "2026-07-22T12:29:00Z",
+      "files": [
+        {
+          "file": "script.json",
+          "kind": "script",
+          "changes": {
+            "linesAdded": 12,
+            "linesRemoved": 3,
+            "linesEdited": 5,
+            "castAdded": 1
+          }
+        }
+      ]
+    },
+    {
+      "at": "2026-07-21T15:07:00Z",
+      "files": [
+        {
+          "file": "script.json",
+          "kind": "script",
+          "changes": {
+            "castRenamed": 1,
+            "linesReassigned": 2,
+            "title": true,
+            "language": true
+          }
+        }
+      ]
+    },
+    {
+      "at": "2026-07-20T09:03:00Z",
+      "files": [
+        {
+          "file": "script (1).json",
+          "kind": "script",
+          "changes": {}
+        }
+      ]
+    },
+    {
+      "at": "2026-07-20T08:11:00Z",
+      "files": [
+        {
+          "file": "script.json",
+          "kind": "script",
+          "changes": {
+            "other": true
+          }
+        }
+      ]
+    },
+    {
+      "at": "2026-07-19T17:48:00Z",
+      "files": [
+        {
+          "file": "Le Malade imaginaire",
+          "kind": "script",
+          "changes": {
+            "created": true
+          }
+        }
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "id": "dev-c-alceste",
+      "name": "Alceste",
+      "color": "#1f77b4"
+    },
+    {
+      "id": "dev-c-eleonore",
+      "name": "Éléonore de Trois-Rivières",
+      "color": "#ff7f0e"
+    },
+    {
+      "id": "dev-c-choeur",
+      "name": "Le Chœur",
+      "color": "#2ca02c"
+    },
+    {
+      "id": "dev-c-un",
+      "name": "Un",
+      "color": "#d62728"
+    },
+    {
+      "id": "dev-c-ingenue",
+      "name": "L'Ingénue",
+      "color": "#9467bd"
+    },
+    {
+      "id": "dev-c-souffleur",
+      "name": "Le Souffleur"
+    }
+  ],
+  "acts": [
+    {
+      "scenes": [
+        {
+          "lines": [
+            {
+              "id": "dev-l01",
+              "characterId": "dev-c-alceste",
+              "character": "Alceste",
+              "text": "Qui va là ? Cette pièce n'est jouée par personne.",
+              "status": "ok",
+              "clip": "clips/dev-l01.mp3",
+              "actIndex": 0,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l02",
+              "characterId": "dev-c-eleonore",
+              "character": "Éléonore de Trois-Rivières",
+              "text": "Personne, en effet : nous sommes le banc d'essai du site.",
+              "status": "ok",
+              "clip": "clips/dev-l02.mp3",
+              "actIndex": 0,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l03",
+              "characterId": "dev-c-choeur",
+              "character": "Le Chœur",
+              "text": "Nous n'existons que pour être affichés, comptés et relus.",
+              "status": "manquant",
+              "clip": null,
+              "actIndex": 0,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l04",
+              "characterId": "dev-c-alceste",
+              "character": "Alceste",
+              "text": "Tenons-nous droit : quelqu'un regarde la grille d'avancement.",
+              "status": "ok",
+              "clip": "clips/dev-l04.mp3",
+              "actIndex": 0,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l05",
+              "characterId": "dev-c-eleonore",
+              "character": "Éléonore de Trois-Rivières",
+              "text": "« Enregistrée », « À refaire », « Manquante » : les trois états tiennent dans cet acte.",
+              "status": "ok",
+              "clip": "clips/dev-l05.mp3",
+              "actIndex": 0,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l06",
+              "characterId": "dev-c-choeur",
+              "character": "Le Chœur",
+              "text": "Et la barre ne doit jamais atteindre le bout.",
+              "status": "manquant",
+              "clip": null,
+              "actIndex": 0,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l07",
+              "characterId": "dev-c-alceste",
+              "character": "Alceste",
+              "text": "Plus fort, on ne t'entend pas au fond du casque.",
+              "status": "manquant",
+              "clip": null,
+              "actIndex": 0,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l08",
+              "characterId": "dev-c-eleonore",
+              "character": "Éléonore de Trois-Rivières",
+              "text": "C'est que ma réplique n'a pas encore de voix.",
+              "status": "manquant",
+              "clip": null,
+              "actIndex": 0,
+              "sceneIndex": 0
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l09",
+              "characterId": "dev-c-un",
+              "character": "Un",
+              "text": "Moi ?",
+              "status": "ok",
+              "clip": "clips/dev-l09.mp3",
+              "actIndex": 0,
+              "sceneIndex": 1
+            },
+            {
+              "id": "dev-l10",
+              "characterId": "dev-c-choeur",
+              "character": "Le Chœur",
+              "text": "Toi. Ton nom tient en deux lettres : il éprouve les colonnes étroites.",
+              "status": "manquant",
+              "clip": null,
+              "actIndex": 0,
+              "sceneIndex": 1
+            },
+            {
+              "id": "dev-l11",
+              "characterId": "dev-c-un",
+              "character": "Un",
+              "text": "Bien.",
+              "status": "ok",
+              "clip": "clips/dev-l11.mp3",
+              "actIndex": 0,
+              "sceneIndex": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scenes": [
+        {
+          "lines": [
+            {
+              "id": "dev-l12",
+              "characterId": "dev-c-eleonore",
+              "character": "Éléonore de Trois-Rivières",
+              "text": "Écoutez-moi jusqu'au bout, car cette tirade est ici pour occuper la place : elle déborde d'une ligne, elle déborde de deux, elle finira par déborder de la carte elle-même, et c'est très bien ainsi, puisqu'il faut bien qu'une réplique quelque part vérifie que le texte s'enroule proprement, que la carte grandit avec lui, que la colonne du tableau d'avancement le tronque sans le couper au milieu d'un mot, et que le PDF ne la laisse pas seule en bas d'une page.",
+              "status": "manquant",
+              "clip": null,
+              "actIndex": 1,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l13",
+              "characterId": "dev-c-alceste",
+              "character": "Alceste",
+              "text": "",
+              "status": "manquant",
+              "clip": null,
+              "actIndex": 1,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l14",
+              "characterId": "dev-c-un",
+              "character": "Un",
+              "text": "Une réplique sans texte vient de passer : la carte doit rester lisible.",
+              "status": "manquant",
+              "clip": null,
+              "actIndex": 1,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l15",
+              "characterId": "dev-c-alceste",
+              "character": "Alceste",
+              "text": "Et celle-ci a changé de mots depuis son enregistrement.",
+              "status": "perime",
+              "clip": "clips/dev-l15.mp3",
+              "actIndex": 1,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l16",
+              "characterId": "dev-c-eleonore",
+              "character": "Éléonore de Trois-Rivières",
+              "text": "Une apostrophe qui s’enjolive n’est pas une correction.",
+              "status": "ok",
+              "clip": "clips/dev-l16.mp3",
+              "actIndex": 1,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l17",
+              "characterId": "dev-c-choeur",
+              "character": "Le Chœur",
+              "text": "Le souffleur, lui, n'a pas une seule réplique.",
+              "status": "manquant",
+              "clip": null,
+              "actIndex": 1,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l18",
+              "characterId": "dev-c-alceste",
+              "character": "Alceste",
+              "text": "Il compte tout de même dans la distribution.",
+              "status": "manquant",
+              "clip": null,
+              "actIndex": 1,
+              "sceneIndex": 0
+            }
+          ]
+        },
+        {
+          "lines": []
+        }
+      ]
+    },
+    {
+      "scenes": [
+        {
+          "lines": [
+            {
+              "id": "dev-l19",
+              "characterId": "dev-c-ingenue",
+              "character": "L'Ingénue",
+              "text": "J'arrive au dernier acte, et je n'ai parlé nulle part ailleurs.",
+              "status": "ok",
+              "clip": "clips/dev-l19.mp3",
+              "actIndex": 2,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l20",
+              "characterId": "dev-c-alceste",
+              "character": "Alceste",
+              "text": "Le menu des scènes ne te proposera donc que celle-ci.",
+              "status": "perime",
+              "clip": "clips/dev-l20.mp3",
+              "actIndex": 2,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l21",
+              "characterId": "dev-c-ingenue",
+              "character": "L'Ingénue",
+              "text": "Et l'acte entier à qui ne parle pas du tout.",
+              "status": "manquant",
+              "clip": null,
+              "actIndex": 2,
+              "sceneIndex": 0
+            },
+            {
+              "id": "dev-l22",
+              "characterId": "dev-c-choeur",
+              "character": "Le Chœur",
+              "text": "Rideau. Rien de tout cela n'est arrivé.",
+              "status": "manquant",
+              "clip": null,
+              "actIndex": 2,
+              "sceneIndex": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "lines": [
+    {
+      "id": "dev-l01",
+      "characterId": "dev-c-alceste",
+      "character": "Alceste",
+      "text": "Qui va là ? Cette pièce n'est jouée par personne.",
+      "status": "ok",
+      "clip": "clips/dev-l01.mp3",
+      "actIndex": 0,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l02",
+      "characterId": "dev-c-eleonore",
+      "character": "Éléonore de Trois-Rivières",
+      "text": "Personne, en effet : nous sommes le banc d'essai du site.",
+      "status": "ok",
+      "clip": "clips/dev-l02.mp3",
+      "actIndex": 0,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l03",
+      "characterId": "dev-c-choeur",
+      "character": "Le Chœur",
+      "text": "Nous n'existons que pour être affichés, comptés et relus.",
+      "status": "manquant",
+      "clip": null,
+      "actIndex": 0,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l04",
+      "characterId": "dev-c-alceste",
+      "character": "Alceste",
+      "text": "Tenons-nous droit : quelqu'un regarde la grille d'avancement.",
+      "status": "ok",
+      "clip": "clips/dev-l04.mp3",
+      "actIndex": 0,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l05",
+      "characterId": "dev-c-eleonore",
+      "character": "Éléonore de Trois-Rivières",
+      "text": "« Enregistrée », « À refaire », « Manquante » : les trois états tiennent dans cet acte.",
+      "status": "ok",
+      "clip": "clips/dev-l05.mp3",
+      "actIndex": 0,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l06",
+      "characterId": "dev-c-choeur",
+      "character": "Le Chœur",
+      "text": "Et la barre ne doit jamais atteindre le bout.",
+      "status": "manquant",
+      "clip": null,
+      "actIndex": 0,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l07",
+      "characterId": "dev-c-alceste",
+      "character": "Alceste",
+      "text": "Plus fort, on ne t'entend pas au fond du casque.",
+      "status": "manquant",
+      "clip": null,
+      "actIndex": 0,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l08",
+      "characterId": "dev-c-eleonore",
+      "character": "Éléonore de Trois-Rivières",
+      "text": "C'est que ma réplique n'a pas encore de voix.",
+      "status": "manquant",
+      "clip": null,
+      "actIndex": 0,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l09",
+      "characterId": "dev-c-un",
+      "character": "Un",
+      "text": "Moi ?",
+      "status": "ok",
+      "clip": "clips/dev-l09.mp3",
+      "actIndex": 0,
+      "sceneIndex": 1
+    },
+    {
+      "id": "dev-l10",
+      "characterId": "dev-c-choeur",
+      "character": "Le Chœur",
+      "text": "Toi. Ton nom tient en deux lettres : il éprouve les colonnes étroites.",
+      "status": "manquant",
+      "clip": null,
+      "actIndex": 0,
+      "sceneIndex": 1
+    },
+    {
+      "id": "dev-l11",
+      "characterId": "dev-c-un",
+      "character": "Un",
+      "text": "Bien.",
+      "status": "ok",
+      "clip": "clips/dev-l11.mp3",
+      "actIndex": 0,
+      "sceneIndex": 1
+    },
+    {
+      "id": "dev-l12",
+      "characterId": "dev-c-eleonore",
+      "character": "Éléonore de Trois-Rivières",
+      "text": "Écoutez-moi jusqu'au bout, car cette tirade est ici pour occuper la place : elle déborde d'une ligne, elle déborde de deux, elle finira par déborder de la carte elle-même, et c'est très bien ainsi, puisqu'il faut bien qu'une réplique quelque part vérifie que le texte s'enroule proprement, que la carte grandit avec lui, que la colonne du tableau d'avancement le tronque sans le couper au milieu d'un mot, et que le PDF ne la laisse pas seule en bas d'une page.",
+      "status": "manquant",
+      "clip": null,
+      "actIndex": 1,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l13",
+      "characterId": "dev-c-alceste",
+      "character": "Alceste",
+      "text": "",
+      "status": "manquant",
+      "clip": null,
+      "actIndex": 1,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l14",
+      "characterId": "dev-c-un",
+      "character": "Un",
+      "text": "Une réplique sans texte vient de passer : la carte doit rester lisible.",
+      "status": "manquant",
+      "clip": null,
+      "actIndex": 1,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l15",
+      "characterId": "dev-c-alceste",
+      "character": "Alceste",
+      "text": "Et celle-ci a changé de mots depuis son enregistrement.",
+      "status": "perime",
+      "clip": "clips/dev-l15.mp3",
+      "actIndex": 1,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l16",
+      "characterId": "dev-c-eleonore",
+      "character": "Éléonore de Trois-Rivières",
+      "text": "Une apostrophe qui s’enjolive n’est pas une correction.",
+      "status": "ok",
+      "clip": "clips/dev-l16.mp3",
+      "actIndex": 1,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l17",
+      "characterId": "dev-c-choeur",
+      "character": "Le Chœur",
+      "text": "Le souffleur, lui, n'a pas une seule réplique.",
+      "status": "manquant",
+      "clip": null,
+      "actIndex": 1,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l18",
+      "characterId": "dev-c-alceste",
+      "character": "Alceste",
+      "text": "Il compte tout de même dans la distribution.",
+      "status": "manquant",
+      "clip": null,
+      "actIndex": 1,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l19",
+      "characterId": "dev-c-ingenue",
+      "character": "L'Ingénue",
+      "text": "J'arrive au dernier acte, et je n'ai parlé nulle part ailleurs.",
+      "status": "ok",
+      "clip": "clips/dev-l19.mp3",
+      "actIndex": 2,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l20",
+      "characterId": "dev-c-alceste",
+      "character": "Alceste",
+      "text": "Le menu des scènes ne te proposera donc que celle-ci.",
+      "status": "perime",
+      "clip": "clips/dev-l20.mp3",
+      "actIndex": 2,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l21",
+      "characterId": "dev-c-ingenue",
+      "character": "L'Ingénue",
+      "text": "Et l'acte entier à qui ne parle pas du tout.",
+      "status": "manquant",
+      "clip": null,
+      "actIndex": 2,
+      "sceneIndex": 0
+    },
+    {
+      "id": "dev-l22",
+      "characterId": "dev-c-choeur",
+      "character": "Le Chœur",
+      "text": "Rideau. Rien de tout cela n'est arrivé.",
+      "status": "manquant",
+      "clip": null,
+      "actIndex": 2,
+      "sceneIndex": 0
+    }
+  ]
+}

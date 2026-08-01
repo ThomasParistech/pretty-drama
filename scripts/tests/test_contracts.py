@@ -24,7 +24,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from build_manifest import COLOR_PATTERN, DEFAULT_LANGUAGE, LANGUAGES
 from build_script_pdf import STRUCTURE, _TENS, _UNITS, roman_numeral
+from build_plays_index import listed_play_ids
 from common import (
+    DEV_PLAY_ID,
     MAX_PLAY_ID_LENGTH,
     PLAY_ID_PATTERN,
     REPO_ROOT,
@@ -320,6 +322,70 @@ class TestCreationZone(unittest.TestCase):
         # button opens really goes through it.
         source = js_without_comments(read(SRC / "shared" / "data.js"))
         self.assertIn("uploads/${NEW_PLAY_DIR}/", source)
+
+
+class TestDevPlay(unittest.TestCase):
+    """`plays/dev/` is the site's own test bench: a play in every respect, except that
+    `build_plays_index` leaves it out of data/plays.json, so only a hand-written URL
+    reaches it and a company that forked the repository never meets it.
+
+    Two sides then have to agree, and neither disagreement would be reported. The
+    creation box refuses an address already taken by reading data/plays.json, where this
+    one is missing on purpose: it needs the id in hand (DEV_PLAY_ID, src/shared/plays.js)
+    or it would send the coordinator off to commit a title the Action refuses minutes
+    later. And the id must be an id like any other, since it names `plays/dev/`,
+    `uploads/dev/` and a URL segment exactly as a troupe's play does."""
+
+    def js_dev_play(self) -> str:
+        found = re.search(r'export const DEV_PLAY_ID = "([^"]+)";', read(PLAYS_JS))
+        self.assertIsNotNone(found, "DEV_PLAY_ID not found in src/shared/plays.js")
+        return found.group(1)
+
+    def test_both_sides_name_the_same_play(self):
+        self.assertEqual(
+            self.js_dev_play(),
+            DEV_PLAY_ID,
+            "DEV_PLAY_ID (src/shared/plays.js) and DEV_PLAY_ID (scripts/common.py) have "
+            "diverged: the creation box would offer an address the Action refuses, or "
+            "would refuse one that is free.",
+        )
+
+    def test_the_test_bench_carries_a_real_play_id(self):
+        # It is hidden from one list, never from the pipeline: everything that turns it
+        # into a path validates it first, like any other play.
+        self.assertTrue(is_play_id(DEV_PLAY_ID))
+
+    def test_the_creation_box_refuses_that_address(self):
+        # The constant could exist and be consulted nowhere, which is the whole failure
+        # this contract exists to prevent: what matters is that the refusal really cites
+        # it, next to the list of plays the page did read.
+        source = js_without_comments(read(SRC / "chooser" / "NewPlay.jsx"))
+        self.assertIn("DEV_PLAY_ID", source)
+
+    def test_the_dev_server_announces_it_and_opens_it(self):
+        """Nothing on the site links to this play, so the two things that name it out
+        loud are the dev server's URL list (vite.config.js) and the tabs `npm start`
+        opens (scripts/dev.sh). A shell script imports no constant, hence the literal
+        path there and this guard: renamed on one side, the tab would open a 404 and the
+        printed line would point nowhere.
+        """
+        self.assertIn(
+            f"plays/{DEV_PLAY_ID}/respo.html",
+            read(REPO_ROOT / "scripts" / "dev.sh"),
+            "scripts/dev.sh no longer opens the test bench under the name DEV_PLAY_ID "
+            "(scripts/common.py) gives it.",
+        )
+        # The config, for its part, builds the path from the constant: what has to hold
+        # is that it really consults it, rather than printing the two root pages alone.
+        self.assertIn("DEV_PLAY_ID", js_without_comments(read(REPO_ROOT / "vite.config.js")))
+
+    def test_it_is_the_only_play_the_index_leaves_out(self):
+        # Read on the repository's real folders: the two root pages list every play but
+        # this one, and a second hidden play would be a play nobody could reach.
+        self.assertEqual(
+            sorted(set(play_ids()) - set(listed_play_ids())),
+            [DEV_PLAY_ID] if DEV_PLAY_ID in play_ids() else [],
+        )
 
 
 class TestNewPlay(unittest.TestCase):
