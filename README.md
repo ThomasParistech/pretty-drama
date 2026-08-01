@@ -9,10 +9,10 @@ seule, et vous dites vos répliques au bon moment.
 
 ## Liens
 
-- [Le site de la troupe](https://example.com) <!-- ref: SITE_HOME -->
+- [Le site de la troupe](https://thomasparistech.github.io/pretty-drama/) <!-- ref: SITE_HOME -->
   elle y choisit une pièce, puis Répétition, Enregistrement ou Répartition.
   C'est ce lien que vous partagez.
-- [La gestion des pièces](https://example.com) <!-- ref: SITE_RESPO -->
+- [La gestion des pièces](https://thomasparistech.github.io/pretty-drama/respo.html) <!-- ref: SITE_RESPO -->
   pour vous : les pièces, et les cinq pages de chacune. **Mettez-le en favori**,
   rien n'y mène depuis l'autre adresse.
 
