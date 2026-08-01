@@ -43,7 +43,7 @@ première fois.
 ## Licence
 
 PrettyDrama Voices est un logiciel libre, publié sous licence
-[MIT](LICENSE) : vous pouvez le forker, le modifier et le réutiliser
+[MIT](LICENSE): vous pouvez le forker, le modifier et le réutiliser
 librement, y compris pour un usage commercial, à condition de conserver la
 mention de copyright et le texte de la licence.
 
