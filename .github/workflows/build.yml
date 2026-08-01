@@ -11,7 +11,9 @@ name: build
 #
 # The coordinator never visits GitHub except to drop files, so this workflow writes
 # nothing for them here, no issue and no README status. Their only feedback is the upload
-# journal on the Dashboard page.
+# journal on the Dashboard page. Single exception, the `pages-check` job below: when
+# publishing is off, that journal sits on a site that does not exist, so the run summary
+# has to say so itself. It says it without failing, so GitHub sends no e-mail either.
 
 on:
   push:
@@ -33,8 +35,82 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Pages is switched on BY HAND, once, and no workflow can ever do it for the
+  # coordinator: creating a Pages site needs `administration:write`, a permission a
+  # workflow token cannot even ask for (hence the `enablement` input of configure-pages
+  # wanting a PAT or a GitHub App). So this job does not try. It looks, and it explains.
+  #
+  # It is a SEPARATE JOB, and that is the whole point: a job-level `if` is the only thing
+  # in Actions that turns a runtime answer into a SKIPPED job rather than a failed one.
+  # The run then ends green with `build` greyed out, and GitHub sends no e-mail. Failing
+  # would have been easier and is wrong here: a coordinator who has not reached step 2 of
+  # the README yet has done nothing wrong, and an English "Run failed" in their inbox is
+  # a scare, not information. The message waits for them inside the run instead, where
+  # the install protocol already sends them.
+  #
+  # `build_type` and not mere existence: Pages switched on but publishing FROM A BRANCH
+  # would let the deploy fail much later AND serve the repository root, whose index.html
+  # points at /src/chooser/main.jsx, so the address answers with a blank page rather than
+  # a 404. Same missing setting, worse symptom, caught here too.
+  #
+  # English, like every other workflow here. The coordinator reads French, but this text
+  # lives in the Actions tab and the README is what walks them to it; guiding them is the
+  # README's job, not this one's.
+  pages-check:
+    name: Is the site allowed to be published
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # `|| true`: the endpoint answers 404 when Pages was never switched on, and
+          # `gh api` exits non-zero, which would fail the step before it can explain.
+          build_type="$(gh api "repos/${{ github.repository }}/pages" --jq .build_type 2>/dev/null || true)"
+          if [ "$build_type" = "workflow" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+
+          if [ -z "$build_type" ]; then
+            title="GitHub Pages is not switched on yet"
+            symptom="the site address answers 404"
+          else
+            title="GitHub Pages is publishing from a branch, not from GitHub Actions"
+            symptom="the site address shows a blank page"
+          fi
+
+          {
+            echo "## $title"
+            echo
+            echo "The site was NOT published, and nothing was lost: everything already"
+            echo "sent is safe in this repository. Right now, $symptom."
+            echo
+            echo "Publishing has to be switched on by a human, once. GitHub does not let"
+            echo "any workflow do it for you."
+            echo
+            echo "1. Open <https://github.com/${{ github.repository }}/settings/pages>"
+            echo "2. Under **Source**, choose **GitHub Actions**"
+            echo "3. Come back to the **Actions** tab, choose **build** on the left,"
+            echo "   then press **Run workflow**"
+            echo
+            echo "Step 3 is also how you publish the whole site again at any time,"
+            echo "without having to upload anything."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # A warning, not an error: nothing is broken, something is waiting for a human.
+          # It also puts a yellow banner on the run, so the green tick of a skipped build
+          # cannot be read as "the site is live".
+          echo "::warning title=$title::Settings > Pages > Source > GitHub Actions, then Actions > build > Run workflow. Full instructions in this run's summary."
+
   build:
     runs-on: ubuntu-latest
+    # Skipped, never failed, while publishing is off. See pages-check above.
+    needs: pages-check
+    if: needs.pages-check.outputs.ready == 'true'
     steps:
       # Explicit `ref`: when called from uploads.yml we run inside the run of a push
       # made BEFORE the commit that workflow just pushed. Without this, checkout would
@@ -134,13 +210,14 @@ jobs:
           cp -r data dist/data
           rsync -a --exclude='*.html' plays/ dist/plays/
 
+      # No `enablement: true` here, and that is not an omission: it needs
+      # `administration:write`, which GITHUB_TOKEN cannot carry, so it could only ever
+      # answer 403 ("Resource not accessible by integration"), and the action THROWS on
+      # anything but a 409. It never enabled anything; it just moved the failure. The
+      # `pages-check` job is what guarantees Pages is on and building from a workflow,
+      # and this job does not even start otherwise, so there is nothing left to enable.
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6
-        with:
-          # Auto-enables Pages (source: GitHub Actions) on first run when the
-          # token has the required permissions; otherwise the coordinator enables it
-          # once in Settings -> Pages.
-          enablement: true
 
       # Since v4 this action EXCLUDES hidden files from the artifact (there is an
       # `include-hidden-files` to bring them back). No effect here, and to be kept
