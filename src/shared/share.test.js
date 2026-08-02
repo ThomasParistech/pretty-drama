@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { makeFormats, makeT } from "./i18n.js";
-import { formatShare, share } from "./share.js";
+import { formatShare } from "./share.js";
 
 // Local catalogue, not the real one: these tests are about the threshold and Intl's
 // typography, so a reworded message must not break them.
@@ -10,12 +10,6 @@ const SHARE_CATALOGUES = {
   fr: { "stats.shareBelow": "< {value}" },
   en: { "stats.shareBelow": "< {value}" },
 };
-
-test("share never divides by zero", () => {
-  assert.equal(share(3, 12), 25);
-  assert.equal(share(0, 0), 0, "an empty scope: 0 %, not NaN in the drawing");
-  assert.equal(share(5, 0), 0);
-});
 
 // Real formatters, not stand-ins: this also checks the typography comes out of Intl.
 const FR = { t: makeT("fr", SHARE_CATALOGUES), fmt: makeFormats("fr") };
@@ -32,6 +26,8 @@ test("formatShare writes the share with one digit after the decimal point", () =
   // A zero share is a real zero: a character with lines but not one word.
   assert.equal(shareFr(0, 12), `0,0${NBSP}%`);
   assert.equal(shareFr(0, 0), `0,0${NBSP}%`, "empty scope: never NaN on screen");
+  // A count against a zero total: the guard is on the DIVISOR, so this is not 500 %.
+  assert.equal(shareFr(5, 0), `0,0${NBSP}%`);
 });
 
 test("the typography of the share follows the language, and comes from Intl", () => {

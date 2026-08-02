@@ -14,7 +14,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
-import { CSS } from "@dnd-kit/utilities";
+import { dragStyle } from "./dragStyle.js";
 import ConfirmModal from "../shared/ConfirmModal.jsx";
 import CountBadge from "./CountBadge.jsx";
 import { FlagIcon } from "../shared/icons.jsx";
@@ -256,11 +256,7 @@ function ActItem({
     <li
       ref={setNodeRef}
       className="structure-act"
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.6 : 1,
-      }}
+      style={dragStyle(transform, transition, isDragging)}
     >
       <div className={`structure-row act ${current ? "current" : ""}`}>
         <DragHandle
@@ -337,11 +333,7 @@ function SceneItem({
   return (
     <li
       ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.6 : 1,
-      }}
+      style={dragStyle(transform, transition, isDragging)}
     >
       {/* The ref goes on the row, the `<li>` already carrying dnd-kit's.
           The WHOLE row opens the scene, as a MOUSE convenience only: no `role`/

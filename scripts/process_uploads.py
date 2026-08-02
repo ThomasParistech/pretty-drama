@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
 
 from build_manifest import DEFAULT_LANGUAGE, sanitize_script
@@ -204,8 +205,6 @@ def process_zip(zip_path: Path, clips_index: dict, clips_dir: Path, expected_pla
     `expected_play` is the play whose zone this ZIP feeds; a ZIP naming another one is
     refused, since mp3s are keyed by line id and the mistake would only surface at the
     rehearsal. Empty means nothing to verify."""
-    import zipfile
-
     try:
         archive = zipfile.ZipFile(zip_path)
     except (zipfile.BadZipFile, OSError) as exc:
@@ -617,29 +616,31 @@ def main() -> None:
     results: dict = {"plays": {}, "unrouted": []}
     total = 0
 
+    def merge(by_play: dict, unrouted: list) -> None:
+        """Fold one zone's outcome into `results`. `setdefault`: the root zone can name a
+        play whose own zone was processed just before, and both lines belong to it."""
+        for play_id, entries in by_play.items():
+            results["plays"].setdefault(play_id, []).extend(entries)
+        results["unrouted"].extend(unrouted)
+
     # Creations FIRST: a play has to exist before anything can attach to it.
-    new_by_play, new_unrouted = process_new_play_zone(new_play_files)
-    for play_id, entries in new_by_play.items():
-        results["plays"].setdefault(play_id, []).extend(entries)
-    results["unrouted"].extend(new_unrouted)
+    merge(*process_new_play_zone(new_play_files))
 
     for play_id, files in zones.items():
         entries, count = process_play_zone(play_id, files)
         total += count
         # A zone that failed to create its play has no journal: root one instead.
         if (play_data_dir(play_id) / "script.json").exists():
-            results["plays"].setdefault(play_id, []).extend(entries)
+            merge({play_id: entries}, [])
         else:
-            results["unrouted"].extend(entries)
+            merge({}, entries)
 
     root_by_play, root_unrouted, root_clips = process_root_zone(root_files)
     total += root_clips
-    for play_id, entries in root_by_play.items():
-        results["plays"].setdefault(play_id, []).extend(entries)
-    results["unrouted"].extend(root_unrouted)
+    merge(root_by_play, root_unrouted)
 
     for folder, files in unnamed:
-        results["unrouted"].extend(discard_unnamed_zone(folder, files))
+        merge({}, discard_unnamed_zone(folder, files))
 
     # Always written, even empty: the next workflow step reads it unconditionally.
     write_json(RESULT_PATH, results)

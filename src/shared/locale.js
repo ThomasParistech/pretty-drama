@@ -73,6 +73,15 @@ export function translator(locale) {
   return bound;
 }
 
+// Date of an upload, null on an unreadable timestamp rather than "Invalid Date", which
+// the callers word themselves. Here and not in data.js: that module is under
+// `node --test` and must not import this one.
+export function formatWhen(iso) {
+  const then = new Date(iso);
+  if (Number.isNaN(then.getTime())) return null;
+  return fmt.dateTime(then);
+}
+
 // A real href, so LocaleSwitch is two plain links: no handler, no state, and the
 // store is written by the normal page-load path above.
 export function localeHref(locale) {

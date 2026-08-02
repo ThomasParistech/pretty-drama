@@ -4,7 +4,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { _coalesceKeyForTests, historyReducer, initHistory } from "./history.js";
+import { coalesceKey, historyReducer, initHistory } from "./history.js";
 
 const PLAY = {
   title: "Le Misanthrope",
@@ -142,7 +142,7 @@ test("no coalescing key identifies its object by a RANK", () => {
     { type: "DELETE_ACT", actIndex: 0 },
   ];
   for (const action of suspects) {
-    const key = _coalesceKeyForTests(action);
+    const key = coalesceKey(action);
     if (key === null) continue;
     for (const field of ["actIndex", "sceneIndex", "from", "to"]) {
       if (action[field] === undefined) continue;

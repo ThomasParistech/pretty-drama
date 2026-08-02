@@ -3,12 +3,8 @@
 // PURE: `t` and `fmt` are passed in (like `actLabel`), so it stays under `node --test`
 // and never imports locale.js.
 
-export function share(value, total) {
-  if (!total) return 0;
-  return (value * 100) / total;
-}
-
 export function formatShare(value, total, t, fmt) {
+  // `total ?` and not a bare division: an empty scope must read "0,0 %", never "NaN %".
   const ratio = total ? value / total : 0;
   // A non-zero share NEVER shows "0.0%": a zero facing a count of 1 reads as a bug.
   // The threshold is formatted, not hard-coded, so the catalogue need not know the figure.

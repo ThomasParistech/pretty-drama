@@ -49,8 +49,10 @@ data/history.json           journal for uploads no play claimed
   extension ignored, because the coordinator commits through GitHub's editor where both
   are editable fields. Content = title, `TITLE_SEPARATOR` (`---`), then a note the Action
   never reads. `_new-play` is outside `SAFE_PLAY_ID` (leading `_`), so it cannot collide.
-  Deleting a play needs a commit, so it is done by hand on GitHub. Migrating a fork:
-  `python3 scripts/migrate_to_plays.py <id>`.
+  Deleting a play needs a commit, so it is done by hand on GitHub. The one-shot
+  `scripts/migrate_to_plays.py`, which moved a v1 fork's single play (root `data/` and
+  `clips/`) into `plays/<id>/`, is gone: that layout is not in this repo any more, and
+  `git log` still has the script for a fork that never ran it.
 - **`plays/dev/` is the test bench**, the ONLY play missing from `data/plays.json`
   (`listed_play_ids`), reachable only by typing `plays/dev/rehearsal.html`. Otherwise an
   ordinary play: same pipeline, deployed, own upload zone. It exists so a page can be

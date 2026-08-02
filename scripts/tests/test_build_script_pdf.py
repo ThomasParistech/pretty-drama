@@ -222,7 +222,7 @@ class TestRenderTexTolerance(unittest.TestCase):
 class TestCompile(unittest.TestCase):
     def test_compile_failure_never_raises(self):
         # A raise here would sink the deploy, and build.yml has no error channel.
-        if shutil.which("pdflatex") is None and shutil.which("tectonic") is None:
+        if shutil.which("pdflatex") is None:
             self.skipTest("no LaTeX engine installed")
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "nope.pdf"
@@ -233,7 +233,7 @@ class TestCompile(unittest.TestCase):
             self.assertFalse(out.exists())
 
     def test_real_script_compiles(self):
-        if shutil.which("pdflatex") is None and shutil.which("tectonic") is None:
+        if shutil.which("pdflatex") is None:
             self.skipTest("no LaTeX engine installed")
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "script.pdf"
@@ -248,7 +248,7 @@ class TestCompile(unittest.TestCase):
                 {"id": "l1", "characterId": ANNIE, "text": r"50 % de #1 & $3 _ {a} ~ ^ \dangereux"},
             ]}]}],
         }
-        if shutil.which("pdflatex") is None and shutil.which("tectonic") is None:
+        if shutil.which("pdflatex") is None:
             self.skipTest("no LaTeX engine installed")
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "script.pdf"
@@ -263,7 +263,7 @@ class TestCompile(unittest.TestCase):
                 {"id": "l1", "characterId": ANNIE, "text": "Premier bout.\n\nSecond bout."},
             ]}]}],
         }
-        if shutil.which("pdflatex") is None and shutil.which("tectonic") is None:
+        if shutil.which("pdflatex") is None:
             self.skipTest("no LaTeX engine installed")
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "script.pdf"

@@ -174,20 +174,12 @@ function replaceFolded(text, folded, foldedQuery, wholeWord, replacement) {
   return out === text ? text : out;
 }
 
-// Replaces every match in ONE text, returning it identically when nothing changes.
+// One entry per line ACTUALLY changed. Its own pass over the play and not the displayed
+// matches: a display ceiling must never decide what gets written.
 // Accepted: an insensitive replacement REWRITES the typography (a curly apostrophe
 // becomes straight, "eleve" -> "ELEVE" loses the accents of "élève"). VSCode does the
 // same, and replaying the source's case would guess for the user. Tested, so do not
 // "fix" it.
-export function replaceInText(text, query, options = {}, replacement = "") {
-  const { caseSensitive = false, wholeWord = false } = options;
-  const foldedQuery = foldText(query, caseSensitive);
-  if (foldedQuery.length === 0) return text;
-  return replaceFolded(text, foldText(text, caseSensitive), foldedQuery, wholeWord, replacement);
-}
-
-// One entry per line ACTUALLY changed. Its own pass over the play and not the displayed
-// matches: a display ceiling must never decide what gets written.
 export function buildReplaceEdits(script, query, options = {}, replacement = "") {
   const { caseSensitive = false, wholeWord = false } = options;
   const foldedQuery = foldText(query, caseSensitive);

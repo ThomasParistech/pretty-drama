@@ -20,8 +20,10 @@ from pathlib import Path
 from common import is_play_id, play_data_dir, play_ids
 from build_manifest import sanitize_script
 
-# pdflatex first: it is the CI's engine, so a local PDF matches the published one.
-ENGINES = ("pdflatex", "tectonic")
+# pdflatex and nothing else: it is what uploads.yml installs (distro TeX), so a local
+# PDF matches the published one. A second engine here would typeset the same play
+# differently depending on which machine ran it.
+ENGINE = "pdflatex"
 
 # Characters that are code for LaTeX. ONE re.sub pass, never a str.replace per
 # character: replacing "\" first would reintroduce backslashes the rest escapes again.
@@ -174,19 +176,19 @@ def render_tex(script: dict) -> str:
     # A one-act play does not show its act title: it distinguishes nothing.
     show_acts = len(script["acts"]) > 1
     for act_index, act in enumerate(script["acts"]):
-        act_title = words["act"] % roman_numeral(act_index + 1)
         # \clearpage and not \newpage, which would only move to the next column.
         if act_index > 0:
             out.append(r"\clearpage")
-        if show_acts and act_title:
+        # A label is always a word plus a numeral, so it is never empty: no guard here.
+        if show_acts:
+            act_title = words["act"] % roman_numeral(act_index + 1)
             out.append(r"\actheading{" + latex_escape(act_title) + "}")
 
         for scene_index, scene in enumerate(act["scenes"]):
-            scene_title = words["scene"] % (scene_index + 1)
             if scene_index > 0:
                 out.append(r"\hlinecol")
-            if scene_title:
-                out.append(r"\sceneheading{" + latex_escape(scene_title) + "}")
+            scene_title = words["scene"] % (scene_index + 1)
+            out.append(r"\sceneheading{" + latex_escape(scene_title) + "}")
 
             for line in scene["lines"]:
                 text = line["text"].strip()
@@ -206,21 +208,10 @@ def render_tex(script: dict) -> str:
     return "\n".join(out) + "\n"
 
 
-def _engine():
-    for name in ENGINES:
-        if shutil.which(name):
-            return name
-    return None
-
-
 def compile_pdf(tex: str, out_path: Path) -> bool:
     """Compile the .tex to out_path. Returns False without raising on any failure."""
-    engine = _engine()
-    if engine is None:
-        print(
-            "no LaTeX engine found (" + " or ".join(ENGINES) + "): PDF not generated",
-            file=sys.stderr,
-        )
+    if shutil.which(ENGINE) is None:
+        print(f"{ENGINE} not found: PDF not generated", file=sys.stderr)
         return False
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -228,17 +219,14 @@ def compile_pdf(tex: str, out_path: Path) -> bool:
         source = tmp_dir / "script.tex"
         source.write_text(tex, encoding="utf-8")
 
-        if engine == "tectonic":
-            cmd = [engine, "--outdir", str(tmp_dir), str(source)]
-        else:
-            cmd = [
-                engine,
-                "-interaction=nonstopmode",
-                "-halt-on-error",
-                "-output-directory",
-                str(tmp_dir),
-                str(source),
-            ]
+        cmd = [
+            ENGINE,
+            "-interaction=nonstopmode",
+            "-halt-on-error",
+            "-output-directory",
+            str(tmp_dir),
+            str(source),
+        ]
 
         try:
             done = subprocess.run(
@@ -253,12 +241,12 @@ def compile_pdf(tex: str, out_path: Path) -> bool:
             )
         # Broad on purpose: this module cannot fail the deployment.
         except Exception as exc:  # noqa: BLE001
-            print(f"{engine} could not be launched ({exc}): PDF not generated", file=sys.stderr)
+            print(f"{ENGINE} could not be launched ({exc}): PDF not generated", file=sys.stderr)
             return False
 
         produced = tmp_dir / "script.pdf"
         if done.returncode != 0 or not produced.exists():
-            print(f"{engine} failed: PDF not generated", file=sys.stderr)
+            print(f"{ENGINE} failed: PDF not generated", file=sys.stderr)
             # The last lines hold the error; the rest is package-loading noise.
             for row in (done.stdout or "").strip().splitlines()[-25:]:
                 print("  " + row, file=sys.stderr)

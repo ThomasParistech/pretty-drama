@@ -10,7 +10,6 @@ import {
   buildReplaceEdits,
   foldText,
   matchExcerpt,
-  replaceInText,
   replaceOneEdit,
   searchScript,
 } from "./search.js";
@@ -220,24 +219,31 @@ test("the excerpt flattens line breaks", () => {
 
 // ------------------------------------------------------------ replacement
 
+// Rewriting ONE text, through the only door there is: a one-line play. No edit means
+// the line was returned untouched, which is exactly what `buildReplaceEdits` omits.
+const replaced = (text, query, options = {}, replacement = "") => {
+  const edits = buildReplaceEdits(one(text), query, options, replacement);
+  return edits.length === 0 ? text : edits[0].text;
+};
+
 test("a replacement that contains the query does not run away", () => {
-  assert.equal(replaceInText("aaa", "a", {}, "aa"), "aaaaaa");
+  assert.equal(replaced("aaa", "a", {}, "aa"), "aaaaaa");
 });
 
 test("replacing with nothing deletes", () => {
-  assert.equal(replaceInText("un mot de trop", "de trop", {}, ""), "un mot ");
+  assert.equal(replaced("un mot de trop", "de trop", {}, ""), "un mot ");
 });
 
 test("a text with no match is returned unchanged", () => {
   const texte = "Rien à voir ici.";
-  assert.equal(replaceInText(texte, "élève", {}, "X"), texte);
-  assert.equal(replaceInText(texte, "", {}, "X"), texte);
+  assert.equal(replaced(texte, "élève", {}, "X"), texte);
+  assert.equal(replaced(texte, "", {}, "X"), texte);
 });
 
 test("an insensitive replacement rewrites the typography of the text found", () => {
   // Intended: an insensitive replacement rewrites the typography rather than guess.
-  assert.equal(replaceInText("L’élève", "eleve", {}, "ELEVE"), "L’ELEVE");
-  assert.equal(replaceInText("L’élève", "l'eleve", {}, "L'élève"), "L'élève");
+  assert.equal(replaced("L’élève", "eleve", {}, "ELEVE"), "L’ELEVE");
+  assert.equal(replaced("L’élève", "l'eleve", {}, "L'élève"), "L'élève");
 });
 
 test("there are as many replacements as matches counted", () => {

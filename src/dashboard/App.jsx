@@ -5,12 +5,11 @@ import PageState from "../shared/PageState.jsx";
 import UploadTile from "../shared/UploadTile.jsx";
 import useManifest from "../shared/useManifest.js";
 import { actLabel, sceneLabel } from "../shared/structureLabels.js";
-import { fmt, t } from "../shared/locale.js";
+import { fmt, formatWhen, t } from "../shared/locale.js";
 import { pageLabelKey } from "../shared/pages.js";
 import T from "../shared/T.jsx";
 import { CheckIcon, CrossIcon, DownloadIcon, WarnIcon } from "../shared/icons.jsx";
 import { githubUploadUrl, slugify } from "../shared/data.js";
-import formatWhen from "../shared/formatWhen.js";
 import { isPlayId } from "../shared/plays.js";
 import "./dashboard.css";
 

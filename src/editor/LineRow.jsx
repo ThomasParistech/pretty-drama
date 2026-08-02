@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { dragStyle } from "./dragStyle.js";
 import { characterColor, characterInk } from "../shared/characterColors.js";
 import ConfirmModal from "../shared/ConfirmModal.jsx";
 import { excerpt } from "../shared/data.js";
@@ -63,11 +63,7 @@ export default React.memo(function LineRow({
   // the palette is made for surfaces and its olive measures 1.87:1 on white.
   const color = characterColor(characters, line.characterId);
   const ink = color === null ? null : characterInk(color);
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.6 : 1,
-  };
+  const style = dragStyle(transform, transition, isDragging);
 
   const known = color != null;
 

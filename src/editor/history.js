@@ -10,7 +10,8 @@ const HISTORY_LIMIT = 100;
 // undo = one character. Closed by any other action, by undo/redo, or by HISTORY_BREAK.
 // Every key must identify its object by a STABLE value (a line id), never by a rank:
 // two different objects must not land in one undo step, and that is tested.
-function coalesceKey(action) {
+// Exported for the test that locks down the invariant above.
+export function coalesceKey(action) {
   switch (action.type) {
     case "EDIT_TEXT":
       return `EDIT_TEXT:${action.lineId}`;
@@ -20,9 +21,6 @@ function coalesceKey(action) {
       return null;
   }
 }
-
-// Exported for the test that locks down the invariant above.
-export { coalesceKey as _coalesceKeyForTests };
 
 // DERIVED from `EMPTY_SCRIPT`, never copied out: a fifth field joins the comparison
 // below on its own instead of being silently ignored.

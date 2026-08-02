@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import HomeFooter from "../shared/HomeFooter.jsx";
 import HomeHero from "../shared/HomeHero.jsx";
-import formatWhen from "../shared/formatWhen.js";
 import { HttpError, fetchPlaysIndex, fetchUnroutedHistory } from "../shared/data.js";
 import { WarnIcon } from "../shared/icons.jsx";
-import { fmt, t } from "../shared/locale.js";
+import { fmt, formatWhen, t } from "../shared/locale.js";
 import { playHref } from "../shared/pages.js";
 import { isPlayId } from "../shared/plays.js";
 import { formatShare } from "../shared/share.js";
