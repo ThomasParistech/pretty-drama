@@ -31,15 +31,7 @@ Suivez les étapes de la vidéo ci-dessous:
 
 </div>
 
-
-<div align="center">
-
-<!-- A LINK to the .mp4, never a `<video>`: GitHub's sanitizer keeps the tag but does not
-     rewrite a relative `src`, so the player stays empty. The blob page of an mp4 plays it,
-     and the path stays repo-relative, so a fork serves its own copy. -->
-[▶ Voir la vidéo de mise en place](design/setup.mp4)
-
-</div>
+https://github.com/user-attachments/assets/87185624-02a7-4d0f-bb85-6c8752777d93
 
 # Utilisation
 ## Page du responsable
@@ -48,11 +40,11 @@ Félicitations, le site est en ligne!
 En tant que responsable du projet, vous pouvez également accéder à plus de fonctionnalités sur le site en rajoutant `/respo` à la page d'accueil. Pour retrouvez plus facilement ces deux liens, pensez à les ajouter à vos favoris.
 
 
-<div align="center">
 
-[▶ Voir la vidéo des pages du responsable](design/respo_pages.mp4)
 
-</div>
+https://github.com/user-attachments/assets/469964b7-4fd0-4b01-9db4-08bd1b4841bb
+
+
 
 Chaque page du site a son sceau, celui que vous retrouverez en haut de l'écran.
 Les trois premières sont pour toute la troupe, les deux dernières pour le responsable.
@@ -61,51 +53,51 @@ Les trois premières sont pour toute la troupe, les deux dernières pour le resp
 
 Répétez à l'italienne, avec les vraies voix de la troupe.
 
-<div align="center">
 
-[▶ Voir la vidéo de la répétition](design/demo_rehearsal.mp4)
 
-</div>
+https://github.com/user-attachments/assets/9802ed65-1e0f-46ce-8093-9f5b0d4b056f
+
+
 
 ## <img src="design/seal-recorder.svg" width="26" align="top" alt=""> Enregistrement
 
 Enregistrez vos répliques, puis envoyez le fichier au responsable.
 
-<div align="center">
 
-[▶ Voir la vidéo de l'enregistrement](design/demo_recording.mp4)
 
-</div>
+https://github.com/user-attachments/assets/88a556bc-82e0-4482-975a-f5cbf1186c67
+
+
 
 ## <img src="design/seal-stats.svg" width="26" align="top" alt=""> Répartition
 
 Voyez comment la parole se répartit entre les personnages, en mots et en répliques, scène par scène.
 
-<div align="center">
 
-[▶ Voir la vidéo de la répartition](design/demo_stats.mp4)
 
-</div>
+https://github.com/user-attachments/assets/d07271bc-ea3c-410e-b523-b2a75802efec
+
+
 
 ## <img src="design/seal-editor.svg" width="26" align="top" alt=""> Édition
 
 Éditez la pièce : personnages, actes, scènes et répliques.
 
-<div align="center">
 
-[▶ Voir la vidéo de l'édition](design/demo_editor.mp4)
 
-</div>
+https://github.com/user-attachments/assets/3fd14251-cf58-4256-8c03-f5820c73c19b
+
+
 
 ## <img src="design/seal-dashboard.svg" width="26" align="top" alt=""> Avancement
 
 Suivez l'avancement des enregistrements et déposez les fichiers de voix que vous recevez.
 
-<div align="center">
 
-[▶ Voir la vidéo de l'avancement](design/demo_dashboard.mp4)
 
-</div>
+https://github.com/user-attachments/assets/5464d3fb-e299-484d-9853-d8835bad9902
+
+
 
 # Licence
 
