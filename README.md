@@ -14,13 +14,14 @@ seule, et vous dites vos répliques au bon moment.
 Suivez les étapes de la vidéo ci-dessous:
 
 > [!NOTE]
-> Pas encore de compte GitHub ? [Créez-en un](https://github.com/signup) avant de commencer.
+> Pas encore de compte GitHub ? [Créez-en un](https://github.com/signup) avant de commencer. Le bouton vert **"Use this template"** mentionné au début de la vidéo ne sera disponible que lorsque vous serez connecté avec votre compte GitHub.
 
 
 VIDEO
 
 
-> [!WARNING] Étape obligatoire avant de créer ma 1ère pièce
+> [!WARNING]
+> **Étape obligatoire avant de créer ma 1ère pièce**
 >
 > Comme indiqué dans la vidéo, il est primordial de sélectionner l'option "GitHub Actions" sur la page [**Settings → Pages**](../../settings/pages) pour que le site prenne vie. Sans cette étape, le bouton de création de la 1ère place échouera.
 
