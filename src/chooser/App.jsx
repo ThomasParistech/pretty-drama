@@ -12,57 +12,23 @@ import NewPlay, { NewPlayTile } from "./NewPlay.jsx";
 import "../home/home.css";
 import "./chooser.css";
 
-// The two ROOT pages of the site, the ones living above the plays: the troupe's
-// chooser (`index.html`) and the coordinator's play management page
-// (`respo.html`). Same component, two sets of actions, just as the two home pages of
-// a play share theirs.
-//
-// They are the ENTRANCE to the site, so they carry the brand and not a page seal:
-// their hero is the one of the home pages (the two masks, the word "PrettyDrama"),
-// and that is also why they reuse `home.css` instead of having their own styling.
-// What belongs to them alone is in `chooser.css`: the play card, the creation
-// gesture, the record of uploads that belong to no play.
-//
-// **No link leads from the chooser to the management page**: this is the same
-// separation of addresses as the one between a play's two home pages, the troupe's
-// address must not open onto the coordinator's tools. `respo.html` is bookmarked.
-//
-// Once a play is chosen, one is IN the play and the rest no longer exists: its seven
-// pages live in its folder, only read its data, and the only path out of it is the
-// "change play" link at the foot of its home page.
+// Both root pages. No link leads from the chooser to management, which is bookmarked.
 export default function App({ manage = false }) {
   const [plays, setPlays] = useState(null);
   const [error, setError] = useState(null);
   const [unrouted, setUnrouted] = useState([]);
-  // Closed until asked for: a company creates a play perhaps twice a year, and the
-  // subject of this page is the plays that exist. The state lives here and not in
-  // `NewPlay` because the gesture has two halves: the tile, which belongs to the grid,
-  // and the box it opens, which is a modal (`NewPlay` renders nothing until then).
+  // Lives here and not in NewPlay: the gesture is a tile in the grid plus a modal.
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     fetchPlaysIndex()
-      // A malformed list reads as "no play": it is a derived file, and there is
-      // nothing better to make of it.
-      //
-      // An entry whose id is not a valid one is dropped, and the id is validated
-      // HERE, once, before anything builds a path out of it (`playHref`), which is the
-      // project's rule everywhere (cf. `UploadLinks` in dashboard/App.jsx, and
-      // `play_dir` on the Python side). `plays.json` is derived, but it is committed,
-      // hence hand-editable in the repository like every other file the pages read.
-      // Dropping such an entry loses nothing: `play_ids()` ignores a folder whose
-      // name is not a valid id, so the play it claims has no folder and no page to
-      // link to.
+      // Validate the id before `playHref` builds a path: plays.json is committed, hence
+      // hand-editable. A malformed list reads as "no play".
       .then((index) =>
         setPlays(Array.isArray(index?.plays) ? index.plays.filter((p) => isPlayId(p?.id)) : [])
       )
       .catch((err) => {
-        // The distinction the whole site makes (cf. `HttpError` in data.js): a 404
-        // is a LEGITIMATE emptiness (a freshly forked repo, the index has not been
-        // built yet), and the page that creates the first play must open on it;
-        // everything else is a BREAKDOWN, and announcing it as "no play" would lie
-        // to the troupe on the site's entrance page, telling it that its plays have
-        // vanished and leaving it no path.
+        // 404 is legitimate emptiness (fresh fork); anything else is a breakdown.
         if (err instanceof HttpError && err.status === 404) {
           setPlays([]);
           return;
@@ -72,18 +38,14 @@ export default function App({ manage = false }) {
   }, []);
 
   useEffect(() => {
-    // The record of uploads without a play only concerns the coordinator: the troupe has
-    // no business reading upload accidents, and has nothing to answer them with.
+    // Upload accidents concern the coordinator only.
     if (!manage) return;
     fetchUnroutedHistory()
       .then((history) => setUnrouted(Array.isArray(history?.runs) ? history.runs : []))
       .catch(() => setUnrouted([]));
   }, [manage]);
 
-  // Sorted by TITLE and in the reader's language, whereas `data/plays.json` is
-  // ordered by id: a machine file has no business knowing a locale (same rule as the
-  // manifest's ranks, which the front end puts into words), and comparing accented
-  // titles requires one.
+  // By title in the reader's language; plays.json is ordered by id, knowing no locale.
   const sorted =
     plays === null
       ? null
@@ -97,19 +59,11 @@ export default function App({ manage = false }) {
         <h1 className="chooser-heading">{t(manage ? "manage.heading" : "chooser.heading")}</h1>
       </HomeHero>
 
-      {/* `main` holds ALL the content, the grid of plays as well as the two blocks that
-          belong to management, and the grid is a `div` inside it. The two blocks used to
-          sit outside the landmark, which put two of the management page's three blocks,
-          including the one that creates a play, out of reach of a landmark walk and of a
-          "skip to content" jump. `.chooser-main` is a flex column and not a bare block
-          so that the vertical rhythm does not change: as direct children of `.home`
-          these blocks were flex items, whose margins do not collapse. */}
+      {/* Everything inside `main` so a landmark walk reaches the management blocks. Flex
+          column, not a bare block: as flex items their margins do not collapse. */}
       <main className="chooser-main">
         <div className="home-grid">
-          {/* Three states, and nothing while LOADING: the list arrives in one round
-              trip on a file of a few lines, and a waiting screen that is replaced right
-              away reads as a flicker. Emptiness and breakdown, on the other hand, are
-              said out loud, and are never conflated. */}
+          {/* Nothing while loading; emptiness and breakdown are never conflated. */}
           {error ? (
             <p className="chooser-error">
               <WarnIcon />
@@ -123,26 +77,15 @@ export default function App({ manage = false }) {
               sorted.map((play) => <PlayCard key={play.id} play={play} manage={manage} />)
             ))
           )}
-          {/* The creation gesture ends the row of the plays, as the empty slot after
-              them, and it opens a modal (see `NewPlayTile`). It waits for the list, like
-              the box it opens and for the same reason: the uniqueness check has nothing
-              to compare against without it. In the breakdown case there is no list at
-              all, so it stays away rather than offer a gesture whose refusals it cannot
-              compute. */}
+          {/* Ends the grid as the empty slot after the plays. Waits for the list: the id
+              uniqueness check has nothing to compare against without it. */}
           {manage && !error && plays !== null && <NewPlayTile onOpen={() => setCreating(true)} />}
         </div>
 
         {manage && (
           <>
-            {/* Creating a play requires knowing which ones already exist: without the
-                list, the id uniqueness check would say nothing and the coordinator could
-                fabricate the duplicate of a play they cannot see. The upload would be
-                refused by `validate_script`'s guard (an empty play never replaces a
-                play that has lines), so nothing would be erased, but we do not offer a
-                gesture we know can fail.
-                The record of uploads without a play, on the other hand, does not depend
-                on the list, and it stays displayed: it may even be what explains the
-                breakdown. */}
+            {/* Creation needs the list (id uniqueness); the unrouted record does not, and
+                may even be what explains the breakdown. */}
             {creating && plays !== null && (
               <NewPlay taken={plays} onClose={() => setCreating(false)} />
             )}
@@ -151,33 +94,21 @@ export default function App({ manage = false }) {
         )}
       </main>
 
-      {/* Nothing above the sentence, unlike a play's home page: its foot carries the
-          "change play" link, and these two pages are where it leads. */}
       <HomeFooter />
     </div>
   );
 }
 
-// `Intl.Collator` and not `localeCompare` on every comparison: the comparator is
-// built once for the whole sort, where the method rebuilds one per call.
+// One collator for the whole sort; localeCompare rebuilds one per call.
 const collator = new Intl.Collator(undefined, { sensitivity: "base" });
 
-// What a card says about its play. What the play IS, and nothing about the work in
-// progress: how many roles it hands out, how long it is. An actor choosing a play asks
-// "is this the one, and how big is my share of it", never "how far along are the
-// recordings", which the play's own Progress page measures by character and by scene.
-//
-// The management card adds ONE item, the recorded share: it is the coordinator's own
-// question, the one they open this page to answer over all the plays at once.
-//
-// One row of items which WRAPS, told apart by space alone: see `chooser.css`, where a
-// drawn separator was tried and removed, a wrapped row always leaving it dangling.
+// What the play IS, plus the recorded share on management. Space alone separates them: a
+// drawn separator dangles when the row wraps.
 function PlayStats({ play, manage }) {
   const total = Number(play.lines) || 0;
   const recorded = Number(play.recorded) || 0;
   if (total === 0) {
-    // A play created but not yet written: "0 personnages 0 mots" describes nothing, and
-    // a "0 %" would read as being behind where it is a beginning.
+    // "0 personnages 0 mots" describes nothing, and "0 %" reads as behind, not as a start.
     return <span className="chooser-card-empty">{t("chooser.emptyPlay")}</span>;
   }
   return (
@@ -185,28 +116,16 @@ function PlayStats({ play, manage }) {
       <span>{t("chooser.characters", { count: Number(play.characters) || 0 })}</span>
       <span>{t("chooser.words", { count: Number(play.words) || 0 })}</span>
       {manage && (
-        // `formatShare` and not `fmt.percent`: it is the same measure as the Speaking
-        // share page's legend, hence the same rounding rule, and it carries a
-        // threshold that matters here too. On a play of more than two thousand lines
-        // of which only one is recorded, a bare percentage shows "0.0 %", which reads
-        // as a bug; below a tenth of a point we say the threshold ("< 0.1 %") and not
-        // the value.
+        // formatShare, not fmt.percent: same rounding as the Speaking share legend, and it
+        // says "< 0.1 %" where a bare percentage shows a "0.0 %" that reads as a bug.
         <span>{t("manage.recorded", { share: formatShare(recorded, total, t, fmt) })}</span>
       )}
     </span>
   );
 }
 
-// A play's card, the SAME on both root pages down to the one extra figure: the two
-// pages list the same objects, and a coordinator who also acts must recognise a play
-// from one page to the other. Only the destination differs, each page opening the
-// home page that belongs to it.
-//
-// The whole card is the link, like the page cards of the home pages: it has one
-// destination and it is opened with a finger. The management card used to be a `div`
-// carrying three links (the play, its upload area, its folder on GitHub), a link
-// inside a link not being valid HTML; the two service links are gone, the upload
-// gesture living on the play's Progress page, next to the log that reports it.
+// Same card on both root pages, only the destination differs. The whole card is the
+// link, so it can never hold a second one.
 function PlayCard({ play, manage }) {
   return (
     <a
@@ -219,27 +138,11 @@ function PlayCard({ play, manage }) {
   );
 }
 
-// The uploads no play has claimed: a file dropped at the root of `uploads/` without
-// saying which play it belongs to, an upload folder whose name is not a valid id.
-//
-// **Displayed only when it carries something**, and that is the difference with a
-// play's journal, which stays visible even when empty so as to make itself known
-// before the first upload. This one is not a channel, it is a record of ANOMALIES:
-// the normal channel is each play's journal, in its Progress page. A permanently
-// empty card on the coordinator's entrance page would announce a problem where there is
-// none.
-//
-// Nor does it take up the journal's four-column table (date, status, type, detail): a
-// file no play claims has by definition succeeded at nothing, so the status column
-// would only say one thing, and its type teaches nothing since the reason explains it
-// in plain words. What remains is the name and the reason, which is what one comes
-// here to read.
+// Shown only when non-empty, unlike a play's journal: a record of anomalies, not a channel,
+// so an always-empty card would announce a non-problem.
 function Unrouted({ runs }) {
-  // Same defensive guard as `filesOf` (src/dashboard/App.jsx) on the file name: this
-  // journal too is hand-editable in the repo. We do not reuse `filesOf` for all that,
-  // and it is not an oversight: it also normalises the TYPE and the clip count in
-  // order to build a four-column row, of which this record displays none (cf. the
-  // comment above).
+  // `filesOf` (dashboard/App.jsx) is deliberately not reused: it also normalises type and
+  // clip count for a four-column row this record does not draw.
   const files = runs.flatMap((run) =>
     (Array.isArray(run?.files) ? run.files : [])
       .filter((file) => file && typeof file.file === "string")
@@ -255,9 +158,8 @@ function Unrouted({ runs }) {
           <li key={`${file.at}-${i}`}>
             <span className="chooser-unrouted-file">{file.file}</span>
             <span className="chooser-unrouted-why">{file.error}</span>
-            {/* Explicit fallback: `formatWhen` returns null on purpose on an
-                unreadable timestamp, and without this the date vanished silently.
-                Same key as a play's journal. */}
+            {/* formatWhen returns null on an unreadable timestamp; without the fallback
+                the date vanished silently. */}
             <span className="chooser-unrouted-when">
               {formatWhen(file.at) || t("dashboard.journal.unknownDate")}
             </span>

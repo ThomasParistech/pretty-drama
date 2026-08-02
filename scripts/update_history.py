@@ -1,29 +1,8 @@
 """Logs this run's uploads into the journals: one per play, plus the root one.
 
-The coordinator reads neither the CI logs nor the Issues tab: their only feedback on "did
-my upload go through?" is the journal displayed on screen. That journal is therefore the
-project's error channel, not a mere history: a rejected file has nowhere else to be
-reported.
-
-**One journal per play** (`plays/<id>/data/history.json`, rendered by that play's
-Dashboard): a play ignores the other plays' uploads, as it ignores their lines and
-clips. **Plus a root journal** (`data/history.json`, rendered by the play management
-page) for whatever no play claims: a file dropped at the root of `uploads/` with no
-readable id, an upload zone whose name is not a valid id. Without it, those files would
-vanish without a word, which is exactly what an error channel must never do.
-
-Input: uploads_result.json (ephemeral, written by process_uploads.py), the outcome of
-every file uploaded in this run, already keyed by play. So the journal logs ONLY
-uploads: the uploads.yml workflow is what writes it, never the one that rebuilds the
-site.
-
-Nothing is logged for a failed run: it does not commit, so it cannot write anything
-here. That is accepted, and is even the failure detector: the last entry's date stops
-advancing.
-
-A play's journal is read by build_manifest.py, which copies it into the play's manifest
-(the only file its pages read); the root one is read by build_plays_index.py, and the
-management page serves it from the index.
+The journal is the project's only error channel; the root one takes what no play claims.
+Input is uploads_result.json, so only uploads.yml ever writes here. A failed run commits
+nothing, so nothing is logged: the last entry's date stops moving.
 """
 
 from __future__ import annotations
@@ -36,16 +15,13 @@ from common import REPO_ROOT, is_play_id, load_json, play_data_dir, utc_stamp, w
 ROOT_HISTORY_PATH = REPO_ROOT / "data" / "history.json"
 RESULT_PATH = REPO_ROOT / "uploads_result.json"
 
-# The journal is committed on every upload: it is capped, or it would grow without end.
-# Around thirty entries covers far more than what the coordinator consults.
+# Capped: the journal is committed on every upload and would otherwise grow forever.
 MAX_RUNS = 30
 
 
 def add_run(history: dict, files: list, at: str) -> dict:
-    """Journal plus this upload's result gives a new journal (pure function).
-
-    Entries are ordered newest to oldest: that is the display order, and the cap then
-    reads as "keep the last MAX_RUNS"."""
+    """Journal plus this upload's result gives a new journal (pure). Newest first,
+    which is the display order, so the cap reads as "keep the last MAX_RUNS"."""
     runs = history.get("runs")
     if not isinstance(runs, list):
         runs = []
@@ -68,18 +44,13 @@ def main() -> None:
     unrouted = result.get("unrouted")
     unrouted = unrouted if isinstance(unrouted, list) else []
 
-    # One timestamp for the whole run: two files uploaded together are a single
-    # upload, even when they concern two plays.
+    # One timestamp for the whole run: files uploaded together are a single upload.
     at = utc_stamp()
     written = 0
     for play_id, files in sorted(by_play.items()):
         if not isinstance(files, list) or not files:
             continue
-        # Validated BEFORE being used to build a path, as everywhere else in the
-        # project. `uploads_result.json` is written by the previous step of the same
-        # job, so the value is safe in practice; the rule does not relax for that.
-        # It is the rule that makes the concatenation safe, not a piece of reasoning
-        # about today's caller.
+        # Validated before building a path, however trusted the caller.
         if not is_play_id(play_id):
             print(f"Journal: invalid play id, ignored ({play_id!r})", file=sys.stderr)
             continue

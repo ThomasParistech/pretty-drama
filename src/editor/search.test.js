@@ -1,15 +1,6 @@
-// Tests for the editor's search and replace (search.js).
-//
-// This is pure logic, with no React and no DOM: `node --test` runs it as is. And
-// it is the most useful file of the lot, because everything that is hard in this
-// feature is invisible to the eye: an offset that slips by one when the word
-// carries an accent, a match lost next to a rejected match, a replacement that
-// contains the query and doubles the text, a displayed count that does not match
-// what will be rewritten.
-//
-// The invariant everything else depends on is the first test: folding preserves
-// length, so an index in the folded text is an index in the raw text. It is
-// checked against a TABLE and not against one example.
+// Everything hard here is invisible to the eye: an offset slipping on an accent, a
+// match lost next to a rejected one, a replacement containing the query.
+// The invariant everything rests on is the first test: folding preserves length.
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -24,9 +15,8 @@ import {
   searchScript,
 } from "./search.js";
 
-// Two acts, on purpose: reading order and grouping by scene cannot be checked on
-// a single act. The two spellings of the apostrophe live side by side, as in the
-// real play.
+// Two acts: reading order and grouping cannot be checked on one. Both spellings of
+// the apostrophe, as in the real play.
 const play = () => ({
   title: "Le Misanthrope",
   characters: [
@@ -60,8 +50,7 @@ const play = () => ({
   ],
 });
 
-// A play with a single line: boundary cases read better on the text alone than
-// drowned in an extract from Le Misanthrope.
+// One line, so boundary cases read on the text alone.
 const one = (text) => ({
   title: "Essai",
   characters: [],
@@ -75,9 +64,8 @@ const countIn = (script, query, options) => searchScript(script, query, options)
 // --------------------------------------------------------------- folding
 
 test("folding preserves length, character by character", () => {
-  // Each of these strings breaks a naive assumption: a lowercase form that grows
-  // (İ), a letter with no canonical decomposition (Æ, ß, ﬁ), a surrogate pair
-  // (emoji), an accent already separated from its letter, a curly apostrophe.
+  // Each breaks a naive assumption: a lowercase form that grows, a letter with no
+  // canonical decomposition, a surrogate pair, an accent already separated.
   const table = [
     "École",
     "Æsop",
@@ -105,8 +93,7 @@ test("a search without accents finds the accented word, at the offsets of the RA
   const { matches } = searchScript(one("Cet élève m'écoute."), "eleve");
   assert.equal(matches.length, 1);
   const m = matches[0];
-  // The real test is not "there is a match" but "its offsets cut out the right
-  // piece of the original text".
+  // The real test is that the offsets cut the right piece of the ORIGINAL text.
   assert.equal(m.text.slice(m.start, m.end), "élève");
 });
 
@@ -124,9 +111,8 @@ test("the straight apostrophe and the curly one find each other", () => {
 });
 
 test("an accent in a separate code point gives no half match", () => {
-  // "école" written as e + U+0301: searching for "e" must not land on the "e"
-  // that carries the accent (replacing it would leave the mark orphaned). The
-  // final "e" of the word, on the other hand, is a legitimate match.
+  // "école" as e + U+0301: "e" must not match the accented one, or a replacement
+  // orphans the mark. The final "e" is legitimate.
   assert.deepEqual(startsOf(one("école"), "e"), [5]);
 });
 
@@ -137,8 +123,7 @@ test("by default case and accents are ignored", () => {
 });
 
 test("Match case still ignores accents", () => {
-  // There is no third checkbox: "eleve" goes on finding "élève", only the case
-  // becomes demanding.
+  // No third checkbox: "eleve" still finds "élève", only the case gets strict.
   assert.equal(countIn(play(), "eleve", { caseSensitive: true }), 5);
   assert.equal(countIn(play(), "Eleve", { caseSensitive: true }), 0);
 });
@@ -156,11 +141,8 @@ test("Whole word rejects a match glued to a word", () => {
 });
 
 test("Whole word does not lose a match overlapping a rejected match", () => {
-  // The trap of the advance step. "a a" has two overlapping matches, at indexes 1
-  // and 3: the first is rejected (glued to the "x"), the second is a whole word.
-  // After a REJECTED candidate one must therefore restart ONE step along;
-  // restarting by the length of the query would jump over the good one and the
-  // list would show nothing.
+  // The advance-step trap: after a REJECTED candidate one restarts ONE step along.
+  // By the query's length, the good match at index 3 is jumped over.
   assert.deepEqual(startsOf(one("xa a a"), "a a", { wholeWord: true }), [3]);
 });
 
@@ -174,7 +156,7 @@ test("an empty query finds nothing and does not loop", () => {
 });
 
 test("a query of a single space really is searched for", () => {
-  // It is not trimmed: searching for a double space is legitimate.
+  // Not trimmed: searching for a double space is legitimate.
   assert.deepEqual(startsOf(one("a b"), " "), [1]);
 });
 
@@ -191,9 +173,7 @@ test("matches come out in the play's reading order", () => {
   );
   const ordinals = matches.map((m) => m.lineOrdinal);
   assert.deepEqual(ordinals, [...ordinals].sort((a, b) => a - b));
-  // A line with no match makes no group, and a group carries the RANKS of its act
-  // and its scene: it is the panel that turns them into a label, in the play's
-  // language (structureLabels.js).
+  // No match, no group; a group carries RANKS and the panel makes the label.
   assert.deepEqual(
     groups.map((g) => [g.actIndex, g.sceneIndex, g.matches.length]),
     [
@@ -201,8 +181,7 @@ test("matches come out in the play's reading order", () => {
       [1, 0, 2],
     ]
   );
-  // The groups share the OBJECTS of the flat array: the panel and the navigation
-  // cannot disagree about the current match.
+  // Groups share the OBJECTS of the flat array, so panel and navigation agree.
   assert.equal(groups[0].matches[0], matches[0]);
 });
 
@@ -226,17 +205,14 @@ test("the excerpt frames the match, even in the middle of a long speech", () => 
   assert.equal(hit, "élève");
   assert.ok(before.startsWith("…"), "the excerpt says it cuts on the left");
   assert.ok(after.endsWith("…"), "the excerpt says it cuts on the right");
-  // Asymmetric, and only slightly so on the starting side: the row is two lines
-  // tall, and the match has to be part of them (cf. EXCERPT_BEFORE /
-  // EXCERPT_AFTER).
+  // Asymmetric: the row is two lines tall and the match must be inside them.
   assert.equal(before.length, EXCERPT_BEFORE + 1); // the "…" plus the radius
   assert.equal(after.length, EXCERPT_AFTER + 1);
   assert.ok(EXCERPT_BEFORE < EXCERPT_AFTER, "what follows the match has more room");
 });
 
 test("the excerpt flattens line breaks", () => {
-  // A line can contain some (Shift + Enter); the raw text is not touched for all
-  // that, it is the display that holds on one line.
+  // Shift+Enter puts them there; the raw text is untouched, only the display flattens.
   const m = searchScript(one("Un\ndeux élève"), "eleve").matches[0];
   const { before } = matchExcerpt(m);
   assert.equal(before, "Un deux ");
@@ -259,16 +235,13 @@ test("a text with no match is returned unchanged", () => {
 });
 
 test("an insensitive replacement rewrites the typography of the text found", () => {
-  // Intended and documented: replacing "eleve" with "ELEVE" does not give the
-  // accents back, and replacing across a curly apostrophe writes what was asked
-  // for. Guessing on the user's behalf would be worse.
+  // Intended: an insensitive replacement rewrites the typography rather than guess.
   assert.equal(replaceInText("L’élève", "eleve", {}, "ELEVE"), "L’ELEVE");
   assert.equal(replaceInText("L’élève", "l'eleve", {}, "L'élève"), "L'élève");
 });
 
 test("there are as many replacements as matches counted", () => {
-  // The invariant of the single iterator: what the panel announces is exactly
-  // what "Replace all" rewrites.
+  // The single-iterator invariant: what the panel announces is what gets rewritten.
   const script = play();
   const total = searchScript(script, "eleve").total;
   const edits = buildReplaceEdits(script, "eleve", {}, "X");

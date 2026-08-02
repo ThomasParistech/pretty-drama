@@ -1,16 +1,5 @@
-"""Contracts that two files must hold TOGETHER, checked by CI.
-
-The project has several of them, which used to live only in a "keep in sync"
-comment. A comment does not break CI: it gets read once, then goes stale in
-silence, and the breakage lands months later at a theatre company.
-
-These tests therefore do not check a behaviour but a CONSISTENCY between
-files, and they are deliberately written by reading the sources rather than by
-copying the expected values (copying would only move the problem elsewhere).
-
-They run with the rest of the Python suite, so in build.yml, so on every code
-push as well as after every deposit.
-"""
+"""Contracts two files must hold together, checked by READING both sources
+rather than by copying expected values."""
 
 from __future__ import annotations
 
@@ -42,22 +31,16 @@ from script_diff import script_changes
 SRC = REPO_ROOT / "src"
 THEME_CSS = SRC / "shared" / "theme.css"
 PAGES_JS = SRC / "shared" / "pages.js"
-# The templates for the seven pages of a play, instantiated in each play's
-# folder at build time (cf. vite.config.js).
+# Templates for a play's seven pages, instantiated per play by vite.config.js.
 PAGES_DIR = REPO_ROOT / "pages"
 PLAYS_JS = SRC / "shared" / "plays.js"
 REDUCER_JS = SRC / "editor" / "reducer.js"
-# The two sides of the ZIP contract: the page that writes the archive and the script
-# that reads it back.
 RECORDER_JSX = SRC / "recorder" / "App.jsx"
 PROCESS_UPLOADS_PY = REPO_ROOT / "scripts" / "process_uploads.py"
 CHARACTER_COLORS_JS = SRC / "shared" / "characterColors.js"
 
-# Tokens that a shared header rule must not consume: each one is re-skinned
-# somewhere, so the header would no longer render the same way from one page to
-# the next. `--accent`, `--font-serif` and `--shadow` are re-skinned by the
-# editor ("Rail" direction); `--page-mark` and `--page-mark-soft` are re-skinned
-# by EVERY page, via the `page-<key>` class both headers put on their root.
+# Tokens a shared header rule must not consume: each is re-skinned somewhere (the
+# first three by the editor, the seal pair by every page).
 FORBIDDEN_IN_HEADER = (
     "--accent",
     "--font-serif",
@@ -66,14 +49,8 @@ FORBIDDEN_IN_HEADER = (
     "--page-mark-soft",
 )
 
-# A single exception, and it is deliberate: the link back to the home page. It
-# is the FOOT of the header it closes, so it wears that header's colour, badge,
-# word, hover wash and focus ring together: the navy of Progress, the purple of
-# Editing, the wine of the four other pages. It carries `page-${page}` itself
-# (HomeLink.jsx) and what says "home" there is the drawing of the two masks, not
-# the hue. This guard only reads CSS and cannot see that class set in JSX: the
-# exemption is therefore written here, which stands as a decision. It covers ONLY
-# the seal tokens.
+# Deliberate exception: the home link is the FOOT of its header and wears its
+# colour, carrying `page-${page}` itself (HomeLink.jsx), which CSS alone cannot show.
 HEADER_TOKEN_EXEMPT_PREFIX = ".play-header-home"
 EXEMPT_TOKENS = ("--page-mark", "--page-mark-soft")
 
@@ -83,12 +60,8 @@ def read(path: Path) -> str:
 
 
 def published_scripts():
-    """(id, script) for every play in the repo that carries a readable script.
-
-    The guards that use it inspect the real TREE and not code: they therefore hold
-    for every play at once, with no list to maintain, and a play added tomorrow
-    enters on its own. A play without a script is skipped: the folder can be born
-    of a refused deposit, and it is its journal that tells the story."""
+    """(id, script) per play with a readable script; a play without one is skipped
+    (the folder can be born of a refused upload)."""
     for play_id in play_ids():
         path = play_data_dir(play_id) / "script.json"
         if path.exists():
@@ -96,23 +69,14 @@ def published_scripts():
 
 
 def css(path: Path) -> str:
-    """CSS without its comments: this file is heavily commented, and a comment
-    that quotes a token or a class is not a declaration."""
+    """CSS without its comments: a comment quoting a token is not a declaration."""
     return re.sub(r"/\*.*?\*/", "", read(path), flags=re.DOTALL)
 
 
 def js_without_comments(source: str) -> str:
-    """JS without its comments, skipping over strings.
-
-    A `re.sub` was enough for the CSS, not here: this repo comments a great deal,
-    and its comments QUOTE code (T.jsx documents `<T k="key" …>`, which made the
-    scan pick up a "key" key that does not exist). Conversely, splitting naively
-    on `//` would cut in the middle of a URL inside a string.
-
-    Known and accepted limitation: a regular expression containing a quote would
-    be taken for the start of a string. No source in the repo has one, and the
-    only effect would be a partial scan, never a false positive.
-    """
+    """JS without its comments, skipping over strings: comments here QUOTE code
+    (T.jsx documents `<T k="key" …>`) and a naive `//` split cuts inside URLs.
+    Accepted limit: a regex holding a quote reads as a string start."""
     out: list[str] = []
     i, n = 0, len(source)
     while i < n:
@@ -145,11 +109,8 @@ def js_without_comments(source: str) -> str:
 
 
 class TestLineIdPattern(unittest.TestCase):
-    """Line ids name the mp3 files. The browser mints them and validates them
-    (SAFE_ID), the Action revalidates them on arrival (LINE_ID_PATTERN). The two
-    guards must say EXACTLY the same thing: stricter on the Action side, an actor
-    would see their ZIP refused over ids the editor handed them; more permissive,
-    a hostile id would name a file."""
+    """SAFE_ID (editor/reducer.js) vs LINE_ID_PATTERN (process_uploads.py): line
+    ids name the mp3 files, so both guards must say exactly the same thing."""
 
     def test_safe_id_and_line_id_pattern_are_the_same_expression(self):
         match = re.search(r"export const SAFE_ID = /(.+?)/;", read(REDUCER_JS))
@@ -163,8 +124,7 @@ class TestLineIdPattern(unittest.TestCase):
         )
 
     def test_the_pattern_stays_anchored_and_bounded(self):
-        # Anchored at both ends (otherwise "../x-1" would slip through the
-        # middle) and bounded (an id names a file).
+        # Unanchored, "../x-1" slips through the middle; unbounded, an id names a file.
         pattern = LINE_ID_PATTERN.pattern
         self.assertTrue(pattern.startswith("^"))
         self.assertTrue(pattern.endswith("$"))
@@ -172,13 +132,7 @@ class TestLineIdPattern(unittest.TestCase):
 
 
 class TestPlayIdPattern(unittest.TestCase):
-    """A play's id names a FOLDER of the repo (`plays/<id>/`, `uploads/<id>/`)
-    and a URL segment of the published site. The browser mints it and validates it
-    (SAFE_PLAY_ID), the Action revalidates it before turning it into a path
-    (PLAY_ID_PATTERN). Same contract as line ids, with one detail that matters:
-    where a line id names a file, this one names a folder that a deposited file
-    points at, so letting them diverge would refuse a deposit over an id the site
-    itself just wrote."""
+    """SAFE_PLAY_ID (shared/plays.js) vs PLAY_ID_PATTERN (common.py)."""
 
     def test_safe_play_id_and_play_id_pattern_are_the_same_expression(self):
         match = re.search(r"export const SAFE_PLAY_ID = /(.+?)/;", read(PLAYS_JS))
@@ -198,10 +152,7 @@ class TestPlayIdPattern(unittest.TestCase):
         self.assertIn("{0,", pattern)
 
     def test_the_pattern_accepts_what_slugify_produces(self):
-        # `slugify` (src/shared/data.js) is what mints the id: lowercase letters,
-        # digits and hyphens, with no hyphen at either end. This guard stands as a
-        # record that the pattern does not refuse the output of the only function
-        # that feeds it.
+        # `slugify` (src/shared/data.js) is the only function feeding the pattern.
         for good in ("transport-de-femmes", "le-malade-imaginaire", "piece2", "a"):
             self.assertIsNotNone(PLAY_ID_PATTERN.fullmatch(good), good)
         for bad in ("-tiret-en-tete", "Majuscule", "avec espace", "accentué", "a" * 65, ""):
@@ -209,16 +160,9 @@ class TestPlayIdPattern(unittest.TestCase):
 
 
 class TestPlayIdMinting(unittest.TestCase):
-    """A play is created by uploading its TITLE, and the identifier is derived from it
-    on arrival (`mint_play_id`). The management page derives the same one beforehand
-    (`mintPlayId`, src/shared/plays.js) so as to announce the address and refuse a
-    duplicate on the spot.
-
-    Two implementations, therefore, and this is the one contract of the project whose
-    breakage nobody would see: the page would announce one address, the Action would
-    create another, and the play would simply appear where nobody was told to look. They
-    are held together by a shared table of cases, read here and by
-    src/shared/plays.test.js: a case is written once and checked on both sides."""
+    """`mintPlayId` (shared/plays.js) announces the address, `mint_play_id`
+    (common.py) decides it. Diverged, the play appears where nobody was told to look.
+    A shared table of cases holds both suites."""
 
     CASES_PATH = REPO_ROOT / "scripts" / "tests" / "play-id-cases.json"
 
@@ -226,8 +170,6 @@ class TestPlayIdMinting(unittest.TestCase):
         return json.loads(read(self.CASES_PATH))
 
     def test_the_shared_table_is_read_and_covers_more_than_the_easy_cases(self):
-        # A guard that would pass on an empty table guards nothing, and this one is the
-        # whole contract.
         cases = self.cases()
         self.assertGreater(len(cases), 5, "shared table not read")
         self.assertTrue(any(case["id"] == "" for case in cases), "no unusable title")
@@ -241,15 +183,10 @@ class TestPlayIdMinting(unittest.TestCase):
                 self.assertEqual(mint_play_id(case["title"]), case["id"])
 
     def test_the_shared_table_is_read_by_the_front_test_too(self):
-        """Half a contract is worse than none: this table only holds the two sides
-        together if the JS suite reads it as well, and it is one deletion away from
-        being Python-only."""
         source = read(SRC / "shared" / "plays.test.js")
         self.assertIn(self.CASES_PATH.name, source)
 
     def test_every_minted_identifier_is_accepted_by_the_pattern(self):
-        # The identifier becomes a folder and a URL segment: minting one the pattern
-        # refuses would create the play and then refuse all of its uploads.
         for case in self.cases():
             if case["id"] == "":
                 continue
@@ -257,22 +194,14 @@ class TestPlayIdMinting(unittest.TestCase):
                 self.assertTrue(is_play_id(mint_play_id(case["title"])))
 
     def test_a_non_string_title_mints_nothing(self):
-        # `read_title` only ever hands over text, but this function names folders: it
-        # answers "no address" rather than raising, on this side as on the other.
         for bad in (None, 42, [], {}, b"Antigone"):
             self.assertEqual(mint_play_id(bad), "")
 
 
 class TestCreationZone(unittest.TestCase):
-    """`uploads/_new-play/` is the whole creation gesture: the site writes a file into it
-    through GitHub's editor, and the Action reads everything that lands there as a play
-    title, whatever the file is called.
-
-    So the folder name is the ONE thing both sides must agree on, and nothing would report
-    a disagreement: the file would be committed into a folder this pipeline does not scan,
-    where it would sit for good with no play, no journal line and no error anywhere. Hence
-    a guard, plus the one that keeps the name out of PLAY_ID_PATTERN: were it a valid play
-    id, `main` would take the creation zone for a play of that name."""
+    """NEW_PLAY_DIR, in shared/data.js and process_uploads.py. Diverged, the file
+    lands in a folder nothing scans: no play, no journal line, no error. It must
+    also stay outside PLAY_ID_PATTERN or `main` reads the zone as a play."""
 
     def js_zone(self) -> str:
         found = re.search(r'const NEW_PLAY_DIR = "([^"]+)";', read(SRC / "shared" / "data.js"))
@@ -297,12 +226,7 @@ class TestCreationZone(unittest.TestCase):
         return found.group(1)
 
     def test_both_sides_agree_on_the_line_that_closes_the_title(self):
-        """The site WRITES that line and the Action READS it: the title is what comes
-        before it, the note for the coordinator is what follows.
-
-        Diverged, the note would be read as part of the title and every creation would be
-        refused for carrying several lines. Loud, unlike the folder name, but it is the
-        site's only creation gesture that would stop working."""
+        # Diverged, the note is read as title and every creation is refused.
         self.assertEqual(
             self.js_separator(),
             TITLE_SEPARATOR,
@@ -312,29 +236,18 @@ class TestCreationZone(unittest.TestCase):
         )
 
     def test_the_separator_is_not_a_title_anyone_could_type(self):
-        # It is compared against a whole line, and a play titled exactly that leaves no
-        # address anyway (`mint_play_id` folds it to nothing), so it can never be
-        # swallowed by the cut.
         self.assertEqual(mint_play_id(TITLE_SEPARATOR), "")
 
     def test_the_site_writes_the_folder_into_the_url_it_opens(self):
-        # The constant could exist and be used nowhere: what matters is that the path the
-        # button opens really goes through it.
+        # The constant could exist and be used nowhere.
         source = js_without_comments(read(SRC / "shared" / "data.js"))
         self.assertIn("uploads/${NEW_PLAY_DIR}/", source)
 
 
 class TestDevPlay(unittest.TestCase):
-    """`plays/dev/` is the site's own test bench: a play in every respect, except that
-    `build_plays_index` leaves it out of data/plays.json, so only a hand-written URL
-    reaches it and a company that forked the repository never meets it.
-
-    Two sides then have to agree, and neither disagreement would be reported. The
-    creation box refuses an address already taken by reading data/plays.json, where this
-    one is missing on purpose: it needs the id in hand (DEV_PLAY_ID, src/shared/plays.js)
-    or it would send the coordinator off to commit a title the Action refuses minutes
-    later. And the id must be an id like any other, since it names `plays/dev/`,
-    `uploads/dev/` and a URL segment exactly as a troupe's play does."""
+    """DEV_PLAY_ID, in shared/plays.js and common.py. The test bench is absent from
+    data/plays.json, so the creation box needs the id in hand to refuse that address;
+    and the id names real folders, so it must be a valid play id."""
 
     def js_dev_play(self) -> str:
         found = re.search(r'export const DEV_PLAY_ID = "([^"]+)";', read(PLAYS_JS))
@@ -351,37 +264,25 @@ class TestDevPlay(unittest.TestCase):
         )
 
     def test_the_test_bench_carries_a_real_play_id(self):
-        # It is hidden from one list, never from the pipeline: everything that turns it
-        # into a path validates it first, like any other play.
         self.assertTrue(is_play_id(DEV_PLAY_ID))
 
     def test_the_creation_box_refuses_that_address(self):
-        # The constant could exist and be consulted nowhere, which is the whole failure
-        # this contract exists to prevent: what matters is that the refusal really cites
-        # it, next to the list of plays the page did read.
+        # The constant could exist and be consulted nowhere.
         source = js_without_comments(read(SRC / "chooser" / "NewPlay.jsx"))
         self.assertIn("DEV_PLAY_ID", source)
 
     def test_the_dev_server_announces_it_and_opens_it(self):
-        """Nothing on the site links to this play, so the two things that name it out
-        loud are the dev server's URL list (vite.config.js) and the tabs `npm start`
-        opens (scripts/dev.sh). A shell script imports no constant, hence the literal
-        path there and this guard: renamed on one side, the tab would open a 404 and the
-        printed line would point nowhere.
-        """
+        # dev.sh imports no constant, hence the literal path: renamed, it 404s.
         self.assertIn(
             f"plays/{DEV_PLAY_ID}/respo.html",
             read(REPO_ROOT / "scripts" / "dev.sh"),
             "scripts/dev.sh no longer opens the test bench under the name DEV_PLAY_ID "
             "(scripts/common.py) gives it.",
         )
-        # The config, for its part, builds the path from the constant: what has to hold
-        # is that it really consults it, rather than printing the two root pages alone.
         self.assertIn("DEV_PLAY_ID", js_without_comments(read(REPO_ROOT / "vite.config.js")))
 
     def test_it_is_the_only_play_the_index_leaves_out(self):
-        # Read on the repository's real folders: the two root pages list every play but
-        # this one, and a second hidden play would be a play nobody could reach.
+        # A second hidden play would be one nobody could reach.
         self.assertEqual(
             sorted(set(play_ids()) - set(listed_play_ids())),
             [DEV_PLAY_ID] if DEV_PLAY_ID in play_ids() else [],
@@ -389,14 +290,7 @@ class TestDevPlay(unittest.TestCase):
 
 
 class TestNewPlay(unittest.TestCase):
-    """The empty play a creation upload brings into being (`new_play_script`,
-    scripts/common.py) against the editor's fallback (`EMPTY_SCRIPT`,
-    src/editor/reducer.js).
-
-    It is the same document, written on both sides of the pipeline: a field added to one
-    and not the other would give a play born without it, which the editor would then
-    fill in silently, and the difference would only show up in a diff of script.json
-    weeks later."""
+    """`new_play_script` (common.py) vs `EMPTY_SCRIPT` (editor/reducer.js)."""
 
     def empty_script_keys(self) -> set[str]:
         body = re.search(
@@ -417,22 +311,14 @@ class TestNewPlay(unittest.TestCase):
         self.assertEqual(fresh["language"], "en")
 
     def test_a_created_play_carries_a_scene_to_write_in(self):
-        # The structural floor the editor lays down too: without a scene, the first
-        # opening of the Editing page would have nothing to display.
         fresh = new_play_script("antigone", "Antigone", "fr")
         self.assertEqual(fresh["acts"], [{"scenes": [{"lines": []}]}])
         self.assertEqual(fresh["characters"], [])
 
 
 class TestCharacterPalette(unittest.TestCase):
-    """A character's colour is written by the editor (JS palette) and copied by
-    the Action all the way to the manifest (COLOR_PATTERN). The palette has only
-    one implementation, in JS, and the Python side validates only its FORM: this
-    guard checks that the accepted form does cover the whole palette.
-
-    Without it, adding a colour written some other way ("#FFF", a CSS name, an
-    `oklch()`) would silently drop it from the manifest, and the Speaking share
-    page would colour that character like a character with no colour."""
+    """The palette lives in JS only; COLOR_PATTERN (build_manifest.py) validates its
+    FORM. A colour written otherwise ("#FFF", `oklch()`) drops from the manifest."""
 
     def palette(self) -> list[str]:
         body = re.search(
@@ -444,8 +330,7 @@ class TestCharacterPalette(unittest.TestCase):
         return re.findall(r'"(#[0-9a-fA-F]+)"', body.group(1))
 
     def test_the_palette_is_found_and_has_its_twenty_colours(self):
-        # A guard that would pass on an empty list guards nothing. Twenty, because
-        # it is Tableau 10 then the ten light shades of tab20.
+        # Twenty: Tableau 10 then the ten light shades of tab20.
         palette = self.palette()
         self.assertEqual(len(palette), 20, f"palette read: {palette}")
         self.assertEqual(len(set(palette)), 20, "two characters cannot share the same colour")
@@ -460,18 +345,13 @@ class TestCharacterPalette(unittest.TestCase):
             )
 
     def test_the_python_validation_stays_anchored(self):
-        # Without an end anchor, "#1f77b4; background: url(...)" would pass, and
-        # the value ends up in a `style` attribute.
+        # Unanchored, "#1f77b4; background: url(...)" reaches a `style` attribute.
         self.assertTrue(COLOR_PATTERN.pattern.endswith(r"\Z"))
 
 
 class TestReservedHeaderTokens(unittest.TestCase):
-    """The shared header renders identically on every page, editor "Rail" re-skin
-    included. That rests on a convention: the `--header-*` tokens are declared in
-    theme.css and redefined nowhere.
-
-    The list is not written here, it is READ from theme.css: a new reserved token
-    is covered automatically."""
+    """`--header-*` tokens are declared in theme.css and redefined nowhere, so the
+    shared header renders identically on every page. The list is read, not written."""
 
     def reserved_tokens(self) -> set[str]:
         root = re.search(r":root\s*\{(.*?)\}", css(THEME_CSS), re.DOTALL)
@@ -479,8 +359,6 @@ class TestReservedHeaderTokens(unittest.TestCase):
         return set(re.findall(r"(--header-[a-z-]+)\s*:", root.group(1)))
 
     def test_there_are_reserved_tokens_to_guard(self):
-        # If the convention disappeared, this test would fail instead of passing
-        # on an empty set (a guard that guards nothing is worse than nothing).
         self.assertGreaterEqual(len(self.reserved_tokens()), 3)
 
     def test_no_page_css_redefines_them(self):
@@ -501,15 +379,8 @@ class TestReservedHeaderTokens(unittest.TestCase):
         )
 
     def test_the_shared_header_never_consumes_a_reskinnable_token_for_its_identity(self):
-        # The header's identity (brand ink, title serif, shadow) must go through
-        # the reserved tokens. The watched tokens are re-skinned by one page or
-        # another: seeing them here would mean the header changes appearance
-        # depending on the page.
         theme = css(THEME_CSS)
-        # Leading indentation is tolerated on both sides of the rule: without it,
-        # the guard only saw top-level rules and let through everything living in
-        # an `@media`, which is exactly where the header keeps its mobile rules
-        # (seal size, drawing of the home logo).
+        # Leading indentation tolerated, or the header's `@media` rules escape.
         header_rules = re.findall(
             r"^[ \t]*(\.page-header[^{]*|\.play-header[^{]*)\{(.*?)^[ \t]*\}",
             theme,
@@ -522,9 +393,7 @@ class TestReservedHeaderTokens(unittest.TestCase):
             for token in FORBIDDEN_IN_HEADER:
                 if exempt and token in EXEMPT_TOKENS:
                     continue
-                # var(--shadow) must not be confused with var(--shadow-hover),
-                # nor var(--page-mark) with var(--page-mark-soft): the closing
-                # parenthesis makes the difference.
+                # The closing parenthesis keeps --shadow from matching --shadow-hover.
                 if re.search(rf"var\(\s*{re.escape(token)}\s*\)", body):
                     leaks.append(f"{selector.strip()} consumes var({token})")
         self.assertEqual(
@@ -536,10 +405,8 @@ class TestReservedHeaderTokens(unittest.TestCase):
 
 
 class TestPageSeals(unittest.TestCase):
-    """`PAGES` (pages.js) is the source of truth for the identity of the pages,
-    but their COLOURS live in CSS (`.page-<key>` in theme.css). Nothing in the code
-    links the two: a page added without its class would render a colourless seal,
-    and nobody would see it before opening the page."""
+    """`PAGES` (pages.js) names the pages, `.page-<key>` (theme.css) colours them,
+    and nothing in the code links the two."""
 
     def page_keys(self) -> set[str]:
         body = re.search(r"export const PAGES = \{(.*?)^\};", read(PAGES_JS), re.DOTALL | re.MULTILINE)
@@ -550,11 +417,7 @@ class TestPageSeals(unittest.TestCase):
         self.assertGreaterEqual(len(self.page_keys()), 5)
 
     def seal_declarations(self) -> dict[str, set[str]]:
-        """{page key: declared variables}, by reading the blocks of theme.css.
-
-        The selectors are grouped (`.page-home, .page-rehearsal, …`), so we split
-        each block's selector list rather than looking for each class one by
-        one."""
+        """{page key: declared variables}. Selectors are grouped, hence the split."""
         declared: dict[str, set[str]] = {}
         for selectors, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css(THEME_CSS)):
             variables = set(re.findall(r"(--page-mark(?:-soft)?)\s*:", body))
@@ -603,18 +466,9 @@ class TestPageSeals(unittest.TestCase):
         return values
 
     def test_each_html_favicon_and_theme_colour_match_its_seal(self):
-        """A page's favicon IS its seal badge: tile in `--page-mark-soft`, glyph
-        in `--page-mark`, and `theme-color` in solid `--page-mark`. The hex values
-        are necessarily copied there (a `<link>` tag does not read a CSS
-        variable), so nothing prevented the favicon from keeping the colour of the
-        page it was copied from: that is exactly what happens when a page is added
-        by duplicating another one's `.html`, and it only shows up in the tab, or
-        worse, in the thumbnail of the link the company shares around.
-
-        The page <-> file correspondence goes through `PAGES[key].href`, the only
-        source of truth for the link between the two."""
+        """The favicon IS the seal badge, but a `<link>` reads no CSS variable, so a
+        page duplicated from another keeps its hex values. Pairing: `PAGES[key].href`."""
         pages_js = read(PAGES_JS)
-        # {key: html file}, read from PAGES and not guessed from the name.
         hrefs = dict(
             re.findall(r"^  ([a-zA-Z]+): \{\s*\n\s*href: \"\./([a-z]+\.html)\"", pages_js, re.MULTILINE)
         )
@@ -626,9 +480,7 @@ class TestPageSeals(unittest.TestCase):
             if not seal:
                 continue  # already covered by test_every_page_has_its_two_seal_colours
             html = read(PAGES_DIR / filename)
-            # The two home pages share the favicon of the masks, whose inner fills
-            # also take up the soft shade: we only check the PRESENCE of the two
-            # hex values, not how many times they occur.
+            # Presence only: the masks favicon repeats the soft shade in its fills.
             icon = re.search(r'rel="icon" href="([^"]*)"', html)
             self.assertIsNotNone(icon, f"{filename} has no favicon")
             icon_href = icon.group(1).lower()
@@ -646,9 +498,7 @@ class TestPageSeals(unittest.TestCase):
         self.assertEqual(problems, [], "Favicon or theme-color out of tune with the seal. " + " ; ".join(problems))
 
     def test_every_page_has_its_apple_touch_icon(self):
-        """iOS reads neither SVG favicons nor `data:` URIs: every page has its
-        PNG, and an `href` pointing at a missing file lets iOS make up a thumbnail
-        (a screenshot of the page, unreadable at that size)."""
+        """iOS reads no SVG favicon nor `data:` URI, and invents one if it is missing."""
         pages_js = read(PAGES_JS)
         hrefs = dict(
             re.findall(r"^  ([a-zA-Z]+): \{\s*\n\s*href: \"\./([a-z]+\.html)\"", pages_js, re.MULTILINE)
@@ -664,9 +514,8 @@ class TestPageSeals(unittest.TestCase):
 
 
 class TestPageEntries(unittest.TestCase):
-    """Every declared page must be a page that exists: a PAGES `href` with no
-    template in `pages/` is a dead link in a home page or a header, and an entry
-    in vite.config.js with no .html breaks the build."""
+    """A PAGES `href` with no template is a dead link; a vite entry with no .html
+    breaks the build."""
 
     def test_every_pages_href_points_to_a_real_html_file(self):
         hrefs = re.findall(r'href: "\./([a-z]+\.html)"', read(PAGES_JS))
@@ -675,9 +524,7 @@ class TestPageEntries(unittest.TestCase):
             self.assertTrue((PAGES_DIR / href).is_file(), f"{href} declared in PAGES but missing")
 
     def test_every_root_html_is_a_vite_entry(self):
-        """The two root `.html` files are the only entries written out plainly:
-        the play selector and the play management page. One more without an entry
-        would never be built nor deployed."""
+        """The two root pages are the only literal Vite entries."""
         config = read(REPO_ROOT / "vite.config.js")
         entries = set(re.findall(r'resolve\(ROOT, "([a-z]+\.html)"\)', config))
         on_disk = {p.name for p in REPO_ROOT.glob("*.html")}
@@ -690,11 +537,7 @@ class TestPageEntries(unittest.TestCase):
         )
 
     def test_every_play_page_template_is_instantiated_by_the_build(self):
-        """The seven pages of a play are TEMPLATES (`pages/*.html`), instantiated
-        in each play's folder by vite.config.js. The list in the config and the
-        templates on disk must coincide exactly: a template absent from the list
-        would never be written, so the page would render a 404 for the company, and
-        a name in the list with no template would fail the build of every play."""
+        """PLAY_PAGES (vite.config.js) vs `pages/*.html`: a missing template 404s."""
         config = read(REPO_ROOT / "vite.config.js")
         declared = re.search(r"const PLAY_PAGES = \[([^\]]*)\]", config)
         self.assertIsNotNone(declared, "PLAY_PAGES not found in vite.config.js")
@@ -707,28 +550,17 @@ class TestPageEntries(unittest.TestCase):
         )
 
     def test_the_play_pages_cover_every_page_of_the_site(self):
-        """And those templates are exactly the pages PAGES declares, plus the second
-        home page: without this guard, a page added to PAGES could have a template
-        for nobody, and its home cards would lead to a 404."""
+        """Those templates are exactly what PAGES declares, plus the second home page."""
         keys = set(re.findall(r"^  ([a-zA-Z]+): \{", read(PAGES_JS), re.MULTILINE))
-        # `home` is a play's home page (`index.html`), `coordinator` its coordinator
-        # twin, which is not a PAGES entry.
+        # `home` is a play's `index.html`; `respo` is its coordinator twin, not in PAGES.
         expected = (keys - {"home"}) | {"index", "respo"}
         self.assertEqual(expected, {p.stem for p in PAGES_DIR.glob("*.html")})
 
 
 class TestScriptDiffFields(unittest.TestCase):
-    """The counts a promoted script publishes: Python names them, the front reads them.
-
-    `script_changes` (scripts/script_diff.py) writes them into the journal and
-    `CHANGE_LABEL_KEYS` (src/dashboard/App.jsx) pairs each with the sentence that says
-    it. A field renamed on one side alone breaks NOTHING: the row simply stops showing
-    that count, on the one row of the journal this whole diff exists to fill, and there
-    is no error anywhere to notice it by.
-
-    Both sides are READ, never copied: the expected list comes from calling the real
-    function, and from the one flag `promote_script` adds on top of it.
-    """
+    """`script_changes` (script_diff.py) writes the counts, `CHANGE_LABEL_KEYS`
+    (dashboard/App.jsx) has a sentence for each. Renamed on one side, the row
+    silently stops showing that count."""
 
     def python_fields(self) -> set[str]:
         was = {
@@ -740,7 +572,7 @@ class TestScriptDiffFields(unittest.TestCase):
                             "lines": [
                                 {"id": "l1", "characterId": "c1", "text": "Un"},
                                 {"id": "l2", "characterId": "c1", "text": "Deux"},
-                                # Gone in `now`: `linesRemoved`.
+                                # Gone in `now`: linesRemoved.
                                 {"id": "l3", "characterId": "c2", "text": "Trois"},
                             ]
                         }
@@ -758,7 +590,7 @@ class TestScriptDiffFields(unittest.TestCase):
                         {
                             "lines": [
                                 {"id": "l1", "characterId": "c1", "text": "Un, mais autrement"},
-                                # Kept, same text, other character: `linesReassigned`.
+                                # Same text, other character: linesReassigned.
                                 {"id": "l2", "characterId": "c3", "text": "Deux"},
                                 {"id": "l4", "characterId": "c3", "text": "Quatre"},
                             ]
@@ -767,14 +599,8 @@ class TestScriptDiffFields(unittest.TestCase):
                 }
             ],
         }
-        # Three calls, because two of the fields are exclusive with the rest by design.
-        # `other` only speaks when nothing else does, so it takes a pair that changes
-        # something with no name of its own (a character colour); `created` replaces
-        # almost everything, a birth having nothing to compare against. All three read
-        # the real function.
-        # The whole cast is kept, names included: only a colour moves, which is a change
-        # with no name of its own. Dropping a character here instead would fire
-        # `castRemoved` and `other` would never be reached.
+        # Three calls: `other` speaks only when nothing else does (hence a lone
+        # colour change) and `created` replaces almost everything.
         recoloured = {
             **was,
             "characters": [
@@ -787,8 +613,7 @@ class TestScriptDiffFields(unittest.TestCase):
             | set(script_changes(was, recoloured))
             | set(script_changes({}, now, created=True))
         )
-        # The fixtures have to exercise them ALL, or the comparison below would pass by
-        # agreeing on a short list.
+        # Or the comparison below agrees on a short list.
         self.assertGreaterEqual(len(fields), 11, "the fixtures no longer trigger every field")
         return fields
 
@@ -802,34 +627,18 @@ class TestScriptDiffFields(unittest.TestCase):
 
 
 class TestCatalogues(unittest.TestCase):
-    """The i18n guards, and this is where the safety of the bilingual site is won.
-
-    The project has NO component test at all, by choice (cf. CLAUDE.md), so
-    nothing renders the pages to check their texts. Yet a rework of several
-    hundred strings always breaks in two ways: a mistyped key, which shows up
-    verbatim on screen, and a forgotten string, which stays in French in the
-    English UI. The first two tests form a pincer around the former, the three
-    text guards around the latter, by static reading, with no rendering and no
-    dependency.
-
-    Parity between the two catalogues is checked on the JS side
-    (src/shared/locales/parity.test.js): it needs Intl.PluralRules, which Python
-    does not have.
-    """
+    """The i18n guards, by static reading (this project has no component test): a
+    mistyped key shows verbatim on screen, a forgotten string stays French in the
+    English UI. Parity is checked JS-side (locales/parity.test.js, Intl.PluralRules)."""
 
     LOCALES_DIR = SRC / "shared" / "locales"
 
     def catalogue_keys(self, locale: str) -> set[str]:
-        """The keys declared in a catalogue, read flat.
-
-        We read the source rather than execute the JS: the Python CI has no JS
-        engine, and the keys are `"a.b.c":` literals at the start of a line.
-        """
+        """The keys declared in a catalogue: read from source, no JS engine here."""
         source = read(self.LOCALES_DIR / f"{locale}.js")
         return set(re.findall(r'^  "([a-zA-Z0-9_.]+)":', source, re.MULTILINE))
 
     def test_catalogues_are_found_and_not_empty(self):
-        # Without this, every test below would pass on an empty set.
         for locale in ("fr", "en"):
             self.assertGreaterEqual(
                 len(self.catalogue_keys(locale)), 10, f"catalogue {locale} not found or empty"
@@ -843,43 +652,17 @@ class TestCatalogues(unittest.TestCase):
             yield path
 
     def used_keys(self) -> dict[str, set[str]]:
-        """{key used: {files}} for every key written out plainly in the code.
-
-        A catalogue key travels by exactly two routes, and it is a convention that
-        this scan makes enforceable:
-
-        1. it is passed to `t(…)` or to `<T k="…">`, including in the middle of an
-           expression (`t(canUndo ? "editor.undo.tip" : "editor.undo.none")`):
-           hence the sweep of the WHOLE call with balanced parentheses, where a
-           `t\\(\\s*"…"` only saw the first case;
-        2. it lives in a table whose NAME says it holds keys
-           (`CHARACTER_COLOR_KEYS`, `KIND_LABEL_KEY`), because the rank-by-rank
-           pairing with colours or file types is checked where those values live,
-           not in the JSX;
-        3. it is the page label passed to `mountPage(…)`, which renders it into the
-           document `<title>` (`applyDocumentLanguage`). The seven pages of a play
-           pass a `page.<x>.label` key there, which the composed-key pattern
-           already covered by accident; the two ROOT pages, however, have no
-           `page.*` key (they are not play pages), and without this third route
-           their labels read as orphan keys.
-
-        One thing stays invisible here, and that is accepted: a key COMPOSED at
-        runtime (`page.${page}.label`, `rail.${key}.tip`). Those are covered by
-        pattern in `test_no_catalogue_key_is_declared_and_never_used`, and by
-        `test_every_page_key_has_its_label_and_desc` for the pages.
-        """
+        """{key used: {files}} for every key written out plainly: a `t(…)` / `<T k>`
+        call, a `*_KEYS?` table, or `mountPage(…)`. A key COMPOSED at runtime is
+        invisible and covered by pattern in the orphan-key test."""
         used: dict[str, set[str]] = {}
         for path in self.scanned_files():
-            # Without the comments: T.jsx documents its own usage with a sample
-            # `<T k="key" …>`, which was picked up as a real key.
             source = js_without_comments(read(path))
             found = [
                 key
                 for callee in ("t", "mountPage")
                 for call in self.balanced_calls(source, callee)
-                # At least one dot: every catalogue key is dotted, and this sweep
-                # also sees literals that are not keys
-                # (`t(pageLabelKey("dashboard"))`).
+                # At least one dot: the sweep also sees non-key literals.
                 for key in re.findall(r'"([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)+)"', call)
             ]
             found += re.findall(r'<T\s[^>]*?\bk="([a-zA-Z0-9_.]+)"', source)
@@ -891,9 +674,8 @@ class TestCatalogues(unittest.TestCase):
 
     @staticmethod
     def balanced_calls(source: str, callee: str) -> list[str]:
-        """The contents of each `<callee>(…)`, with balanced parentheses: without
-        this, an argument that itself contains a call (`t(pageLabelKey("editor"))`)
-        or a condition (`t(canUndo ? "a" : "b")`) escaped the scan."""
+        """Contents of each `<callee>(…)`, balanced, so a nested call or a ternary
+        argument does not escape the scan."""
         calls = []
         for match in re.finditer(rf"\b{re.escape(callee)}\(", source):
             depth, i = 1, match.end()
@@ -907,9 +689,6 @@ class TestCatalogues(unittest.TestCase):
         return calls
 
     def test_every_key_used_in_the_code_exists_in_both_catalogues(self):
-        # THE guard that best replaces the missing component tests: a mistyped key
-        # shows up verbatim on screen, and only a visit to the page concerned
-        # would reveal it.
         used = self.used_keys()
         self.assertGreaterEqual(len(used), 5, "no call to t() found: has the scan broken?")
         missing = []
@@ -926,24 +705,14 @@ class TestCatalogues(unittest.TestCase):
         )
 
     def test_no_catalogue_key_is_declared_and_never_used(self):
-        """The mirror guard of the previous one, and it proved itself on its own: a
-        key written in both catalogues but never called signals a string we thought
-        we had translated and that stayed hardcoded in the JSX (that is exactly
-        what had happened to `common.loadingScript`, the editor keeping its literal
-        "Chargement du script…").
-
-        The "every key used exists" guard cannot see that case: it only looks one
-        way."""
+        """A key declared and never called means a string thought translated that
+        stayed hardcoded in the JSX (it caught `common.loadingScript`)."""
         used = set(self.used_keys())
-        # Keys COMPOSED at runtime are invisible to the literal scan: we cover them
-        # by pattern, which stands as a decision. Each one is built in a single
-        # place, named here:
+        # Keys composed at runtime, covered by pattern. Each is built in one place:
         #   page.<x>.label|desc      pageLabelKey / pageDescKey (pages.js)
-        #   structure.language.<xx>  the LOCALES list (StructurePanel.jsx)
+        #   structure.language.<xx>  LOCALES (StructurePanel.jsx)
         #   rail.<x>[.tip]           the icon strip (EditorRail.jsx)
         #   recorder.status.<x>      a line's label (recorder/App.jsx)
-        # `test_every_page_key_has_its_label_and_desc` checks the first ones
-        # separately.
         built_by_helper = re.compile(
             r"^(page\.[a-z]+\.(label|desc)"
             r"|structure\.language\.[a-z]{2}"
@@ -963,42 +732,20 @@ class TestCatalogues(unittest.TestCase):
             + ", ".join(orphans),
         )
 
-    # ------------------------------------------------------------------------
-    # The three "no forgotten string" guards. They watch ALL of `src/`, with no
-    # list of files to maintain: a brand new page is therefore covered
-    # automatically. It was the other way round during the translation (a MIGRATED
-    # set that grew phase by phase, so as not to keep CI red for a whole worksite),
-    # and that list is precisely what let five entire pages slip through: the files
-    # not written into it were watched by nothing.
-    #
-    # Three complementary angles, because none of them is enough on its own:
-    #   1. an ACCENTED literal (the French of this site is accented almost
-    #      everywhere);
-    #   2. a literal in an attribute or a prop THAT CARRIES TEXT;
-    #   3. a JSX TEXT NODE.
-    # The first one alone saw neither "+ Acte", nor "Personnages", nor "Date"; the
-    # other two alone do not see a text tucked away in a variable. Together they
-    # catch everything the translation had forgotten (verified by replaying all
-    # three on the tree from before: 160 findings, zero afterwards).
+    # Three "no forgotten string" guards over ALL of `src/`: an accented literal, a
+    # literal in a text-bearing attribute, a JSX text node. None suffices alone.
 
-    # Legitimate accented literals, with their reason. Any addition here is a
-    # decision: it says "this text does not get translated".
+    # Accented literals that are NOT interface text. Adding one is a decision.
     ACCENT_ALLOWED = {
-        # A language's name is written IN that language and is never translated:
-        # "Français" stays "Français" in the English UI, because you look for your
-        # language using your own word for it (LocaleSwitch.jsx).
+        # A language's name is written in that language (LocaleSwitch.jsx).
         "Français",
-        # The per-locale quotation marks of `makeFormats`: that is locale DATA, not
-        # interface text, and i18n.js is precisely the place that carries them for
-        # both languages (Intl does not expose the CLDR ones).
+        # `makeFormats` quotation marks: locale DATA, and Intl does not expose CLDR's.
         "«\u00a0",
         "\u00a0»",
     }
 
-    # The HTML attributes and component props that CARRY TEXT on this site. A
-    # literal in one of them is necessarily interface text: there is nothing else
-    # to write in a `title`. The list is the repo's own, so a text prop added to a
-    # shared component gets written in here.
+    # Attributes and props that CARRY TEXT here, so a literal in one is interface
+    # text. The repo's own list: a new text prop gets written in.
     TEXT_ATTRS = (
         "title",
         "aria-label",
@@ -1008,9 +755,7 @@ class TestCatalogues(unittest.TestCase):
         "label",
         "hint",
         "error",
-        # The waiting sentence of `PageState`, a prop like the four below it: it
-        # carries visible text, its default comes from the catalogue, and without it
-        # here a literal passed by a page would slip through all three guards.
+        # `PageState`'s waiting sentence, like the four below.
         "loading",
         "unit",
         "confirmLabel",
@@ -1018,12 +763,10 @@ class TestCatalogues(unittest.TestCase):
         "saveLabel",
     )
 
-    # Two literals that are not interface text: a file name and the brand. Neither
-    # of them gets translated.
+    # A file name and the brand: neither is translated.
     NOT_TEXT = {"script.json", "PrettyDrama"}
 
-    # The JS keywords at the start of a line: a `return` or an `else` that fell
-    # between a comparison `>` and `<` is not a text node.
+    # A `return` caught between a `>` and a `<` is not a text node.
     JS_KEYWORDS = {
         "return", "else", "if", "const", "let", "var", "for", "while", "break",
         "continue", "try", "catch", "finally", "default", "case", "throw", "new",
@@ -1032,23 +775,16 @@ class TestCatalogues(unittest.TestCase):
     }
 
     ACCENTED = re.compile(r"[àâäçéèêëîïôöùûüÀÂÄÇÉÈÊËÎÏÔÖÙÛÜœæ«»]")
-    # Two lowercase letters in a row: what tells a word apart from a technical
-    # acronym ("(ZIP)", "(PDF)") or a symbol ("✕", "⠿"), which stay verbatim.
+    # Two lowercase letters in a row: a word, not "(PDF)" or "✕".
     HAS_WORD = re.compile(r"[a-zà-ÿ]{2,}")
-    # The contents of an interpolation are not a literal: `${scene.act}` is already
-    # a translated label, it must not get its own name reported.
+    # `${scene.act}` is already a translated label.
     INTERPOLATION = re.compile(r"\$\{[^}]*\}")
-    # The characters that betray code inside a candidate text node.
     CODE_CHARS = set("={}()[];\"'`&|$#\\/*<>@,")
 
     def test_no_accented_literal_survives_outside_the_catalogues(self):
-        # Crude but effective, and it is the only one of the three that sees a text
-        # tucked away in a variable or an array.
         offenders = []
         for path in self.scanned_files():
             relative = path.relative_to(REPO_ROOT).as_posix()
-            # Without the comments: many of them are still in French, and a comment
-            # is not a displayed text.
             source = js_without_comments(read(path))
             for quoted in re.findall(r'"([^"\n]*)"|\'([^\'\n]*)\'', source):
                 text = quoted[0] or quoted[1]
@@ -1065,8 +801,7 @@ class TestCatalogues(unittest.TestCase):
         )
 
     def test_no_text_bearing_attribute_carries_a_literal(self):
-        # The guard that sees French WITHOUT accents, the one the previous guard
-        # could not see: "Renommer", "Pause", "Mot entier".
+        # Sees French WITHOUT accents: "Renommer", "Pause", "Mot entier".
         pattern = re.compile(
             r"\b(" + "|".join(self.TEXT_ATTRS) + r')=\{?\s*(["\'`])(.*?)(?<!\\)\2', re.S
         )
@@ -1088,15 +823,9 @@ class TestCatalogues(unittest.TestCase):
         )
 
     def test_no_jsx_text_node_carries_a_literal(self):
-        """The other half of the accent-free guard: the text written between two tags.
-
-        Heuristic, and deliberately bounded to lines that look like prose (at least
-        two words, or an initial capital, or an accent) and that carry no code
-        character. It therefore does not see a text adjacent to a brace on the same
-        line, which only a real JSX parser could split apart; it is the first guard
-        that catches that case as soon as the text is French. What it does catch, on
-        the other hand, it catches without noise.
-        """
+        """Text between two tags. Bounded to prose-looking lines with no code
+        character; a text adjacent to a brace needs a real JSX parser, and the accent
+        guard covers that case in French."""
         offenders = []
         for path in self.scanned_files():
             relative = path.relative_to(REPO_ROOT).as_posix()
@@ -1121,15 +850,10 @@ class TestCatalogues(unittest.TestCase):
     def looks_like_prose(cls, text: str) -> bool:
         if text.split()[0] in cls.JS_KEYWORDS:
             return False
-        # Several words, an initial capital or an accent: enough to tell
-        # "+ Acte", "Personnages" and "insérer" apart from an identifier that
-        # landed there (`m.lineOrdinal`, `shiftEnter:`).
         return " " in text or text[0].isupper() or bool(re.search(r"[à-ÿÀ-Ý]", text))
 
     def test_every_page_key_has_its_label_and_desc(self):
-        # `PAGES` no longer carries the words, so nothing in the code links a page
-        # to its two texts: a page added without them would display its key.
-        # Same spirit as TestPageSeals, which makes that link for the colours.
+        # `PAGES` carries no words, so a page added without them displays its key.
         page_keys = TestPageSeals.page_keys(self)
         missing = []
         for locale in ("fr", "en"):
@@ -1137,32 +861,14 @@ class TestCatalogues(unittest.TestCase):
             for page in sorted(page_keys):
                 if f"page.{page}.label" not in declared:
                     missing.append(f"page.{page}.label ({locale})")
-                # `home` is the only page with no doc sentence: it has neither a
-                # home card nor a play header, so nothing that would render it.
                 if page != "home" and f"page.{page}.desc" not in declared:
                     missing.append(f"page.{page}.desc ({locale})")
         self.assertEqual(missing, [], "Missing page texts: " + ", ".join(missing))
 
     def test_no_entry_names_a_page_instead_of_interpolating_its_label(self):
-        """A page label is not copied into a sentence, it is INTERPOLATED.
-
-        Six entries of each catalogue named the Editing page ("la pièce doit
-        d'abord être saisie dans la page Édition"): copied out, that word demanded
-        twelve edits at the slightest rename, and the two catalogues could drift
-        apart from one another in silence. They now go through `{page}`, fed from
-        `page.editor.label`.
-
-        The guard is deliberately BOUNDED to the "page X" / "mode X" turn of
-        phrase, and not to every appearance of the label: in French, page names are
-        common nouns, so "Enregistrement…" (the take in progress),
-        "Enregistrement" (the panel's label) and "Avancement par personnage et par
-        scène" are three perfectly legitimate uses that a broad search reported. A
-        guard that demands a list of exemptions growing with every sentence helps
-        nobody; this one only sees the turn of phrase that DESIGNATES a page, which
-        is exactly the one that was being copied out.
-        """
-        # "(dans la|de la|sur la) page Édition", "le mode Édition", "the Editing
-        # page", "the Editing screen".
+        """A page label is interpolated through `{page}`, never copied into a sentence.
+        Bounded to the "page X" / "mode X" turn of phrase: French page names are common
+        nouns, so a broad search flags legitimate uses like "Enregistrement…"."""
         for locale, patterns in (
             ("fr", (r"\b(?:page|mode)\s+{label}\b",)),
             ("en", (r"\b{label}\s+(?:page|screen|mode)\b", r"\b(?:page|screen|mode)\s+{label}\b")),
@@ -1187,11 +893,8 @@ class TestCatalogues(unittest.TestCase):
             )
 
     def test_the_static_html_title_matches_the_french_catalogue(self):
-        """The `<title>` of the .html files is the fallback BEFORE the JS runs
-        (locale.js sets it again afterwards). It is therefore hardcoded French,
-        which must stay in tune with the catalogue: otherwise a French-speaking
-        reader sees the title change on load, which is exactly what this fallback
-        exists to avoid."""
+        """The static `<title>` is the fallback before locale.js runs, so a drift from
+        the French catalogue makes the title visibly change on load."""
         source = read(self.LOCALES_DIR / "fr.js")
         template = re.search(r'"common\.docTitle":\s*"([^"]+)"', source)
         self.assertIsNotNone(template, "common.docTitle not found in fr.js")
@@ -1201,16 +904,8 @@ class TestCatalogues(unittest.TestCase):
             self.assertIsNotNone(found, f"{key} missing from fr.js")
             return found.group(1)
 
-        # Two families of documents, and that is the whole division of the site.
-        #
-        # The TEMPLATES in `pages/` are the seven pages of a play, instantiated in
-        # each play's folder at build time: their label is that of their page
-        # (`respo.html` is the only one not to bear the name of its key, it is a
-        # play's second home page).
-        #
-        # The two ROOT `.html` files live above the plays (the company's selector and
-        # the coordinator's play management page): they are not play pages, they have
-        # no `page.*` key and their label belongs to them.
+        # The `pages/` templates take their page's label (`respo.html` alone does not
+        # bear its key's name); the two root pages have their own.
         expected = {
             REPO_ROOT / "index.html": "chooser.label",
             REPO_ROOT / "respo.html": "manage.label",
@@ -1236,15 +931,7 @@ class TestCatalogues(unittest.TestCase):
 
 
 class TestStructureLabels(unittest.TestCase):
-    """Act and scene labels are DERIVED from their rank, and two implementations
-    derive them: `structureLabels.js` for the screen, `STRUCTURE` in
-    build_script_pdf.py for paper.
-
-    Letting them diverge would print "Acte II" under a screen announcing
-    "Act II", or worse, would offset the numbering between the page and the script
-    an actor is holding. It is the same kind of contract as SAFE_ID and
-    LINE_ID_PATTERN, and it is checked the same way: by reading both sources.
-    """
+    """`structureLabels.js` (screen) vs `STRUCTURE` (build_script_pdf.py, paper)."""
 
     LOCALES_DIR = SRC / "shared" / "locales"
 
@@ -1255,8 +942,7 @@ class TestStructureLabels(unittest.TestCase):
         return found.group(1)
 
     def test_the_pdf_words_match_the_catalogues(self):
-        # `{n}` on the JS side, `%s` on the Python side: that is the only difference
-        # allowed.
+        # `{n}` on the JS side, `%s` on the Python side: the only difference allowed.
         for locale, words in STRUCTURE.items():
             for kind, key in (("act", "structure.act"), ("scene", "structure.scene")):
                 self.assertEqual(
@@ -1274,8 +960,6 @@ class TestStructureLabels(unittest.TestCase):
         self.assertIn(DEFAULT_LANGUAGE, LANGUAGES)
 
     def test_the_roman_numerals_agree(self):
-        """The two implementations are independent, so they are compared value by
-        value, including how they give up beyond 39."""
         js = read(SRC / "shared" / "structureLabels.js")
         tens = re.search(r'const TENS = \[(.*?)\];', js, re.DOTALL).group(1)
         units = re.search(r'const UNITS = \[(.*?)\];', js, re.DOTALL).group(1)
@@ -1283,15 +967,12 @@ class TestStructureLabels(unittest.TestCase):
         js_units = re.findall(r'"([A-Z]*)"', units)
         self.assertEqual(js_tens, list(_TENS), "the Roman tens have diverged")
         self.assertEqual(js_units, list(_UNITS), "the Roman units have diverged")
-        # And the behaviour, over the whole useful range plus its edges.
         expected = {1: "I", 4: "IV", 9: "IX", 10: "X", 14: "XIV", 39: "XXXIX", 40: "40", 0: "0"}
         for n, want in expected.items():
             self.assertEqual(roman_numeral(n), want, f"roman_numeral({n})")
 
     def test_no_act_or_scene_title_is_written_back_into_the_play(self):
-        """No published script must carry an act or scene title: it would be a
-        piece of data in one language, and it would travel back out to the PDF, the
-        Progress columns and the Speaking share scope."""
+        """A title here is data in one language, and it travels on to the PDF."""
         for play_id, script in published_scripts():
             self.assertIn(
                 script.get("language"), LANGUAGES, f"{play_id}: the play must state its language"
@@ -1303,31 +984,18 @@ class TestStructureLabels(unittest.TestCase):
 
 
 class TestZipFormat(unittest.TestCase):
-    """The ZIP of takes, written by the Recording page and read by the Action.
-
-    The one contract of this project whose two sides can never be checked by running
-    them together: the archive is built in a browser and opened in a workflow, weeks
-    apart, by way of a company's mailbox. Nothing fails when they fall out of step,
-    the Action simply refuses every ZIP an actor sends, with a format message, and the
-    company has no idea why. CLAUDE.md has been advertising this guard among the
-    cross-file contracts; it did not exist, and the format has just gained a field.
-
-    Read on BOTH sides, like every test in this file, and deliberately loose about
-    everything but the shape: the point is that a key added on one side gets added on
-    the other, not to freeze the way either one is written.
-    """
+    """`downloadZip` (recorder/App.jsx) writes the archive, `parse_manifest`
+    (process_uploads.py) reads it, and the two never run together: out of step, every
+    ZIP an actor sends is refused. Loose about everything but the set of keys."""
 
     def manifest_keys_written(self) -> set:
-        """The keys the Recording page puts in manifest.json."""
+        """The keys the Recorder puts in manifest.json."""
         source = js_without_comments(read(RECORDER_JSX))
         found = re.search(
             r'zip\.file\(\s*"manifest\.json"\s*,\s*JSON\.stringify\(\s*\{(.*?)\}', source, re.S
         )
         self.assertIsNotNone(found, "the call writing manifest.json is no longer recognisable")
-        # `{ play: manifest.id, clips }`: one entry per comma, and of each entry only
-        # the NAME, which is what precedes the colon (or the whole of it, for the
-        # shorthand). Reading the names with a bare `\w+` would also collect the
-        # `id` of the `manifest.id` on the value side.
+        # Name only: a bare `\w+` would also catch the `id` of `manifest.id`.
         keys = set()
         for entry in found.group(1).split(","):
             name = entry.split(":")[0].strip()
@@ -1339,7 +1007,6 @@ class TestZipFormat(unittest.TestCase):
         """The keys `parse_manifest` looks for in it."""
         source = read(PROCESS_UPLOADS_PY)
         body = source[source.index("def parse_manifest") : source.index("def process_zip")]
-        # The two ways it names a key: `manifest.get("x")` and `"x" in manifest`.
         pairs = re.findall(r'manifest\.get\("(\w+)"|"(\w+)" in manifest', body)
         return {name for pair in pairs for name in pair if name}
 
@@ -1355,11 +1022,9 @@ class TestZipFormat(unittest.TestCase):
         )
 
     def test_the_audio_member_is_named_after_the_line_id(self):
-        """`{lineId}.{ext}`, and the extension is the recording browser's, which is why
-        the Action looks the member up by id rather than by name."""
+        """`{lineId}.{ext}`: the extension is the recording browser's, so the Action
+        looks the member up by id."""
         written = js_without_comments(read(RECORDER_JSX))
-        # `assertRegex` on a whole file prints the whole file when it fails: we test
-        # the search ourselves so a drift reads as one sentence.
         self.assertTrue(
             re.search(r"zip\.file\(\s*`\$\{lineId\}\.\$\{take\.ext\}`", written),
             "recorder/App.jsx no longer names the audio member {lineId}.{ext}: the "
@@ -1367,15 +1032,11 @@ class TestZipFormat(unittest.TestCase):
         )
         source = read(PROCESS_UPLOADS_PY)
         body = source[source.index("def parse_manifest") : source.index("def process_zip")]
-        # The Action rebuilds that same name from the id alone, the extension being
-        # whatever the browser chose: an alphanumeric run after the dot.
         self.assertIn("re.escape(line_id)", body)
         self.assertRegex(body, r'r"\\\.\[0-9a-zA-Z\]\+"')
 
     def test_the_play_id_travels_verbatim_from_the_manifest(self):
-        """The field is a VERIFICATION and never a routing (the upload folder routes),
-        so what the page writes must be the play's own id, taken from the manifest it
-        is displaying, and nothing recomputed."""
+        """The field verifies and never routes, so it must be the manifest's own id."""
         source = js_without_comments(read(RECORDER_JSX))
         self.assertTrue(
             re.search(r"play:\s*manifest\.id", source),
@@ -1384,22 +1045,12 @@ class TestZipFormat(unittest.TestCase):
 
 
 class TestPublishedPlays(unittest.TestCase):
-    """The plays actually present in the repo, against the layout the site and the
-    Action expect of them. This is not a behaviour test but a TREE safeguard: a
-    badly filed play does not show up when rereading code, it shows up when a page
-    renders a 404 for the company."""
+    """The real tree against the layout the site and the Action expect."""
 
     def test_no_play_script_claims_another_play_than_its_own_folder(self):
-        """A script that names a play OTHER than its folder would make every deposit
-        of that play be refused (`validate_script` compares the two), so the
-        safeguard would turn against the company.
-
-        It does NOT require the id to be present, and that gap is deliberate:
-        `validate_script` accepts a script that does not carry one (that is the case
-        for a file downloaded before this field existed, and the folder then decides
-        on its own). Requiring its presence here would turn CI red for a deposit the
-        Action accepts, so it would stop the site's deployment over a perfectly
-        usable file, and that silence is exactly what the project dreads most."""
+        """`validate_script` compares the two, so a mismatch refuses every upload of
+        that play. Presence is deliberately NOT required: it accepts a script carrying
+        no id, and failing here would stop a deploy over a good file."""
         for play_id, script in published_scripts():
             declared = script.get("id")
             if not declared:
@@ -1412,9 +1063,8 @@ class TestPublishedPlays(unittest.TestCase):
             )
 
     def test_every_play_has_a_deposit_zone(self):
-        """It must EXIST in the repo before the coordinator clicks the play's deposit
-        button: GitHub only serves its upload page on a folder it knows about, and
-        git does not version an empty folder, hence the `.gitkeep`."""
+        """GitHub serves its upload page only on a folder it knows; git versions no
+        empty folder, hence the `.gitkeep`."""
         for play_id in play_ids():
             zone = REPO_ROOT / "uploads" / play_id
             self.assertTrue(zone.is_dir(), f"uploads/{play_id}/ is missing")

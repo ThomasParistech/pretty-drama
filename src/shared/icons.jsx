@@ -1,9 +1,7 @@
 import React from "react";
 
-// Control icons in SVG (never emojis: on mobile ▶/⏸/⏹/⬇ rendered as blue
-// emojis, outside the palette). All of them inherit the button colour through
-// `currentColor` and size themselves on the font-size (1em) unless overridden in
-// CSS.
+// Icons in SVG, never emoji: on mobile ▶/⏸/⏹/⬇ render as blue emoji, outside the
+// palette. All inherit `currentColor` and size on the font (1em).
 const svg = {
   width: "1em",
   height: "1em",
@@ -12,9 +10,8 @@ const svg = {
   focusable: false,
 };
 
-// The "stroked" variant (as opposed to the solid shapes of the controls): the
-// same stroke settings for all of them, otherwise the icons do not carry the
-// same weight side by side.
+// Stroked variant, one setting for all: otherwise they do not weigh the same side
+// by side.
 const strokeSvg = {
   ...svg,
   fill: "none",
@@ -111,9 +108,7 @@ export function DownloadIcon() {
   );
 }
 
-// Succeeded / failed, in the upload journal of the Progress page: the status
-// there holds a narrow column, so it is carried by the drawing alone (the cell
-// keeps an aria-label, otherwise a screen reader has nothing left to read).
+// Journal status, drawing alone in a narrow column; the cell keeps its aria-label.
 export function CheckIcon() {
   return (
     <svg {...strokeSvg}>
@@ -131,10 +126,7 @@ export function CrossIcon() {
   );
 }
 
-// Deleting a recording take (Recording page). Deliberately without the two
-// vertical strokes of the usual lid: the drawing is 17 px, a size at which they
-// close up against the walls (same reason as SparkleIcon, the other way round:
-// here we remove strokes instead of switching to a solid).
+// No lid strokes: at 17 px they close up against the walls.
 export function TrashIcon() {
   return (
     <svg {...strokeSvg}>
@@ -145,7 +137,7 @@ export function TrashIcon() {
   );
 }
 
-// Search (Editing rail): the circle and its handle.
+// Search (Editing rail).
 export function SearchIcon() {
   return (
     <svg {...strokeSvg}>
@@ -155,10 +147,7 @@ export function SearchIcon() {
   );
 }
 
-// Characters (Editing rail). ONE head, even though the section name is plural:
-// the drawing is 18 px, a size at which a second head behind the first only adds
-// a smudge (same lesson as the lid removed from TrashIcon). It is the tooltip
-// that says "Characters".
+// ONE head despite the plural section name: at 18 px a second one is a smudge.
 export function PersonIcon() {
   return (
     <svg {...strokeSvg}>
@@ -168,10 +157,8 @@ export function PersonIcon() {
   );
 }
 
-// Structure (Editing rail): the plan of the play, an act and its two indented
-// scenes. Three strokes, not four: at 18 px a second act brings the spacing
-// under four pixels and the drawing becomes a hatch again (same lesson as the
-// second head removed from PersonIcon). It is the indent, and it alone, that
+// An act and its two indented scenes. Three strokes, not four: at 18 px a second act
+// drops the spacing under 4 px and the drawing becomes a hatch. The INDENT is what
 // tells a plan apart from a menu.
 export function OutlineIcon() {
   return (
@@ -183,13 +170,8 @@ export function OutlineIcon() {
   );
 }
 
-// A single chevron, which PIVOTS according to what it opens (and not two swapped
-// drawings): that is already the rule of the header's fold chevron, for the same
-// reason, the movement must follow that of the panel. It serves the fold of the
-// rail (turned a quarter towards the icon strip) and the reveal of the
-// replacement field. In SVG and not the header's `▼` character: that one only
-// pivots well at its text size, and the project's list of tolerated characters
-// is closed.
+// ONE chevron that PIVOTS, never two swapped drawings: the movement must follow the
+// panel's. SVG and not the header's `▼`, which only pivots well at its text size.
 export function ChevronIcon() {
   return (
     <svg {...strokeSvg}>
@@ -198,11 +180,8 @@ export function ChevronIcon() {
   );
 }
 
-// Previous / next match (Editing search). Two vertical arrows, because a list is
-// walked from top to bottom. Neither ▲/▼ (the list of tolerated characters is
-// closed, and ▼ is already the vocabulary of folding on this page, so the same
-// glyph would say two things), nor SkipPrev/SkipNext (solid, a family reserved
-// for the playback controls, and horizontal).
+// Vertical, because a list is walked top to bottom. Not ▲/▼, already the vocabulary
+// of folding here, and not SkipPrev/SkipNext, reserved for playback.
 export function ArrowUpIcon() {
   return (
     <svg {...strokeSvg}>
@@ -212,9 +191,8 @@ export function ArrowUpIcon() {
   );
 }
 
-// Distinct from DownloadIcon, which additionally carries the receiving line at
-// the bottom; the two never sit side by side (one is in the header, the other in
-// the rail).
+// Distinct from DownloadIcon, which adds the receiving line; they never sit side
+// by side.
 export function ArrowDownIcon() {
   return (
     <svg {...strokeSvg}>
@@ -224,10 +202,8 @@ export function ArrowDownIcon() {
   );
 }
 
-// Warning: replaces the ⚠️ emoji, which rendered in full colour (yellow and
-// black) on mobile like the ▶/⏸ of before, hence outside the palette, and whose
-// height varied from one platform to the next. It only ever serves at the head of
-// a sentence, hence the alignment class carried here rather than by each caller.
+// Replaces ⚠️, which rendered in full colour on mobile at a per-platform height.
+// Always at the head of a sentence, hence the alignment class carried here.
 export function WarnIcon() {
   return (
     <svg {...strokeSvg} className="warn-icon">
@@ -238,12 +214,8 @@ export function WarnIcon() {
   );
 }
 
-// Synthetic voice (Rehearsal): replaces the 🤖 emoji, for the same reason. Two
-// sparkles, the convention for "automatically generated", and no longer a robot:
-// the label that carries them is 11.5 px, a size at which a stroked drawing
-// closes up (the robot was no more than a blot there). Hence too the choice of a
-// solid rather than a stroke, the only icon family in the project in that case:
-// there is nothing to close up.
+// Synthetic voice, replacing 🤖. SOLID and not stroked, the only one in the project:
+// its label is 11.5 px, a size at which a stroked drawing closes up.
 export function SparkleIcon() {
   return (
     <svg {...svg} fill="currentColor" className="tts-icon">
@@ -253,32 +225,17 @@ export function SparkleIcon() {
   );
 }
 
-// ---- Page icons (the "seal" of src/shared/PageMark.jsx) ----
-// One per page, stroked, so that the page is recognised at a glance.
-// The paths are reused as they are in the favicons of the .html files: any
-// retouching here must be carried over there.
+// ---- Page icons (the "seal" of PageMark.jsx) ----
+// The paths are reused as they are in the favicons of the .html files: retouching one
+// here must be carried over there.
 
 // Home, and therefore the brand: the two theatre masks.
-//
 // GEOMETRY SUPPLIED, NOT TO BE RETOUCHED. The 8 paths come as they are from
-// `design/drama-wine.svg` (the design delivery, kept in the repository so it can
-// be compared), original 329x345 viewBox included. Only the fill VALUES have
-// changed, so that the brand follows the system of the seals instead of freezing
-// hex values: the wine becomes `currentColor` (hence `--page-mark`) and the two
-// interior solids follow the background of the badge (`--page-mark-soft`).
-// The order of the paths is significant: outline, then interiors, then the eyes
-// and the mouths on top.
-//
-// Only the CROPPING is retouched, never the paths: in the delivered file the ink
-// occupies 259x262 at offset (39, 36) of a 329x345 viewBox, so the drawing is
-// off-centre and leaves an uneven ring inside the badge. The viewBox below crops
-// it square around that same content (side 262, centred on the ink). The shapes,
-// their proportions and their transforms are untouched.
-//
-// Density: this drawing needs room. It only reads from about 34 px up (at 20 px
-// the two masks touch), hence the enlarged badge of `.home-brand-mark`. It serves
-// ONLY there: the headers of the other pages carry the seal of their page, not
-// the brand.
+// `design/drama-wine.svg`; only the fill VALUES changed, so the brand follows the
+// seal tokens. Path order matters: outline, interiors, then eyes and mouths.
+// Only the CROPPING is retouched: the delivered viewBox leaves the ink off-centre, so
+// this one crops square around it (side 262). Shapes and transforms are untouched.
+// Reads only from about 34 px up (at 20 the masks touch), hence `.home-brand-mark`.
 export function MasksIcon() {
   const inner = { fill: "var(--page-mark-soft)" };
   return (
@@ -333,7 +290,7 @@ export function MasksIcon() {
   );
 }
 
-// Rehearsal: two speech bubbles (the play read in several voices).
+// Rehearsal: two speech bubbles.
 export function DialogueIcon() {
   return (
     <svg {...strokeSvg}>
@@ -343,8 +300,7 @@ export function DialogueIcon() {
   );
 }
 
-// Recording: the mic (formerly inline in recorder/App.jsx, with a hard-coded
-// white stroke; it now inherits the colour like the others).
+// Recording: the mic.
 export function MicIcon() {
   return (
     <svg {...strokeSvg}>
@@ -355,25 +311,11 @@ export function MicIcon() {
   );
 }
 
-// Stats: the pie chart of the page, but EXPLODED, one slice detached from the
-// rest.
-//
-// The whole pie does not work as a stroke: it is a circle plus two radii, and two
-// segments starting from the centre of a circle are two hands, and at 12 and 3
-// o'clock they are exactly those of a clock (that is what this seal used to be,
-// and that is how it read, a clock face). Detaching the slice settles that by
-// construction and not by compensation: a hand does not leave its dial, so the
-// "clock" reading is no longer available, and there is no solid to open up inside
-// a stroked family (filling the slice was tried, it does lift the ambiguity but at
-// the cost of the exception).
-//
-// Three measurements, all checked on the rendering at 17 px (the journal's seal,
-// the worst case) and at 36: the slice covers 120° and not 90° (a detached quarter
-// reads as a little flag stuck to the circle), it moves 3 units apart along its
-// bisector (at 1.5 the gap closes up at the pixel and the clock comes back), and
-// the WHOLE of the two shapes is centred in the box, hence coordinates that are
-// not round numbers: centring the circle alone would put the drawing at the
-// bottom left of its badge, with the slice heading up and to the right.
+// Stats: an EXPLODED pie. A whole stroked pie is a circle plus two radii, which at 12
+// and 3 o'clock reads as a clock face; detaching the slice removes that reading by
+// construction. Measured at 17 px and 36: 120° and not 90° (a quarter reads as a flag),
+// 3 units apart on the bisector (at 1.5 the gap closes and the clock returns), and the
+// TWO shapes together centred in the box, hence the non-round coordinates.
 export function PieIcon() {
   return (
     <svg {...strokeSvg}>
@@ -383,18 +325,9 @@ export function PieIcon() {
   );
 }
 
-// Progress: a ticked list, that is, what has been recorded.
-//
-// It used to be three rising bars, and they fell at the same time as the whole pie
-// of the Stats page (see `PieIcon`, just above): a bar chart next to a pie chart is
-// twice "a statistic", so the manager's two seals were told apart by their detail
-// and not by their silhouette. The page shows no bar anyway, it shows a grid of
-// "3/5" turning green; this is progress, not measurement.
-//
-// The tick is the word the site already uses for "done" (the journal status, the
-// Recording labels), so the seal teaches nothing new to read. Two lines and not
-// three: at 17 px a third row thickens the drawing, and a fully ticked list names
-// the page very well without having to stage a line still to be done.
+// Progress: a ticked list. Not bars, which next to `PieIcon` would make the
+// coordinator's two seals differ by detail rather than silhouette. Two rows, not
+// three: at 17 px a third thickens the drawing.
 export function ChecklistIcon() {
   return (
     <svg {...strokeSvg}>
@@ -406,7 +339,7 @@ export function ChecklistIcon() {
   );
 }
 
-// Editing: the quill that writes the text of the play.
+// Editing: the quill.
 export function QuillIcon() {
   return (
     <svg {...strokeSvg}>
@@ -417,38 +350,17 @@ export function QuillIcon() {
   );
 }
 
-// The flags of the two places where a language is chosen: the switch in the foot
-// of the home pages (the language of the SITE) and the one in the "Structure"
-// section of the Editing page (the language of the PLAY).
-//
-// **Drawn, never the flag emoji.** 🇫🇷 is a pair of regional indicators: Windows
-// renders none of them and shows the two letters "FR" instead, which would turn
-// the switch into a pair of letter pairs on half the troupe's machines. The rule
-// "no emoji in the UI" (see the no-emoji invariant in CLAUDE.md) therefore applies here
-// too, and the colours are hard-coded because a flag does not follow the site
-// palette: this is the only image in the repository that is not in
-// `currentColor`.
-//
-// **Two flags, a single box, 3:2.** The Union Jack is 2:1 in reality: it is
-// stretched vertically (`scale(1 4/3)`, applied to its canonical 60x30 geometry
-// rather than redrawn by hand). Two thumbnails of different widths side by side in
-// a switch read as a misalignment, whereas a flag a third taller than life is
-// still recognised by everyone.
-//
-// The British flag for English, and not that of another English-speaking country:
-// it is the one carried by very nearly every language switch on this side of the
-// Atlantic. A flag names a country and not a language, which stays true and is
-// accepted: the language name travels with it, as `title` and as accessible name,
-// never replaced by the image.
-//
-// The size, the rounded corner and the hairline live in `.flag-icon` (theme.css):
-// without the hairline, the white band of the tricolour and the white background
-// of the Union Jack melt into the cream paper and the flag loses an edge.
+// DRAWN, never the flag emoji: 🇫🇷 is a pair of regional indicators, and Windows
+// renders them as the letters "FR". The only image here not in `currentColor`, since a
+// flag does not follow the site palette.
+// One box for both, 3:2: the Union Jack is really 2:1 and is stretched
+// (`scale(1 4/3)` over its canonical 60x30), because two widths side by side in a
+// switch read as a misalignment.
+// The hairline in `.flag-icon` is required: without it the white band and the Union
+// Jack's white melt into the cream paper.
 export function FlagIcon({ locale }) {
-  // The Union Jack's `clipPath`s are referenced by id, so two flags on the same
-  // page would duplicate one. `useId` makes them unique; the colons it produces
-  // are stripped, an id may legally contain them but the URL parsers of old
-  // engines get lost in them.
+  // `clipPath`s are referenced by id, so two flags on a page would collide. The
+  // colons `useId` produces are stripped: old URL parsers get lost in them.
   const uid = React.useId().replace(/:/g, "");
   const box = { viewBox: "0 0 60 40", className: "flag-icon", "aria-hidden": true, focusable: false };
 
@@ -459,9 +371,8 @@ export function FlagIcon({ locale }) {
           <clipPath id={`${uid}-flag`}>
             <path d="M0,0 v30 h60 v-30 z" />
           </clipPath>
-          {/* The four quarters where the red diagonal is offset (the
-              counterchange of the Union Jack: without it, the crosses of Saint
-              Patrick and Saint Andrew overlap instead of interlacing). */}
+          {/* Counterchange: without it Saint Patrick's and Saint Andrew's crosses
+              overlap instead of interlacing. */}
           <clipPath id={`${uid}-counter`}>
             <path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z" />
           </clipPath>

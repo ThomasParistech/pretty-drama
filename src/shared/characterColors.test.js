@@ -1,11 +1,3 @@
-// Tests for the character palette.
-//
-// What is tested here is exactly what cannot be re-read by eye: that the colour
-// fill-in is DETERMINISTIC (Editing and Speaking share replay it separately on
-// the same characters and must agree), that it does not give the same colour
-// twice before the palette is exhausted, and that the first ten entries really
-// are Tableau 10 (that is the promise made to a troupe of ten characters or
-// fewer: the palette at full strength, no pale tint).
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -37,8 +29,6 @@ const cast = (n) => Array.from({ length: n }, (_, i) => ({ id: `c${i}`, name: `P
 // ------------------------------------------------------------------ palette
 
 test("the first ten colours are Tableau 10, in its order", () => {
-  // The promise of the Speaking share page: a troupe of ten characters or fewer
-  // only ever sees the canonical register, never a light tint from tab20.
   assert.deepEqual(CHARACTER_COLORS.slice(0, 10), TAB10);
 });
 
@@ -49,11 +39,8 @@ test("the palette holds twenty distinct colours, all in lowercase hex", () => {
 });
 
 test("every colour has its name key, otherwise a swatch announces itself \"undefined\"", () => {
-  // These keys serve as the `aria-label` of the twenty swatches of the editor's
-  // palette, indexed by rank: a shorter list would put `undefined` there, and
-  // only a screen reader would notice. That the key EXISTS in both catalogues is
-  // checked elsewhere (test_contracts.py, which collects the literal `t("…")`
-  // calls and the keys built by pattern).
+  // Indexed by rank: a shorter list puts `undefined` in an aria-label, and only a
+  // screen reader notices. That each key EXISTS in both catalogues: test_contracts.py.
   assert.equal(CHARACTER_COLOR_KEYS.length, CHARACTER_COLORS.length);
   assert.equal(new Set(CHARACTER_COLOR_KEYS).size, CHARACTER_COLOR_KEYS.length, "no homonym");
   for (const key of CHARACTER_COLOR_KEYS) {
@@ -74,13 +61,9 @@ test("isPaletteColor accepts only the palette, and tolerates any other input", (
 test("firstFreeColor returns the first free one, then wraps once the palette is exhausted", () => {
   assert.equal(firstFreeColor(new Set()), CHARACTER_COLORS[0]);
   assert.equal(firstFreeColor(new Set([CHARACTER_COLORS[0]])), CHARACTER_COLORS[1]);
-  // Palette exhausted: we wrap around rather than return undefined, otherwise a
-  // 21st character would have no colour and the legend would show a hole.
   const full = new Set(CHARACTER_COLORS);
   assert.equal(firstFreeColor(full, 20), CHARACTER_COLORS[0]);
-  // And the wrap ADVANCES. The count is passed separately because `used` stops
-  // growing as soon as the palette is exhausted: relying on it gave the same
-  // colour to every character beyond the twentieth.
+  // The wrap ADVANCES: `used` stops growing once the palette is exhausted.
   assert.equal(firstFreeColor(full, 21), CHARACTER_COLORS[1]);
   assert.equal(firstFreeColor(full, 43), CHARACTER_COLORS[3]);
 });
@@ -88,7 +71,6 @@ test("firstFreeColor returns the first free one, then wraps once the palette is 
 // --------------------------------------------------------------- assignColors
 
 test("a cast with no colours receives the palette in order", () => {
-  // This is the REAL case: the published script.json carried no colour at all.
   const colors = assignColors(cast(10));
   assert.deepEqual([...colors.values()], TAB10);
 });
@@ -128,9 +110,6 @@ test("no colour repeats before the palette is exhausted", () => {
 });
 
 test("beyond twenty, the palette really wraps instead of freezing", () => {
-  // The trap: `used` stops growing when the palette is exhausted, so a fallback
-  // computed from it gave #1f77b4 to the 21st as well as to the 25th, and a
-  // troupe of 25 characters had five characters of the same blue.
   const colors = assignColors(cast(25));
   assert.equal(colors.size, 25);
   assert.deepEqual(
@@ -141,7 +120,7 @@ test("beyond twenty, the palette really wraps instead of freezing", () => {
 });
 
 test("assignColors takes a dubious cast without crashing", () => {
-  // Tolerant mirror of sanitize_script: the manifest can be hand-edited.
+  // Tolerant like sanitize_script: the manifest can be hand-edited.
   for (const raw of [null, undefined, 42, "texte", {}, [null, 42, "x", { name: "sans id" }]]) {
     assert.doesNotThrow(() => assignColors(raw), `input: ${JSON.stringify(raw)}`);
   }
@@ -151,9 +130,7 @@ test("assignColors takes a dubious cast without crashing", () => {
 // ------------------------------------------------------------ characterColor
 
 test("characterColor reads the stored colour, without filling it in", () => {
-  // Unlike `assignColors`: this is the editor's per-line-row call, and
-  // `sanitizeScript` already guarantees the colour there. Filling in here would
-  // rebuild the whole cast on every row.
+  // Editor's per-line-row call: filling in here would rebuild the cast on every row.
   const characters = [{ id: "a", name: "A", color: "#2ca02c" }, { id: "b", name: "B" }];
   assert.equal(characterColor(characters, "a"), "#2ca02c");
   assert.equal(characterColor(characters, "b"), null, "no stored colour, no colour");
@@ -163,17 +140,12 @@ test("characterColor reads the stored colour, without filling it in", () => {
 });
 
 test("characterColor rejects a colour outside the palette rather than paint it", () => {
-  // It would end up in a `style` attribute: we return null and the caller sets
-  // its neutral token.
   assert.equal(characterColor([{ id: "a", color: "chartreuse" }], "a"), null);
 });
 
 // -------------------------------------------------------------- characterInk
 
 test("characterInk caps the lightness and keeps the colour's chroma", () => {
-  // The cap, not a mix with black: mixing dimmed the colour at the same time as
-  // it darkened it, and in the editor the character's name read as black. Cf. the
-  // comment on `characterInk`.
   assert.equal(characterInk("#bcbd22"), "oklch(from #bcbd22 min(l, 0.5) c h)");
   for (const color of CHARACTER_COLORS) {
     const ink = characterInk(color);

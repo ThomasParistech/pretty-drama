@@ -1,8 +1,5 @@
-"""Upload tests: the ZIP contract (`{play, clips: {lineId: raw text}}` + one audio
-member `{id}.{ext}` per line), the ROUTING of uploaded files (one upload zone per
-play, `uploads/<id>/`, plus the root as the creation channel), and the validation of
-a script BEFORE it becomes the source of truth. A hostile input raises UploadError,
-never anything else."""
+"""The ZIP contract, the routing of uploaded files, and script validation before
+promotion. A hostile input raises UploadError, never anything else."""
 
 import io
 import json
@@ -39,8 +36,7 @@ from process_uploads import (
 
 
 def make_archive(members: dict, manifest=None):
-    """In-memory ZIP: members = {name: bytes}; manifest (if not None) is
-    JSON-dumped into manifest.json."""
+    """In-memory ZIP: members = {name: bytes}, manifest dumped into manifest.json."""
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as zf:
         if manifest is not None:
@@ -71,10 +67,7 @@ class TestParseManifest(unittest.TestCase):
         )
 
     def test_the_bare_legacy_manifest_is_still_accepted(self):
-        # The ZIP from before multiple plays: the manifest IS the mapping. An
-        # actor may have had theirs sitting in their downloads for weeks, and
-        # refusing it would protect nothing (it names no play, so it cannot
-        # contradict one).
+        # Pre-multi-play ZIP: the manifest IS the mapping and names no play.
         archive = make_archive(
             {"aaaa-1111.webm": b"x"}, manifest={"aaaa-1111": "Silence !"}
         )
@@ -83,16 +76,13 @@ class TestParseManifest(unittest.TestCase):
         )
 
     def test_an_empty_play_id_declares_nothing(self):
-        # What the Recording page writes for a play whose script has no
-        # identifier yet: accepted, and without any check.
         archive = make_archive(
             {"aaaa-1111.webm": b"x"}, manifest={"play": "", "clips": {"aaaa-1111": "t"}}
         )
         self.assertEqual(parse_manifest(archive)[0], "")
 
     def test_an_invalid_play_id_is_rejected(self):
-        # This identifier becomes a path (`plays/<id>/`): it is validated the way
-        # a line id is, and for the same reason.
+        # The identifier becomes a path `plays/<id>/`.
         for bad in ("../evil", "Le-Malade", "le malade", "-malade", "x" * 65, 42):
             archive = make_archive(
                 {"aaaa-1111.webm": b"x"}, manifest={"play": bad, "clips": {"aaaa-1111": "t"}}
@@ -116,8 +106,7 @@ class TestParseManifest(unittest.TestCase):
             parse_manifest(archive)
 
     def test_old_clips_list_format_is_rejected(self):
-        # Pre-{id: text} format ({character, clips: [...]}) : text values are
-        # not strings -> rejected, never crashes.
+        # Pre-{id: text} format: rejected, never a crash.
         archive = make_archive(
             {"aaaa-1111.webm": b"x"},
             manifest={"character": "Serge", "clips": [{"id": "aaaa-1111", "file": "aaaa-1111.webm"}]},
@@ -133,9 +122,7 @@ class TestParseManifest(unittest.TestCase):
             parse_manifest(archive)
 
     def test_line_id_with_a_trailing_newline_is_rejected(self):
-        # The browser's SAFE_ID (mirror of LINE_ID_PATTERN) refuses "abc\n"; on
-        # the Python side, `$` would accept it with .match, hence the fullmatch.
-        # An id let through here would name an mp3 with a line break in it.
+        # `$` with .match would accept it, hence the fullmatch; SAFE_ID agrees.
         archive = make_archive({"aaaa-1111\n.webm": b"x"}, manifest={"aaaa-1111\n": "texte"})
         with self.assertRaises(UploadError):
             parse_manifest(archive)
@@ -159,8 +146,6 @@ class TestParseManifest(unittest.TestCase):
             parse_manifest(archive)
 
     def test_audio_member_with_path_or_odd_extension_is_not_matched(self):
-        # fullmatch keeps member names free of path tricks: "sub/aaaa-1111.webm"
-        # or "aaaa-1111.webm/../x" never match the id.
         archive = make_archive(
             {"sub/aaaa-1111.webm": b"x"}, manifest={"aaaa-1111": "texte"}
         )
@@ -182,51 +167,40 @@ class TestParseManifest(unittest.TestCase):
 
 
 class TestShort(unittest.TestCase):
-    """The only path from UNTRUSTED text to the coordinator's screen: a file name chosen
-    by the ZIP, an excerpt of a manifest, ffmpeg output. Everything `short` promises
-    is consumed by a table cell (the upload journal on the Dashboard), so both
-    properties matter just as much as one another: a single line, and a bounded
-    length."""
+    """The only path from untrusted text to the coordinator's screen, and it lands in
+    a table cell: one line, bounded length."""
 
     def test_whitespace_is_flattened_to_single_spaces(self):
-        # A line break would break the table row, and a LaTeX or ffmpeg log is
-        # full of them.
+        # An ffmpeg log is full of line breaks, and one would break the table row.
         self.assertEqual(short("voix\nde\t serge  .zip", 100), "voix de serge .zip")
 
     def test_a_long_text_is_capped_and_says_so(self):
         self.assertEqual(short("a" * 12, 10), "a" * 10 + "…")
 
     def test_a_text_at_the_cap_is_left_alone(self):
-        # No ellipsis for nothing: the limit is inclusive.
         self.assertEqual(short("a" * 10, 10), "a" * 10)
 
     def test_a_non_string_is_accepted(self):
-        # Callers pass the EXCEPTION itself (`short(exc, ...)`), not its message:
-        # without the `str()`, the coordinator's only feedback channel would raise at
-        # the very moment of reporting the failure.
+        # Callers pass the exception itself, `short(exc, ...)`, not its message.
         self.assertEqual(short(UploadError("le ZIP est\nabîmé"), 100), "le ZIP est abîmé")
 
 
 class TestReadMemberCapped(unittest.TestCase):
-    """The size caps count the REAL decompressed bytes: a member whose header
-    lies about its size (a highly compressible payload) must still be rejected
-    once it exceeds the cap, not trusted."""
+    """Size caps count the real decompressed bytes: ZIP headers lie."""
 
     def test_member_under_cap_is_returned(self):
         archive = make_archive({"clip.webm": b"x" * 100})
         self.assertEqual(read_member_capped(archive, "clip.webm", 200), b"x" * 100)
 
     def test_member_over_cap_is_rejected(self):
-        # 10 kB of zeros compresses to a few bytes in the ZIP header, but the
-        # real (decompressed) size is what the cap must enforce.
+        # 10 kB of zeros is a few bytes in the header.
         archive = make_archive({"clip.webm": b"\0" * 10_000})
         with self.assertRaises(UploadError):
             read_member_capped(archive, "clip.webm", 1000)
 
 
 class TestAudioFilter(unittest.TestCase):
-    """The trim is peak-relative and needs a sustained onset: those two are
-    what makes it work at all (see the constants' comments)."""
+    """The trim is peak-relative and needs a sustained onset."""
 
     def test_threshold_follows_the_peak(self):
         loud = audio_filter(-2.0)
@@ -235,8 +209,7 @@ class TestAudioFilter(unittest.TestCase):
         self.assertIn(f"start_threshold={-22.0 - TRIM_BELOW_PEAK_DB:.1f}dB", quiet)
 
     def test_onset_duration_is_required(self):
-        # Without start_duration, the click browsers put on the first samples
-        # counts as sound and nothing is trimmed at all.
+        # Without it, the browser's opening click counts as sound and nothing trims.
         self.assertIn("start_duration=", audio_filter(-2.0))
 
     def test_both_ends_are_trimmed_then_normalized(self):
@@ -247,8 +220,7 @@ class TestAudioFilter(unittest.TestCase):
         self.assertTrue(chain[4].startswith("loudnorm="))
 
     def test_silent_take_is_not_trimmed(self):
-        # Trimming a take that holds no voice would remove everything and
-        # write an empty, unplayable mp3.
+        # Trimming a voiceless take writes an empty, unplayable mp3.
         chain = audio_filter(SILENT_PEAK_DBFS - 1)
         self.assertNotIn("silenceremove", chain)
         self.assertTrue(chain.startswith("loudnorm="))
@@ -271,8 +243,7 @@ class TestParsePeakDbfs(unittest.TestCase):
 
 
 class TestKindOf(unittest.TestCase):
-    """An upload's type comes from the extension ALONE: the browser happily
-    renames files to "script (1).json" or "voix-serge (2).zip"."""
+    """The type comes from the extension alone: browsers rename to "script (1).json"."""
 
     def test_extensions_decide(self):
         self.assertEqual(kind_of(Path("voix-serge.zip")), "voix")
@@ -283,20 +254,14 @@ class TestKindOf(unittest.TestCase):
         self.assertEqual(kind_of(Path("voix-serge")), "inconnu")
 
     def test_the_creation_zone_owes_nothing_to_the_extension(self):
-        # A file of `uploads/_new-play/` is read as a title whatever it is called, and its
-        # journal line is filed under `script` by the zone itself: this function never
-        # sees it, which is why a `.txt` means nothing here.
+        # `uploads/_new-play/` files never reach this function; the zone files them.
         self.assertEqual(kind_of(Path("antigone.txt")), "inconnu")
         self.assertEqual(kind_of(Path("Antigone")), "inconnu")
 
 
 class TestReadTitle(unittest.TestCase):
-    """The creation upload: one text file, one line, the play's title.
-
-    Deliberately STRICT about the shape, where the rest of this module is tolerant: this
-    file is committed through GitHub's editor, where the content is a box the coordinator
-    can retype, and a note or a pasted paragraph had better be refused than turned into a
-    play named after its first sentence."""
+    """One text file, one line, the play's title. Strict where the rest of the
+    module is tolerant: a pasted note must not become a play's name."""
 
     def file(self, content: bytes) -> Path:
         tmp = tempfile.TemporaryDirectory()
@@ -313,8 +278,7 @@ class TestReadTitle(unittest.TestCase):
             self.assertEqual(read_title(self.file(content)), "Antigone")
 
     def test_a_windows_byte_order_mark_is_not_part_of_the_title(self):
-        # Left in, it would become the first character of the title, hence a leading
-        # hyphen in the identifier, which PLAY_ID_PATTERN refuses.
+        # Left in, it makes a leading hyphen that PLAY_ID_PATTERN refuses.
         self.assertEqual(read_title(self.file(b"\xef\xbb\xbfAntigone\n")), "Antigone")
 
     def test_a_title_with_accents_travels_whole(self):
@@ -326,14 +290,11 @@ class TestReadTitle(unittest.TestCase):
                 read_title(self.file(content))
 
     def test_several_lines_are_rejected(self):
-        # A note the coordinator dropped by mistake, not a title.
         with self.assertRaises(UploadError):
             read_title(self.file("penser aux costumes\net aux perruques\n".encode("utf-8")))
 
     def test_everything_past_the_separator_is_a_note_and_not_data(self):
-        # The shape the site writes: the title, the separator, then the sentence the
-        # coordinator reads in GitHub's box. Several lines of prose, blank lines, and even
-        # another `---` further down: none of it touches the title.
+        # The shape the site writes; even a second `---` below changes nothing.
         content = (
             "L'École des femmes\n"
             "---\n"
@@ -345,28 +306,23 @@ class TestReadTitle(unittest.TestCase):
         self.assertEqual(read_title(self.file(content.encode("utf-8"))), "L'École des femmes")
 
     def test_the_separator_is_recognised_around_its_own_whitespace(self):
-        # GitHub's editor, or a coordinator's hand, can leave a space on that line.
         for line in ("---", "  ---  ", "---\t"):
             content = f"Antigone\n{line}\nune note\n"
             with self.subTest(line=line):
                 self.assertEqual(read_title(self.file(content.encode("utf-8"))), "Antigone")
 
     def test_a_second_line_before_the_separator_is_rejected(self):
-        # Typing INTO the note changes nothing; typing a title on two lines is refused,
-        # and the reason names the separator so there is something to look for.
+        # The reason names the separator, so there is something to look for.
         with self.assertRaises(UploadError) as caught:
             read_title(self.file(b"Antigone\nde Sophocle\n---\nune note\n"))
         self.assertIn("---", str(caught.exception))
 
     def test_a_file_that_is_only_a_note_carries_no_title(self):
-        # The box emptied of its first line: refused, rather than a play named after the
-        # note itself.
         with self.assertRaises(UploadError):
             read_title(self.file(b"---\nCe fichier cree la piece...\n"))
 
     def test_a_title_may_start_with_any_character(self):
-        # The reason the separator is a line of its own and not a per-line marker: no
-        # character becomes forbidden at the start of a title.
+        # Why the separator is a line of its own and not a per-line marker.
         for title in ("#Balance", "// Titre", "; Titre", "-- Titre"):
             with self.subTest(title):
                 self.assertEqual(read_title(self.file(f"{title}\n---\nnote\n".encode())), title)
@@ -388,15 +344,13 @@ class TestCreatePlay(unittest.TestCase):
         root = Path(self.tmp.name)
         self.plays = root / "plays"
         self.addCleanup(self.tmp.cleanup)
-        # BOTH paths: `create_play` lays out the play's silo, which includes its upload
-        # zone. Left unpatched, the tests would write `uploads/antigone/` into the repo.
+        # Both paths: `create_play` lays out the silo, upload zone included.
         patch = mock.patch.multiple(common, PLAYS_DIR=self.plays, UPLOADS_DIR=root / "uploads")
         patch.start()
         self.addCleanup(patch.stop)
 
     def file(self, content: str, name: str = "titre.txt") -> Path:
-        """A file of `uploads/_new-play/`, whose NAME is deliberately varied in the tests:
-        nothing must ever be read from it."""
+        """A file of `uploads/_new-play/`; its name is varied on purpose."""
         folder = Path(self.tmp.name) / "uploads" / process_uploads.NEW_PLAY_DIR
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / name
@@ -410,17 +364,11 @@ class TestCreatePlay(unittest.TestCase):
     def test_the_identifier_is_derived_from_the_title(self):
         play_id, changes = create_play(self.file("L'École des femmes\n"))
         self.assertEqual(play_id, "l-ecole-des-femmes")
-        # A brand new play is empty, so there is nothing to count: `created` alone is
-        # the whole of what the journal row has to say.
-        self.assertEqual(changes, {"created": True})
+        self.assertEqual(changes, {"created": True})  # nothing to count yet
 
     def test_the_name_of_the_file_is_never_read(self):
-        # The one property the whole creation zone rests on: on GitHub's page the name is
-        # a field the coordinator can edit, so nothing may depend on it. Not the name, not
-        # the extension, not even having one. The titles are deliberately unrelated to the
-        # names, one of them naming ANOTHER play: the identifier follows the content every
-        # time. One title per case, since two files carrying the same one would collide on
-        # the address, which is the rule tested just below.
+        # On GitHub the name is an editable field. One title per case: two files
+        # sharing one would collide, as tested below.
         for name, title, play_id in (
             ("titre.txt", "Antigone", "antigone"),
             ("Antigone", "Le Cid", "le-cid"),
@@ -432,8 +380,7 @@ class TestCreatePlay(unittest.TestCase):
                 self.assertEqual(self.script(title, name)["id"], play_id)
 
     def test_the_title_is_kept_as_typed(self):
-        # The identifier is folded, the title is not: it is what the troupe reads on
-        # the play's card and what the PDF prints.
+        # The identifier is folded, the title is not.
         self.assertEqual(self.script("L'École des femmes")["title"], "L'École des femmes")
 
     def test_the_play_is_empty_and_carries_a_scene_to_write_in(self):
@@ -442,20 +389,15 @@ class TestCreatePlay(unittest.TestCase):
         self.assertEqual(fresh["acts"], [{"scenes": [{"lines": []}]}])
 
     def test_the_language_is_the_project_default(self):
-        # This file says nothing about it, and the reader's locale is not the play's
-        # language: the rail's outline sets it in one click.
+        # The reader's locale is not the play's language; the Editor rail sets it.
         self.assertEqual(self.script("Antigone")["language"], DEFAULT_LANGUAGE)
 
     def test_the_silo_of_the_new_play_is_laid_out(self):
-        # Both `.gitkeep` files matter: git does not version an empty folder, and the
-        # upload zone must exist before the coordinator clicks the button of their new
-        # play.
         play_id, _ = create_play(self.file("Antigone\n"))
         self.assertTrue((self.plays / play_id / "clips" / ".gitkeep").exists())
 
     def test_a_title_that_leaves_no_address_is_rejected(self):
-        # Rather than fabricate a folder named "piece-1", which would live for years in
-        # the troupe's URL.
+        # Rather than fabricate a "piece-1" that lives forever in the troupe's URL.
         for title in ("???", "---", "..."):
             with self.subTest(title):
                 with self.assertRaises(UploadError):
@@ -463,7 +405,7 @@ class TestCreatePlay(unittest.TestCase):
         self.assertFalse(self.plays.exists(), "no phantom play folder")
 
     def written_play(self, play_id: str, title: str, lines: list) -> bytes:
-        """A play already at that address, and the bytes it must still hold afterwards."""
+        """A play already at that address; returns the bytes it must still hold."""
         data = self.plays / play_id / "data"
         data.mkdir(parents=True)
         raw = json.dumps(
@@ -474,34 +416,27 @@ class TestCreatePlay(unittest.TestCase):
         return raw
 
     def test_an_address_already_taken_is_refused(self):
-        # The creation gesture repeated by mistake on a play that is already written: the
-        # empty play it carries must not erase the troupe's work.
         before = self.written_play(
             "antigone", "Antigone", [{"id": "l1", "characterId": "c1", "text": "Non."}]
         )
         with self.assertRaises(UploadError) as caught:
             create_play(self.file("Antigone\n"))
-        # The reason names the address and what to change, where the promotion safeguard
-        # behind it would speak of a script with no line to someone who sent a title.
+        # The safeguard behind it would speak of a script with no line instead.
         self.assertIn("antigone", str(caught.exception))
         self.assertEqual((self.plays / "antigone" / "data" / "script.json").read_bytes(), before)
 
     def test_two_titles_that_fold_onto_the_same_address_collide(self):
-        # The identifier is a FOLDING, so the collision does not need the same title: the
-        # management page catches this one, but the title travels in a box the coordinator
-        # can retype on GitHub.
+        # The identifier is a folding, so a collision needs no identical title.
         before = self.written_play("l-ecole-des-femmes", "L'École des femmes", [])
         with self.assertRaises(UploadError):
             create_play(self.file("L'Ecole des femmes\n"))
-        # A play with no line yet is protected too, and that is the point: the promotion
-        # safeguard alone would have let the empty document through and reset its title.
+        # A play with no line yet is protected too, which the safeguard alone is not.
         path = self.plays / "l-ecole-des-femmes" / "data" / "script.json"
         self.assertEqual(path.read_bytes(), before)
 
 
 class TestValidateScript(unittest.TestCase):
-    """Safeguard BEFORE overwriting a play's script.json: stricter than
-    sanitize_script, which is only a tolerant reader."""
+    """Safeguard before overwriting script.json, stricter than sanitize_script."""
 
     PLAY = {
         "title": "Pièce",
@@ -522,7 +457,7 @@ class TestValidateScript(unittest.TestCase):
             validate_script(b"{pas du json", self.PLAY)
 
     def test_valid_json_that_is_not_a_script_is_rejected(self):
-        # The real danger: a foreign JSON would sanitize into an empty play.
+        # A foreign JSON would sanitize into an empty play.
         for bad in ([1, 2, 3], {"foo": "bar"}, "texte", 42, None):
             with self.assertRaises(UploadError):
                 validate_script(self.raw(bad), self.PLAY)
@@ -537,8 +472,7 @@ class TestValidateScript(unittest.TestCase):
         validate_script(self.raw(empty), {})
 
     def test_a_script_naming_another_play_is_rejected(self):
-        # The file names its play, and so does the upload folder: letting the two
-        # contradict each other would overwrite one play's script with another's.
+        # File and folder both name a play; a contradiction would overwrite the wrong one.
         other = {**self.PLAY, "id": "le-malade"}
         with self.assertRaises(UploadError):
             validate_script(self.raw(other), self.PLAY, expected_play="transport-de-femmes")
@@ -548,9 +482,7 @@ class TestValidateScript(unittest.TestCase):
         validate_script(self.raw(same), self.PLAY, expected_play="le-malade")
 
     def test_a_script_without_an_id_is_accepted_where_it_is_dropped(self):
-        # A script downloaded before this field existed: it says nothing, so it
-        # contradicts nothing, and the folder decides (same tolerance as for a ZIP
-        # in the older form).
+        # Says nothing, contradicts nothing: the folder decides, as for a legacy ZIP.
         validate_script(self.raw(self.PLAY), self.PLAY, expected_play="le-malade")
 
     def test_oversized_file_is_rejected(self):
@@ -563,14 +495,8 @@ class TestValidateScript(unittest.TestCase):
 
 
 class TestProcessZip(unittest.TestCase):
-    """The merge is ALL-OR-NOTHING per ZIP: a take that refuses to convert must
-    leave behind neither a published mp3 nor a clips.json entry for the takes
-    that came before it in the same ZIP. That is what guarantees an actor never
-    ends up with half of their lines online.
-
-    ffmpeg is not installed in build.yml's CI: `transcode` is therefore replaced,
-    which tests exactly the part we care about (the order of the two phases),
-    without depending on the converter."""
+    """All-or-nothing per ZIP, so an actor never gets half their lines online.
+    `transcode` is mocked: build.yml's CI has no ffmpeg."""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -602,8 +528,7 @@ class TestProcessZip(unittest.TestCase):
         with mock.patch.object(process_uploads, "transcode", fake_transcode):
             self.assertEqual(process_uploads.process_zip(self.zip_path, clips_index, self.clips), 2)
         self.assertEqual(self.published(), ["aaaa-1111.mp3", "bbbb-2222.mp3"])
-        # RAW text as of recording time (normalization only happens in
-        # build_manifest), and the clips already there are kept.
+        # Raw text as of recording time; build_manifest normalizes.
         self.assertEqual(
             clips_index, {"vieux-id": "déjà là", "aaaa-1111": "Silence !", "bbbb-2222": "J'arrive."}
         )
@@ -622,16 +547,13 @@ class TestProcessZip(unittest.TestCase):
         with mock.patch.object(process_uploads, "transcode", failing_transcode):
             with self.assertRaises(UploadError):
                 process_uploads.process_zip(self.zip_path, clips_index, self.clips)
-        # Neither the take converted before the failure nor the next one: nothing
-        # is published, and the index has not moved.
+        # Not even the take converted before the failure.
         self.assertEqual(self.published(), [])
         self.assertEqual(clips_index, {"vieux-id": "déjà là"})
 
     def test_a_zip_naming_another_play_publishes_nothing(self):
-        # The mp3s are named by LINE id: merging here would write one play's
-        # voices under another play's lines, and nobody would notice before the
-        # rehearsal. The refusal comes before any conversion, hence the
-        # `transcode` that would raise if it were called.
+        # mp3s are named by line id, so a misfiled merge shows only at rehearsal.
+        # The refusal precedes any conversion, hence this `transcode`.
         def never(source, dest):
             raise AssertionError("no conversion must be attempted")
 
@@ -660,25 +582,15 @@ class TestProcessZip(unittest.TestCase):
 
 
 class TestMain(unittest.TestCase):
-    """The script as the workflow calls it, on real upload zones.
-
-    This is where ROUTING happens, and routing is the heart of the multi-play repo:
-    it is the FOLDER that decides which play a file belongs to, never its content,
-    without which a damaged ZIP (hence unreadable, hence silent about its play)
-    would have no journal to speak in. The identifier the file carries only serves
-    to check.
-
-    No valid ZIP here: transcoding them would need ffmpeg, which the CI installs
-    only in uploads.yml when there are voices to process. An unreadable ZIP fails
-    before any call to ffmpeg, so `shutil.which` is the only point to neutralise
-    (without it, the "ffmpeg not found" guard would exit with an error)."""
+    """The script as the workflow calls it. The FOLDER routes and the content only
+    verifies, so a damaged ZIP still reaches a journal. No valid ZIP here (no ffmpeg
+    in CI), hence the mocked `shutil.which`."""
 
     PLAY = {
         "id": "le-malade",
         "title": "Pièce",
-        # The malformed colour is what sanitize_script drops (it only copies the
-        # `#rrggbb` form): it proves that promotion really writes the uploaded
-        # bytes, and not a re-read version.
+        # The malformed colour, dropped by sanitize_script, proves promotion writes
+        # the uploaded bytes.
         "characters": [{"id": "c1", "name": "Serge", "color": "bleu de Prusse"}],
         "acts": [
             {
@@ -717,9 +629,7 @@ class TestMain(unittest.TestCase):
         return raw
 
     def run_main(self):
-        # `PLAYS_DIR` and `UPLOADS_DIR` are patched in common, where the path
-        # helpers re-read them on every call; `UPLOADS_DIR` is also patched in
-        # process_uploads, which imported it by value.
+        # Patched in common and in process_uploads, which imported it by value.
         with mock.patch.multiple(
             common, PLAYS_DIR=self.plays, UPLOADS_DIR=self.uploads
         ), mock.patch.multiple(
@@ -742,28 +652,20 @@ class TestMain(unittest.TestCase):
         results = self.entries_of(self.run_main(), "le-malade")
 
         self.assertEqual(set(results), {"script.json", "voix-lea.zip", "notes.txt"})
-        # The script is promoted, verbatim (the malformed colour survived). Its `changes`
-        # are EMPTY and the key is there all the same: the play already carried this exact
-        # script, so nothing moved, and the journal says "no change" rather than showing
-        # the blank cell that sent us diffing promotions in the first place. The absence
-        # of the key means something else entirely (a journal written before the diff
-        # existed), which is why the empty dict is written out.
+        # `changes` empty rather than absent: a MISSING key means a journal written
+        # before the diff existed.
         self.assertEqual(
             results["script.json"], {"file": "script.json", "kind": "script", "changes": {}}
         )
         self.assertEqual((self.data("le-malade") / "script.json").read_bytes(), raw)
-        # Every file carries ITS own failure, with its own reason.
         self.assertEqual(results["voix-lea.zip"]["kind"], "voix")
         self.assertIn("ZIP", results["voix-lea.zip"]["error"])
         self.assertEqual(results["notes.txt"]["kind"], "inconnu")
         self.assertIn("inconnu", results["notes.txt"]["error"])
 
     def test_a_promoted_script_publishes_what_it_changed(self):
-        # End to end, because the diff crosses four places between the upload zone and the
-        # coordinator's eyes (`promote_script` takes it, `record` merges it,
-        # update_history.py copies it, build_manifest.py carries it into the manifest), and
-        # each of them handles it without knowing what is inside. Only a real run says the
-        # fields arrive intact.
+        # The diff crosses promote_script, record, update_history and build_manifest,
+        # none of which look inside it.
         self.existing_play()
         updated = {
             **self.PLAY,
@@ -773,10 +675,8 @@ class TestMain(unittest.TestCase):
                     "scenes": [
                         {
                             "lines": [
-                                # Kept, and edited.
-                                {"id": "l1", "characterId": "c1", "text": "Silence, enfin !"},
-                                # Brand new.
-                                {"id": "l2", "characterId": "c2", "text": "J'arrive."},
+                                {"id": "l1", "characterId": "c1", "text": "Silence, enfin !"},  # edited
+                                {"id": "l2", "characterId": "c2", "text": "J'arrive."},  # new
                             ]
                         }
                     ]
@@ -795,8 +695,7 @@ class TestMain(unittest.TestCase):
         )
 
     def test_a_script_that_creates_its_play_says_so_in_the_journal(self):
-        # There is nothing to compare against, so the row carries `created` plus the size
-        # of what arrived: this upload is both the birth of the play and its first text.
+        # Nothing to compare against, so `created` plus the size of what arrived.
         new = {**self.PLAY, "id": "antigone"}
         (self.zone("antigone") / "script.json").write_text(
             json.dumps(new, ensure_ascii=False), encoding="utf-8"
@@ -815,7 +714,7 @@ class TestMain(unittest.TestCase):
         (self.zone("le-malade") / "voix-lea.zip").write_bytes(b"pas un zip du tout")
         (self.zone("le-malade") / "notes.txt").write_text("x", encoding="utf-8")
         self.run_main()
-        # `.gitkeep` keeps the folder alive in git: it is not an upload.
+        # `.gitkeep` keeps the folder alive in git; it is not an upload.
         self.assertEqual([p.name for p in self.zone("le-malade").iterdir()], [".gitkeep"])
 
     def test_a_refused_script_leaves_the_play_untouched(self):
@@ -830,8 +729,6 @@ class TestMain(unittest.TestCase):
         self.assertEqual(self.run_main(), {"plays": {}, "unrouted": []})
 
     def test_two_plays_are_processed_independently(self):
-        # Siloing, seen from the repo: two zones, two journals, and one's failure
-        # says nothing in the other.
         self.existing_play("le-malade")
         self.existing_play("transport", play={**self.PLAY, "id": "transport"})
         (self.zone("le-malade") / "voix-lea.zip").write_bytes(b"pas un zip du tout")
@@ -845,10 +742,8 @@ class TestMain(unittest.TestCase):
         self.assertEqual(results["unrouted"], [])
 
     def test_a_script_creates_its_play_and_its_deposit_zone(self):
-        # A play is born from a script upload into a zone that does not correspond
-        # to any play yet. Both `.gitkeep` files matter: git does not version an
-        # empty folder, and the upload zone must exist before the coordinator clicks the
-        # upload button of their new play.
+        # `.gitkeep`: git versions no empty folder, and the zone must exist before
+        # the coordinator clicks the play's button.
         new = {**self.PLAY, "id": "antigone"}
         (self.zone("antigone") / "script.json").write_text(
             json.dumps(new, ensure_ascii=False), encoding="utf-8"
@@ -863,15 +758,12 @@ class TestMain(unittest.TestCase):
         self.assertTrue((self.uploads / "antigone" / ".gitkeep").exists())
 
     def test_a_refused_script_in_an_orphan_zone_leaves_no_phantom_play(self):
-        # The other half of the safety net above: the zone matches no play, and the
-        # only file in it is refused. Nothing must be left behind, `clips.json`
-        # included, or the troupe's chooser would show a play with no title and no
-        # line (`process_play_zone` guards its write with `script_json.exists()`).
+        # Not even a `clips.json`, or the chooser shows a titleless play: hence the
+        # `script_json.exists()` guard in `process_play_zone`.
         (self.zone("antigone") / "export.json").write_text("[1, 2, 3]", encoding="utf-8")
         results = self.run_main()
         self.assertFalse((self.plays / "antigone").exists())
-        # The line exists all the same: it has no play journal to go to, so it goes to
-        # the root one, which the management page displays.
+        # No play journal to speak in, so the line goes to the root one.
         self.assertEqual([e["file"] for e in results["unrouted"]], ["export.json"])
 
     def new_play_zone(self):
@@ -881,13 +773,9 @@ class TestMain(unittest.TestCase):
         return folder
 
     def test_the_creation_gesture_of_the_site_creates_its_play(self):
-        """The EXACT path of the management page's "New play" button: one file in
-        `uploads/_new-play/`, carrying the title and nothing else.
-
-        `validate_script`'s safeguard is precisely the one that refuses a candidate
-        without any line. It only applies against a play that HAS some, but nothing in its
-        signature says so: without this test, the only way to create a play from the site
-        could become a refusal the first time that safeguard is tightened."""
+        """The exact path of the management page's "New play" button. `validate_script`
+        refuses a candidate with no line, and only its "against a play that HAS some"
+        condition keeps this working."""
         (self.new_play_zone() / "l-ecole-des-femmes.txt").write_text(
             "L'École des femmes\n", encoding="utf-8"
         )
@@ -896,27 +784,19 @@ class TestMain(unittest.TestCase):
 
         self.assertEqual(list(results), ["l-ecole-des-femmes.txt"])
         self.assertNotIn("error", results["l-ecole-des-femmes.txt"])
-        # The journal says "script", and the ZONE is what says so: `kind_of` would have
-        # answered "inconnu" and shown the coordinator a "?" on the one upload that
-        # worked.
+        # The ZONE files it as "script"; `kind_of` would have answered "inconnu".
         self.assertEqual(results["l-ecole-des-femmes.txt"]["kind"], "script")
         script = json.loads((self.data("l-ecole-des-femmes") / "script.json").read_text("utf-8"))
         self.assertEqual(script["id"], "l-ecole-des-femmes")
         self.assertEqual(script["title"], "L'École des femmes")
         self.assertEqual(script["language"], DEFAULT_LANGUAGE)
-        # The silo of a brand new play, exactly as for a `.json` creation.
         self.assertTrue((self.plays / "l-ecole-des-femmes" / "clips" / ".gitkeep").exists())
         self.assertTrue((self.uploads / "l-ecole-des-femmes" / ".gitkeep").exists())
-        # And the file leaves the zone, like every processed upload: left there, it would
-        # be re-processed on every later run.
+        # Left in the zone, it would be re-processed on every later run.
         self.assertEqual(list(self.new_play_zone().iterdir()), [])
 
     def test_the_creation_zone_reads_no_file_name(self):
-        # The whole point of a dedicated zone: on GitHub's page the name is a field the
-        # coordinator can edit before committing, so the gesture must not depend on it.
-        # Renamed, stripped of its extension, given another one, or named after another
-        # play entirely: it is the CONTENT that says which play is born. A title per case,
-        # two files carrying the same one colliding on the address (tested below).
+        # The content, never the name, says which play is born.
         for name, title, play_id in (
             ("antigone (1).txt", "Antigone", "antigone"),
             ("antigone.txt", "Le Cid", "le-cid"),
@@ -931,8 +811,7 @@ class TestMain(unittest.TestCase):
                 self.assertTrue((self.data(play_id) / "script.json").exists())
 
     def test_a_title_that_leaves_no_address_is_reported_unrouted(self):
-        # It names no play, so it has no journal to speak in: the reason goes to the
-        # root journal, which the management page displays, and it says what to fix.
+        # It names no play, so the reason goes to the root journal.
         (self.new_play_zone() / "piece.txt").write_text("???\n", encoding="utf-8")
         results = self.run_main()
         self.assertEqual(results["plays"], {})
@@ -941,9 +820,7 @@ class TestMain(unittest.TestCase):
         self.assertFalse(self.plays.exists())
 
     def test_a_note_dropped_in_the_creation_zone_creates_no_play(self):
-        # The strictness of `read_title` is what stands here: several lines is a note,
-        # never a title, and the reason says so instead of a play appearing with a
-        # sentence for a name.
+        # `read_title`'s strictness: several lines is a note, never a title.
         (self.new_play_zone() / "notes.txt").write_text(
             "penser aux costumes\net aux perruques\n", encoding="utf-8"
         )
@@ -953,24 +830,18 @@ class TestMain(unittest.TestCase):
         self.assertFalse(self.plays.exists())
 
     def test_the_creation_zone_never_empties_a_play_that_already_exists(self):
-        # The gesture repeated by mistake on a play that is already there: the empty play
-        # it carries would erase the troupe's work, and the address gate of `create_play`
-        # refuses it before the promotion safeguard behind it ever has to.
+        # `create_play`'s address gate refuses it before the promotion safeguard has to.
         before = self.existing_play("le-malade", play={**self.PLAY, "title": "Le Malade"})
         (self.new_play_zone() / "le-malade.txt").write_text("Le Malade\n", encoding="utf-8")
         results = self.run_main()
-        # A REFUSED creation created no play, so it speaks in the ROOT journal, the one
-        # the management page displays: that is the page the gesture was made from, and
-        # the play's own Progress page would be a strange place to hide it.
+        # No play, so it speaks in the root journal: the page it was made from.
         self.assertEqual(results["plays"], {})
         self.assertIn("error", results["unrouted"][0])
         self.assertEqual(results["unrouted"][0]["file"], "le-malade.txt")
         self.assertEqual((self.data("le-malade") / "script.json").read_bytes(), before)
 
     def test_the_creation_zone_is_never_taken_for_a_play(self):
-        # `_new-play` is not a valid play id, so without its own branch in `main` the
-        # site's own gesture would be answered with "not a valid play identifier", and
-        # nothing else would ever create a play.
+        # `_new-play` is not a valid play id, so it needs its own branch in `main`.
         (self.new_play_zone() / "antigone.txt").write_text("Antigone\n", encoding="utf-8")
         results = self.run_main()
         self.assertEqual(results["unrouted"], [])
@@ -978,9 +849,7 @@ class TestMain(unittest.TestCase):
         self.assertFalse((self.plays / process_uploads.NEW_PLAY_DIR).exists())
 
     def test_a_text_file_outside_the_creation_zone_creates_nothing(self):
-        # The other half of "the folder decides": a note in a play's zone, or at the root,
-        # is an unknown type again. It used to be the creation form itself, which made any
-        # stray text file a play waiting to be born.
+        # The other half of "the folder decides": elsewhere a .txt is an unknown type.
         self.existing_play("le-malade")
         (self.zone("le-malade") / "titre.txt").write_text("Antigone\n", encoding="utf-8")
         (self.uploads / "titre.txt").write_text("Hamlet\n", encoding="utf-8")
@@ -1005,9 +874,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual((self.data("le-malade") / "script.json").read_bytes(), before)
 
     def test_a_root_script_is_routed_by_its_own_id(self):
-        # The safety net: at the root there is no folder to route with, so the
-        # file's own identifier decides. It covers the case where GitHub would
-        # refuse to serve its upload page for a folder it does not know yet.
+        # No folder to route with at the root, so the file's own identifier decides.
         new = {**self.PLAY, "id": "antigone"}
         (self.uploads / "script (1).json").write_text(
             json.dumps(new, ensure_ascii=False), encoding="utf-8"
@@ -1025,8 +892,7 @@ class TestMain(unittest.TestCase):
         self.assertIn("pièce", results["unrouted"][0]["error"])
 
     def test_a_root_zip_is_reported_unrouted(self):
-        # Voices always concern a play that exists, and that play carries its own
-        # upload button: the root has no reason to accept any.
+        # Voices always concern an existing play, which carries its own upload button.
         (self.uploads / "voix-lea.zip").write_bytes(b"peu importe")
         results = self.run_main()
         self.assertEqual(results["plays"], {})
@@ -1039,8 +905,7 @@ class TestMain(unittest.TestCase):
         results = self.run_main()
         self.assertEqual(results["plays"], {})
         self.assertIn("Le Malade", results["unrouted"][0]["error"])
-        # Logged AND removed, like any faulty upload: leaving it would have it
-        # reported again on every run.
+        # Logged AND removed: leaving it would report it again on every run.
         self.assertEqual(list(folder.iterdir()), [])
 
 

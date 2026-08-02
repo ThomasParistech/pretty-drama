@@ -1,59 +1,31 @@
-/* The two root pages of the site: the troupe's play selector and the manager's
-   play management page.
+/* The two root pages, chooser and management. They borrow their styling from home.css;
+   this file carries only what is specific to them.
 
-   They borrow all their styling from `home.css` (the brand hero, the card grid, the
-   footer and its language switch): they are home pages, and the entrance of the site
-   must have the same bearing whichever door you come through. This file therefore
-   carries ONLY what is specific to them, namely what a play card says about its play,
-   the creation gesture, and the report of uploads with no play. */
-
-/* The landmark holds all the content of the page, the grid of plays and, on the
-   management page, the two blocks that belong to it (see `App.jsx`). A flex column and
-   not a bare block: these blocks used to be direct children of `.home`, hence flex
-   items, and adjacent flex items do not collapse their vertical margins where blocks
-   do. Without this the grid's 20 px and the creation card's 10 px would have merged
-   into 20, moving the whole lower half of the management page by ten pixels for a
-   change meant to touch nothing but the landmarks. */
+   A flex column and not a bare block: adjacent flex items do not collapse their
+   vertical margins where blocks do, and the grid's 20 px and the creation card's 10
+   would merge into 20. */
 .chooser-main {
   display: flex;
   flex-direction: column;
 }
 
-/* The heading of the page takes the place of the play title on a play's home page
-   (`.home-play-title`), give or take one size: here it is a question put to the
-   reader, not the name of a work, so it does not deserve the 44 px of a play
-   title. */
+/* In the place of `.home-play-title`, one size down: a question, not a work's name. */
 .chooser-heading {
   font-size: 30px;
   font-weight: 700;
   color: var(--ink);
 }
 
-/* A play's cards are shorter than a page's (a title and one line, against a 52 px
-   seal and two paragraphs): they therefore tighten their inner gutter, the rest (base
-   width, hover, focus ring) coming from `.home-card`. No `align-items` here: a flex
-   container already stretches its items by default, so the cards of a row have the
-   same height without being asked (a rule used to write it, it did nothing). */
+/* Shorter than a page card, so a tighter gutter; the rest comes from `.home-card`. */
 .chooser-card {
   gap: 4px;
 }
 
-/* What a card says about its play, on one wrapping row: its cast size, its length in
-   words, and on the management page the recorded share (see `PlayStats`).
-
-   In fixed-width digits like every aligned number on the site (the Progress grid, the
-   Speaking share counts): two cards side by side can then be compared without the
-   figures shifting.
-   In the soft ink and NOT in the green of `--ok`, which was tried and removed on the
-   share: that green is the green of completion all over the site (a cell of the grid, a
-   recorded take), so it made "0.7 %" read as good news. A progress figure is a fact,
-   not a state reached; the colour of status belongs to the play's Progress page, which
-   measures it by character and by scene. */
-/* The items are told apart by SPACE alone, and this is not an oversight: a middle dot
-   was drawn between them and removed. The row wraps (three items on a 330 px card, and
-   a phone is narrower still), and a separator has to belong to one of the two items it
-   sits between, so whichever one carries it, a wrap leaves it dangling at the end of a
-   line or opening the next one. Space never dangles. */
+/* Cast size, length in words, recorded share. Fixed-width digits, so two cards can be
+   compared without the figures shifting. Soft ink and NOT the green of `--ok`, which is
+   the green of completion everywhere else and made "0.7 %" read as good news.
+   Told apart by SPACE alone: the row wraps, and a separator belongs to one of the two
+   items it sits between, so a wrap leaves it dangling. Space never dangles. */
 .chooser-card-stats {
   display: flex;
   flex-wrap: wrap;
@@ -63,18 +35,16 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* A still empty play says so instead of describing itself in zeros (see `PlayStats`):
-   the sentence takes the place of the row, in the same size so that two neighbouring
-   cards keep the same height. */
+/* An empty play says so instead of describing itself in zeros, at the same size so
+   two neighbouring cards keep their height. */
 .chooser-card-empty {
   font-size: 13.5px;
   color: var(--ink-soft);
   font-style: italic;
 }
 
-/* A whole row to itself, and it matters now that the grid holds one item more than the
-   plays: this sentence is a flex item like the creation tile, so without a full basis the
-   two sat side by side, the sentence reading as the label of the tile. */
+/* A whole row to itself: a flex item like the creation tile, so without a full basis
+   the two sat side by side and the sentence read as the tile's label. */
 .chooser-empty {
   flex: 1 1 100%;
   color: var(--ink-soft);
@@ -82,16 +52,10 @@
   padding: 10px 0 20px;
 }
 
-/* The creation tile, last item of the grid: the empty slot after the plays.
-   It borrows the basis of a play card (`.home-card`) so the row keeps its rhythm, and
-   gives up everything else a card has: no paper, no shadow, a dashed outline and the soft
-   ink. That is the whole point, and it is measured against what it replaces (a card with
-   a field and a button, open at all times, asking for a play on every visit): the offer
-   has to be READABLE and never louder than the plays it follows, which are the subject of
-   the page.
-   `align-self: stretch` and no height of its own: the tallest card of the row sets the
-   height, and a fixed one would leave it short or hanging on the day a card gains a
-   line. */
+/* The creation tile, the empty slot after the plays: a play card's basis so the row
+   keeps its rhythm, and nothing else a card has, so it stays readable without ever being
+   louder than the plays. `align-self: stretch` and no height of its own, the tallest
+   card of the row setting it. */
 .chooser-new-tile {
   flex: 0 1 330px;
   align-self: stretch;
@@ -111,9 +75,7 @@
   transition: color 0.12s, border-color 0.12s, background-color 0.12s;
 }
 
-/* No lift on hover, unlike every other clickable surface here (`.lift-hover`): a tile
-   that rises out of the paper would claim the attention the plays are owed. It answers
-   in ink and in its outline instead, which is enough to say it can be clicked. */
+/* No `.lift-hover`: a tile that rises would claim the attention the plays are owed. */
 .chooser-new-tile:hover {
   color: var(--ink);
   border-color: var(--accent);
@@ -125,24 +87,16 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-/* The "+" reads as a sign and not as a letter: bigger than the label, and its own line
-   height so it centres on the cap height of the words next to it rather than on their
+/* Its own line height, so it centres on the cap height of the words and not their
    baseline. */
 .chooser-new-tile-plus {
   font-size: 20px;
   line-height: 1;
 }
 
-/* The report of uploads with no play, the one block of the management page that lives
-   BELOW the grid and at the width of the content, not in the grid: it is not a play, and
-   a card of the same width as a play would read as one more play. (The creation gesture
-   used to sit here too; it is a tile in the grid and a modal now.)
-   The narrow-window inset is not a bare 700 px: `.home` carries no side padding (it is
-   `.home-grid` that has its own), so below 700 px this card was touching both edges of
-   the screen while the play cards just above stayed tucked in. And it is the GRID's inset
-   that is copied here, 20 px per side, not `--notice-gutter`, which is worth 16: the
-   block sits right under the play cards, in the same column, so an edge four pixels off
-   from theirs is read as a misalignment and not as a gutter of its own. */
+/* Below the grid and not in it: a card of a play's width would read as one more play.
+   The inset copies the GRID's 20 px per side and not `--notice-gutter` (16): the block
+   sits in the same column as the cards, so four pixels off reads as a misalignment. */
 .chooser-unrouted {
   width: 100%;
   max-width: min(700px, calc(100% - 40px));
@@ -150,13 +104,8 @@
   padding: 22px;
 }
 
-/* Neither `font-family` nor field padding here: the serif of the headings and the
-   geometry of the fields are ELEMENT rules of the theme (`h1, h2, h3` and
-   `select, input[type="text"], textarea`). The theme's `font-size: 16px` on a field
-   moreover carries a contract that must not be undone: below that, iOS zooms on focus,
-   and these two pages are opened on a phone.
-   The creation panel has no heading of its own: the tile that opens it carries the words
-   one line above (see `NewPlayTile`). */
+/* No `font-family` and no field padding here: those are ELEMENT rules of the theme,
+   and its `font-size: 16px` on a field is a contract (below it, iOS zooms on focus). */
 .chooser-unrouted h2 {
   font-size: 22px;
   margin-bottom: 6px;
@@ -169,10 +118,7 @@
   margin-bottom: 14px;
 }
 
-/* The label above its field, the whole width of the box: the action button is the box's
-   own (`.modal-actions`), so nothing shares this line. The field stretches on its own,
-   being a flex item of this column, and a play title is read back whole even on a
-   phone. */
+/* Label above its field, full width: the action button is the box's own. */
 .chooser-new-field {
   display: flex;
   flex-direction: column;
@@ -181,25 +127,17 @@
   color: var(--ink-soft);
 }
 
-/* A paragraph, not a flex box: `WarnIcon` already carries its own gutter and its own
-   baseline (`.warn-icon`, theme.css), which is how the four other warnings of the
-   site slip it in at the head of a sentence. A flex box laid a second gutter on top of
-   that margin and, on a message that takes three lines at 375 px, centred the triangle
-   on the middle of the paragraph instead of sitting it on the first line. Same lesson as
-   `.stats-warning`, where it is written down. */
+/* A paragraph and not a flex box: `WarnIcon` carries its own gutter and baseline, and
+   a flex box centred the triangle on the height of a three-line message. */
 .chooser-new-error {
   margin-top: 12px;
   font-size: 13.5px;
   color: var(--warn);
 }
 
-/* The report of uploads with no play. A list and not the four-column table of a play's
-   log: these files have by definition succeeded at nothing, so a status column would
-   only say one thing (see `Unrouted`).
-   `margin` and `padding` reset with the markers, as every other bullet-less list of the
-   site does (`.stats-legend`, `.character-list`): dropping `list-style` alone leaves the
-   UA's 40 px `padding-inline-start`, so the file names and their separating rules sat
-   inset from the heading and the hint right above them, and lost that width on a phone. */
+/* A list and not the journal's four-column table: these files succeeded at nothing, so
+   a status column would say one thing. `margin` and `padding` reset with the markers:
+   dropping `list-style` alone leaves the UA's 40 px `padding-inline-start`. */
 .chooser-unrouted ul {
   list-style: none;
   margin: 0;
@@ -220,13 +158,11 @@
 
 .chooser-unrouted-file {
   font-weight: 600;
-  /* A file name comes from an upload, hence from nobody trustworthy: it can be long
-     and without a space, and without this break it would widen the card. */
+  /* An uploaded file name can be long and space-free, and would widen the card. */
   overflow-wrap: anywhere;
 }
 
-/* The reason for the refusal, in the amber of the site's warnings (AA on the white of
-   the card, see the comment on `--warn` in theme.css). */
+/* The site's warning amber, AA on the white card. */
 .chooser-unrouted-why {
   color: var(--warn);
 }
@@ -242,19 +178,15 @@
   }
 }
 
-/* The failure to load the list, distinct from emptiness (see `App.jsx`): in the amber
-   of the site's warnings, like the five others.
-   A paragraph and not a flex box, for the reason written on `.chooser-new-error`:
-   `text-align: center` centres the lines, and the triangle stays at the head of the
-   first one instead of being centred on the height of the whole message. */
+/* Failure to load the list, distinct from emptiness. A paragraph and not a flex box,
+   for the reason at `.chooser-new-error`. */
 .chooser-error {
   color: var(--warn);
   text-align: center;
   padding: 10px 20px 20px;
 }
 
-/* The tile is the only thing this file animates, and it neutralises it here, as each
-   file of the project does for its own (see the same block in home.css). */
+/* The tile is the only thing this file animates. */
 @media (prefers-reduced-motion: reduce) {
   .chooser-new-tile {
     transition-duration: 0s;

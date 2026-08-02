@@ -20,20 +20,10 @@ import { pageLabelKey } from "../shared/pages.js";
 import useTts from "./useTts.js";
 import "./rehearsal.css";
 
-// A small breath between two lines chained by the speech synthesiser: the real
-// mp3s carry a slight silence at their head and tail, TTS does not, hence a
-// transition that is too abrupt without this delay.
+// The mp3s carry a silence at head and tail, TTS does not, hence a breath between lines.
 const TTS_GAP_MS = 80;
 
-// Rehearsal player, a React port of the v1 UX:
-//  - act / scene / character selectors, plus the four toggles of `.checks-row`
-//    (mute my voice, hide my text, beep, start one line early); muting and text
-//    hiding are two separate settings in v2, unlike v1 which conflated them
-//  - dialogue cards, current line highlighted and auto-scrolled
-//  - fixed bottom bar: line-indexed progress + prev/play/next + my-line jumps
-//  - the actor's own lines are cued (beep + `rehearsal.yourTurn` overlay when
-//    their voice is muted)
-// v2 twist: real mp3 clips when status is "ok", browser TTS fallback otherwise.
+// Real mp3 clips when a line's status is "ok", browser TTS otherwise.
 export default function App() {
   const { manifest, error: loadError } = useManifest();
 
@@ -48,15 +38,11 @@ export default function App() {
   const [avant, setAvant] = useState(true);
   const [overlay, setOverlay] = useState(false);
 
-  // The PLAY's language and not the interface's: this voice stands in for an actor
-  // saying their line, so it must pronounce the text in the language it is written
-  // in. `manifest` may be null while loading, and `useTts` then falls back on
-  // French.
+  // The PLAY's language, not the reader's. Null while loading, and useTts falls back.
   const tts = useTts(manifest?.language);
 
-  // Imperative playback machinery (kept out of React state to avoid stale
-  // closures): generation token invalidates every pending callback on any
-  // stop/jump.
+  // Imperative, out of React state to avoid stale closures: the generation token
+  // invalidates every pending callback on any stop or jump.
   const tokenRef = useRef(0);
   const playingRef = useRef(false);
   const audioRef = useRef(null);
@@ -69,11 +55,10 @@ export default function App() {
   const scene = scenes[sceneIndex] ?? null;
   const lines = useMemo(() => scene?.lines ?? [], [scene]);
 
-  // The scenes the menu offers: once a character is chosen, only the ones where
-  // they speak (`sceneChoices`, shared with the Recording header).
+  // `sceneChoices` (shared with the Recorder) returns INDEXES into the act, never renumbered.
   const choices = useMemo(() => sceneChoices(scenes, characterId), [scenes, characterId]);
 
-  // Refs mirroring the values the imperative engine needs.
+  // Mirrors the values the imperative engine needs.
   const engineRef = useRef({});
   engineRef.current = { lines, characterId, muet, bip };
 
@@ -144,15 +129,14 @@ export default function App() {
         playAt(i + 1);
       }
     };
-    // Advance after a short breath (speech synthesis: cf. TTS_GAP_MS).
+    // cf. TTS_GAP_MS.
     const advanceAfterGap = () => {
       if (token !== tokenRef.current || !playingRef.current) return;
       waitTimerRef.current = setTimeout(advance, TTS_GAP_MS);
     };
 
     if (mine && muet) {
-      // The actor speaks this line: silence + beep + overlay, then a
-      // time-based auto-advance (~80 ms per character, 3 s minimum) like v1.
+      // The actor speaks it: silence, beep, overlay, then advance on time alone.
       setOverlay(true);
       playBeep();
       const waitTime = Math.max(3000, line.text.length * 80);
@@ -171,7 +155,7 @@ export default function App() {
       audio.src = line.clip;
       audio.onended = advance;
       audio.onerror = () => {
-        // Missing/broken mp3: degrade gracefully to TTS.
+        // Missing or broken mp3: fall back to TTS.
         if (token === tokenRef.current) tts.speak(line.text, advanceAfterGap);
       };
       audio.play().catch(() => {
@@ -186,13 +170,11 @@ export default function App() {
     if (playingRef.current) {
       stopPlayback();
     } else {
-      // AudioContext must be created inside a user gesture (mobile autoplay).
+      // Both need a user gesture (mobile autoplay), or a TTS line from a callback is mute.
       if (!audioCtxRef.current) {
         const Ctx = window.AudioContext || window.webkitAudioContext;
         if (Ctx) audioCtxRef.current = new Ctx();
       }
-      // Same for the speech synthesiser: prime it inside the gesture so that the
-      // TTS lines started later from a callback do not stay silent.
       tts.unlock();
       setPlaying(true);
       playAt(index);
@@ -208,18 +190,16 @@ export default function App() {
     }
   };
 
-  // Indices of my lines in the current scene (single scan, reused by the
-  // jump targets and the (n/total) numbering).
+  // One scan, reused by the jump targets.
   const myLineIndices = useMemo(() => {
     if (characterId === "") return [];
     return lines.map((l, i) => (l.characterId === characterId ? i : -1)).filter((i) => i !== -1);
   }, [lines, characterId]);
 
-  // "Name (n/total)" on my cards: numbering shared with the Recording page.
+  // Numbering shared with the Recording page.
   const myNumbers = useMemo(() => myLineNumbers(lines, characterId), [lines, characterId]);
 
-  // "My lines" jump targets: with "Avant" checked, land on the cue line
-  // just before each of my lines instead of on the line itself.
+  // With "cue early" checked, jump to the line BEFORE each of mine.
   const myTargets = useMemo(() => {
     if (!avant) return myLineIndices;
     return [...new Set(myLineIndices.map((i) => Math.max(0, i - 1)))].sort((a, b) => a - b);
@@ -234,7 +214,7 @@ export default function App() {
     if (target !== undefined) goTo(target);
   };
 
-  // Selecting another act/scene stops playback and rewinds.
+  // Changing act or scene stops playback and rewinds.
   const changeAct = (i) => {
     stopPlayback();
     setActIndex(i);
@@ -247,11 +227,8 @@ export default function App() {
     setIndex(0);
   };
 
-  // Choosing a character can hide the scene one is standing in. Left alone, the
-  // `<select>` would carry a value no option holds, which a browser renders as a
-  // blank field: we move to the first scene the menu still offers. Through
-  // `changeScene`, so that playback stops and the position rewinds exactly as if
-  // the reader had picked that scene themselves.
+  // Choosing a character can hide the current scene, blanking a `<select>` on a dead value.
+  // Through `changeScene`, so playback stops too.
   useEffect(() => {
     if (choices.length > 0 && !choices.includes(sceneIndex)) changeScene(choices[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -267,12 +244,7 @@ export default function App() {
   if (!manifest) {
     return <PageState page="rehearsal" />;
   }
-  // A final screen, the site's third one: one stays on it until the coordinator enters
-  // the play, nothing more will load on this device. It comes after the manifest,
-  // so it knows the title and says it, like the five headers. The two states above,
-  // on the other hand, name nothing: the play is not known yet, and `PageHeader`
-  // renders no title when there is no title (never a page label in its place, it
-  // would get covered).
+  // A final screen and not a wait, so it can name the play, unlike the two states above.
   if (lines.length === 0 && acts.every((a) => a.scenes.every((s) => s.lines.length === 0))) {
     return (
       <PageState
@@ -285,9 +257,7 @@ export default function App() {
 
   return (
     <div className="rehearsal-page">
-      {/* No `hint` here: the four checkboxes just below carry explicit labels, and
-          a sentence repeating them only served to push the settings further
-          down. */}
+      {/* No `hint`: the four checkboxes below label themselves. */}
       <PlayHeader page="rehearsal" title={manifest.title || t("common.untitledPlay")}>
         <div className="selects-row">
           <select
@@ -312,19 +282,11 @@ export default function App() {
                   ? null
                   : scenes[i].lines.filter((l) => l.characterId === characterId).length;
               return (
-                // The value is the scene's rank in the ACT, not its rank in this
-                // list: the menu hides scenes, it never renumbers them.
+                // The value is the scene's rank in the ACT: hiding never renumbers.
                 <option key={i} value={i}>
                   {sceneLabel(t, i)}
-                  {/* The count is interpolated into `common.optionNote`, the
-                      brackets shared with the Recording menus: the plural is
-                      settled in one place only and the punctuation in another.
-                      A count and NOT the Recording page's "aucune réplique": this
-                      menu answers how many lines you have in a scene, so zero
-                      belongs to the same series as three ("0 réplique", "3
-                      répliques"), where over there the suffix reports work left
-                      and has to tell "nothing to do" from "nothing to do it on".
-                      Two questions, two wordings, deliberately. */}
+                  {/* A plain count, not the Recorder's "aucune réplique": this menu answers
+                      how many lines you have, so zero is in the same series as three. */}
                   {count != null
                     ? t("common.optionNote", { note: t("common.lineCount", { count }) })
                     : ""}

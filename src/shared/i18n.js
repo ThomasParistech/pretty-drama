@@ -1,26 +1,12 @@
-// The UI translation engine.
-//
-// PURE on purpose: no React, no DOM, no storage, no imports at all. Everything
-// it needs is passed in. That is what lets `node --test` cover the policy (which
-// locale wins, how a plural is picked, how a placeholder is filled) without a
-// browser and without a test dependency, the same bargain the other pure modules
-// of this project make (stats.js, reducer.js, search.js).
-//
-// The environment-facing half lives in locale.js, which reads the URL, the
-// stored choice and the navigator, then calls in here once per document.
-//
-// Not an ICU MessageFormat implementation, and not trying to be. ICU is the
-// industry standard and a real library would be the answer for five languages or
-// an outside translator; for two locales and ~270 short strings the platform
-// already carries the only genuinely hard parts (plural categories, number and
-// date formatting) in `Intl`, and this module is the thin seam over it.
+// The UI translation engine. PURE: no React, no DOM, no storage, no imports, so
+// `node --test` covers the policy. The environment-facing half is locale.js.
+// Not ICU and not trying to be: for two locales and ~270 strings `Intl` already
+// carries the hard parts and this is the thin seam over it.
 
 export const DEFAULT_LOCALE = "fr";
 export const LOCALES = ["fr", "en"];
 
-// Typographic quotation marks, which `Intl` does NOT expose (CLDR has them, the
-// ECMA-402 surface does not). French wants no-break spaces INSIDE the
-// guillemets, English wants plain curly quotes and no spacing at all.
+// `Intl` does NOT expose quotation marks (CLDR has them, ECMA-402 does not).
 const QUOTES = {
   fr: { open: "« ", close: " »" },
   en: { open: "“", close: "”" },
@@ -32,37 +18,22 @@ export function isLocale(value) {
   return typeof value === "string" && LOCALES.includes(value);
 }
 
-// "en-GB" -> "en". A stored or asked-for value is already a bare locale; a
-// navigator tag usually is not.
+// "en-GB" -> "en": a navigator tag is usually not bare.
 function baseTag(tag) {
   return typeof tag === "string" ? tag.toLowerCase().split("-")[0] : null;
 }
 
-// The locale explicitly asked for in a query string, or null. Exported because
-// locale.js needs to know whether the value came from the URL: an explicit ask
-// is a choice, so it gets remembered, whereas a detected one must not be.
+// Exported because locale.js must know the value came from the URL: an explicit ask
+// is a choice and gets remembered, a detected one must not be.
 export function askedLocale(search) {
   if (typeof search !== "string" || search === "") return null;
   const asked = new URLSearchParams(search).get("lang");
   return isLocale(asked) ? asked : null;
 }
 
-// The three layers, in priority order, and the whole locale policy of the site.
-//
-// An explicit `?lang=` wins so a link can carry a language (locale.js also
-// WRITES it to the stored choice, so opening such a link once switches the site
-// for good). The stored choice comes next, and it is the layer that makes the
-// feature usable at all: without it, a francophone who picks English is dragged
-// back to French by their own navigator on every page that loses the parameter,
-// and this site loses it on every navigation (internal links are plain relative
-// hrefs, and a bookmark or a hand-typed URL never had one). The navigator
-// therefore only ever decides the
-// FIRST visit, when there is nothing remembered yet, which is exactly where it
-// is right: a troupe that forks this repo should not have to find a switch to
-// read its own site.
-//
-// An unknown `?lang=xx` falls through to the NEXT layer rather than straight to
-// French: a typo in a shared link should not override a deliberate choice.
+// The whole locale policy: explicit `?lang=`, then the stored choice, then the
+// navigator (first visit only). An unknown `?lang=xx` falls through to the NEXT layer
+// and not straight to French: a typo in a shared link must not override a choice.
 export function resolveLocale({ search, stored, languages } = {}) {
   const asked = askedLocale(search);
   if (asked) return asked;
@@ -76,20 +47,11 @@ export function resolveLocale({ search, stored, languages } = {}) {
   return DEFAULT_LOCALE;
 }
 
-// A catalogue entry is either a plain string, or an object of plural forms keyed
-// by CLDR category: { one, other, many? }.
-//
-// Verified against CLDR: French reports the categories one/many/other and
-// English one/other, and `many` only ever fires in French from 1e6 upwards, a
-// figure no message on this site reaches. Entries therefore carry `one` and
-// `other`, `many` stays allowed but optional, and anything unlisted falls back
-// to `other`. The parity test enforces exactly that, and deliberately does NOT
-// demand the full category set of each language.
-//
-// The count drives selection through `params.count`. Note this is where an old
-// bug dies: every hand-rolled site used `n > 1 ? "s" : ""`, so zero rendered
-// singular. That is right in French (select(0) === "one", "0 réplique") and
-// wrong in English ("0 replies"). Intl.PluralRules knows the difference.
+// A catalogue entry is a string or `{ one, other, many? }` keyed by CLDR category.
+// French `many` only fires from 1e6, which no message here reaches, so entries carry
+// one/other and anything unlisted falls back to `other`.
+// Selection is driven by `params.count`, which is why zero is singular in French
+// ("0 réplique") and plural in English ("0 replies").
 function selectForm(entry, params, plural) {
   if (entry == null || typeof entry === "string") return entry;
   const count = params?.count;
@@ -97,28 +59,16 @@ function selectForm(entry, params, plural) {
   return entry[category] ?? entry.other ?? entry.one ?? null;
 }
 
-// A missing placeholder is left VISIBLE as `{name}` rather than printed as
-// "undefined": both are bugs, but one of them says which parameter is missing
-// and survives a screenshot.
-//
-// "Missing" is tested with `!= null` and not with `in`, so a parameter present
-// but null or undefined counts as absent. Otherwise a `{ count: null }` reaching
-// here rendered the literal string "null" into the sentence. Falsy but real
-// values (0, "") still substitute, which matters: 0 is a legitimate count.
+// A missing placeholder stays VISIBLE as `{name}` rather than printing "undefined":
+// it names its own bug. `!= null` and not `in`, so `{ count: null }` does not render
+// the string "null"; 0 and "" still substitute.
 function has(params, name) {
   return params != null && params[name] != null;
 }
 
-// A NUMBER substituted into a sentence is formatted for the locale, never
-// stringified raw. This is where "10307 mots" became "10 307 mots" in French and
-// "10,307 words" in English, and it belongs here rather than at each call site
-// for the same reason plural selection does: every `{count}` on the site is a
-// quantity, there are a dozen of them, and one forgotten is invisible in French
-// review. The engine already holds the locale, so it costs one line.
-//
-// Only numbers. A string parameter is passed through untouched, which is what
-// keeps `stats.shareBelow` (already formatted by `fmt.percent`) and the roman
-// numeral of `structure.act` out of this.
+// A NUMBER in a sentence is formatted for the locale here and never at the call site:
+// one forgotten grouping is invisible in review. Strings pass through untouched, which
+// keeps `stats.shareBelow` and the roman numeral of `structure.act` out of it.
 function substitute(value, number) {
   return typeof value === "number" ? number.format(value) : String(value);
 }
@@ -130,13 +80,9 @@ function interpolate(template, params, number) {
   );
 }
 
-// `catalogues` is a parameter so this module imports nothing and the tests can
-// pass their own fixtures. locale.js supplies the real ones.
-//
-// A key missing from the active catalogue falls back to the default locale, then
-// to the key itself. Never a blank: a hole in the UI is invisible in review,
-// whereas a stray `recorder.status.todo` on screen names its own bug. The CI
-// guard in scripts/tests/test_contracts.py is what keeps that from shipping.
+// `catalogues` is a parameter so this module imports nothing.
+// A missing key falls back to the default locale then to THE KEY ITSELF, never a
+// blank: a hole is invisible in review, a stray `recorder.status.todo` names its bug.
 export function makeT(locale, catalogues) {
   const active = catalogues?.[locale] ?? catalogues?.[DEFAULT_LOCALE] ?? {};
   const fallback = catalogues?.[DEFAULT_LOCALE] ?? {};
@@ -152,14 +98,9 @@ export function makeT(locale, catalogues) {
     return found == null ? key : interpolate(found, params, number);
   }
 
-  // Same lookup, but the parameters may be React nodes: returns the message cut
-  // into an array of pieces instead of a string. Sentences on this site
-  // regularly carry a <strong>, a <code>, an icon or a colour-bearing <span>
-  // mid-phrase, and the alternative (splitting the sentence into fragments in
-  // the JSX) hard-codes French word order into the component. Here the
-  // translator keeps the word order and the component keeps the markup.
-  //
-  // No React import: this returns a plain array and T.jsx is what keys it.
+  // Same lookup with React nodes as parameters: returns the message cut into pieces
+  // so markup mid-sentence does not freeze French word order. No React import here,
+  // T.jsx keys the array.
   t.parts = function parts(key, params) {
     const found = template(key, params);
     return found == null ? [key] : split(found, params, number);
@@ -168,9 +109,8 @@ export function makeT(locale, catalogues) {
   return t;
 }
 
-// `number` is optional here: a React node is the normal parameter of `t.parts`,
-// so this path rarely sees a raw number. It formats one anyway when it does, so
-// the two substitution paths cannot disagree on what "1144" looks like.
+// `number` is optional but honoured, so the two substitution paths cannot disagree
+// on what "1144" looks like.
 export function split(template, params, number) {
   const out = [];
   let last = 0;
@@ -186,26 +126,16 @@ export function split(template, params, number) {
   return out;
 }
 
-// Number, date and quote formatting, all locale-driven.
-//
-// This replaces hand-rolled French typography in two places. `formatShare` in
-// stats/App.jsx built the decimal comma with a `.replace(".", ",")` and put an
-// ORDINARY space before the percent sign (with `nowrap` in CSS to stop it
-// breaking); Intl produces a real U+00A0 there, so the CSS belt is now
-// redundant. `formatWhen` in dashboard/App.jsx pinned "fr-FR" and joined date
-// and time with the French word "à"; the locale format carries that join itself.
+// Number, date and quote formatting, all locale-driven. French typography (the
+// U+00A0 before `%`, the date/time join) comes from Intl and is never written by hand.
 export function makeFormats(locale) {
   const percent = new Intl.NumberFormat(locale, {
     style: "percent",
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   });
-  // Explicit components rather than `dateStyle`/`timeStyle: "short"`, and this is
-  // a rule of the upload log, not a preference: "a log is read back months
-  // later", so the year is written out in full. The short style rendered it on
-  // TWO digits in English ("7/27/26"). The hour stays 2-digit, and the date/time
-  // separator belongs to the locale, which is the whole point (the old code glued
-  // a French "à" on by hand).
+  // Explicit components and not `dateStyle: "short"`, which rendered the year on TWO
+  // digits in English: a log is read back months later, so the year is written out.
   const dateTime = new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "2-digit",
@@ -214,33 +144,21 @@ export function makeFormats(locale) {
     minute: "2-digit",
   });
   const marks = QUOTES[locale] ?? QUOTES[DEFAULT_LOCALE];
-  // The thousands separator, for the numbers a component writes ALONE, outside
-  // any sentence: the total at the centre of the donut and the counts in the
-  // Speaking share legend. The ones that live inside a sentence do not need it,
-  // `makeT` already formatting every numeric parameter; it is the same formatter
-  // on both sides, so the two cannot disagree.
+  // For numbers a component writes ALONE, outside any sentence. Same formatter as
+  // `makeT` uses inside one, so the two cannot disagree.
   const number = new Intl.NumberFormat(locale);
 
-  // Joining an ENUMERATION of already translated phrases, for the upload log's script
-  // row ("12 lines added, 3 removed, 5 edited"). How a language strings a list
-  // together is a fact of that language, exactly like the no-break space before a
-  // French `?`, so it comes from the locale and never from a `", "` written in the
-  // component or from a catalogue entry made of one comma.
-  // The two languages do NOT come out symmetrical, and that is the point rather than
-  // a defect: French closes its list with "et" before the last item and English here
-  // stays on commas. Measured, not assumed.
-  // `type: "unit"` and not the default `"conjunction"`: they agree in French, and in
-  // English conjunction adds a spoken ", and" that turns a row of measurements into a
-  // sentence about them. `style: "narrow"` was the other candidate and is unusable,
-  // French dropping the commas altogether ("12 ajoutées 3 supprimées"). Measured on
-  // both locales, hence the default `style` left alone here.
+  // Joining an ENUMERATION of translated phrases (the journal's script row). How a
+  // language strings a list is a fact of that language, never a `", "` in a component.
+  // `type: "unit"` and not `"conjunction"`, which adds an English ", and" that turns a
+  // row of measurements into a sentence; `style: "narrow"` drops the French commas
+  // altogether. Both measured.
   const list = new Intl.ListFormat(locale, { type: "unit" });
 
   return {
     number: (n) => number.format(n),
     list: (parts) => list.format(parts),
-    // Takes a RATIO (0.124), not a percentage: Intl wants the fraction, and
-    // handing it 12.4 would silently render "1 240 %".
+    // A RATIO (0.124), not a percentage: 12.4 silently renders "1 240 %".
     percent: (ratio) => percent.format(ratio),
     dateTime: (date) => dateTime.format(date),
     quote: (text) => `${marks.open}${text}${marks.close}`,

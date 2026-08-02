@@ -1,9 +1,6 @@
 .home {
-  /* `dvh` and not `vh`, the same choice as `--shell-height`'s default (theme.css):
-     `100vh` is the LARGE viewport, the one with the phone's toolbars hidden, so a
-     page that fits exactly still scrolls a few dozen pixels as long as they are
-     shown. This one is worth more here than anywhere else: these four documents
-     include the site's two entrance pages, which the cast opens on a phone. */
+  /* `dvh` and not `vh`: `100vh` is the LARGE viewport, toolbars hidden, so a page
+     that fits exactly still scrolls while they are shown. */
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -18,9 +15,7 @@
   font-family: var(--font-serif);
   font-size: 26px;
   font-weight: 700;
-  /* The burgundy of the brand comes from the seal (`.page-home`, set on
-     `.home`), not from --accent: a single source for the colour of the logo and
-     of the word. */
+  /* From the seal (`.page-home`) and not --accent: one source for logo and word. */
   color: var(--page-mark);
   margin-bottom: 14px;
   display: flex;
@@ -29,10 +24,8 @@
   gap: 10px;
 }
 
-/* The only place where the brand is displayed, hence the only one that needs
-   room: the two masks are only told apart from about 34 px up, whereas a page
-   seal holds at 20 px. A bigger disc and a drawing pushed to the edge, the hero
-   has room to spare. */
+/* The only place the brand is displayed: the two masks are only told apart from
+   about 34 px up, where a page seal holds at 20. */
 .home-brand-mark {
   width: 52px;
   height: 52px;
@@ -44,33 +37,13 @@
   margin-bottom: 8px;
 }
 
-/* Three cards per row: the three pages open to the whole troupe (rehearse,
-   record, compare) fill one row, and on the manager's home page the two modes
-   that belong to him alone (write, follow) come below, centred. The ROW then
-   says who the page is addressed to. It was a 2x2 square back when there were
-   two pages on each side; Speaking share makes three on one side, and a 2x2 plus a
-   lone card no longer said anything about the separation.
-
-   This reading by row is a BONUS of the wide window, not a contract: below about
-   1060 px (3 x 330 + 2 x 16 + 40), the five cards wrap into 2 + 2 + 1 and
-   Speaking share ends up next to Editing. We accept that rather than forcing
-   the break after the third card, which would require a separator in the DOM or
-   a `:nth-child` per home page: the separation that counts is that of the
-   ADDRESSES (`index.html` does not show the manager's two modes, whatever the
-   width), the row is only its visual reminder when there is room for it.
-
-   Flex and not grid, and that is what makes the rest unnecessary:
-   `justify-content: center` centres EACH row, so the manager's incomplete row is
-   centred without a single `:nth-child`, and `flex-wrap` picks the number of
-   columns on its own (three, then two, then one, as the window narrows), so the
-   page no longer needs a single media query for its grid. The two that used to
-   be here disappeared with it.
-
-   `flex: 0 1 330px`: the fixed basis is what holds the cards at the SAME width
-   from one row to the next. With `flex-grow: 1`, the two cards of the bottom row
-   stretched to the width of three, and the manager's home page showed two wide
-   cards under three narrow ones. They keep the right to shrink, for the window
-   where only one fits. */
+/* Three cards per row on a wide window, which is how the ROW says who the page is
+   addressed to. A bonus, not a contract: below ~1060 px they wrap into 2 + 2 + 1, and
+   the separation that counts is that of the ADDRESSES, not the layout.
+   Flex and not grid: `justify-content: center` centres EACH row, so the incomplete one
+   needs no `:nth-child`, and `flex-wrap` picks the column count, so the page needs no
+   media query. The fixed basis with no growth is what holds the cards at the SAME width
+   from one row to the next. */
 .home-grid {
   display: flex;
   flex-wrap: wrap;
@@ -82,11 +55,9 @@
   padding: 0 20px;
 }
 
-/* The hover is the shared `.lift-hover` (theme.css). All that remains here is
-   the step, bigger than elsewhere: these cards are the tallest clickable
-   surfaces of the site, and a one-pixel step was lost on them. */
+/* Hover is the shared `.lift-hover`; only the step is local, these being the tallest
+   clickable surfaces of the site. */
 .home-card {
-  /* Fixed basis, no growth: see the comment on `.home-grid`. */
   flex: 0 1 330px;
   padding: 26px 22px;
   text-decoration: none;
@@ -98,17 +69,13 @@
   transition: transform 0.12s, box-shadow 0.12s;
 }
 
-/* Shared ring, as on the two other card-links of the site (the upload button of
-   the Progress page, the characters of the recording intro card): without it, the
-   cards of both home pages fell back on the browser's default ring, outside the
-   palette. */
+/* Shared ring, as on the site's other card-links. */
 .home-card:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
 
-/* Seal enlarged into a card thumbnail (the header, for its part, keeps it at
-   36 px). */
+/* Seal enlarged into a card thumbnail (the header keeps 36 px). */
 .home-card-mark {
   width: 52px;
   height: 52px;
@@ -120,8 +87,7 @@
   font-family: var(--font-serif);
   font-size: 26px;
   font-weight: 700;
-  /* The title takes the colour of the page, not the common burgundy: that is
-     what ties it to the seal of the header once you are there. */
+  /* The page's colour, which ties the card to the seal one meets on arriving. */
   color: var(--page-mark);
 }
 
@@ -142,63 +108,38 @@
   color: var(--accent);
 }
 
-/* "Change play", above the footer sentence and not beside it: it is a way out of
-   the page, the sentence says what the site is, and on a single line the two read
-   as a list of links (the same lesson as the language switch, just below). One
-   notch bigger than the rest of the footer: it is the only path that leads out of
-   the play, and it must not have to be hunted for. */
+/* Above the footer sentence and not beside it, or the two read as a list of links.
+   One notch bigger: the only path out of the play. */
 .home-change-play {
   font-size: 14px;
   margin-bottom: 10px;
 }
 
-/* The language switch, the only place on the site where the language is chosen
-   (see LocaleSwitch.jsx). Below the footer sentence and not beside it: the
-   sentence says what the site is, the switch is a control, and putting them on
-   one line made "PrettyDrama FR | EN" read as a list of links.
-   It stays discreet because it is only used once: it is the only control of the
-   home page that is not a card, so it must not compete with the six cards that
-   are the reason for the page. */
+/* The site's only language switch. Below the footer sentence and not beside it, and
+   discreet: it is used once, and must not compete with the cards. */
 .locale-switch {
   display: flex;
   justify-content: center;
-  /* `center` and not `baseline`: the two entries are now flags (see
-     LocaleSwitch.jsx), and an image has no baseline to share. */
+  /* `center` and not `baseline`: the entries are flags, and an image has none. */
   align-items: center;
   gap: 4px;
   margin-top: 14px;
 }
 
-/* No rule between the two, unlike the days of the "FR | EN" abbreviations: two
-   words stuck together needed separating, whereas two thumbnails each outlined by
-   its own rule are already two distinct objects. */
-
-/* The following rules are prefixed with `.locale-switch` in order to win over the
-   `.home-footer a` above, which is more specific than a lone class (a class + a
-   type) and was repainting the links in the accent colour. Relying on the order
-   of the file would have worked and would have broken at the first move. */
+/* Prefixed with `.locale-switch` to win over `.home-footer a` above, which is a class
+   plus a type and was repainting the links in the accent colour. */
 .locale-switch .locale-switch-link,
 .locale-switch .locale-switch-current {
   position: relative;
-  /* Padding and not the size of the drawing: the target thus measures
-     44 x 40 px, the contract measurement for a finger, where the flag alone
-     would only make 24 x 16. The actors' home page is opened on a phone, and this
-     is the only control in its footer. */
+  /* Padding and not the drawing's size: the target measures 44 x 40 px where the
+     flag alone would make 24 x 16. */
   padding: 12px 10px;
   border-radius: 6px;
 }
 
-/* The current language is not a link: nothing to click, so nothing lights up on
-   hover. It is an accent rule under its flag that says "you are here", and not a
-   reduced opacity on the other one: dimming a flag makes it read as an
-   unavailable language, when it is precisely the one being offered.
-   (The same trap as in the days of the abbreviations, where the pale ink of the
-   link made it read as disabled next to the inert word.)
-   The full frame that the SAME pair of flags takes in Editing's rail was tried
-   here and set aside: in a footer where nothing is framed, it reads as a button
-   and weighs more than the six cards that are the reason for the page. Over there,
-   on the contrary, it is the vocabulary of the panel, where the open scene carries
-   exactly that frame. */
+/* A rule under the flag says "you are here", never a reduced opacity on the other
+   one: a dimmed flag reads as an unavailable language. The full frame the same pair
+   takes in Editing's rail reads as a button in a footer where nothing is framed. */
 .locale-switch .locale-switch-current::after {
   content: "";
   position: absolute;
@@ -219,20 +160,14 @@
   background: var(--accent-soft);
 }
 
-/* Shared ring, like the cards just above (`.home-card:focus-visible`) and the two
-   other card-links of the site: it is the only control of this footer, hence the
-   only one that would otherwise fall back on the browser's default ring, outside
-   the palette. The CURRENT language does not need it, it is not a link. */
+/* Shared ring, like the cards above. The CURRENT language is not a link. */
 .locale-switch .locale-switch-link:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
 
-/* The file neutralizes its OWN animations, like every other CSS file of the site:
-   theme.css cannot do it for us, since the trap next door has each surface declare
-   its own `transition` rather than hoisting it into `.lift-hover`. The card's lift
-   is the only movement these four home pages carry (the language switch only
-   transitions a background, which does not move). */
+/* theme.css cannot do this for us: each surface declares its own `transition` rather
+   than hoisting it into `.lift-hover`. */
 @media (prefers-reduced-motion: reduce) {
   .home-card {
     transition-duration: 0s;

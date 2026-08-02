@@ -1,14 +1,14 @@
-/* Shared design system: warm paper palette inspired by PrettyDrama v1 */
+/* Shared design system: warm paper palette */
 
 :root {
   --paper: #faf6ef;
   --paper-dark: #f1eadd;
   --card: #ffffff;
-  --card-active: #fffdf8; /* current dialogue card: a breath of cream */
+  --card-active: #fffdf8;
   --ink: #2b2420;
   --ink-soft: #6b5f56;
   --accent: #8b2635;
-  --accent-dark: #6f1e2a; /* hover of the solid accent buttons */
+  --accent-dark: #6f1e2a;
   --accent-soft: #f6e8ea;
   --gold: #b98a2f;
   --border: #e3dbcd;
@@ -18,66 +18,27 @@
   --warn-soft: #fdeede;
   --radius: 10px;
   --shadow: 0 2px 8px rgba(43, 36, 32, 0.08);
-  /* Hover of a clickable card (the home page cards, the upload button of the
-     Progress page): the same slight lift everywhere, it used to be written twice
-     with two neighbouring values. */
   --shadow-hover: 0 6px 18px rgba(43, 36, 32, 0.16);
-  /* Shadow of a layer that FLOATS above the page, and not of a card laid on it:
-     the confirmation modal and the "Your turn…" pop-up of the Rehearsal page.
-     It is wider and denser than `--shadow` because these two objects have no place
-     in the flow, and it is the shadow that says they are above. It used to be
-     written twice with two neighbouring values (0 12px 40px / 0.35 against
-     0 10px 40px / 0.25); we keep the one of the modal, the more frequent of the
-     two and the only one shared by two pages. */
+  /* For layers that FLOAT above the page (modal, "Your turn" pop-up), not cards. */
   --shadow-float: 0 10px 40px rgba(0, 0, 0, 0.25);
-  /* Focus ring of the elements that do not have one by default (slider, cards,
-     card-links): a single source for the trio 2px/accent/2px, which used to be
-     copied into three page CSS files. */
   --focus-ring: 2px solid var(--accent);
   --focus-ring-offset: 2px;
-  /* Gutter of the full-page cards (`.page-notice` and the `.load-error` that
-     widens it): they centre themselves with `margin: auto`, so their only
-     safeguard on a narrow phone is this inset, to be kept identical on both
-     sides. */
+  /* Full-page cards centre with `margin: auto`; this inset is their only phone gutter. */
   --notice-gutter: 32px;
   --font-ui: "Inter", system-ui, sans-serif;
   --font-serif: "Cormorant Garamond", Georgia, serif;
-  /* Shared header (PlayHeader/PageHeader): these tokens must NEVER be re-skinned
-     by a page; the brand and the title render identically on every page, the
-     "Rail" re-skin included.
-     --header-shadow is reserved for the same reason as the other two: the header
-     is sticky, its shadow is what detaches it from the content scrolling
-     underneath. It used to take that shadow from --shadow, which the editor's
-     local :root overwrites with `none` for its own panels: the header therefore
-     rendered flat there, alone on the whole site. */
+  /* Header tokens, NEVER re-skinned by a page (the editor sets --shadow: none, which
+     is why the header keeps its own shadow token). */
   --header-accent: #8b2635;
   --header-serif: "Cormorant Garamond", Georgia, serif;
   --header-shadow: 0 2px 8px rgba(43, 36, 32, 0.08);
-  /* Collapsing of the header: a frank start then a long braking, so that the
-     content seems to settle rather than to stop dead. */
   --ease-header: cubic-bezier(0.22, 0.61, 0.24, 1);
 }
 
-/* ---- Page signature (the "seal") ----
-   Each page has its colour: it tints the disc of the header, so that one knows
-   where one is without reading a label. (It also used to tint a 3 px rule at the
-   top of the page: removed, it barred every screen with a stroke that was not
-   needed twice.)
-   This block is THE source of truth of these colours; the favicons of the .html
-   files duplicate them (a <link> tag cannot read a CSS variable).
-   Literal hex values and not var(--accent) & co.: otherwise the editor's "Rail"
-   re-skin would shift the colour of the seal. Each tint holds >= 4.5:1 on white as
-   well as on its light background. */
-/* The pages of the troupe (the brand, Rehearsal, Recording, Speaking share) carry
-   EXACTLY the same seal: same ink, same disc. They each used to have their own
-   shade, a burgundy here, a slightly other burgundy there, an earth tone next to
-   them: close enough not to read as a distinction, different enough to look like
-   mistakes. It is the icons (the masks, the speech bubbles, the mic, the pie
-   chart) that say where one is. Wine on sand is the pairing of the original design
-   file (design/drama-token.svg), so that is the one we extend to all of them.
-   Only the two modes of the coordinator keep their own colour: they no longer
-   separate two neighbouring pages, they mark another territory. Speaking share is
-   not one of them, it is open to the whole troupe. */
+/* Page signature (the "seal"), tinting the header disc. THE source of truth for these
+   colours; the .html favicons duplicate them. Literal hex, never var(--accent), so the
+   editor's re-skin cannot shift a seal. Each tint holds >= 4.5:1 on white and on its
+   own tint. The troupe's pages share one seal; only the coordinator's two differ. */
 .page-home,
 .page-rehearsal,
 .page-recorder,
@@ -85,28 +46,14 @@
   --page-mark: #8b2635;
   --page-mark-soft: #f5eeda;
 }
-/* The Progress page was GREEN, and its `--page-mark` was #2e7d32, the exact value of
-   `--ok` four lines above. The two were the same colour because they said the same
-   thing on the day the page was drawn: this is where one comes to see what is
-   finished. They stopped saying it the day the page tinted surfaces with it. A header
-   band, a table row, a filled tile in green all read as "this is valid" on the one page
-   where "valid" is a real state a cell can be in, so a character's NAME looked recorded
-   and the journal's column titles looked like statuses.
-   Ink navy, because the family had to leave the greens entirely and the neighbouring
-   ones were no better: teal and bottle green are still read as green next to a green
-   tick. It is also clear of the amber of `--warn`, the grid's other signal, and of the
-   two seals above (a wine and a light saturated violet, where this one is a dark
-   saturated blue). What is left is the coordinator's second mode, marked by a colour
-   that means nothing else anywhere on the site.
-   7.9:1 on white and 6.8:1 on its own tint, so unlike the pair it replaces it carries
-   TEXT at AA and the page needs no darkened twin of it (`--dash-mark-ink` in
-   dashboard.css, deleted with the green). */
+/* Navy, not green: the page tints surfaces with this and green reads as "valid" on the
+   one page where valid is a real cell state. 7.9:1 on white, 6.8:1 on its tint. */
 .page-dashboard {
   --page-mark: #1d4e89;
   --page-mark-soft: #e8eef8;
 }
 .page-editor {
-  --page-mark: #7a5cc0; /* the "Rail" accent of the editor */
+  --page-mark: #7a5cc0;
   --page-mark-soft: #f2eefb;
 }
 
@@ -123,27 +70,15 @@
   font-size: 20px; /* the icon sizes itself on it (1em) */
 }
 
-/* The warning triangle of `WarnIcon`, slipped in at the head of a sentence: it
-   follows the size and the colour of the text (1em, currentColor), and we sit it on
-   the baseline instead of the bottom of the box. A right margin rather than a space
-   in the JSX: a non-breaking space would break at the line wrap and would leave the
-   triangle alone at the end of the line. */
+/* WarnIcon at the head of a sentence. Margin rather than a space in the JSX: a space
+   would break at the wrap and strand the triangle. */
 .warn-icon {
   vertical-align: -0.15em;
   margin-right: 0.35em;
 }
 
-/* The flags of the two language switches (`FlagIcon`), the foot of the home pages
-   and the "Structure" section of Editing. A single rule for both, like the
-   checkboxes and `.confirm-quote`: two pages that show the same object must show it
-   the same way.
-   This is not an icon of the site, so nothing here follows the font-size nor
-   `currentColor`: a flag is an image, at a fixed size and in its own colours. 24x16
-   (the 3:2 of the box) is the size at which the tricolour stays three frank bands
-   and at which the Union Jack keeps its diagonals.
-   The rule is an outer `box-shadow` and not a `border`: in `border-box` it would
-   crop a pixel of drawing on each edge, and an `inset` one would pass under the SVG
-   content, which paints itself over the background. */
+/* FlagIcon, shared by both language switches. Not an icon of the site: fixed size, own
+   colours. Outer box-shadow, not a border, which would crop a pixel of drawing. */
 .flag-icon {
   display: block;
   width: 24px;
@@ -192,21 +127,13 @@ select {
   color: var(--ink);
 }
 
-/* ---- Common components ---- */
+/* Common components */
 
-/* The same geometry as `.play-header`: a top row, then the foot that carries the
-   brand and the way back to the home page (see HomeLink.jsx). These screens are the
-   waiting state of the five pages with a play header, the brand cannot be in one
-   place here and in another there: it would jump when the manifest arrives. Hence
-   also the switch to a column and the same padding values as `.play-header-row` +
-   `.play-header-settings-inner`. */
+/* Waiting state of the five pages with a play header: same geometry, same paddings, so
+   the brand does not jump when the manifest arrives. */
 .page-header {
   background: var(--card);
   border-bottom: 1px solid var(--border);
-  /* The same shadow as `.play-header`, for the same reason: both headers are
-     sticky, and this one is the waiting state of that one. Without it, the header
-     GAINED its shadow when the manifest arrived, exactly as the brand used to jump
-     from the top row to the foot before `HomeLink`. */
   box-shadow: var(--header-shadow);
   padding: 10px 18px 14px;
   display: flex;
@@ -224,13 +151,8 @@ select {
   flex-wrap: wrap;
 }
 
-/* The title of THIS header lives in the shared rule of `.play-header-title`
-   (further down): ever since the final screens name the play, both headers write the
-   same string in the same place, and they used to render it differently (15 px grey
-   in the UI font here, 20 px serif there). The title therefore changed size, weight,
-   colour AND typeface when the manifest arrived, and on Editing it took the IBM
-   Plex of the local re-skin along the way, whereas `--header-serif` exists precisely
-   so that a shared header renders the same everywhere. */
+/* This header's title styling lives in the shared `.play-header-title` rule below: both
+   headers write the same string in the same place. */
 
 .spacer {
   flex: 1;
@@ -293,30 +215,16 @@ textarea {
   background: #fff;
 }
 
-/* A field that is switched off. **The white background of the rule above undoes the
-   browser's greying**, so without this rule a disabled select reads exactly like an
-   active select: that is the case of the scene one on the Speaking share page, switched
-   off when the scope is the whole play, and it only looked like it was offering a
-   choice that never opened.
-   The treatment is NOT the `opacity: 0.45` of `.btn:disabled`, and the difference is
-   deliberate: a button carries its label, so dimming it is enough to switch it off,
-   whereas this field is EMPTY when it is disabled (see stats/App.jsx). All that is
-   left is a frame and an arrow: at 45 % opacity, a 1 px rule on cream almost
-   disappears, and the row no longer looks like it has a third field switched off but
-   like it has lost one. A flat fill, on the other hand, keeps the box visible and says
-   "no choice here" without a word. The soft ink goes with it, for the disabled fields
-   which do keep a label.
-   An element selector, and living here rather than in the page, like the checkboxes
-   just below: the look of a field shared by five headers is not written in the CSS of
-   the only page that uses it today. */
+/* EXPLICIT rule required: the white background above undoes the browser's greying, so a
+   disabled select would read as active. A flat fill, not `opacity: 0.45`, because a
+   disabled select here is empty and would fade to nothing. */
 select:disabled {
   background: var(--paper-dark);
   color: var(--ink-soft);
   cursor: not-allowed;
 }
 
-/* Derived from --accent (and not a hard-coded rgba): a re-skinned page carries its
-   focus ring along with its accent, without having to copy the rule. */
+/* Derived from --accent so a re-skinned page carries its own focus ring. */
 select:focus,
 input:focus,
 textarea:focus {
@@ -324,14 +232,8 @@ textarea:focus {
   outline-offset: 1px;
 }
 
-/* Checkboxes in the accent of the page (burgundy here, purple in the re-skinned
-   editor) rather than in the system blue. An element selector and not a class, and
-   here and not in a page: two pages now have some (the four settings of the Rehearsal
-   page, the two options of the Search) and they want them identical. Named precedent:
-   `.confirm-quote`, moved down here the day the Recording page quoted a line in its
-   turn.
-   The enlarged click area below 800 px, for its part, stays local to the Rehearsal
-   page: it is justified by the thumb, and Editing does not open under a finger. */
+/* Accent, not system blue. Element selector and shared: two pages have checkboxes and
+   they must be identical. */
 input[type="checkbox"] {
   accent-color: var(--accent);
   width: 16px;
@@ -339,19 +241,8 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-/* The label that carries a checkbox: the box and its text on one line, and the
-   WHOLE label is the click target. The same reason as the rule above, and the same
-   story: the two rows of the site (the four settings of the Rehearsal page, the two
-   options of the Search) each wrote it on their own side and had already diverged by
-   one pixel of gutter (6 against 7), a difference nobody names but which one notices
-   when going from one page to the other. 6 px, the value of the Rehearsal page, which
-   is the row the troupe sees.
-   `user-select: none` along with it, and not only for comfort: without it, clicking
-   twice in a row on the label to toggle the box back highlights its text.
-   What stays local is the size of the text, the colour and the gutter of the ROW,
-   which have nothing to do with each other from one page to the next, plus the 32 px
-   touch target below 800 px, specific to the Rehearsal page (Editing does not open
-   under a finger). */
+/* Box and text on one line, the WHOLE label clickable. `user-select: none` so a double
+   toggle does not highlight the text. Size, colour and row gutter stay per page. */
 .checks-row label,
 .search-options label {
   display: flex;
@@ -361,21 +252,13 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-/* Wrapper that carries the tooltip of a button that SWITCHES OFF: a `disabled`
-   control receives no mouse event (Chrome, Safari), so its own `title` never shows,
-   and the explanation does not arrive at the moment when it is useful, that is
-   precisely when the button is asleep. The accessible name stays on the button (its
-   `aria-label`, which does not depend on its state); only the tooltip moves up here.
-   Purely structural: it hugs its button and must change nothing in the row that
-   contains it. Two pages use it, Editing (undo, redo, download) and the Recording
-   page (the four buttons of the bottom bar), hence its place here. */
+/* Tooltip wrapper for a button that DISABLES: a disabled control receives no mouse
+   event, so its own `title` never shows. The accessible name stays on the button. */
 .btn-tip {
   display: inline-flex;
 }
 
-/* ---- Collapsible play header (shared between Rehearsal, Recording and the
-   Editor): page seal + title of the play, then the act/scene/character selects,
-   and the brand at the foot of the expanded header. ---- */
+/* Collapsible play header (Rehearsal, Recording, Editor) */
 
 .play-header {
   position: sticky;
@@ -394,28 +277,16 @@ input[type="checkbox"] {
   padding: 10px 18px;
 }
 
-/* The top row NEVER moves: neither its height, nor the seal, nor the size of the
-   title. Collapsing only removes the settings below it; the title stays centred in a
-   bar with symmetrical padding. */
+/* The top row never moves: collapsing only removes the settings below it. */
 
-/* The collapse button swallows the WHOLE row except the seal: the title of the play
-   is inside it, and it alone (the word "PrettyDrama" moved down to the foot of the
-   header, with the logo: in the only row that is always visible, it was taking the
-   room that the title of the play was then cutting into "…" on mobile). On mobile,
-   aiming at the top of the bar to collapse it landed on the link of the brand and
-   sent one back to the main menu; the link moved down into the settings
-   (`.play-header-home`). */
+/* The collapse button swallows the whole row except the seal. */
 .play-header-toggle {
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
-  /* `stretch` and not the natural height of the title: the button must be the full
-     height of the row, which the seal already fixes at 36 px. Without it, it only
-     measured its 28 px of title, and `align-items: center` on the row left four dead
-     pixels on either side, at the top of the bar, exactly where the thumb aims to
-     collapse it. Nothing moves on screen: the background is transparent and the
-     content stays centred. */
+  /* `stretch`: without it the button measured only its 28 px of title, leaving four
+     dead pixels at the top of the bar where the thumb aims. */
   align-self: stretch;
   gap: 10px;
   background: none;
@@ -424,29 +295,10 @@ input[type="checkbox"] {
   text-align: left;
 }
 
-/* Two lines at most, then the ellipsis: a play title that does not fit the width of
-   the phone used to read "The Tricks of Sca…", and it is recoverable nowhere (hovering
-   the row gives the tooltip of the collapse, and on mobile there is no hover). The cap
-   of two lines holds in BOTH states of the collapse, like the rest of the top row: the
-   thumb collapses the bar several times per rehearsal, and a title that changed its
-   number of lines at each press would snap, a line break not being interpolable where
-   the settings glide over 0.26 s. A long title therefore makes the bar grow once and
-   for all, not at each gesture.
-   `line-height: 1.2` is the price of it: the 1.5 inherited from the body would give
-   60 px of title over two lines, whereas at 1.2 a line measures 24 px and stays under
-   the 30 px of the seal, which already fixes the height of the row. A short title
-   therefore changes nothing at all, a long title adds 18 px.
-   Path set aside: shrinking the size of the title (on mobile, or when collapsed). It
-   buys two or three characters, it gives two typographic sizes to the same string on
-   the same screen, and a `font-size` in transition on a serif reads as a zoom glitch
-   (subpixel reflow of the whole line).
-   The `-webkit-` trio is the idiom rendered everywhere (Firefox 68+, and it is the one
-   the standard `line-clamp` property defines); it replaces `text-overflow`, which has
-   no effect in a `-webkit-box` box: it is the clamp that puts its ellipsis at the end
-   of the second line.
-   A single rule for BOTH headers, and not two that look alike: they write the same
-   string in the same place, one while the other loads, so the slightest divergence
-   shows as a jump. The same reason as the single `HomeLink` of the foot. */
+/* Two lines then ellipsis, in BOTH collapse states: a title changing its line count at
+   each press would snap, a line break not being interpolable. `line-height: 1.2` keeps
+   one line under the 30 px seal. The `-webkit-` trio is the idiom rendered everywhere;
+   `text-overflow` has no effect in a `-webkit-box`. One rule for BOTH headers. */
 .play-header-title,
 .page-header .page-title {
   min-width: 0;
@@ -461,10 +313,8 @@ input[type="checkbox"] {
   -webkit-line-clamp: 2;
 }
 
-/* Only the play header eats the remaining width: its row has no `.spacer`, it is the
-   collapse button that follows the title. The row of `PageHeader` has one, and two
-   `flex: 1` in the same row would share the space, which would cut the title halfway
-   along the bar. */
+/* Only the play header eats the remaining width: its row has no `.spacer`, and two
+   `flex: 1` in one row would cut the title halfway along the bar. */
 .play-header-title {
   flex: 1;
 }
@@ -480,33 +330,16 @@ input[type="checkbox"] {
   transform: rotate(0deg);
 }
 
-/* Animated collapse: the single-row grid goes from the height of the content to
-   zero, which is interpolable, unlike `height: auto`.
-   `minmax(0, …)` and not plain `0fr`/`1fr`: the minimum of an `fr` track is `auto`,
-   hence the min-content contribution of its content, and a track "at zero" stayed as
-   tall as the 14 px of bottom padding of the settings, which left an empty line under
-   the title once the header was closed.
-   `visibility` (a discrete property: applied at the end of the transition when
-   closing, right at the start when opening) takes the selects out of the keyboard path
-   once closed, without unmounting them. */
+/* Animated collapse on grid rows, which are interpolable unlike `height: auto`.
+   `minmax(0, …)` and never plain `0fr`/`1fr`: an `fr` track has an `auto` minimum, so a
+   track "at zero" stayed as tall as the settings' bottom padding.
+   `visibility` (discrete) takes the selects out of the keyboard path once closed. */
 .play-header-settings {
   display: grid;
   grid-template-rows: minmax(0, 0fr);
   visibility: hidden;
-  /* The clipping lives HERE, on the grid, and not on its child: in `border-box`, a
-     child of height 0 still keeps its 14 px of bottom padding, which overflowed
-     below the closed header and thickened it for no visible reason.
-     It is active PERMANENTLY. It was not: an `animating` class, set by the component
-     and removed by a 340 ms timer, lifted it as soon as the header was open and
-     still, for one single reason, the colour popover of a character chip, which had
-     to be able to overflow the header of the editor. The chips now live in the rail
-     of Editing and their palette settles in its flow, so not one of the five
-     pages has content that overflows its settings any more, and five pages no longer
-     have to run a timer at each collapse for nobody. The doctrine that went with it
-     no longer has an object, but it is noted here in case some future overflowing
-     content brought the question back: it was a timer and not a `transitionend`,
-     because with reduced motion the event never comes and the header would stay
-     clipped. */
+  /* Clipping lives on the GRID, not the child: a border-box child of height 0 still
+     keeps its bottom padding, which thickened the closed header. Permanent. */
   overflow: hidden;
   transition: grid-template-rows 0.26s var(--ease-header), visibility 0.26s;
 }
@@ -517,7 +350,7 @@ input[type="checkbox"] {
 }
 
 .play-header-settings-inner {
-  min-height: 0;
+  min-height: 0; /* trap: without it the flex item's auto minimum is its content */
   padding: 0 18px 14px;
   display: flex;
   flex-direction: column;
@@ -531,18 +364,8 @@ input[type="checkbox"] {
   transition-delay: 0.06s; /* the content appears once the room has been made */
 }
 
-/* The way back to the home page, the only outgoing link of the pages with a header:
-   it can only be touched once the header is expanded, hence never by accident while
-   collapsing it. The two-masks logo and the word "PrettyDrama" to its right make the
-   button together: this is where the name of the site is read, the top row now only
-   having to say the title of the play. At the foot of the header and centred: a way out
-   of the page is not put above the settings, and centred the button does not claim to
-   belong to any of the columns on the left. */
-/* The foot of the header: two rules that fade away outwards, the brand in the middle.
-   Alone and centred, it looked like a disc that had fallen there; framed, it closes the
-   header the way a tailpiece closes a page. Short, graduated rules rather than a full
-   line from edge to edge: under settings that are already busy, one more frank stroke
-   would have weighed too much. */
+/* Foot of the header: two rules fading outwards, the brand between them. The only
+   outgoing link of the pages with a header, reachable only once expanded. */
 .play-header-foot {
   display: flex;
   align-items: center;
@@ -565,31 +388,19 @@ input[type="checkbox"] {
 }
 
 .play-header-home {
-  position: relative; /* anchors the glow of the hover, see ::before */
+  position: relative; /* anchors the hover wash, see ::before */
   display: inline-flex;
   align-items: center;
   gap: 10px;
   text-decoration: none;
-  /* Nothing paints this edge any more (the hover is a wash of light, not a
-     background): it only remains in order to give its oval shape to the focus
-     ring. */
-  border-radius: 999px;
-  /* The padding brings the touch target to 48 px high whereas the disc only shows
-     36 of them. More margin to the right of the word than to the left of the logo:
-     the circle already has its own surrounding white, the word has none. */
-  padding: 6px 16px 6px 6px;
+  border-radius: 999px; /* only shapes the focus ring; nothing paints this edge */
+  padding: 6px 16px 6px 6px; /* brings the touch target to 48 px */
   transition: transform 0.18s;
 }
 
-/* The name of the site, in the serif reserved for the header: exactly what it rendered
-   in the top row, at the same size (the foot of the header is not a page footer, it is
-   the signature of the site).
-   The ink is `--page-mark`, the one of the seal of the CURRENT page, and not
-   `--header-accent`: the whole button (badge, word, hover wash) takes the colour of the
-   header it closes, so it is navy on Progress and purple on Editing. On the four wine
-   pages `--page-mark` IS `#8b2635`, so this changes nothing there. This is the only
-   place in a header where a re-skinnable token is deliberate, and `test_contracts.py`
-   exempts the `.play-header-home` prefix on that ground. */
+/* Ink is `--page-mark`, the CURRENT page's seal, not `--header-accent`: the only place
+   in a header where a re-skinnable token is deliberate, and `test_contracts.py` exempts
+   the `.play-header-home` prefix on that ground. */
 .play-header-home-word {
   font-family: var(--header-serif);
   font-size: 20px;
@@ -598,56 +409,20 @@ input[type="checkbox"] {
   white-space: nowrap;
 }
 
-/* The two masks, as in the hero of the home page. A disc of the SAME size as the seal
-   of the page (hence 36 px, and 30 px below 800 px like it): the header carries only
-   these two circles, one size each read as a misalignment. The drawing, for its part,
-   is pushed closer to the edge of its disc than in a page seal (26 px instead of 20):
-   at 20 px the two faces touch, and the logo is no more than a blot. */
+/* Same disc size as the page seal; the drawing sits closer to the edge (26 vs 20) or
+   the two faces touch and the logo is a blot. */
 .play-header-home-mark {
   font-size: 26px;
 }
 
-/* The hover of the link: the **cream of the brand's seal spreads out and takes in the
-   whole block** (logo + word), without ever drawing an edge. It is the sand of the
-   masks' disc that overflows it and wraps the name of the site: the two are now a
-   single object laid on a warm background, instead of a cream circle followed by a
-   word.
-   Three attempts kept here because they are tempting:
-   (1) a rule in the brand colour around the disc of the logo, like the one on the
-   home page cards and on the upload button. Except that over there the rule already
-   exists at rest (it is the border of the card, the hover only tints it): here it
-   appeared out of nowhere and ringed the masks like a target. On top of that it only
-   lit the circle, leaving the word unlit beside it, and the button read as two objects
-   of which only one responded. Hence the rule: what responds to the hover is the WHOLE
-   OVAL, logo and word together.
-   (2) a tinted background + blurred `box-shadow` on that oval. A background stops dead
-   at the edge of its box, and a drop shadow redraws the silhouette: in both cases an
-   edge appeared, exactly what we do not want.
-   (3) the same wash as here, but in the wine of the brand: that made a red glow around
-   the logo, an alert rather than a welcome. The colour that must spread out is the one
-   of the seal's BACKGROUND (the sand), not the one of its ink.
-   Hence a radial gradient from cream to transparent, which reaches transparency BEFORE
-   the edge of its own layer (`closest-side`, last stop transparent), and a layer bigger
-   than the oval (the negative `inset`) so that the wash finishes fading outside:
-   nothing ends on a line any more, the cream is born at the centre and gets lost in the
-   white of the header. The intermediate stops serve the same cause: two stops alone
-   leave a visible fringe where the slope is steepest.
-   Full cream at the centre, where the wine had to stay under 20 %: the sand is close
-   enough to the white of the header to bear it. This link is the only way out of the
-   page on the five headers and it has no action word to announce itself, so the wash
-   must be seen; it is its width and its gentle slope, not its paleness, that keep it
-   from showing off. It appears over 0.26 s, more slowly than the one-pixel step of the
-   oval (0.18 s): the background rises instead of lighting up all at once.
-   The colour comes from `--page-mark-soft`, which the `page-<key>` class the link sets
-   on itself (see HomeLink.jsx) resolves to the disc of the CURRENT page's seal: no hex
-   copied here, no extra token, cream on the four wine pages and the pale navy or pale
-   purple of the header on the coordinator's two.
-   `z-index: -1` puts the wash UNDER the logo and the word (without which this absolute
-   layer would cover the masks) but not under the header: the sticky `.play-header`
-   creates the stacking context, the oval creates none (`position: relative` without
-   `z-index`), so the wash paints itself between the background of the header and its
-   content. `pointer-events: none` keeps the click target on the oval, which the
-   negative `inset` would have widened. */
+/* Hover: the seal's cream spreads over the whole block (logo + word) without ever
+   drawing an edge. Hence a radial gradient reaching transparency before its own edge
+   (`closest-side`) on a layer bigger than the oval, with intermediate stops (two alone
+   leave a visible fringe). A background or a box-shadow would redraw that edge.
+   Colour from `--page-mark-soft` via the `page-<key>` class HomeLink sets on itself.
+   `z-index: -1` puts the wash under the logo but not under the sticky header, which
+   owns the stacking context. `pointer-events: none` keeps the click target on the
+   oval, which the negative inset would have widened. */
 .play-header-home::before {
   content: "";
   position: absolute;
@@ -670,21 +445,12 @@ input[type="checkbox"] {
   opacity: 1;
 }
 
-/* The one-pixel step upwards, the one of the upload button of the Progress page: it
-   is what remains of the shared hover, the wash of cream replacing its rule and its
-   shadow. (The home page cards, for their part, rise by 3 px: they are the only ones
-   with nothing around them, a franker step reads there without weighing.)
-   Two paths set aside for the disc of the logo: inverting it (wine background, sand
-   drawing) drowns the masks, which paint their two faces in `--page-mark-soft`, and all
-   that is left is a pale blot; enlarging it redraws it at a size it cannot bear. */
 .play-header-home:hover {
   transform: translateY(-1px);
 }
 
-/* The same ring geometry as `--focus-ring` (2 px, offset by 2 px), but built on
-   `--page-mark`, like the word and the wash: the ring of a button rings THAT button, so
-   it takes its ink. Not `--accent`, which the editor re-skins for its rail and which
-   would put a purple ring around a navy button on the Progress page. */
+/* Same geometry as `--focus-ring` but built on `--page-mark`, so the editor's re-skin
+   cannot put a purple ring around a navy button. */
 .play-header-home:focus-visible {
   outline: 2px solid var(--page-mark);
   outline-offset: 2px;
@@ -701,9 +467,7 @@ input[type="checkbox"] {
   min-width: 130px;
 }
 
-/* Character on its own line (common to Rehearsal and Recording); on the Rehearsal page
-   the checkboxes line up right next to it (.checks-row, local to the page), and pass
-   under the select when there is not enough width. */
+/* Character on its own line (Rehearsal and Recording). */
 .character-row {
   display: flex;
   align-items: center;
@@ -715,33 +479,21 @@ input[type="checkbox"] {
   min-width: 160px;
 }
 
-/* The documentation of the header, on the five pages: rendered by PlayHeader, never by
-   the pages. Two paragraphs that frame the settings: the compact `desc` from pages.js
-   (the same one as the home page card) at the top of the expanded header, the details
-   specific to the header at its foot. A single class for both, hence a single style: it
-   is the same voice, give or take one notch of detail, and it is their place that tells
-   them apart.
-   The pair `13.5px` + `--ink-soft` is the site's secondary text, and it is written out
-   again in a handful of page rules (`.load-info`, `.character-empty`,
-   `.scene-empty-hint`, the hints of the chooser). It is deliberately NOT hoisted into a
-   `.hint-text` utility: everything this file shares is a named OBJECT (`.dialogue-card`,
-   `.page-notice`, `.btn-tip`, `.lift-hover`), never a size and a colour to be sprinkled
-   from the JSX, and each of those rules carries its own margin, which is the part that
-   actually differs. Two declarations repeated cost less than a class the markup has to
-   remember. */
+/* The header's documentation, rendered by PlayHeader on all five pages. The
+   13.5px + --ink-soft pair is the site's secondary text and is deliberately NOT hoisted
+   into a utility class: this file shares named OBJECTS, never a size and a colour. */
 .header-hint {
   font-size: 13.5px;
   color: var(--ink-soft);
   margin: 0;
 }
 
-/* ---- Dialogue list + fixed bottom control bar (shared) ---- */
+/* Dialogue list + fixed bottom control bar (shared) */
 
 .dialogue-container {
   max-width: 760px;
   margin: 0 auto;
-  /* The bottom padding clears the fixed control bar (common to both pages). */
-  padding: 16px 16px 140px;
+  padding: 16px 16px 140px; /* bottom padding clears the fixed control bar */
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -759,10 +511,8 @@ input[type="checkbox"] {
 }
 
 .progress-container {
-  /* A 40 px touch target; the visible track (6 px) is drawn by ::before, centred
-     vertically, so that it carries its own rounding: a border-radius on the
-     container clipped to the content-box would stay invisible.
-     The negative margins cancel the height so that nothing is shifted. */
+  /* 40 px touch target; the visible 6 px track is drawn by ::before so it can carry its
+     own rounding. Negative margins cancel the height so nothing shifts. */
   height: 40px;
   margin: -13px 0 -3px;
   cursor: pointer;
@@ -812,14 +562,8 @@ input[type="checkbox"] {
   pointer-events: none;
 }
 
-/* While the cursor is being DRAGGED, no more smoothing: the thumb and the fill settle
-   on the pointer, to the pixel. The named precedent is the width handle of Editing's
-   rail (class `resizing`) and the lesson is the same: a 0.15 s transition during a drag
-   makes it chase the cursor with a lag, which reads as a latency of the page. It stays
-   for the discrete jumps, which are its reason for being (click on the track, arrows of
-   the bottom bar, keyboard, playback moving on). The same cause on the list side, where
-   the recentring of the active card swaps the browser's `smooth` for a fast follow for
-   the duration of the drag (`setSeekDragging`, `useScrollToActiveCard.js`). */
+/* No smoothing mid-drag: a 0.15s transition makes the thumb chase the cursor, which
+   reads as page latency. Same as the rail's `resizing`. Kept for discrete jumps. */
 .progress-container.dragging .progress-fill,
 .progress-container.dragging .progress-thumb {
   transition: none;
@@ -867,16 +611,14 @@ input[type="checkbox"] {
   color: #fff;
 }
 
-/* The generic .ctrl-btn:hover (cream) outranks .ctrl-btn.play and would
-   wash the accent circle out under its white glyph: darken instead. */
+/* .ctrl-btn:hover (cream) outranks .ctrl-btn.play and would wash out the accent
+   circle under its white glyph: darken instead. */
 .ctrl-btn.play:hover:not(:disabled) {
   background: var(--accent-dark);
   border-color: var(--accent-dark);
 }
 
-/* The "my line" jumps (common to Rehearsal and Recording): tinted with the accent that
-   highlights my lines (.dialogue-card.mine), to link the buttons visually to my
-   cards. */
+/* "My line" jumps, tinted like .dialogue-card.mine to link buttons to my cards. */
 .ctrl-btn.my-jump {
   color: var(--accent);
   background: var(--accent-soft);
@@ -888,7 +630,7 @@ input[type="checkbox"] {
   color: #fff;
 }
 
-/* ---- Dialogue cards (shared look between Rehearsal & Recording) ---- */
+/* Dialogue cards (shared: Rehearsal & Recording) */
 
 .dialogue-card:focus-visible {
   outline: var(--focus-ring);
@@ -900,14 +642,12 @@ input[type="checkbox"] {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 12px 16px;
-  /* The same tint as the rule on the other sides: a transparent edge left an "open"
-     white band on the lines with no state. */
+  /* Tinted like the other sides: a transparent edge left an "open" white band. */
   border-left: 4px solid var(--border);
   transition: border-color 0.15s, background 0.15s;
 }
 
-/* "My lines": the same pink/gold palette on Rehearsal and on Recording.
-   The pages set .mine next to their semantic class (.muted / .own). */
+/* "My lines". The pages set .mine next to their semantic class (.muted / .own). */
 .dialogue-card.mine {
   background: var(--accent-soft);
   border-left-color: var(--gold);
@@ -916,16 +656,12 @@ input[type="checkbox"] {
 .dialogue-card.active {
   border-color: var(--accent);
   border-left-color: var(--accent);
-  /* Derived from --accent (like the recording halo of recorder.css) and not the same
-     burgundy frozen as an rgba: a shared component does not fix a colour that a page
-     can re-skin. */
+  /* Derived from --accent, not a frozen rgba: a shared component does not fix a
+     colour a page can re-skin. */
   box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
-/* The current card lightens by a breath against the white of the others: the border
-   alone gets lost in a long list. Common to both pages (the Rehearsal page had it for
-   itself alone, hard-coded, and the Recording page did without it).
-   `:not(.mine)` and not a plain `.active`: on my own lines the pink/gold palette must
+/* `:not(.mine)`, not a plain `.active`: on my own lines the pink/gold palette must
    stay, and `.active` comes after it in the cascade. */
 .dialogue-card.active:not(.mine) {
   background: var(--card-active);
@@ -944,9 +680,7 @@ input[type="checkbox"] {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  /* The other characters stay in soft grey; only the selected character (.mine) takes
-     the colour of the theme (as in v1). */
-  color: var(--ink-soft);
+  color: var(--ink-soft); /* only .mine takes the theme colour, below */
 }
 
 .dialogue-card.mine .dialogue-character {
@@ -961,7 +695,7 @@ input[type="checkbox"] {
   white-space: pre-wrap;
 }
 
-/* ---- Layout helpers ---- */
+/* Layout helpers */
 
 .container {
   max-width: 900px;
@@ -969,54 +703,29 @@ input[type="checkbox"] {
   padding: 20px;
 }
 
-/* A shell the height of the window: the header stays in the flow at the top, and ONLY
-   the content below it scrolls. Two pages need it, Editing (the rail, hence the list
-   of matches, must stay before the eyes while one goes through the lines) and
-   Speaking share (its legend bar must stay under the header while the mosaic is several
-   screens long), and it used to be written twice, the comments of the two files quoting
-   each other.
-   The reason is the same on both sides, and that is what makes it shareable: sticking a
-   bar UNDER the header would otherwise require knowing the height of that header, which
-   is an ANIMATED unknown (a title on two lines, two paragraphs of documentation, a
-   collapse over 0.26 s), hence measuring it in JS, remeasuring it at each collapse, and
-   the bar would trail a quarter of a second behind the animation. Here nothing is
-   measured and `PlayHeader` is not touched: its `position: sticky` inside an ancestor
-   that does not scroll behaves like `relative`, it holds the top because it IS at the
-   top.
-   `--shell-height` is the only real difference between the two consumers, and it is not
-   cosmetic: Speaking share takes `100dvh` because it is among the actors' cards, hence on
-   the phone, where an address bar that retracts really does change the usable height;
-   Editing keeps `100vh`, it only opens with a mouse (see useTouchPointer.js). The
-   default is `100dvh`, the phone case: a page that forgot to set it had better be too
-   short than too long.
-   To be set on an element of the page and NEVER on `body`: the full-page screens of
-   `PageState` keep normal scrolling, their card being able to overflow a short
-   window. */
+/* Window-height shell: the header stays in the flow, only the content below scrolls.
+   Sticking a bar UNDER the header would otherwise mean measuring an animated height in
+   JS at every collapse. `--shell-height` defaults to 100dvh (the phone case); Editing
+   sets 100vh since it only opens with a mouse.
+   TO BE SET ON AN ELEMENT, NEVER ON `body`: the full-page PageState screens keep normal
+   scrolling, their card being able to overflow a short window. */
 .page-shell {
   height: var(--shell-height, 100dvh);
   display: flex;
   flex-direction: column;
 }
 
-/* The scrolling area of `.page-shell`. `min-height: 0` is the plumbing that makes it
-   work: without it, the automatic minimum of a flex item is its content height, so the
-   area pushes the shell beyond the window instead of scrolling (the same trap as
-   `.play-header-settings-inner` and `.editor-rail-body`). Horizontal scrolling stays
-   forbidden: it is the height that is bounded, never the width. */
+/* `min-height: 0` is what makes it scroll: a flex item's automatic minimum is its
+   content height (same trap as `.play-header-settings-inner` and `.editor-rail-body`).
+   Only the height is bounded, never the width. */
 .page-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
 }
 
-/* A name that must not push its neighbours out of their box: it takes the room it has
-   and cuts itself off with "…". Four carriers, all the same object (the name of a
-   character or of an object of the play in a tight row), and the trio used to be copied
-   into four page CSS files, each one pointing in a comment to the one of the Progress
-   page. What stays local is what really varies: the maximum width, the `flex`, the
-   padding.
-   Always doubled with a `title` at the call site, otherwise a cut name becomes a name
-   that can no longer be read at all. */
+/* A name cut with "…" rather than pushing its neighbours out. Always doubled with a
+   `title` at the call site. Max width, `flex` and padding stay local. */
 .truncate {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1030,54 +739,22 @@ input[type="checkbox"] {
   box-shadow: var(--shadow);
 }
 
-/* The hover gesture common to all clickable surfaces of the site: the surface lifts by
-   one step and takes the high shadow. It used to be copied onto the cards of both home
-   pages, onto the upload button and onto the PDF button, in three files for two
-   declarations, whereas the project describes it everywhere as ONE gesture. A
-   divergence of one pixel between two neighbouring surfaces does not get named, it just
-   gets noticed.
-   `--lift` for the step, because it depends on the size of the surface and not on the
-   gesture: a home page card is tall and rises by 3 px, a button or a one-line bar by
-   1 px (the default). That is the only legitimate difference.
-   The `transition` stays with each surface, and is deliberately not moved up here:
-   `transition` is ONE property, so a local declaration (the PDF button also transitions
-   its background) would overwrite the one here instead of adding to it, and the lift
-   would appear all at once. A counterpart to uphold: any surface that takes this class
-   must list `transform` and `box-shadow` in ITS transition.
-   Not suitable for the way back to the home page from the header
-   (`.play-header-home`): it keeps the one-pixel step but replaces the shadow with the
-   cream wash of the seal, so it is another gesture, not this one badly tuned. */
+/* The one hover gesture of every clickable surface. `--lift` is the step (3 px for a
+   tall home card, 1 px default).
+   `transition` STAYS ON EACH SURFACE and is deliberately not hoisted here: it is one
+   property, so a local declaration would overwrite this one instead of adding to it.
+   Counterpart: any surface taking this class lists `transform` and `box-shadow` in ITS
+   own transition. */
 .lift-hover:hover {
   transform: translateY(var(--lift, -1px));
   box-shadow: var(--shadow-hover);
 }
 
-/* ---- The file tile (shared: Progress page x2, Editing page) ----
-   The site's shape for "a FILE passes between the coordinator and the repository",
-   whichever way it goes. It lived in dashboard.css as `.dash-upload` while the Progress
-   page was the only place one could upload anything; the Editing page then carried its
-   own (the script it has just produced), and one gesture gets ONE look, so it moved up
-   here. Nothing was retuned on the way: same paddings, same discreet extension.
-
-   The name still says `upload`, and it now covers one tile that does the opposite: the
-   PDF download of the Progress page (`.dash-script-tile`), which used to be a solid
-   `.btn` pill and read, beside this tile, as the page's only real button. Three
-   carriers, therefore, and the DIRECTION is never in the shape: it is in the drawing
-   that opens the tile (a seal for what leaves, the download arrow for what comes back)
-   and in the verb of the label. Renaming the class and `UploadTile.jsx` with it would
-   touch four files for nothing but the word, so the word stays and this paragraph is
-   the correction.
-
-   A real tile the width of its content: at full width, the seal ended up flattened
-   against the edge, thirty pixels away from the label it qualifies. It therefore
-   frames the label closely, and shrinks with the screen until it takes up all the
-   available width.
-
-   `flex: none` because every carrier is inside a flex row (the actions of the Editing
-   and Progress headers, `.dash-actions`): stretched by the row, the tile read as a
-   panel and no longer as a control. The two tiles of a header give that back on their
-   own breakpoint, where they take a full line rather than crush the play title. The font and the pointer of the `<button>` variant
-   come from the `button` rule above, which the whole site relies on. */
+/* The file tile (Progress x2, Editing): one look for "a FILE passes between the
+   coordinator and the repository", either way. The DIRECTION is in the opening drawing
+   and the verb, never the shape, so the `upload` name also covers the PDF download.
+   A tile the width of its content, hugging its label. `flex: none` because every
+   carrier sits in a flex row and a stretched tile reads as a panel. */
 .upload-tile {
   flex: none;
   display: flex;
@@ -1090,8 +767,7 @@ input[type="checkbox"] {
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 
-/* The lift and the shadow come from `.lift-hover`; all that remains here is what is
-   specific to this tile, the rule that switches to the accent colour. */
+/* Lift and shadow come from `.lift-hover`; only the accent rule is specific. */
 .upload-tile:hover:not(:disabled) {
   border-color: var(--accent);
 }
@@ -1101,59 +777,28 @@ input[type="checkbox"] {
   outline-offset: var(--focus-ring-offset);
 }
 
-/* Switched off exactly like `.btn:disabled`: the tile carries its label, so dimming
-   it is enough to say it sleeps. `.lift-hover` is not even applied in that state
-   (UploadTile.jsx): `:hover` still fires on a disabled button, and a tile that lifts
-   under a mouse that cannot click it promises a gesture that will not happen. */
+/* `.lift-hover` is not applied in this state (UploadTile.jsx): `:hover` still fires on
+   a disabled button, and a tile that lifts promises a gesture that will not happen. */
 .upload-tile:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
-/* The seal of the page that produced the file (the mic of Recording for the voices,
-   on the Progress tile). `flex: none` is already carried by `.page-mark`: it does
-   not compress, it is the label that wraps.
-   Optional, and absent from the Editing tile: that one lives in the header row,
-   next to the quill the header already draws, and the tile is then the label alone
-   in its card. Nothing to retune for that case, the `gap` above simply has one
-   thing to space. */
+/* Seal of the page that produced the file. Optional: the Editing tile has none. */
 .upload-tile-mark {
   width: 34px;
   height: 34px;
   font-size: 19px;
 }
 
-/* The label is in black: "Upload", "Download" is the gesture, it belongs to no page.
-   Only the group of words that names a FILE takes a colour, through the `--page-mark`
-   set by the `page-<key>` class of the same span, and that class is the page one is
-   READING on all three tiles (`page-editor` on Editing, `page-dashboard` on the two of
-   Progress, including the voices tile whose seal keeps the mic of Recording). It was
-   Recording's wine there, the only foreign colour on that page, and beside a seal
-   drawn in the same wine it read as a warning on the gesture the coordinator repeats
-   every week. Which page a file COMES from is what the drawing says, not the ink.
-   The two tiles that live in a HEADER override this, each at its own rule and each in
-   its page's colour: Editing's update tile (`.editor-upload-tip`, editor.css) and the
-   Progress PDF tile (`.dash-script-tile`, dashboard.css) are FILLED, and they take one
-   ink for the whole label, the coloured group of words losing its own. What is
-   described here is therefore the tile IN THE PAGE, of which the voices tile of
-   Progress is now the only one; that is why those two repaints live in their pages and
-   not in a variant of this rule.
-
-   `line-height` is EXPLICIT, and it is what makes the tile the same height whichever
-   element carries it. Left to inherit, it is not: the `<button>` variant (Editing's
-   update tile) takes the UA's `normal` on the button, hence a 19 px line box, where the
-   `<a>` variant (the two of Progress) inherits the body's 1.5 and gets 22.5 px.
-   Measured: the same object stood 45 px tall in the Editing header and 48.5 px in the
-   Progress one, at the same font size, on rows meant to look identical, and nothing in
-   the CSS said so because neither file declared anything.
-   1.3 is what the button was already rendering (the UI font resolves `normal` to about
-   1.27), so the tiles that looked right do not move. A ratio and not a length: the 14 px
-   label of the narrow-phone rule at the end of this file scales with it.
-   Corollary for any drawing put in a tile: it has to stay UNDER this line box, or it
-   becomes what sets the height, and the tile grows again (that is exactly how the
-   Progress header tile ended up 3.5 px taller, see `.dash-script-tile svg`). The 34 px
-   seal is the deliberate exception, and it is why a tile carrying one, in the body of a
-   page, is taller than the two that live in a header. */
+/* The gesture word is black; only the group naming a FILE takes `--page-mark`, and that
+   class is the page one is READING. The two tiles living in a HEADER override this in
+   their own files (`.editor-upload-tip`, `.dash-script-tile`).
+   `line-height` is EXPLICIT and that is what makes the tile the same height whichever
+   element carries it: left to inherit, a `<button>` takes the UA's `normal` and an
+   `<a>` the body's 1.5, measured 45 vs 48.5 px for the same object. 1.3 is what the
+   button already rendered. Corollary: any drawing put in a tile must stay under this
+   line box or it becomes what sets the height. */
 .upload-tile-text {
   color: var(--ink);
   font-size: 15px;
@@ -1163,33 +808,17 @@ input[type="checkbox"] {
   text-wrap: balance;
 }
 
-/* The group stays unbreakable: "voices (ZIP)" broken at the end of a line would
-   leave an orphan parenthesis under the word it qualifies.
-   `--page-mark` means the span (or an ancestor) has to carry a `page-<key>` class, and
-   that only works where such a class exists: on the `<header>`, or on the span itself.
-   Neither of the surviving carriers takes the value as written any more. The two header
-   tiles pin one ink for the whole label (see `.upload-tile-text` above) and the voices
-   tile of Progress, which sits in the BODY where no seal token resolves, pins the page's
-   navy through `--accent` (`.dash-actions .upload-tile-word`). What is left here is the
-   fallback and the no-break, which is the part every carrier keeps. */
+/* Unbreakable group: "voices (ZIP)" split would orphan the parenthesis. Both surviving
+   carriers override the colour; the fallback and the no-break are what they keep. */
 .upload-tile-word {
   color: var(--page-mark);
   white-space: nowrap;
 }
 
-/* The extension: said, not shouted. It does not compete with the word it follows.
-   The discretion comes from the weight and the size, NEVER from an opacity: at 0.75
-   on the page colour, the format word fell to 3.1:1 on the white card (below the AA
-   threshold for its ~13 px). Measured on the editor tile's "(JSON)", which has since
-   gone (a button that PRODUCES the file has no format to announce, cf. editor/App.jsx);
-   the two of the Progress page remain, "(ZIP)" and "(PDF)", both of them files the
-   coordinator has to recognise among others on their own disk.
-   `line-height: 1` is not about this text's own spacing, it is about the tile's height:
-   at 0.86em with the 1.3 ratio inherited from the label, this inline box hangs a
-   quarter of a pixel below the line's strut, so a tile with a format word measured
-   45.765 px against the 45.5 of one without. Under a whole pixel and invisible, but the
-   two header tiles are supposed to be the same height, and one of the two carries a
-   format word. Nothing is clipped: a line box is never a crop. */
+/* The extension: said, not shouted. Weight and size, NEVER an opacity (0.75 on the page
+   colour measured 3.1:1 on white, below AA at this size). `line-height: 1` is about the
+   tile's height, not this text: otherwise it hangs a quarter pixel below the strut and
+   a tile with a format word is taller than one without. */
 .upload-tile-format {
   font-weight: 400;
   font-size: 0.86em;
@@ -1203,23 +832,10 @@ input[type="checkbox"] {
   font-size: 17px;
 }
 
-/* Full-page message of `PageState`: it lives in a white card, like EVERYTHING that
-   carries content on this site (the home page cards, the "Who are you playing?" intro
-   card, the panels of the Progress page, the dialogue cards). As bare text on the cream,
-   these screens were the only ones on the site to lay nothing on the paper: one read a
-   half-loaded page rather than an answer.
-   **BOTH states take it**, the message (browser unable to record, unreadable manifest,
-   Editor opened under a finger) and the loading: they are two moments of the same
-   screen, and since one often follows the other, a card that only appeared at the second
-   would read as a change of page.
-   The wording stays centred and short (one sentence, not a paragraph), hence no title:
-   the card and the seal of the header already situate the screen.
-   `min()` rather than a side margin: `margin: auto` centres, and a gutter is still
-   needed on a narrow phone. The gutter is a token because the editor's card raises its
-   ceiling without changing the edge (`.load-error`), and two copied `calc()` would
-   drift.
-   The shadow follows `--shadow`, so the editor (which sets it to `none`) renders the
-   card flat: that is its "Rail" direction, and its own panels are flat. */
+/* Full-page PageState message, in a white card like everything carrying content here.
+   BOTH states take it (message and loading): they are two moments of one screen.
+   `min()` rather than a side margin, since `margin: auto` centres. The shadow follows
+   `--shadow`, so the editor (which sets it to `none`) renders the card flat. */
 .page-notice {
   max-width: min(480px, calc(100% - var(--notice-gutter)));
   margin: 40px auto;
@@ -1234,21 +850,17 @@ input[type="checkbox"] {
   line-height: 1.55;
 }
 
-/* The triangle takes the warning colour of the theme: on a white card, the ink alone
-   did not say that there is something to know. */
 .page-notice .warn-icon {
   color: var(--warn);
 }
 
-/* The waiting state, in the same card: only the ink softens, and the text breathes a
-   little more than a message which, for its part, is read once and then closes. */
 .page-notice.loading-state {
   color: var(--ink-soft);
   padding: 40px 26px;
   font-size: 17px;
 }
 
-/* ---- Modal ---- */
+/* Modal */
 
 .modal-backdrop {
   position: fixed;
@@ -1284,11 +896,8 @@ input[type="checkbox"] {
   flex-wrap: wrap;
 }
 
-/* Confirmation modals (ConfirmModal): the line concerned is quoted in serif, as in the
-   dialogue cards, so that it is recognised. Lives here and no longer in editor.css ever
-   since the Recording page also quotes the line (deletion of a take): the modal is
-   shared, so is its quotation. The rule follows --border (re-skinned by the editor), so
-   the tint stays the one of the page. */
+/* ConfirmModal quotes the line in serif, as in the dialogue cards, so it is
+   recognised. Shared, since two pages quote a line. */
 .confirm-quote {
   font-family: var(--font-serif);
   font-size: 16px;
@@ -1300,23 +909,13 @@ input[type="checkbox"] {
   white-space: pre-wrap;
 }
 
-/* ---- Mobile ----
-   The row of the header is tight at 375px (seal + brand + play title + chevron, plus
-   the actions of the editor): we take width back from the seal then from the margins,
-   never from the title of the play. */
+/* Mobile: the header row is tight at 375px, so take width back from the seal then the
+   margins, never from the play title. */
 
-/* Aimed at both headers, and above all NOT at plain `.page-mark`: the masks of the home
-   page only read from about 34 px up and would drop here to 17 px, a size at which the
-   two faces touch. It used to work by accident (`.home-brand-mark` has the same
-   specificity and comes later in the cascade, but only because main.jsx imports
-   theme.css before home.css: swapping those two imports shrank the brand). No other
-   carrier of a seal is inside a header, so the rendering is unchanged.
-   The disc of the way back to the home page, for its part, really is inside a header and
-   deliberately follows the rule: it must stay the EXACT size of the seal of the page, the
-   only other circle of the header. Only its drawing keeps the lead it has at a large
-   size (the masks fill about three quarters of the disc, a page seal a little more than
-   half): the next line gives it back to it, otherwise the rule above would bring it down
-   to 17 px, a size at which the two faces touch. */
+/* Aimed at both HEADERS and above all NOT at bare `.page-mark`: the home page masks
+   only read from about 34 px up and would drop to 17 px here. It used to work by
+   accident, through import order. The way-back disc follows the rule deliberately (it
+   must match the page seal) and gets its drawing back on the next rule. */
 @media (max-width: 800px) {
   .page-header .page-mark,
   .play-header .page-mark {
@@ -1325,24 +924,14 @@ input[type="checkbox"] {
     font-size: 17px;
   }
 
-  /* Aimed at the way-back link and not at a header: `HomeLink` is the same object in
-     both, and the rule above has already brought it down to a 30 px disc (it carries
-     `page-mark`). All that remains is to give it back its drawing, which takes up three
-     quarters of the circle where a page seal takes up half of it. */
   .play-header-home .play-header-home-mark {
     font-size: 22px;
   }
 }
 
-/* On a narrow phone, the 18 px of gutter of the header take too much from the width of
-   the title. ALL THREE carriers of that gutter go through this, never two: the top row,
-   the block of settings under it (documentation sentence, selects, `hint`, way back to
-   the home page) and the waiting header, which sets its own in one piece. Without
-   `.play-header-settings-inner`, the seal and the title were shifted 6 px to the left
-   relative to everything that follows them on the five pages with a play header, and the
-   content of the waiting screen (aligned, itself) slid by 6 px when the manifest
-   arrived. This is the same agreement that the comment on `.page-header` promises
-   above. */
+/* ALL THREE carriers of the 18 px header gutter go through this, never two, or the seal
+   and title sit 6 px left of everything below them and the content slides when the
+   manifest arrives. */
 @media (max-width: 420px) {
   .page-header,
   .play-header-row,
@@ -1352,11 +941,7 @@ input[type="checkbox"] {
   }
 }
 
-/* The upload tile on a narrow phone: the label goes over two or three lines, so the
-   seal shrinks to leave it the width, without ever going under the text (it is its
-   position on the left that says which page the file comes from). Breakpoint kept
-   from dashboard.css, where these three rules were written when the Progress page
-   was the only carrier of a tile. */
+/* Narrow phone: the seal shrinks to leave the label its width, never going under it. */
 @media (max-width: 560px) {
   .upload-tile {
     gap: 9px;
@@ -1374,8 +959,7 @@ input[type="checkbox"] {
   }
 }
 
-/* ---- Reduced motion ----
-   The collapsing of the header stays functional, it becomes instantaneous. */
+/* Reduced motion: the header collapse stays functional, it becomes instantaneous. */
 @media (prefers-reduced-motion: reduce) {
   .play-header-settings,
   .play-header-settings-inner,
@@ -1384,8 +968,7 @@ input[type="checkbox"] {
     transition-delay: 0s;
   }
 
-  /* The upload tile declares its own `transition` (it has to: `.lift-hover` leaves
-     it to each surface), so it is switched off here, in the file it lives in. */
+  /* The tile declares its own `transition` (`.lift-hover` leaves it to each surface). */
   .upload-tile {
     transition-duration: 0s;
   }

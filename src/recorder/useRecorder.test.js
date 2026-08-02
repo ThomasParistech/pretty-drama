@@ -1,22 +1,14 @@
-// The ZIP contract, browser side: the extension of the audio member.
-//
-// The Action finds a line's audio by looking for a member named
-// `{lineId}.{ext}`, with `ext` validated by the `[0-9a-zA-Z]+` regex of
-// `parse_manifest` (scripts/process_uploads.py). An extension that fell outside
-// that alphabet (an `audio/webm;codecs=opus` copied verbatim, a dot, a hyphen)
-// would make the clip impossible to find: the whole ZIP would be refused, and
-// the coordinator would read "audio file not found" without knowing why.
+// ZIP contract: the Action looks for `{lineId}.{ext}` with `ext` matched by `[0-9a-zA-Z]+`
+// (`parse_manifest`, process_uploads.py). Outside that alphabet the whole ZIP is refused.
 import test from "node:test";
 import assert from "node:assert/strict";
 
 import { extensionForMimeType } from "./useRecorder.js";
 
-// The exact mirror of LINE_ID_PATTERN on the extension side, in process_uploads.py:
-//   re.fullmatch(re.escape(line_id) + r"\.[0-9a-zA-Z]+", n)
+// Mirrors process_uploads.py: re.fullmatch(re.escape(line_id) + r"\.[0-9a-zA-Z]+", n)
 const ACCEPTED_BY_THE_ACTION = /^[0-9a-zA-Z]+$/;
 
-// What browsers actually return in MediaRecorder.mimeType, plus the boundary
-// values.
+// What browsers really return in MediaRecorder.mimeType, plus the boundary values.
 const MIME_TYPES = [
   "audio/webm;codecs=opus",
   "audio/webm",
@@ -44,9 +36,7 @@ test("known containers keep their customary extension", () => {
 });
 
 test("a missing or unknown MIME type falls back to an extension, never to nothing", () => {
-  // ffmpeg reads the real container, not the extension: getting the name wrong
-  // costs less than writing a member with no extension, which the Action would
-  // not find.
+  // ffmpeg reads the real container, so a wrong name costs less than no extension at all.
   for (const mimeType of ["", null, undefined, "audio/x-inconnu"]) {
     assert.equal(extensionForMimeType(mimeType), "webm");
   }

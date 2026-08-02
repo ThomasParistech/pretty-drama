@@ -23,9 +23,6 @@ import useTouchPointer from "./useTouchPointer.js";
 import "./editor.css";
 
 export default function App() {
-  // scriptReducer wrapped in an undo stack (see history.js): `script` is the
-  // present state, `past` the previous ones, `saved` the one that matches the
-  // last downloaded script.json.
   const [{ present: script, past, future, saved }, dispatch] = useReducer(
     historyReducer,
     EMPTY_SCRIPT,
@@ -36,36 +33,21 @@ export default function App() {
   // Blocking error: the published script EXISTS but could not be read.
   // Starting empty here would let the coordinator overwrite the real play.
   const [loadError, setLoadError] = useState(null);
-  // Focus and/or selection request addressed to ONE line, cleared as soon as it
-  // is honoured: `{ lineId, selection: [start, end] | null, focus }`.
-  // Generalises the original `focusLineId` (the line just created takes the
-  // caret): the search also needs to select, and sometimes WITHOUT stealing the
-  // focus. Since the object clears itself, its identity is enough to tell two
-  // successive requests on the same line apart, so no serial number here (unlike
-  // the search field, see useSearch.js).
+  // `{ lineId, selection, focus }`, cleared once honoured. The search selects too,
+  // sometimes WITHOUT taking the focus. The object clears itself, so its identity
+  // separates two successive requests and no serial number is needed.
   const [focusRequest, setFocusRequest] = useState(null);
-  // Pending character deletion needing a decision (has lines).
   const [deleteRequest, setDeleteRequest] = useState(null);
-  // Is there anything to download? A state comparison, not a flag raised by
-  // the first edit: undoing back to the last downloaded state (or to the
-  // loaded script, when nothing was downloaded yet) leaves nothing to save.
-  // Identity is enough, the stack stores the very objects it restores.
+  // A state COMPARISON and not a flag: undoing back to the last download leaves
+  // nothing to save. Identity is enough, the stack restores the very objects.
   const dirty = script !== saved;
 
-  // The act and scene labels of THIS page are composed in the language of the
-  // PLAY and not in the reader's (see structureLabels.js): here one shapes the
-  // document, and "Acte II" is the heading the PDF will print. It is the only one
-  // of the five pages in that case, the other four merely navigating a play they
-  // do not touch. The rest of the editor's text stays in the reader's language:
-  // that is interface.
-  // The language goes down as a PROP (and never this `tPlay`) to the two
-  // components that need it below: `SceneEditor` is in `React.memo`, and a fresh
-  // function on every render would make it re-render the whole scene on every
-  // keystroke.
+  // Act and scene labels here follow the PLAY's language, not the reader's: this page
+  // shapes the document the PDF prints. Everything else stays interface.
+  // The LANGUAGE goes down as a prop, never this `tPlay`: `SceneEditor` is memoised
+  // and a fresh function per render would re-render the scene on every keystroke.
   const tPlay = translator(script.language);
 
-  // Computer-only page (see useTouchPointer): on a touch pointer it renders an
-  // explanation screen instead of the editor.
   const touchOnly = useTouchPointer();
 
   const canUndo = past.length > 0;
@@ -73,10 +55,8 @@ export default function App() {
   const undo = useCallback(() => dispatch({ type: "UNDO" }), [dispatch]);
   const redo = useCallback(() => dispatch({ type: "REDO" }), [dispatch]);
 
-  // Ctrl+Z / Ctrl+Y (and Cmd+Z / Cmd+Shift+Z on Mac) anywhere, including
-  // inside a textarea: the browser's own undo would only rewind that one
-  // field, out of sync with our stack. When there is nothing to undo or redo
-  // we let the key through, so the native undo of a field still works.
+  // Undo/redo anywhere, textareas included: the browser's own would rewind one field
+  // out of sync with the stack. With nothing to undo we let the key through.
   useEffect(() => {
     const onKeyDown = (e) => {
       if (!e.ctrlKey && !e.metaKey) return;
@@ -96,12 +76,8 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [canUndo, canRedo, undo, redo]);
 
-  // "Reprise" mode: load the published script.json to continue editing it.
-  // Fetched even when the page is walled off (touch screen), and not for nothing:
-  // that screen's header names the play like the site's five other headers.
-  // Skipping the fetch was a saving of nothing at all (one JSON, on a page that
-  // then shows a single sentence) paid for by the site's only top row writing
-  // "Editing" instead of the play's title.
+  // Load the published script.json. Fetched even on the touch-walled screen, whose
+  // header names the play like every other.
   useEffect(() => {
     let cancelled = false;
     fetchScript()
@@ -112,7 +88,7 @@ export default function App() {
       .catch((err) => {
         if (cancelled) return;
         if (err instanceof HttpError && err.status === 404) {
-          // Genuinely no published script yet: legitimate empty start.
+          // No published script yet: legitimate empty start.
           setLoadInfo(t("editor.noPublishedScript"));
         } else {
           setLoadError(t("editor.readError"));
@@ -124,9 +100,7 @@ export default function App() {
     };
   }, [dispatch]);
 
-  // The file, on the disk, and the page's state marked as up to date. It is the
-  // rescue gesture of `LeaveGuard` (save the work before leaving) and the first
-  // half of `upload` below.
+  // Also LeaveGuard's rescue gesture and the first half of `upload`.
   const download = useCallback(() => {
     const blob = new Blob([JSON.stringify(script, null, 2)], {
       type: "application/json",
@@ -135,44 +109,23 @@ export default function App() {
     dispatch({ type: "MARK_SAVED" });
   }, [script, dispatch]);
 
-  // The play's upload page on GitHub, or null wherever it cannot be known (local
-  // dev outside github.io, custom domain, a script.json that has lost its `id`).
-  // Read here and not inside the tile: it decides what the gesture is made of.
+  // Null wherever the repo cannot be known, or when script.json lost its `id`. Read
+  // here and not in the tile: it decides what the gesture is made of.
   const uploadUrl = isPlayId(script.id) ? githubUploadUrl(script.id) : null;
 
-  // The page's outward gesture: the tile ANNOUNCES, the box's button acts. Clicking
-  // the tile opens a box that says what is about to happen (a file downloads, then
-  // GitHub opens, where you drag it), and "Continue" does both, in that order.
-  //
-  // A browser cannot upload for the coordinator (the site commits nothing, see the
-  // doc), so the journey has always had these two halves; what changed is that the
-  // page no longer stops halfway. It used to download and say, in its header, to go
-  // and find the button on the Progress page: two pages for one gesture, and the
-  // file sat in a downloads folder in between.
-  //
-  // The box comes FIRST, before anything happens, and that order is the whole point:
-  // announced, the download and the tab that opens are two steps of one gesture;
-  // fired first and explained afterwards, they are two surprises one then reads the
-  // caption of. It is also the only moment where the two halves can be named
-  // together, which is what a coordinator landing on a bare GitHub form is missing.
-  //
-  // Both live in the same click, hence in the same user gesture: that is what lets
-  // `window.open` through the pop-up blockers.
-  //
-  // Without a usable URL the gesture stays a plain download, and no box: it is the
-  // play's only way out, and hiding it as the Progress page hides its tile would
-  // leave this page with no exit at all. But a box promising a page that will never
-  // open is worse than no box.
+  // The tile ANNOUNCES, the box's button acts: the box comes FIRST so the download and
+  // the tab that opens read as two steps of one gesture rather than two surprises.
+  // Both fire in the SAME click, which is what pop-up blockers ask of `window.open`.
+  // With no usable URL it stays a plain download and no box: this is the play's only
+  // way out, but a box promising a page that never opens is worse than none.
   const [uploadNotice, setUploadNotice] = useState(false);
   const upload = useCallback(() => {
     if (uploadUrl) setUploadNotice(true);
     else download();
   }, [download, uploadUrl]);
 
-  // Insert a new line and focus it: the UUID is minted here (not in the
-  // reducer, which must stay pure) so we know which textarea to focus.
-  // The default character (same speaker as the previous line) is computed
-  // by the reducer.
+  // The UUID is minted HERE, not in the reducer, which must stay pure, and it is also
+  // how we know which textarea to focus.
   const addLine = useCallback(
     (actIndex, sceneIndex, afterLineId) => {
       const id = newId();
@@ -185,11 +138,9 @@ export default function App() {
   // Stable identity: LineRow uses it in an effect dependency list.
   const handleFocusHandled = useCallback(() => setFocusRequest(null), []);
 
-  // One scene at a time, designated in the rail's "Structure" section (which took
-  // over the header's two selects, see StructurePanel.jsx). The indices are
-  // clamped at render time, so a deletion can never leave one dangling; the
-  // gestures below also put them back where they belong, so that the text column
-  // keeps showing THE SAME scene after the plan is reshuffled.
+  // One scene at a time. The indices are CLAMPED at render time, so a deletion never
+  // leaves one dangling; the gestures below also move them so the column keeps showing
+  // the same scene after the plan is reshuffled.
   const [actIndex, setActIndex] = useState(0);
   const [sceneIndex, setSceneIndex] = useState(0);
   const safeActIndex = Math.max(0, Math.min(actIndex, script.acts.length - 1));
@@ -202,20 +153,18 @@ export default function App() {
     setSceneIndex(si);
   };
 
-  // ADD_ACT / ADD_SCENE append at the end: navigate straight to the new one.
+  // Both append at the end: navigate straight to the new one.
   const addAct = () => {
     dispatch({ type: "ADD_ACT" });
     goToScene(script.acts.length, 0);
   };
-  // A given act, no longer "the current act": the rail's plan adds the scene
-  // where it is asked to.
+  // A GIVEN act: the plan adds the scene where it is asked to.
   const addScene = (ai) => {
     dispatch({ type: "ADD_SCENE", actIndex: ai });
     goToScene(ai, script.acts[ai].scenes.length);
   };
 
-  // Deletions: the question has already been asked (the plan confirms when the
-  // object is not empty, see StructurePanel), only moving the gaze is left.
+  // The question was already asked in StructurePanel; only the gaze moves here.
   const deleteAct = (ai) => {
     dispatch({ type: "DELETE_ACT", actIndex: ai });
     const nextAct = indexAfterRemoval(safeActIndex, ai);
@@ -226,8 +175,7 @@ export default function App() {
     if (ai === safeActIndex) setSceneIndex(indexAfterRemoval(safeSceneIndex, si));
   };
 
-  // Reorder: the gaze follows the moved object, and shifts when it is a neighbour
-  // that crossed it (indexAfterMove, tested next to MOVE_*).
+  // The gaze follows the moved object, or shifts when a neighbour crossed it.
   const moveAct = (from, to) => {
     dispatch({ type: "MOVE_ACT", from, to });
     setActIndex(indexAfterMove(safeActIndex, from, to));
@@ -248,21 +196,15 @@ export default function App() {
     return counts;
   }, [script]);
 
-  // The rail's open section, or null (collapsed). "Structure" on arrival, no
-  // longer "Characters": it is the one that now carries the page's navigation, so
-  // closing it would hide the choice of scene, which the header's two selects used
-  // to show without being asked. It also shows the play's title field, which used
-  // to live in the header too. A constant is enough, where "open on Characters
-  // only if the play has none" would need a seeding effect after the fetch.
+  // "Structure" on arrival: it carries the page's navigation and the title field. A
+  // constant, where a conditional default would need a seeding effect after the fetch.
   const [railSection, setRailSection] = useState("structure");
   const openSearch = useCallback(() => setRailSection("search"), []);
   const closeRail = useCallback(() => setRailSection(null), []);
 
-  // Go to a match. The four state changes live in the SAME handler, so React
-  // batches them into a single render: the target scene is already designated
-  // there, the targeted row mounts with its focus request in the same commit, and
-  // the effect runs afterwards, on a textarea that is laid out and measured.
-  // Neither setTimeout nor requestAnimationFrame.
+  // The three state changes are in ONE handler, so React batches them: the row mounts
+  // with its focus request in the same commit and the effect runs on a measured
+  // textarea. No setTimeout, no requestAnimationFrame.
   const goToMatch = useCallback((match, focus) => {
     setActIndex(match.actIndex);
     setSceneIndex(match.sceneIndex);
@@ -280,8 +222,7 @@ export default function App() {
     isOpen: railSection !== null,
     onOpen: openSearch,
     onClose: closeRail,
-    // On the touch-wall screen, Ctrl+F would be taken away from the browser for a
-    // page that only shows one sentence.
+    // Do not steal Ctrl+F on a page showing one sentence.
     enabled: !touchOnly && !loadError,
   });
 
@@ -301,12 +242,8 @@ export default function App() {
     return <PageState page="editor" loading={t("common.loadingScript")} />;
   }
 
-  // Before the other loaded states: on a touch screen the page never shows the
-  // editor, only why and where to open it. It still names the play, like the
-  // site's five headers: this is a final screen and not a wait. It therefore comes
-  // AFTER the loading (the title only arrives with the script, and the header says
-  // nothing as long as it does not know it) but BEFORE the read error: an
-  // unreadable script teaches nothing to someone who cannot edit.
+  // AFTER loading, because the title only arrives with the script; BEFORE the read
+  // error, which teaches nothing to someone who cannot edit anyway.
   if (touchOnly) {
     return (
       <PageState
@@ -338,33 +275,17 @@ export default function App() {
   }
 
   return (
-    // Shell the height of the window: the header at the top in the flow, then the
-    // rail and the text column, each scrolling on its own. `.page-shell` is shared
-    // with the Speaking share page (theme.css); `.editor-shell` now only sets the
-    // height, `vh` instead of the default `dvh`. The scrolling-area role is NOT
-    // held by `.page-scroll` here: it is `.editor-layout`, a grid whose two
-    // columns each scroll on their own, where the Speaking share page has a single
-    // flow to scroll. Put here and not on `body`: the full-page screens rendered
-    // above keep normal scrolling.
+    // Window-height shell. Here the scroller is `.editor-layout` and not
+    // `.page-scroll`: two columns scrolling separately. On an element and never on
+    // `body`, so the full-page screens above keep normal scrolling.
     <div className="page-shell editor-shell">
-      {/* A header WITHOUT settings, like the Progress one: the play's title and
-          the choice of scene have moved to the rail's "Structure" section (see
-          StructurePanel.jsx), so all that is left here is what the site's five
-          pages have in common, the play's title in serif, the doc and the way
-          back home. It still collapses, like the other four. */}
+      {/* No settings: the title field and the choice of scene live in the rail. */}
       <PlayHeader
         page="editor"
         title={script.title || t("common.untitledPlay")}
         hint={
           <>
-            {/* The two sentences are in the order in which they are lived: what
-                serves during typing first, what serves once one has finished
-                next (type, then send). The other way round announced the way out
-                of the page before entering it, and cut the file's journey in two.
-                Accepted price: this page's `hint` is the only one not to open on
-                an imperative (see pages.js), it arrives one sentence later. And
-                no "press the button": that is the finger's verb, and this is the
-                only page the finger does not open (see useTouchPointer.js). */}
+            {/* Ordered as lived: type, then send. */}
             <T
               k="editor.hintTyping"
               p={{
@@ -372,42 +293,19 @@ export default function App() {
                 shiftEnter: <strong>{t("common.keyShiftEnter")}</strong>,
               }}
             />
-            {/* A `<br />` and above all not a third paragraph: the header only
-                carries two (see PlayHeader.jsx), and the two sentences really
-                are the same voice, one moment of the work apart. So the line
-                breaks where the work changes nature, during typing then once it
-                is finished, rather than at the width of the window. */}
+            {/* A `<br />` and not a third paragraph: the header carries two. */}
             <br />
-            {/* One GESTURE, and nothing of the machinery behind it: click the button
-                to update the play. The sentence used to describe the whole journey
-                (the download, GitHub, the drag) and then send one on to the Progress
-                page to read what became of the file, carrying a link there (the green
-                seal plus the page's name, the shape the return home has at the foot of
-                the header) and, with it, the only rules of this file for a link inside
-                a doc paragraph; all of it went away together.
-                Why: the doc says what to DO here, the button says what it does (it
-                announces the download and the JSON, cf. `UploadTile`), and the journal
-                belongs to the page that holds it, which announces itself on the home
-                page and in its own header. Naming the transport in the doc made the
-                second half of a two-sentence doc a procedure, and pointing at another
-                page made it speak of somewhere else.
-                Plain `t()` and no longer `<T>`: with the link gone the sentence has
-                no markup inside it, so nothing has to become a parameter. */}
+            {/* One GESTURE and none of the machinery: the doc says what to DO, the
+                button says what it does. */}
             {t("editor.hintUpload")}
           </>
         }
         actions={
           <>
             {dirty && <span className="dirty-hint">{t("editor.dirty")}</span>}
-            {/* The three buttons of this row go dark, and each explains why in
-                its tooltip. That tooltip is therefore carried by a wrapper and
-                never by the button: a `disabled` control receives no mouse event,
-                so its own `title` does not show (Chrome, Safari), and the
-                explanation never arrived at the moment it is useful. The
-                accessible name, on the other hand, stays on the button: it is the
-                `aria-label`, which does not change from one state to the other (a
-                button's name does not depend on its state, only the tooltip says
-                why it sleeps). */}
+            {/* Tooltips on a WRAPPER: a `disabled` control receives no mouse event, so
+                its own `title` never shows (measured, Chrome and Safari). The
+                accessible name stays on the button and never depends on the state. */}
             <span className="history-group">
               <span
                 className="btn-tip"
@@ -436,47 +334,18 @@ export default function App() {
                 </button>
               </span>
             </span>
-            {/* The site's upload tile (theme.css, UploadTile.jsx), the same object
-                as the one on the Progress page: one gesture, "this file leaves for
-                GitHub", one look, wherever it is triggered from.
-                NO seal here, hence no `page` (see UploadTile.jsx): the tile would
-                carry the quill, the page that produces the script, and it sits in
-                the header row where `PlayHeader` already shows that very quill. The
-                same drawing twice in one row reads as two objects to tell apart,
-                and the second one says nothing the first has not. On the Progress
-                page the tile keeps its seal, which is the MIC there: it names the
-                page the voices come from, not the page one is on.
-                It was an icon-only button before, and it read as the third of the
-                row's buttons, a neighbour of undo and redo, when it is the only one
-                that leaves the page. Its written label comes back with the tile: it
-                is the row's only text besides the play's title, and on a narrow
-                window it wraps onto its own line (`.play-header-row` wraps) rather
-                than cutting into the title.
-                Faded when there is nothing to upload (`dirty` is a comparison of
-                states, not a flag: undoing back to the last download turns it off
-                too), like the two history buttons next to it, except that it keeps
-                its lilac fill and only goes quiet (`.editor-upload-tip`,
-                editor.css): the row's main action must not change object between
-                two states. Uploading the script
-                exactly as it is already published teaches the Action nothing, and
-                a button that is always live makes one doubt whether anything is
-                left to send. Tooltip on the wrapper and not on the tile, like the
-                other two: a disabled control receives no mouse event. */}
+            {/* The shared upload tile, same object as the Progress one. NO seal, hence
+                no `page`: it would be the quill, which `PlayHeader` already shows in
+                this very row. Disabled keeps its fill and only goes quiet: the row's
+                main action must not change object between two states. */}
             <span
               className="btn-tip editor-upload-tip"
               title={t(dirty ? "editor.upload.tip" : "editor.upload.none")}
             >
               <UploadTile onClick={upload} disabled={!dirty}>
-                {/* The coloured group of words is a PARAMETER, as on the Progress
-                    page: it carries this page's colour, and each language keeps its
-                    own word order.
-                    No extension after it, where the Progress tile does say "(ZIP)":
-                    over there the coordinator has a file on their disk and has to
-                    recognise it among others, here the file does not exist yet, this
-                    button is what produces it. The label says what the gesture DOES
-                    ("update the play's script"), and naming a format in it described
-                    the means instead. `.upload-tile-format` stays alive for the
-                    Progress tile, which is the one that has something to name. */}
+                {/* The coloured words are a PARAMETER, so each language keeps its word
+                    order. No extension: the file does not exist yet, this button makes
+                    it, so the label says what the gesture DOES. */}
                 <T
                   k="editor.upload"
                   p={{
@@ -493,10 +362,8 @@ export default function App() {
         }
       />
 
-      {/* The rail BEFORE the content, in the DOM as on screen: tabbing starts
-          from the header, goes through the rail, reaches the lines, which is also
-          the order the character chips had back when they followed the act and
-          scene selects. */}
+      {/* The rail BEFORE the content in the DOM as on screen, so tabbing runs
+          header, rail, lines. */}
       <div className="editor-layout">
         <EditorRail
           section={railSection}
@@ -557,11 +424,7 @@ export default function App() {
           <div className="editor-main">
             {loadInfo && <p className="load-info">{loadInfo}</p>}
 
-            {/* The act's title, plainly: the column SAYS where one is writing, the
-                rail does all the rest (create, rename, delete, reorder, navigate).
-                It used to carry the act's renaming and the ✕ that deleted it;
-                nothing is left that appears, disappears or opens above the text
-                one is typing. */}
+            {/* The column SAYS where one is writing; the rail does everything else. */}
             {act && <h2 className="act-title">{actLabel(tPlay, safeActIndex)}</h2>}
 
             {scene && (
@@ -592,21 +455,13 @@ export default function App() {
         </p>
       </LeaveGuard>
 
-      {/* What the gesture is made of, said before it happens (see `upload` above).
-          No destructive gesture here, so no `confirmLabel`: the box has "Continue",
-          which downloads and then opens the upload page, and the shared Cancel,
-          which does nothing at all, the work staying in the tab as it was.
-          Both halves are called from this button, hence inside one click: that is
-          what pop-up blockers ask of `window.open`. The download goes first, it is
-          the file the page one is about to see asks for. */}
+      {/* No destructive gesture, hence no `confirmLabel`. Both halves fire from this
+          one click, which is what pop-up blockers ask of `window.open`; the download
+          goes first, being the file the next page asks for. */}
       {uploadNotice && (
         <ConfirmModal
-          /* The box's title is the TILE's label, written once and composed here from
-             the same two keys (`editor.upload` around `editor.upload.script`): the
-             button one has just pressed and the box that confirms it must name the
-             same gesture, and two entries saying "update the play's script" would
-             fall out of step at the first reword. It arrives as a plain string, the
-             coloured span of the tile being of no use in a modal's heading. */
+          /* The TILE's label, composed from the same two keys: the button pressed and
+             the box confirming it must name one gesture. */
           title={t("editor.upload", { script: t("editor.upload.script") })}
           primaryLabel={t("editor.uploadNotice.go")}
           onPrimary={() => {
@@ -617,12 +472,8 @@ export default function App() {
           onCancel={() => setUploadNotice(false)}
         >
           <p>
-            {/* The break before the last sentence is a PARAMETER of the entry and not
-                a `<br />` written here between two keys, as the header's doc does with
-                its two: there the two sentences are two separate entries, here it is
-                one entry whose last sentence changes subject (what one does, then what
-                happens next). Passed as `{br}`, the break stays inside the translation,
-                so each language places it after its own last full stop. */}
+            {/* The break is a PARAMETER of one entry, so each language places it after
+                its own last full stop. */}
             <T
               k="editor.uploadNotice.body"
               p={{ file: <code>script.json</code>, br: <br /> }}
@@ -646,15 +497,9 @@ export default function App() {
   );
 }
 
-// Guard against ghost data: a character that still owns lines cannot be
-// silently removed: the user chooses to reassign or delete those lines.
-//
-// Built on the shared ConfirmModal, like the line, scene and act confirmations:
-// it used to reimplement the same box by hand, and therefore silently differed on
-// everything that component brings (Escape, initial focus, portal rendering,
-// role="dialog"). Reassigning is the safe way out, hence the `primaryLabel`;
-// deleting the lines is the destructive gesture. With no other character to give
-// them to, only the latter is left.
+// A character that still owns lines is never silently removed: reassign (the safe way
+// out, hence `primaryLabel`) or delete the lines. With no other character, only the
+// latter is offered.
 function DeleteCharacterModal({ request, characters, onCancel, onConfirm }) {
   const others = characters.filter((c) => c.id !== request.character.id);
   const [reassignTo, setReassignTo] = useState(others[0]?.id ?? null);

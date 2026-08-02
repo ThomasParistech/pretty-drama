@@ -1,11 +1,5 @@
-// Tests for the computation of the Speaking share page.
-//
-// This is pure logic, with no React and no DOM: `node --test` runs it as is. What
-// is tested here is exactly what cannot be re-read by eye: the wrapping of the
-// block (a line straddling three rows must give three rectangles whose widths ADD
-// BACK UP to its word count, otherwise the drawing would lie with no way of
-// seeing it), the clamping of the scopes, and the fate of lines whose character
-// has disappeared.
+// What cannot be re-read by eye: the block's wrapping (widths must add back up to the word
+// count or the drawing lies invisibly), the clamping of scopes, and orphan lines.
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -63,8 +57,7 @@ test("countWords ignores punctuation and counts accents as letters", () => {
 });
 
 test("countWords returns zero on anything that is not a text", () => {
-  // The manifest can be hand-edited: a line with no text must not bring down the
-  // whole page.
+  // The manifest is hand-editable.
   for (const raw of [null, undefined, 42, [], {}, ""]) {
     assert.equal(countWords(raw), 0, `input: ${JSON.stringify(raw)}`);
   }
@@ -80,8 +73,7 @@ test("scopeLines returns the whole play, a whole act, or one scene", () => {
 });
 
 test("scopeLines keeps the order of the play, not an order within a scene", () => {
-  // The block is a TIMELINE: the order is the only information it carries on top
-  // of the colours.
+  // The block is a TIMELINE: order is its only information beyond colour.
   assert.deepEqual(
     scopeLines(MANIFEST, ALL, ALL).map((l) => l.text),
     ["un deux trois", "quatre cinq", "six"]
@@ -89,12 +81,9 @@ test("scopeLines keeps the order of the play, not an order within a scene", () =
 });
 
 test("scopeLines clamps the ranks instead of returning nothing", () => {
-  // A manifest reloaded under a rank that has become too large: the page must
-  // fall back on a scene that exists, not read as empty.
+  // A rank that has become too large must fall back on a scene that exists.
   assert.equal(scopeLines(MANIFEST, 99, 99).length, 1);
-  // Any unusable rank means "all of that level", and not only -1: otherwise -1
-  // returned the whole play and -5 silently fell back on the first scene, two
-  // behaviours for one and the same mistake.
+  // Any unusable rank means "all of that level", not only -1.
   assert.equal(scopeLines(MANIFEST, -5, -5).length, 3);
   assert.equal(scopeLines(MANIFEST, NaN, NaN).length, 3, "a Number(\"\") coming from a select");
   assert.equal(scopeLines(MANIFEST, 0, 1.5).length, 2, "a non-integer rank indexes nothing");
@@ -110,8 +99,7 @@ test("scopeLines takes a missing or misshapen manifest", () => {
 // -------------------------------------------------------------------- scopeOf
 
 test("scopeOf returns the LEVEL and the ranks, not a sentence", () => {
-  // It is the caller that puts the scope into words, with the reader's locale:
-  // here we only return ranks, which keeps this module pure and testable as is.
+  // The caller puts the scope into words; ranks alone keep this module pure.
   assert.deepEqual(scopeOf(MANIFEST, ALL, ALL), { kind: "all" });
   assert.deepEqual(scopeOf(MANIFEST, 0, ALL), { kind: "act", actIndex: 0 });
   assert.deepEqual(scopeOf(MANIFEST, 0, 1), { kind: "scene", actIndex: 0, sceneIndex: 1 });
@@ -127,8 +115,7 @@ test("scopeOf clamps its ranks, so the caller has nothing to re-check", () => {
 test("scopeOf falls back on the whole play rather than on a phantom act", () => {
   assert.deepEqual(scopeOf(null, ALL, ALL), { kind: "all" });
   assert.deepEqual(scopeOf({ acts: [] }, 0, 0), { kind: "all" });
-  // An act with no scene: we stay at act level instead of designating a scene
-  // that does not exist.
+  // An act with no scene stays at act level.
   assert.deepEqual(scopeOf({ acts: [{ scenes: [] }] }, 0, 0), { kind: "act", actIndex: 0 });
 });
 
@@ -158,8 +145,7 @@ test("speechStats sorts from the most talkative to the least, like the slices", 
 });
 
 test("speechStats omits a character who is silent in the scope", () => {
-  // Otherwise the legend of a two-character scene would list the whole cast, with
-  // shares at zero.
+  // Or a two-character scene's legend lists the whole cast at zero.
   const { rows } = speechStats([line("c-serge", "un")], CHARACTERS);
   assert.deepEqual(
     rows.map((r) => r.id),
@@ -168,8 +154,7 @@ test("speechStats omits a character who is silent in the scope", () => {
 });
 
 test("a line with no known character is counted apart, never blended in", () => {
-  // Same stance as the Progress grid: these lines swell the total and belong to
-  // nobody, so they are made visible.
+  // They swell the total and belong to nobody, so they are made visible.
   const { rows, totalWords } = speechStats(
     [line("c-serge", "un"), line(null, "deux trois"), line("c-fantome", "quatre")],
     CHARACTERS
@@ -199,9 +184,7 @@ test("speechStats takes a misshapen scope or cast", () => {
 // -------------------------------------------------------------- centerFontSize
 
 test("the centre of the ring keeps its nominal size on today's texts", () => {
-  // The shrinking must change NOTHING about what the page already draws:
-  // otherwise a setting written for an extreme case would shrink every ring on
-  // the site.
+  // The shrinking must change nothing about what the page already draws.
   assert.equal(centerFontSize("10307", TOTAL_SIZE), TOTAL_SIZE, "the play's 10,307 words");
   assert.equal(centerFontSize(10307, TOTAL_SIZE), TOTAL_SIZE, "a number, not a string");
   assert.equal(centerFontSize("répliques", UNIT_SIZE), UNIT_SIZE, "the longest unit");
@@ -212,12 +195,7 @@ test("the centre of the ring keeps its nominal size on today's texts", () => {
 });
 
 test("the thousands separator does not count as a digit", () => {
-  // Now that the total goes through `fmt.number`, the centre line carries a
-  // narrow no-break space in French and a comma in English. Counted at full
-  // width, these characters dropped the published play's total from 17 to 14.5
-  // units, a shrinking of 15 % for a line that only widens by 6 %: this guard is
-  // what holds the gap, and without it the site's flagship page shrank its
-  // biggest figure as it gained its typography.
+  // At full advance width they cost 15 % of the size for 6 % more text.
   const nu = centerFontSize("10307", TOTAL_SIZE);
   for (const separateur of ["\u202f", "\u00a0", " ", ","]) {
     const groupe = centerFontSize(`10${separateur}307`, TOTAL_SIZE);
@@ -227,40 +205,32 @@ test("the thousands separator does not count as a digit", () => {
       `a separator must not cost a whole digit (${separateur.codePointAt(0)})`
     );
   }
-  // And it stays narrower than a digit: six full digits go much lower than five
-  // digits plus a separator.
+  // Still narrower than a digit.
   assert.ok(centerFontSize("103070", TOTAL_SIZE) < centerFontSize("10\u202f307", TOTAL_SIZE));
 });
 
 test("the centre of the ring shrinks an over-long text and caps its width", () => {
-  // What the computation promises: the line never overflows the hole of the ring,
-  // so its rendered width (number of characters x size) stops growing once the
-  // cap is reached, whatever the length. It is that invariance that is checked,
-  // rather than copying the module's constants here, which would only move the
-  // problem.
+  // The rendered width stops growing once capped. Checking the invariant rather than
+  // copying the module's constants here, which would only move the problem.
   const width = (text, nominal) => String(text).length * centerFontSize(text, nominal);
   assert.ok(centerFontSize("1234567", TOTAL_SIZE) < TOTAL_SIZE, "seven digits do not fit");
   assert.ok(
     Math.abs(width("1234567", TOTAL_SIZE) - width("123456789012", TOTAL_SIZE)) < 1e-9,
     "the width is the same as soon as we shrink"
   );
-  // And never LARGER than the nominal: a single-digit total is not drawn as a big
-  // headline in the middle of the ring.
+  // Never LARGER than nominal.
   assert.equal(centerFontSize("7", TOTAL_SIZE), TOTAL_SIZE);
 });
 
 // --------------------------------------------------------------- clampColumns
 
 test("the default setting is the reference's own", () => {
-  // `generate_viz.py` drew the whole play at `w=100` and each scene at `w=50`: the
-  // page serves the same document as the troupe's PDF, so its block is read at the
-  // width it has always been read at. These two values are exactly the default and
-  // the lower bound, the slider's travel merely extends them.
+  // The reference (`generate_viz.py`) drew the play at w=100 and a scene at w=50, so the
+  // block reads at the width the troupe's PDF has always used.
   assert.equal(DEFAULT_COLUMNS, 100);
   assert.equal(MIN_COLUMNS, 50);
   assert.ok(DEFAULT_COLUMNS >= MIN_COLUMNS && DEFAULT_COLUMNS <= MAX_COLUMNS);
-  // The three figures land on the step grid: a value off the grid would make the
-  // first press of a keyboard arrow jump.
+  // On the step grid, or the first keyboard arrow jumps.
   for (const value of [MIN_COLUMNS, DEFAULT_COLUMNS, MAX_COLUMNS]) {
     assert.equal((value - MIN_COLUMNS) % COLUMNS_STEP, 0, `${value} off the grid`);
   }
@@ -275,8 +245,7 @@ test("clampColumns holds the setting within its bounds", () => {
 });
 
 test("clampColumns falls back on the default rather than on an absurd block", () => {
-  // It is what feeds the viewBox: an unreadable value there would make an
-  // unreadable drawing, that is, a breakage nobody sees.
+  // It feeds the viewBox, where a bad value draws a breakage nobody sees.
   for (const raw of [NaN, Infinity, -Infinity, undefined, "abc"]) {
     assert.equal(clampColumns(raw), DEFAULT_COLUMNS, `input: ${raw}`);
   }
@@ -285,7 +254,7 @@ test("clampColumns falls back on the default rather than on an absurd block", ()
 // ----------------------------------------------------------------- blockRects
 
 test("the sum of the widths gives the word total back", () => {
-  // THE contract of the block: each word occupies exactly one square, once.
+  // THE contract: each word occupies exactly one square, once.
   const lines = [
     line("c-serge", "un deux trois quatre cinq six sept"),
     line("c-annie", "huit neuf dix onze"),
@@ -323,9 +292,7 @@ test("no rectangle goes past the width of the block", () => {
 });
 
 test("consecutive lines of the same character merge into one run", () => {
-  // They would be adjacent and of the same colour: two rectangles instead of one,
-  // for nothing. That is what keeps the rectangle count in the hundreds rather
-  // than in the thousands over the whole play.
+  // Adjacent and of the same colour, so two rectangles for nothing.
   const { rects } = blockRects([line("c-serge", "un deux"), line("c-serge", "trois")], 100, CHARACTERS);
   assert.equal(rects.length, 1);
   assert.equal(rects[0].width, 3);
@@ -350,11 +317,8 @@ test("blockRects keeps the character of each run, unknown included", () => {
 });
 
 test("the block and the counts put the orphans in the SAME bucket", () => {
-  // That is what makes "Unknown character" isolatable from the block's legend: the
-  // legend sends the `row.id` of the counts, and the block compares it with the
-  // `characterId` of its runs. When the block kept the raw id, neither a null
-  // `characterId` nor a deleted character ever equalled that bucket, so isolating
-  // the "Unknown character" row switched off the whole block.
+  // The legend sends the counts' `row.id` and the block compares it to its runs'
+  // `characterId`; when the block kept the raw id, isolating the orphan row blanked it.
   const lines = [
     line("c-serge", "un"),
     line(null, "deux"),
@@ -375,8 +339,7 @@ test("the block and the counts put the orphans in the SAME bucket", () => {
 });
 
 test("blockRects takes an empty or misshapen scope without returning zero rows", () => {
-  // `rows` is at least 1: a viewBox of height 0 does not draw and the SVG element
-  // collapses.
+  // `rows` is at least 1: a viewBox of height 0 collapses the SVG.
   for (const raw of [[], null, undefined, 42, [null, {}]]) {
     const block = blockRects(raw, 10, CHARACTERS);
     assert.deepEqual(block.rects, [], `input: ${JSON.stringify(raw)}`);

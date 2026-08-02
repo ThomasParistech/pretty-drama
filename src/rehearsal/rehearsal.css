@@ -1,18 +1,8 @@
-/* Rehearsal: the structural styles (play header, dialogue cards, bottom
-   control bar) are shared in shared/theme.css.
-   Here: only the states specific to rehearsal. */
+/* Rehearsal: structure and card states shared in shared/theme.css; here, only what is
+   specific to the page.
 
-/* .character-row / .character-select are shared (shared/theme.css): the
-   character sits on its own line on both pages. Here: only the checkboxes,
-   specific to rehearsal, which line up next to the select.
-   A row that wraps, and above all NOT a grid with fixed columns: the labels
-   have become sentences ("Mute my voice", "Start one line before mine"…:
-   "Mute" and "Early" were only understood once tried), and a column width
-   imposed on all four makes them all wrap on the length of the longest one,
-   hence four checkboxes two lines high on a phone. With `flex-wrap`, each
-   checkbox keeps its own width, as many fit per line as the window allows, and
-   the wrapping follows the space available instead of a number of columns
-   decided in advance. */
+   `flex-wrap` and above all NOT a fixed column count: the labels are sentences, and a
+   column width imposed on all four wraps them all on the longest one. */
 .checks-row {
   display: flex;
   flex-wrap: wrap;
@@ -20,40 +10,18 @@
   font-size: 14px;
 }
 
-/* The geometry of the label (checkbox + text on one line, the whole label
-   clickable, no text selection on double-click) comes from the shared rule
-   `.checks-row label, .search-options label` in theme.css: the Search of the
-   Editor has the same row. All that remains here is the touch target, lower
-   down, which the thumb justifies and which Editing does not have. */
-
-/* These are the main controls of the page on a phone ("Mute my voice", "Hide
-   my text"…): a 16 px checkbox on a line of text makes a target about 21 px
-   high. We enlarge the label area, not the box.
-   **The height of that area IS the line spacing**, and that is what sets the
-   number: a 32 px label contains a 21 px line of text, so it carries 5 or 6 px
-   of empty space on each side, and two rows of checkboxes end up about ten
-   pixels apart, the same value as with a mouse. At 40 px (the first attempt)
-   the empty space went up to 19 px, wider than the 18 px that separate two
-   checkboxes side by side: the row read as two unrelated groups of settings,
-   all the more so since those 40 px arrived exactly at the point where the
-   window becomes too narrow to fit the four checkboxes on one line.
-   The `row-gap` therefore drops to zero (it was adding to that empty space) and
-   it is the height of the labels that spaces the rows, a single number to tune
-   instead of two. The targets touch each other, which has no consequence: they
-   are neighbouring checkboxes, not dangerous buttons. What we lose on the
-   44 px recommendation is made up in width, each label being a whole clickable
-   sentence. */
+/* The label geometry is the shared `.checks-row label, .search-options label`
+   (theme.css); only the touch target below is local, the thumb justifying it and
+   Editing not needing it.
+   The height of the label IS the line spacing, which is what sets the 32: it leaves 5
+   or 6 px each side, the same gap as with a mouse. 40 px gave 19, wider than the 18
+   between two checkboxes side by side, and the row read as two groups. `row-gap` drops
+   to zero so one number tunes the spacing. */
 @media (max-width: 800px) {
   .checks-row {
     row-gap: 0;
-    /* The 5 px of empty space that the touch target adds above the first row of
-       checkboxes and below the last one are taken back here: they only serve to
-       space the checkboxes BETWEEN themselves, and at the edge of the block they
-       were adding to the `row-gap` of `.character-row`, so the gap to the "Who
-       are you playing?" select grew when going below 800 px (and the space under
-       the checkboxes with it). A block whose outer box hugs the text: what
-       surrounds it keeps the same gap as with a mouse, the target stays tall
-       inside. */
+    /* Takes back the 5 px the target adds above the first row and below the last:
+       at the edge of the block they added to the `row-gap` of `.character-row`. */
     margin-block: -5px;
   }
 
@@ -62,18 +30,9 @@
   }
 }
 
-/* The checkboxes themselves (the accent of the page rather than the system
-   blue) live in `theme.css`: the Search of Editing now has some too, and both
-   pages want them identical. */
-
-/* ---- Dialogue card states ---- */
-
 .dialogue-card {
   cursor: pointer;
 }
-
-/* The "my lines" palette (.mine), active border and tint of the current card:
-   in theme.css, common to both pages. */
 
 .tts-hint {
   font-size: 11.5px;
@@ -81,8 +40,7 @@
   white-space: nowrap;
 }
 
-/* The sparkles of the label: at 11.5 px we make them a fifth bigger without
-   touching the text, and we sit them on the baseline. */
+/* A fifth bigger than the 11.5 px label, sat on the baseline. */
 .tts-icon {
   width: 1.2em;
   height: 1.2em;
@@ -94,7 +52,7 @@
   user-select: none;
 }
 
-/* ---- "Your turn…" overlay ---- */
+/* "Your turn" overlay */
 
 .wait-indicator {
   position: fixed;
@@ -108,9 +66,7 @@
   font-weight: 700;
   padding: 22px 40px;
   border-radius: 16px;
-  /* The shadow of layers that FLOAT (theme.css), the same as the confirmation
-     modal: two objects with no place in the flow, and it is the shadow that says
-     they are above the page. */
+  /* The shadow of layers that FLOAT, as the confirmation modal. */
   box-shadow: var(--shadow-float);
   z-index: 150;
   animation: appear 0.25s ease-out;
@@ -127,10 +83,7 @@
   }
 }
 
-/* The file neutralizes its OWN animation, like every other CSS file of the site.
-   The pop-up appears by sliding four points of its own height, which is precisely
-   the movement this setting asks us to drop: `animation: none` leaves it at its
-   final state, hence in place and legible, rather than replaying the translation. */
+/* `animation: none` leaves the pop-up at its final state, in place and legible. */
 @media (prefers-reduced-motion: reduce) {
   .wait-indicator {
     animation: none;

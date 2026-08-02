@@ -1,218 +1,76 @@
-/* Editor, "Rail" direction: shared cream background, warm neutrals, the
-   character's colour is now only an accent (drag handle + select).
-   Lines as thin rows separated by a 1px rule, no card and no shadow.
-   Type: Spectral (line text), IBM Plex Sans (UI),
-   IBM Plex Mono (badges/numbers). */
+/* Editor, "Rail" direction: cream background, warm neutrals, the character's colour
+   only an accent. Lines as thin rows separated by a 1px rule, no card, no shadow.
+   Type: Spectral (line text), IBM Plex Sans (UI), IBM Plex Mono (badges/numbers). */
 
 :root {
-  /* Re-skin of the shared tokens, scoped to this page (this file is only
-     loaded by editor.html). */
+  /* Re-skin of the shared tokens, scoped to this page (only editor.html loads it). */
   --paper: #faf6ef;
   --paper-dark: #f1eadd;
   --card: #ffffff;
   --ink: #2b2b28;
-  --ink-soft: #6f6f66; /* darkened "Rail" grey: ≥ 4.5:1 on the cream */
-  --ed-ghost: #8f8f88; /* drag handle of lines without a character (≥ 3:1 on white) */
+  --ink-soft: #6f6f66; /* darkened "Rail" grey: >= 4.5:1 on the cream */
+  --ed-ghost: #8f8f88; /* handle of lines with no character (>= 3:1 on white) */
   --accent: #7a5cc0;
   --accent-soft: #f2eefb;
-  /* The hover of the accent buttons (`.btn.primary:hover`, theme.css). The re-skin
-     has to carry it too, otherwise the page's own button goes lilac at rest and
-     darkens into the shared WINE under the pointer.
-     It is `--ed-tile-lit`, a DEEPER LILAC and not a darker violet, because on this
-     page `.btn.primary` is not a solid button at all: it is the upload tile's
-     object, pale fill and violet ink (see `.btn.primary` below). "Darker on
-     hover" therefore means the same step the tile itself takes, the accent at
-     22 % (`.editor-upload-tip .upload-tile:hover`), and the two must not part
-     company: the button says it is that tile, so it has to respond like it.
-     The token stays in the loop rather than the value being written straight into
-     the hover rule: it is the one place that says "what an accent button of this
-     page becomes under the pointer", and anything solid the page grows later
-     (the Rehearsal pages' `.ctrl-btn.play` is the shared theme's other reader)
-     picks up a page colour instead of the wine. */
+  /* Hover of `.btn.primary`, which here IS the upload tile object (pale fill, violet
+     ink): the same deeper lilac the tile takes, not a darker violet. Re-skinned or the
+     page's own button would darken into the shared WINE. */
   --accent-dark: var(--ed-tile-lit);
   --border: #e8e1d3;
-  /* "Rail" wants no shadow on its own surfaces: the lines are thin rows
-     separated by a rule, not cards laid on the page. The shared header keeps
-     its own (--header-shadow, a reserved token of theme.css): it is not
-     decorative, it detaches a sticky bar from the text scrolling underneath,
-     and a re-skin must change nothing in a shared component. */
+  /* "Rail" wants no shadow on its own surfaces. The shared header keeps its own
+     (--header-shadow, reserved by theme.css): a re-skin changes nothing shared. */
   --shadow: none;
-  /* The only shadow of the shared theme kept for a surface of this page: the
-     lines panel. */
-  /* The theme's `--shadow` is set to `none` just above (the "Rail" design lays
-     its panels out with a rule), but two surfaces of the page do want a real
-     one: the lines panel and the full-page card. We READ the header's reserved
-     token rather than copying its value: the contract forbids redefining a
-     `--header-*`, not reading one (named precedent, the legend bar of the
-     Speaking share page), and this value was written three times identically in
-     the repo (`--shadow`, `--header-shadow`, here). The site has only ONE
-     elevation shadow for a surface laid on the paper, and `--header-shadow` is
-     the only one of the three that no page ever re-skins, hence the only one
-     that can carry it. */
+  /* The site's one elevation shadow, for the two surfaces here that do want one.
+     Read from `--header-shadow`, the only identical value no page re-skins (the
+     contract forbids redefining a `--header-*`, not reading one). */
   --ed-panel-shadow: var(--header-shadow);
   --font-ui: "IBM Plex Sans", system-ui, sans-serif;
   --font-serif: "Spectral", Georgia, serif;
 
   --ed-title: #26261f;
   --ed-rule: #ece5d6;
-  /* The tile of an ACT in the rail's outline: the page's own violet, at a bit less
-     than a third of its strength (#d4cbeb). It is what makes the act row a BAND, and
-     the white scenes that follow it cards laid inside it: it is a shade darker than
-     the panel (luminance ratio 1.36 on the lilac `--ed-sidebar`, when a white surface
-     laid on that same lilac only holds 1.14), so the band stands out from the panel
-     slightly more than the cards it contains, which is the right reading order. A
-     `--paper-dark` would have been enough for a technical tile but not for the reading
-     (1.05 on this background, so the same cream as the panel to the eye).
-     Three attempts before this one, in that order: a sand (`#e7dabc`), which held the
-     ratio but was a third colour family on a page that only wants two; the brand's
-     wine at 18 % (`#ead8db`), which read as that third family again once the rail
-     itself had become lilac, a pink band in a purple panel; then this same violet AT
-     FULL STRENGTH, a dark band carrying white ink, which was simply too strong. A
-     saturated band repeated once per act, in a panel that is otherwise all pale lilac
-     and white, opened a gulf between the tile and its background and pulled the eye
-     away from the text column, which is the very defect for which the violet had
-     already been refused as the rail's own background (cf. `--ed-sidebar`). The tint
-     keeps what the dark band was after, one single hue in the panel, and gives up the
-     contrast that came with it.
-     32 % and no more, and that is the ceiling: the outline's darkened accent, which an
-     act's "you are here" takes, holds 4.76:1 on the tint (an act's name is 15 px, so
-     4.5:1 is required) and falls under AA at 36 %. The floor is `--ed-tile-lit`, the
-     accent at 22 %: closer than this the band and the open scene it contains read as
-     two states of the same object, which is what happened when the tile WAS that 22 %.
-     Everything else the row carries keeps the ink it has on a white scene row, the
-     handle and the ✕ in `--ink-soft` at 3.3:1; only the ✕'s hover needed its own value
-     (see `.structure-row.act .chip-delete:hover`).
-     A TINT and not a hex, written with the expression the search's `<mark>` already
-     uses, so the band follows the accent if the page is ever re-skinned again.
-     Corollary of the switch to the violet: this token no longer READS
-     `--header-accent`. The wine stays on the page in the one place that wears it at
-     full strength, the logo at the foot of the header. */
+  /* Tile of an ACT in the outline, making the row a BAND and the white scenes cards
+     inside it. 32 % is the CEILING (`--ed-accent-ink` holds 4.76:1 on it, under AA at
+     36 %) and `--ed-tile-lit` the floor, or band and open scene read as one object. */
   --ed-tile-act: color-mix(in srgb, var(--accent) 32%, #fff);
-  /* The accent, but dark enough to carry TEXT on the pale purple surfaces of the
-     outline: on the act tile `--accent` falls to 3.7:1 (AA failure) and on the lilac
-     of the panel to 4.4:1, when this one holds 5.4:1 and 6.5:1. Same lesson as
-     `characterInk`: we cap the lightness, we keep the hue. The RULES and the
-     backgrounds keep taking `--accent`, a line not having to hold the contrast of a
-     text.
-     A measured hex and not a value computed from `--accent`, and that is a choice,
-     not an oversight: the ratios written above are true of THIS value, so
-     recomputing them at each re-skin would make them false without anything saying
-     so. The `oklch(from … min(l, 0.5) c h)` idiom of `characterInk` was considered:
-     over there it is mandatory (twenty palette colours, they cannot be measured one
-     by one), here there is ONE ink, on TWO known backgrounds. And relative colour
-     syntax is the least supported in the whole repo, more recent than the
-     `color-mix` of the tile just above.
-     Corollary to know: re-tuning `--accent` requires re-measuring this ink, just as
-     it would require re-measuring a `color-mix`. */
+  /* The accent dark enough to carry TEXT on the pale purple surfaces: 5.4:1 on the act
+     tile, 6.5:1 on the panel, where `--accent` gives 3.7 and 4.4. Rules and backgrounds
+     keep `--accent`. A measured hex on purpose: re-tuning `--accent` means re-measuring
+     this ink. */
   --ed-accent-ink: #5f45a0;
 
-  /* The hover rule of the two surfaces one POINTS AT in the outline, the row of
-     a scene and the thumbnail of a language flag. A token because their two
-     comments require them to "respond the same way": the expression was written
-     twice, and two twins fall out of step at the first tweak. The background is
-     already a shared token (`--ed-tile-lit`). */
+  /* Hover rule of the two surfaces one POINTS AT in the outline (a scene row, a
+     language flag): a token because they must respond identically. */
   --ed-tile-hover-border: color-mix(in srgb, var(--accent) 35%, var(--border));
-  /* The rail's background. This token already bore this name when it was the
-     background of no sidebar at all (it served the character chips, in the white
-     header): the direction has been called "Rail" from the start, the page had
-     no rail.
-     THE LILAC OF THE SEAL, and no longer the warm cream (#f5f0e5): the rail is the
-     page's own furniture, and this page is the only purple one on the site. The
-     cream was the shared paper of the four other pages, so the rail read as a piece
-     borrowed from them, laid beside a white text column.
-     `--accent-soft` is EXACTLY the disc of the editor's seal (`--page-mark-soft` of
-     `.page-editor`, theme.css: the same #f2eefb), so the panel and the quill at the
-     top of the page are the same lilac, not two neighbouring ones. It is read
-     through the re-skinned token and not copied as a hex: this `:root` already
-     re-skins `--accent-soft` to that value, and a second literal would be one more
-     place to keep in step with the seal.
-     What the value gives: a white surface laid on it (character chips, scene rows,
-     the play's name field) keeps the 1.14 luminance ratio it had on the cream, so
-     the cards still read as cards, and the violet act band its 1.36 (cf.
-     `--ed-tile-act`).
-     Known and unchanged: the panel's secondary labels (`--ink-soft`, the section
-     title and "Language of the play") hold 4.44:1 here where the cream gave 4.46,
-     i.e. the same hair under the 4.5 of AA. It is not a regression of this change,
-     it is a debt the cream already carried, and paying it means giving the rail its
-     own darker secondary ink rather than tuning this background.
-     The violet AT FULL STRENGTH was tried here and rejected: it works (the panel
-     inverts, white ink, tiles going deeper instead of lighter, everything measured),
-     but a saturated column beside the text one pulls the eye away from the play,
-     and this page is the one where one reads what one is writing. The lilac says
-     "the editor's furniture" without asking for attention. What that attempt cost,
-     if it is ever reopened: the panel's `<mark>` and the character inks of the search
-     results are measured for a pale background and each needs its own value on a dark
-     one, the act band's tint included. */
+  /* The rail's background: the LILAC OF THE SEAL, read through the re-skinned
+     `--accent-soft` (exactly `--page-mark-soft` of `.page-editor`), so no hex is copied.
+     Known debt inherited from the cream it replaced: the panel's secondary labels hold
+     4.44:1, a hair under AA; paying it means a darker secondary ink, not a new
+     background. Full-strength violet was tried and rejected (a saturated column pulls
+     the eye off the play, and every measured ink here assumes a pale ground). */
   --ed-sidebar: var(--accent-soft);
-  /* The "lit" surface of the rail: the section open in the strip, the scene one
-     points at or has open, the current search hit, the flag of the play's language,
-     the hover of the two "+" rows. The rail being that lilac now, the lit state can
-     no longer BE `--accent-soft`: it would be the background itself. So it is the
-     same lilac deeper, 22 %, which holds 1.18 of luminance ratio against the panel
-     and 1.34 against a white row: the ladder rest -> pointed at -> open still rises
-     by hue alone, nothing moves on screen.
-     What it carries: `--ink` at 10.6:1, `--ed-accent-ink` at 5.5:1 (the labels that
-     go with this fill take that darkened ink, `--accent` being too pale on it), and
-     a drawing in `--ink-soft` at 3.8:1, above the 3:1 of a drawing. */
+  /* The "lit" surface of the rail (open section, pointed-at or open scene, current
+     search hit, chosen flag). The same lilac deeper, the rail already being
+     `--accent-soft`. Carries `--ink` 10.6:1, `--ed-accent-ink` 5.5:1, `--ink-soft` 3.8:1. */
   --ed-tile-lit: color-mix(in srgb, var(--accent) 22%, #fff);
   --ed-danger: #c0603f;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  /* The rail's icon strip, always visible, and the open section.
-     272 px of panel leave 248 px of usable width: enough to hold a complete
-     character chip on one line, the colour palette and an excerpt of a line of
-     about forty characters over two lines. 300 px cut the excerpt too short to
-     recognise the line, 360 px ate the column's gutter as soon as the window was
-     1280 px wide.
-     This is no more than a STARTING POINT: `EditorRail` redefines
-     `--ed-rail-panel` inline, the right-edge handle allowing the width to be
-     tuned (bounds and keyboard step in the component, with their reasons). The
-     token stays here because it is the one the rail's geometry consumes, and
-     because a default value must live next to the others. */
+  /* Icon strip and open section. 272 px leave 248 usable: a whole chip on one line
+     and a forty-odd character excerpt over two. Only a STARTING POINT, `EditorRail`
+     redefining `--ed-rail-panel` inline for the width handle. */
   --ed-rail-strip: 48px;
   --ed-rail-panel: 272px;
-  /* The panel's right edge: the width handle, and nothing else since it is the
-     strip's icons that collapse the rail. 10 px, the width of a handle one aims
-     at without having to look for it: a 6 px one is missed with the mouse, and
-     the 14 px of the version that carried a collapse tab left a dead gutter
-     between the panel's text and the play's column. */
+  /* The panel's right edge, the width handle and nothing else. 10 px is what one aims
+     at without looking; 6 px is missed with the mouse. */
   --ed-rail-edge: 10px;
 }
 
-/* No focus rule here: the one in theme.css derives from --accent, which this
-   local :root already re-skins in purple. */
+/* No focus rule here: theme.css derives it from --accent, re-skinned above. */
 
-/* The page's one solid button: the "Continue" of the upload box, and "Reassign" in
-   the character modal. It takes the page's violet and not the header's wine (it used
-   to be pinned to `--header-accent`, back when the page carried a solid wine
-   "Download" button in its header, matching the Recording page; that button is gone,
-   replaced by the upload tile, and the wine now wears at full strength in the one
-   place that keeps it, the logo at the foot of the header).
-   It is THE UPLOAD TILE, the four values read from the same tokens the tile reads
-   (`.editor-upload-tip .upload-tile` below, which is where they are explained): pale
-   `--accent-soft` fill, no border of its own, the darkened violet as ink, the deeper
-   lilac under the pointer. The box's "Continue" is the tile one has just pressed,
-   carried on to its confirmation, so it is the same object, and the modal is now the
-   only place a `.btn.primary` appears on the page.
-   NOT the theme's own rule, which fills with `var(--accent)`: that value fills
-   NOTHING else here. Every surface of the page that carries the violet carries a
-   tint of it (`--ed-tile-lit` at 22 %, `--ed-tile-act` at 32 %, the search hit at
-   12 %, `--accent-soft` for the rail itself) and every piece of violet TEXT takes
-   the darkened ink, so the theme's rule put the page's only saturated block of
-   colour inside a modal, three centimetres from the pale tile that opened it. A
-   solid `--ed-accent-ink` was the step in between and is gone too: it fixed the
-   colour and kept the foreign SHAPE, a filled pill on a page whose every accent
-   surface is pale.
-   What this costs, and it is a real cost, knowingly paid: the button no longer
-   asserts itself by weight of colour against the "Cancel" beside it, which is a
-   white pill of the same size. What is left to tell them apart is the fill, the
-   violet ink and the 700 (`.btn` is 600, and the tile's label is 700 for the same
-   reason) - the same three signals that make the tile read as the row's main action
-   next to the header's other buttons. It is the one modal of the site whose two
-   buttons are both safe, so nothing destructive rides on the distinction.
-   `font-weight` and `color` are the two properties the theme's `.btn.primary` does
-   NOT set to something we keep: it hands out `color: #fff`, made for the fill we are
-   dropping, so the ink has to be stated here or the label goes white on lilac. */
+/* The page's one solid button. It IS the upload tile, reading the same tokens as
+   `.editor-upload-tip .upload-tile` and NOT the theme's `var(--accent)` fill. The
+   theme hands out `color: #fff`, so ink and weight must be stated here. */
 .btn.primary {
   background: var(--accent-soft);
   border-color: var(--accent-soft);
@@ -220,17 +78,14 @@
   font-weight: 700;
 }
 
-/* The tile's own hover, through `--accent-dark` so that the two stay in step (see
-   that token). The theme's rule already sets the background from it; the border
-   follows, the rest state having tied the two together. */
+/* Through `--accent-dark` so button and tile stay in step; the theme's rule already
+   sets the background from it, the border follows. */
 .btn.primary:hover:not(:disabled) {
   border-color: var(--accent-dark);
 }
 
-/* The "Rail" re-skin also covers the destructive button (character deletion
-   modal): otherwise it inherits the accent purple. The rule too, otherwise it
-   stays purple (theme.css derives it from --accent-soft, which this :root
-   re-skins) around a text that has become terracotta. */
+/* The re-skin also covers the destructive button, rule included (the theme derives it
+   from --accent-soft, so it would stay purple around terracotta text). */
 .btn.danger {
   color: var(--ed-danger);
   border-color: color-mix(in srgb, var(--ed-danger) 25%, #fff);
@@ -242,72 +97,28 @@ h3 {
   color: var(--ed-title);
 }
 
-/* ---- Shell of the page: the header, then the rail and the column ----
-
-   The editing page no longer scrolls as a whole: it takes the height of the
-   window, and it is the rail and the text column that scroll, each on its own.
-   Motive: the rail (and therefore the list of matches) must stay in front of the
-   eyes while one goes through the lines, and the only other way to obtain that,
-   a rail sticky under the header, requires knowing the height of the header. Now
-   that is an ANIMATED unknown: title on two lines, two paragraphs of doc,
-   collapse over 0.26 s. It would have to be measured in JS, re-measured at every
-   collapse, and the rail's `top` would lag a quarter of a second behind the
-   animation at each gesture. Here nothing is measured, no number travels between
-   the CSS and the JS.
-   `PlayHeader` is not touched for all that: its `position: sticky` in an
-   ancestor that does not scroll behaves like `relative`, it holds the top
-   because it IS at the top.
-   `vh` and not `dvh`: an address bar that retracts is a phone problem, and this
-   page does not open under a finger (cf. useTouchPointer.js).
-   The shell is laid on an element of the editor and never on `body`: the two
-   full-page screens of the page (unreadable script, opened with a finger) keep
-   normal scrolling, their card being able to overflow a short window. */
-/* The geometry is the shared class `.page-shell` (theme.css), which the Speaking
-   share page uses too; all that is left here is the height, and it is the only
-   real difference between the two: `vh` and not the default `dvh`, an address bar
-   that retracts being a phone problem and this page not opening under a finger
-   (cf. useTouchPointer.js). */
+/* Shell: geometry from the shared `.page-shell` (theme.css). Only the height is
+   local: `vh` and not the default `dvh`, this page not opening under a finger. */
 .editor-shell {
   --shell-height: 100vh;
 }
 
 .editor-layout {
   flex: 1;
-  /* Without it, the two scrolling areas push the shell past the window instead
-     of scrolling: the automatic minimum of a flex item is its content height
-     (same trap as the `min-height: 0` of `.play-header-settings-inner`,
-     theme.css). */
+  /* Without it the two scrolling areas push the shell past the window: a flex item's
+     automatic minimum is its content height. */
   min-height: 0;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  /* The row is written `minmax(0, 1fr)` and NEVER implicitly (`auto`) nor plain
-     `1fr`, for exactly the reason already paid for on the header's collapse: the
-     minimum of an `auto` or `fr` track is the min-content contribution of its
-     content. Without this line, the row grew to the UNFOLDED height of the
-     results list (measured: 8643 px for 144 matches), so the rail overflowed the
-     window, its right edge with it, and the collapse button, vertically centred
-     on that edge, ended up four thousand pixels below the screen.
-     It held before by accident: the rail was in `overflow: hidden`, hence a
-     scroll container, whose min-content contribution is zero. It moved to
-     `overflow: clip` (cf. the stutter of the icon strip) and the accident stopped
-     covering for us. */
+  /* EXPLICIT `minmax(0, 1fr)`, never implicit `auto` nor plain `1fr`: those tracks
+     take their content's min-content contribution, so the row grew to the unfolded
+     results list (8643 px) and pushed the rail's edge off screen. */
   grid-template-rows: minmax(0, 1fr);
 }
 
-/* The scrolling area takes ALL the remaining width, and it is the inner block
-   (`.editor-main`) that centres itself on 860 px: the scrollbar belongs to the
-   edge of the window, not to the text column. Opening the rail therefore shifts
-   the text by half the width gained (136 px), which is accepted, and that is the
-   reason the rail animates. Rejected option: compensating with a left margin
-   equal to the rail's width, to keep the text centred on the window; it eats the
-   left gutter until the text touches the panel, and at 1280 px it ends up stuck
-   to it.
-   `container`: the narrow reflow of the line rows is now measured against THIS
-   width and no longer against the window's (cf. the "Narrow window" section at
-   the end of the file). Trade-off to know: `container-type` implies layout
-   containment, so this element becomes the containing block of descendants in
-   `position: fixed`. Put nothing `fixed` in the column (same trap as the dnd-kit
-   transform, which earned ConfirmModal its portal). */
+/* The scroller takes the remaining width, `.editor-main` centres inside it.
+   `container-type` implies layout containment: put nothing `fixed` in the column (same
+   trap as the dnd-kit transform, which earned ConfirmModal its portal). */
 .editor-column {
   overflow: auto;
   container: ed-column / inline-size;
@@ -319,8 +130,7 @@ h3 {
   padding: 16px 20px 20px;
 }
 
-/* Undo/redo pair: two icon buttons side by side, read as a single command for
-   navigating the stack of states (see history.js). */
+/* Undo/redo: two icon buttons read as one command over the state stack. */
 .history-group {
   display: inline-flex;
   gap: 4px;
@@ -331,36 +141,9 @@ h3 {
   padding: 7px 10px;
 }
 
-/* Undo and redo as two CREAM chips, and only WHEN they are available: the page's
-   darker paper fills them and the neutral ink draws the arrow.
-   They were LILAC, `--accent-soft` and `--ed-accent-ink`, which was the right idea
-   on the wrong pair. The reasoning then was that the pale fill kept the history
-   behind the upload tile, the row's main action; but the tile was a white card, so
-   the only two coloured surfaces of the row were the two buttons one presses in
-   passing, and the gesture that LEAVES the page wore nothing. The violet moved to
-   the tile (see `.editor-upload-tip` below), and the history keeps a fill of its
-   own in the page's OTHER family: warm, flat, silent. Two live surfaces in the row,
-   one look each, so nothing has to be told apart by size.
-   `--paper-dark` is the site's one cream step, the very fill `.btn:hover` takes on
-   every page: a live chip therefore looks like a plain button under the pointer.
-   Accepted, this row holding no other white button to confuse it with, and it is
-   what makes the pair read as ordinary controls next to a tile that is not one.
-   The hover then has to go one step further than that fill, hence `--border`, the
-   next cream down of this page: a colour change reads on a chip, where a ring
-   appearing out of nowhere would read as a target (the lesson of the home link's
-   hover, theme.css). Rest and hover sit 1.05 apart in luminance, the same distance
-   the theme's white -> `--paper-dark` hover covers.
-   The border takes the fill's value, as it did when this was lilac: it makes each
-   button ONE flat shape instead of a tinted rectangle inside a warmer outline.
-   Ink `--ink` and no longer the darkened violet: the accent belongs to the tile now,
-   and a neutral arrow is what says "another kind of control" rather than a small
-   version of the same one. 10.9:1 on this fill, where the old pairing was cut to
-   clear 4.5.
-   `:not(:disabled)` is still the whole point of the rule. These two buttons spend
-   most of the session dark (nothing to undo when the page opens), and
-   `.btn:disabled` says that with `opacity: 0.45`, which washes any fill out: a
-   sleeping button keeps the plain white shape of the theme, and the cream IS the
-   signal that the gesture is live. */
+/* Cream chips, and only when AVAILABLE: `.btn:disabled` washes any fill out, so the
+   cream IS the signal that the gesture is live. The violet belongs to the upload tile.
+   Border takes the fill so each button is one flat shape. */
 .history-group .btn:not(:disabled) {
   background: var(--paper-dark);
   border-color: var(--paper-dark);
@@ -372,52 +155,12 @@ h3 {
   border-color: var(--border);
 }
 
-/* The upload tile, the page's main action, sits at the end of the same row (see
-   App.jsx and UploadTile.jsx). Its SHAPE is shared with the Progress page and lives
-   in theme.css (paddings, the seal's slot, the label); what follows is what this page
-   adds to it, and it is only ever the editor's tile that is repainted, the Progress
-   page keeping the white card twice over.
-   The tile is the one gesture of the page that leaves it, so it is the one thing in
-   the row that is filled: the lilac of the rail and of the seal's disc, the whole
-   label in the darkened violet, bold. It used to be a white card between two lilac
-   history chips, i.e. the row's quietest surface was its only real action (the swap
-   is written up on `.history-group` above).
-   Ink `--ed-accent-ink` and not `--accent`: this is 15 px of text on `--accent-soft`,
-   where the accent falls to 4.5:1 (measured 4.47) and this one holds 6.5:1. The same
-   measurement, and the same token, as `.dirty-hint` further down, which is the pill
-   this tile answers: the two are now the same lilac carrying the same violet, on
-   purpose, "there is unsaved work" and "send it" being one thought in two objects.
-   They are told apart by shape and size (a 13 px pill, a 15 px tile with a border
-   radius), never by colour.
-   The label becomes ONE ink, the group of words that names the file giving up its own
-   (`color: inherit`): `--page-mark` is the same violet undarkened, 4.4:1 on this
-   lilac, and a violet word inside a violet label distinguishes nothing anyway. The
-   span keeps its `white-space: nowrap`, which is what holds "script de la pièce"
-   together at the end of a line.
-   The border takes the fill's value, so the tile is one flat lilac shape and not a
-   tint inside a cream outline, and the hover deepens the hue to `--ed-tile-lit`
-   (the accent at 22 %, the rail's "lit" surface) rather than letting the theme's
-   `--accent` ring appear around a filled tile, where it would read as a second
-   object. `.lift-hover` still gives the one-pixel rise and the shadow.
-   `transition` is written out in full and that is mandatory, not duplication: it is
-   ONE property, so this declaration REPLACES the theme's, and the tile must keep
-   `transform` and `box-shadow` in it or `.lift-hover` would snap (theme.css says so
-   at that class). `background` is the only addition.
-   The fill is NOT guarded by `:not(:disabled)`, where the history chips above are:
-   the tile keeps one shape in both states and only FADES when there is nothing to
-   send (`.upload-tile:disabled`, 0.45 opacity, theme.css). It did switch back to the
-   theme's white card when asleep, on the reasoning that the fill was the signal; but
-   the two states then differed in fill, ink, weight AND opacity at once, so the
-   row's main action changed object rather than going quiet, and the eye had to
-   re-find it every time the play became dirty again. Fading alone says "same
-   gesture, not available", which is what `.btn:disabled` says everywhere else on
-   the site. The washed-out lilac is below AA, and that is allowed: WCAG 1.4.3
-   exempts an inactive control, and the `title` on the wrapper is what tells the
-   coordinator why it sleeps.
-   The HOVER keeps the guard, on the other hand: `:hover` still fires on a disabled
-   button (the reason `.lift-hover` is dropped in the JSX), and a tile whose fill
-   deepens under a mouse that cannot click it promises a gesture that will not
-   happen. */
+/* The page's main action, hence the filled thing in the row. Shape from theme.css.
+   Ink `--ed-accent-ink` (the accent measures 4.47:1 here), as on `.dirty-hint`.
+   `transition` written out in full is MANDATORY: one property, so this REPLACES the
+   theme's and must keep `transform` and `box-shadow` or `.lift-hover` snaps.
+   The fill is NOT guarded by `:not(:disabled)`, only faded; the HOVER is, `:hover`
+   still firing on a disabled button. */
 .editor-upload-tip .upload-tile {
   background: var(--accent-soft);
   border-color: var(--accent-soft);
@@ -438,18 +181,9 @@ h3 {
   border-color: var(--ed-tile-lit);
 }
 
-/* Below this width the three of them no longer fit: `.play-header-row` wraps, but
-   the flex algorithm shrinks the title (`flex: 1`) long before wrapping anything,
-   and the tile cannot shrink below its own label. The row then cut "Transport de
-   Femmes" into two crushed lines and, on a really narrow window, overflowed
-   sideways. So we ask for the wrap ourselves: the tile takes a line of its own,
-   centred, and the title gets its full width back.
-   Carried by the tooltip WRAPPER and not by the tile: it is the wrapper that is the
-   flex item of the row (a disabled button receives no mouse event, hence that
-   wrapper, see theme.css).
-   860 px is the width at which the title starts to be squeezed with a two-word
-   title, measured on this play; it is deliberately not one of the site's mobile
-   breakpoints, this row being the only thing it is about. */
+/* Below 860 px the row's flex shrinks the title (`flex: 1`) long before wrapping, and
+   the tile cannot shrink below its label, so we ask for the wrap ourselves. Carried by
+   the tooltip WRAPPER, which is the flex item of the row. */
 @media (max-width: 860px) {
   .editor-upload-tip {
     flex: 0 0 100%;
@@ -457,18 +191,9 @@ h3 {
   }
 }
 
-/* `.btn-tip`, the wrapper that carries the tooltip of buttons that go dark, is
-   in theme.css: the Recording page needs it for the four buttons of its bottom
-   bar. */
-
-/* When the destructive button IS the main action (the only other choice being
-   "Cancel"), it asserts itself. It stays understated in the character modal,
-   where it is only one of the two possible gestures facing "Reassign".
-   The test is on the presence of a `.btn.primary` and not on a class set by the
-   caller: ConfirmModal only renders that button if it is given a
-   `primaryLabel`, so the question "is there a safe way out?" is already written
-   in the DOM. A browser without `:has()` simply falls back on the theme's
-   `.btn.danger`, never on something broken. */
+/* When the destructive button IS the main action, it asserts itself. The test reads
+   "is there a safe way out?" straight from the DOM; without `:has()` it falls back on
+   the theme's `.btn.danger`, never on something broken. */
 .confirm-modal:not(:has(.btn.primary)) .btn.danger {
   border-color: var(--ed-danger);
 }
@@ -478,17 +203,9 @@ h3 {
   color: #fff;
 }
 
-/* The pill next to the upload tile, `editor.dirty` in the catalogues (cited by key and
-   not quoted: the wording follows the gesture the tile names, and it has moved once). It is in the page's
-   VIOLET, that of the quill of the header and, since the tile was filled, of the
-   tile's whole label, and no longer in the orange `--warn`: it says the state of the work, not a
-   problem to fix, and it stands two centimetres from the button that resolves it.
-   The orange was the only warm alert of a purple row, and it read as an error
-   where there is nothing wrong: one has typed, that is all.
-   `--ed-accent-ink` and not `--accent`: it is text, on the palest of the page's
-   two purple surfaces, where the accent falls to 4.5:1 (measured 4.47) and this
-   ink holds 6.5:1. That is exactly what this token is for (see its comment at the
-   top of the file), and the same reason the outline uses it. */
+/* The pill next to the upload tile (`editor.dirty`). In the page's violet and not the
+   orange `--warn`: it says the state of the work, not a problem. `--ed-accent-ink`
+   because it is text on `--accent-soft`, where the accent measures 4.47:1. */
 .dirty-hint {
   font-size: 13px;
   font-weight: 600;
@@ -498,38 +215,22 @@ h3 {
   padding: 4px 12px;
 }
 
-/* The two keys the page's doc names (`{enter}` and `{shiftEnter}` of
-   `editor.hintTyping`, rendered in the foot of the header by PlayHeader). They
-   already came out in bold; the weight alone left them the grey of the sentence
-   around them, and a key one is meant to PRESS is the only concrete object in a
-   doc otherwise made of prose.
-   Same violet as the quill of the header, the coloured word of the upload tile
-   and `.dirty-hint` above: the page has one accent, and it marks what one acts
-   on. `--accent` and not `--ed-accent-ink` because the ground here is the white
-   of the header (5.1:1 at 13.5 px), not the pale purple that forces the ink (cf.
-   the comment on `.dirty-hint`).
-   Written here and not in theme.css: `.header-hint` is shared by the five pages,
-   and the doc's bold is only the editor's business (the other four have no bold
-   in theirs). Nothing of the header's own identity is touched, which is what the
-   `--header-*` tokens reserve. */
+/* The two keys the page's doc names. `--accent` and not the darkened ink: the ground is
+   the white of the header (5.1:1 at 13.5 px). Here and not in theme.css: `.header-hint`
+   is shared by five pages, and only the editor's has bold in it. */
 .header-hint strong {
   color: var(--accent);
 }
 
-/* The editor's two full-page screens (unreadable script, page opened with a
-   finger) lay out the shared card `.page-notice`, which takes its shadow from
-   `--shadow`: at `none` here. It therefore takes the one "Rail" reserves for its
-   content panel, since this card IS the content of the screen; without that it
-   is the only surface of the site laid on the paper with nothing underneath. */
+/* The full-page screens lay out `.page-notice`, whose shadow is `--shadow`, at `none`
+   here. It takes the panel one instead, this card being the content of the screen. */
 .page-notice {
   box-shadow: var(--ed-panel-shadow);
 }
 
-/* Unreadable published script: the shared card `.page-notice` (theme.css)
-   receives several paragraphs of instructions here, so it widens and aligns
-   left. The block on touch screens (cf. useTouchPointer.js) does NOT take this
-   class: its single sentence stays in the narrow, centred card, like the
-   full-page states of the other pages. */
+/* Unreadable published script: several paragraphs, so the card widens and aligns left.
+   The touch-screen block does NOT take this class, its single sentence staying in the
+   narrow centred card. */
 .load-error {
   max-width: min(660px, calc(100% - var(--notice-gutter)));
   text-align: left;
@@ -542,46 +243,24 @@ h3 {
   margin: 0 0 14px;
 }
 
-/* ---- The rail ----
-
-   A strip of three icons always visible (Structure, Characters, Search) and one
-   section open at a time, to the left of the text column.
-   The animation is a WIDTH, and not the `minmax(0, 0fr)` trick of the header:
-   over there the height of the content is unknown and does not interpolate, here
-   the open width is a number we choose. And an `fr` track would make the rail's
-   width depend on its content, so a character name of excessive length would
-   widen the panel. We do keep the lesson of the grid, though: it is the RAIL
-   that clips and the panel that keeps its width, an elastic panel reflowing its
-   text at every frame of the drag, which reads as a display glitch.
-   Do NOT give the rail a `position` or a `z-index`: it would create a stacking
-   context and would trap the `z-index: 20` of the colour palette, which must
-   pass over the full-screen backdrop at 19. `overflow: hidden` alone creates
-   none. */
+/* Three always-visible icons, one section open at a time. The animation is a WIDTH,
+   not the header's `minmax(0, 0fr)` trick: the RAIL clips, the panel keeps its width.
+   Do NOT give the rail a `position` or a `z-index`: it would create a stacking context
+   and trap the palette's `z-index: 20`, which must pass over the backdrop at 19. */
 .editor-rail {
   display: flex;
   flex: none;
-  /* Collapsed, there is ONLY the icon strip. The right edge, which now only
-     tunes the width, does not exist in this state: collapsed, there is no width
-     to tune, and a second vertical bar stuck to the strip read as a piece of
-     furniture forgotten there (back when it carried a collapse button, a chevron
-     was lost in the middle of it). So it is the icons that reopen the rail, and
-     they say which section on top of that. */
+  /* Collapsed there is ONLY the icon strip: the icons reopen the rail and say which
+     section, so the right edge (width tuning only) has nothing to do in this state. */
   width: var(--ed-rail-strip);
-  /* `clip` and NOT `hidden`, and this is a bug already paid for: `hidden` makes
-     the rail a scroll container (invisible, but scrollable by program), so when
-     the panel mounts, when the search field takes the focus, the browser scrolled
-     the rail horizontally to bring that field into view. The icon strip went out
-     on the left (measured: left = -104) then came back as the width arrived,
-     which read as a stutter of the permanent bar. `clip` clips without creating
-     a scroll container, so there is nothing left to scroll. The rejected options
-     all assumed delaying the focus behind a timer, that is, bringing back the
-     machinery the header's collapse has just got rid of. */
+  /* `clip` and NEVER `hidden`: `hidden` makes the rail a scroll container, so focusing
+     the search field scrolled the icon strip out on the left (measured -104) and it
+     came back as the width arrived, reading as a stutter of the permanent bar. */
   overflow: clip;
   background: var(--ed-sidebar);
   border-right: 1px solid var(--border);
-  /* The same curve and the same duration as the header's collapse
-     (`--ease-header`, theme.css, borrowed and never redefined): the page has two
-     surfaces that collapse, they must collapse with the same gesture. */
+  /* Same curve and duration as the header's collapse (`--ease-header`, borrowed and
+     never redefined): the page's two collapsing surfaces share one gesture. */
   transition: width 0.26s var(--ease-header);
 }
 
@@ -589,31 +268,23 @@ h3 {
   width: calc(var(--ed-rail-strip) + var(--ed-rail-panel) + var(--ed-rail-edge));
 }
 
-/* While the handle is being dragged, the width transition is cut off: otherwise
-   the panel chases the cursor a quarter of a second behind, which reads as
-   latency and not as an animation. */
+/* Mid-drag the transition is cut: otherwise the panel chases the cursor a quarter of a
+   second behind, which reads as latency. */
 .editor-rail.resizing {
   transition: none;
 }
 
-/* ---- The rail's right edge: the width handle ----
-
-   It now does ONLY the width: collapsing has moved to the strip's icons (cf.
-   EditorRail.jsx, where the tab that used to live here left the story of its
-   pointer capture bug). The edge therefore no longer needs a `position` nor room
-   for a button, and one can drag anywhere on it. */
+/* The rail's right edge: the width handle only (collapsing moved to the strip's
+   icons), so it needs no `position` and one can drag anywhere on it. */
 .editor-rail-edge {
   flex: none;
   width: var(--ed-rail-edge);
   background: var(--ed-sidebar);
   cursor: col-resize;
-  /* The drag must not become a scroll on a trackpad. */
-  touch-action: none;
-  /* The rail's separating rule lives on this edge, and it is IT that thickens
-     and takes the accent when one is about to drag: a rule that goes from 1 to
-     2 px says "this line can be grabbed" without colouring anything else. The
-     first version tinted the whole edge over its 14 px of width, which laid a
-     purple slab across the page to announce a one-pixel gesture. */
+  touch-action: none; /* the drag must not become a trackpad scroll */
+  /* The rail's separating rule lives here, and it is IT that thickens and takes the
+     accent: 1 to 2 px says "grabbable" without colouring anything else. Tinting the
+     whole edge laid a purple slab across the page for a one-pixel gesture. */
   border-right: 1px solid var(--border);
   transition: border-right-color 0.15s, border-right-width 0.15s;
 }
@@ -631,10 +302,8 @@ h3 {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  /* 8 px of padding for a 32 px button: the focus ring (2 px at a 2 px offset)
-     thus fits INSIDE the rail, whose `overflow: clip` would have clipped it on
-     the side. A clipped ring is an accessibility defect that cannot be seen by
-     re-reading the rule. */
+  /* 8 px for a 32 px button so the focus ring (2 px at 2 px offset) fits INSIDE the
+     rail, whose `overflow: clip` would otherwise crop it. */
   padding: 8px;
   border-right: 1px solid var(--border);
 }
@@ -654,48 +323,35 @@ h3 {
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
-/* The step below the open section: the same lilac, halfway between the panel and
-   the lit tile (it used to be the cream `--paper-dark`, a warm wash on what is now a
-   purple strip). The only three-state ladder of the panel, hence the only place with
-   a value of its own rather than a token: everywhere else pointing at something and
-   having it open share `--ed-tile-lit` and differ by their rule. */
+/* The step below the open section, halfway between panel and lit tile. The panel's
+   only three-state ladder, hence the only value of its own rather than a token. */
 .editor-rail-tab:hover {
   background: color-mix(in srgb, var(--accent) 12%, #fff);
   color: var(--ink);
 }
 
-/* The project's ring and not the browser's, as everywhere else in this panel
-   (`.editor-rail-edge`, `.structure-scene-name`, `.search-hit`). It is also the
-   one the strip's 8 px of padding reserve just above: the room was provisioned,
-   the rule was missing, so the three icons that open the rail were the only
-   controls of the page to light up under the keyboard in a different style from
-   their neighbours. */
+/* The project's ring, as everywhere else in this panel; the strip's padding already
+   reserves the room. */
 .editor-rail-tab:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
 
-/* The section's state is carried by `aria-expanded` and nothing else: the CSS
-   reads it from the attribute rather than from one more class, so the appearance
-   cannot fall out of step with the accessible name. */
+/* State read from `aria-expanded` and not one more class, so the appearance cannot
+   fall out of step with the accessible name. */
 .editor-rail-tab[aria-expanded="true"] {
   background: var(--ed-tile-lit);
   border-color: color-mix(in srgb, var(--accent) 30%, transparent);
   color: var(--ed-accent-ink);
 }
 
-/* The panel DOES NOT SCROLL: it is each section that grants scrolling to what
-   must scroll, and to that alone (the list of results, the list of characters).
-   Otherwise the search settings went up out of view as soon as one moved through
-   the matches, and bringing them back down to re-read the query or to re-tick
-   "Whole word" was the most frequent gesture of the screen. */
+/* The panel DOES NOT SCROLL: each section grants scrolling to what must scroll and to
+   that alone, or the search settings leave the view as soon as one moves through the
+   matches. */
 .editor-rail-panel {
-  /* FIXED width, cf. the rail's `overflow`: it is the rail that clips, the panel
-     does not move. Hence `flex: none`, which is not decorative: by default a flex
-     item has `flex-shrink: 1`, so during the collapse (the rail goes from ~480 px
-     to 48) the panel would have let itself be squeezed instead of being clipped,
-     and its text would have reflowed at every frame of the drag. That is exactly
-     what the rail's geometry sets out to avoid. */
+  /* FIXED width: the rail clips, the panel does not move. `flex: none` is not
+     decorative, a flex item shrinks by default and the panel would reflow its text at
+     every frame of the drag instead of being clipped. */
   flex: none;
   width: var(--ed-rail-panel);
   overflow: hidden;
@@ -712,10 +368,8 @@ h3 {
   gap: 8px;
 }
 
-/* Section title: small letter-spaced caps, the vocabulary of the character name
-   on the dialogue cards. In `--font-ui` and not in the serif of the h1/h2/h3:
-   this is a tool label, not a content title (the act and scene titles, for their
-   part, stay in Spectral). */
+/* Section title: small letter-spaced caps, in `--font-ui` and not the serif of the
+   headings, this being a tool label and not a content title. */
 .editor-rail-title {
   flex: 1;
   min-width: 0;
@@ -728,10 +382,9 @@ h3 {
   margin: 0;
 }
 
-/* What is left of the panel under its head: the sections lay out their own
-   scrolling area in it, hence the `min-height: 0` (without it, the automatic
-   minimum of a flex item is its content height and nothing would scroll, same
-   trap as `.play-header-settings-inner` and `.editor-layout`). */
+/* `min-height: 0`: without it a flex item's automatic minimum is its content height
+   and the sections' scrolling areas would not scroll (same trap as
+   `.play-header-settings-inner` and `.editor-layout`). */
 .editor-rail-body {
   flex: 1;
   min-height: 0;
@@ -740,19 +393,11 @@ h3 {
   gap: 10px;
 }
 
-/* ---- Character chips (the rail's "Characters" section) ----
+/* Character chips (the rail's "Characters" section). They used to sit in the shared
+   header, which only has room for what the five pages have in common. */
 
-   They used to live in the header, where the other pages have their character
-   select. The header is shared by five pages and only has room for what the five
-   have in common; the chips were the only block of that size specific to one
-   page, they pushed the two paragraphs of doc and the return to the home page
-   downwards, and they grew with the cast, so the bar of a play with fifteen
-   characters had nothing to do with that of a play with three. */
-
-/* One chip per line, and no longer a row that wraps: in a column of 248 px,
-   pills of unequal widths read as a staircase, and once aligned the line counts
-   finally form a column, hence a cast list for the play that reads without
-   counting. */
+/* One chip per line: in a 248 px column, pills of unequal widths read as a staircase,
+   and aligned the line counts finally form a column. */
 .character-list {
   list-style: none;
   margin: 0;
@@ -760,22 +405,16 @@ h3 {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  /* The list is what scrolls in this section (the panel itself no longer
-     scrolls): the add form therefore stays in front of the eyes with a cast of
-     twenty characters, whereas one had to scroll down to find it before.
-     `flex: 0 1 auto` and above all NOT `flex: 1`: it must be the height of its
-     content and only let itself be squeezed (hence scroll) when there is no room
-     left. With `flex: 1` it took the whole column even with three characters, and
-     pushed the add form right to the bottom of the panel, a screen away from the
-     list it completes. */
+  /* `flex: 0 1 auto` and above all NOT `flex: 1`: the list is the height of its
+     content and only shrinks (hence scrolls) when there is no room left, or three
+     characters already push the add form to the bottom of the panel. */
   flex: 0 1 auto;
   min-height: 0;
   overflow-y: auto;
   scrollbar-gutter: stable;
 }
 
-/* The character and, when it is open, its palette: two blocks stacked in the
-   same list item. */
+/* The character and, when open, its palette. */
 .character-item {
   display: flex;
   flex-direction: column;
@@ -786,16 +425,12 @@ h3 {
   display: flex;
   align-items: center;
   gap: 7px;
-  /* White on the rail's cream: the chips carry content, so they lie on the paper
-     like everything else on the site (dialogue cards, lines panel, home page
-     cards). The cream has moved to the rail's background, which is the sidebar
-     `--ed-sidebar` was announcing. */
+  /* White on the rail: chips carry content, so they lie on the paper like everything
+     else on the site. No `position: relative`, the palette is in the panel's flow. */
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 3px 6px 3px 8px;
-  /* No more `position: relative`: the colour palette is no longer anchored to
-     the chip, it lies in the panel's flow. */
 }
 
 .chip-delete {
@@ -831,28 +466,10 @@ h3 {
   z-index: 19;
 }
 
-/* The palette no longer hangs under the chip: it lies IN THE FLOW of the panel,
-   under the character, and pushes the following ones. Three reasons, two of them
-   new.
-   (1) The rail's panel scrolls, so it clips any absolutely positioned child:
-   anchored to the chip, the palette would be cut off by the panel's edge.
-   (2) It takes the panel's width and its pills the size of their cell: there is
-   nothing left to overflow, which was the WHOLE reason for the bottom bar in a
-   narrow window (rule removed, along with the enlargement of the pills that went
-   with it).
-   (3) In a column, a drawer that pushes the list reads better than a box that
-   covers the neighbouring character.
-   All that is left is `position: relative` + `z-index`, and for stacking alone:
-   the full-screen backdrop that closes the palette is at 19, it must pass above.
-   That is also why the rail takes neither `position` nor `z-index`. */
-/* Ten columns, hence two rows: Tableau 10 on top, its ten light hues below. That
-   is the structure of tab20, from which the palette is drawn, and it makes the
-   choice legible (a colour and its pale version are one under the other) where
-   six columns cut the series in the middle.
-   The gutter goes down from 7 to 4 px for the same reason there are ten columns:
-   the rail's panel is 233 px of content by default, and ten pills of 18 px plus
-   nine gutters of 7 px ask for 243, so the last column went out of the panel,
-   which clipped it (`overflow: clip`). */
+/* In the FLOW under the character: the scrolling panel would clip an absolute child.
+   `position: relative` + `z-index` are for stacking alone (backdrop at 19), which is
+   also why the rail takes neither. Ten columns, Tableau 10 over its light hues; 4 px
+   gutter, at 7 the ten pills asked 243 px of the panel's 233. */
 .swatch-popover {
   position: relative;
   z-index: 20;
@@ -866,11 +483,9 @@ h3 {
   box-shadow: 0 8px 24px rgba(43, 43, 40, 0.12);
 }
 
-/* The pill takes the size of ITS CELL, it does not impose it: the rail's width
-   is tuned with the mouse (200 to 560 px), so a fixed size would overflow at the
-   bottom of the range and would leave ten pills lost in a wide panel at the top
-   of it. `aspect-ratio` keeps it round, and the cap keeps it from becoming a big
-   button when the panel is stretched. */
+/* The pill takes the size of ITS CELL, it does not impose it: the rail is tunable from
+   200 to 560 px. `aspect-ratio` keeps it round, the cap keeps it from becoming a big
+   button in a stretched panel. */
 .swatch-popover .swatch {
   width: 100%;
   max-width: 20px;
@@ -890,11 +505,8 @@ h3 {
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink);
 }
 
-/* The name takes the room and is cut off with "…" (shared class `.truncate` from
-   theme.css, set in JSX): a name of excessive length must not push the line count
-   and the ✕ out of the rail. `min-width: 0` goes with it in a flex container,
-   without which the element refuses to go below the width of its text and is
-   never cut off. */
+/* Cut off with "…" through `.truncate` (set in JSX). `min-width: 0` goes with it in a
+   flex container, without which the element never goes below its text width. */
 .character-name {
   background: none;
   border: none;
@@ -908,23 +520,20 @@ h3 {
   text-align: left;
 }
 
-/* The lilac of the rail and no longer the cream: this wash lies inside a white chip
-   laid on a purple panel. */
+/* The rail's lilac, not the cream: this wash is inside a white chip on a purple panel. */
 .character-name:hover {
   background: var(--accent-soft);
 }
 
 .character-rename-input {
-  /* Elastic, where 130 px were measured for a horizontal row. */
   flex: 1;
   min-width: 0;
   padding: 2px 6px;
   font-size: 13.5px;
 }
 
-/* The same line count in the two sections of the rail that carry one, the cast
-   and the outline: a single rule, otherwise the two columns of numbers of the
-   same panel end up no longer looking alike. */
+/* One rule for the two line counts of the rail (cast and outline), or the two columns
+   of numbers in one panel stop looking alike. */
 .character-count,
 .structure-count {
   font-family: var(--font-mono);
@@ -940,14 +549,9 @@ h3 {
   color: var(--ink-soft);
 }
 
-/* In a column, like the list above: the 170 px of the field were measured for a
-   horizontal row in the header. It lies JUST UNDER the list (the panel's `gap` is
-   enough to keep it clear of it) and does not scroll with it, so it stays in
-   front of the eyes with a cast of twenty names.
-   No rule here, unlike in Search: over there it announces a real boundary, the
-   results list always scrolling; here the list stops at its content most of the
-   time, and a line across the panel under three characters would separate
-   nothing. When it does scroll for real, it is its scrollbar that says so. */
+/* Just under the list and outside its scrolling, so it stays in view with twenty
+   names. No rule here, unlike in Search: this list usually stops at its content, and a
+   line under three characters would divide nothing. */
 .character-add {
   flex: none;
   display: flex;
@@ -965,38 +569,18 @@ h3 {
   align-self: flex-end;
 }
 
-/* ---- Play outline (the rail's "Structure" section) ----
+/* Play outline (the rail's "Structure" section), in place of the shared header's two
+   selects: elsewhere one CHOOSES a scene, here one shapes it. */
 
-   It has replaced the two `<select>` of the shared header and the "+ Scene" /
-   "+ Act" buttons that followed them, as the character chips had replaced its
-   character select, and for the same motive: on Rehearsal and Recording one
-   CHOOSES a scene in frozen content, in Editing one shapes it. A drop-down list
-   only shows one line at a time, so the shape of the play could be read nowhere.
-
-   The order of the blocks tells the play from the general to the particular: its
-   title, its acts, its scenes; and "+ Act" is at the foot, outside the
-   scrolling. */
-
-/* The play's title is the ONLY field of the outline: an act and a scene take
-   their label from their rank and are not renamed (cf. StructurePanel.jsx).
-   The frame comes from `theme.css` (`input[type="text"]`, more specific than a
-   class alone); all that is left here is to say the hover: the rule takes the
-   accent, the background does not move. */
+/* The play's title is the ONLY field of the outline: acts and scenes take their label
+   from their rank. The frame comes from theme.css; this only says the hover. */
 .structure-field:hover {
   border-color: var(--accent);
 }
 
-/* The root of the outline. The field used to live in the header, at 19 px: here
-   it is 18, the usable width going from the whole bar to the panel's 248 px.
-   It keeps the white frame `theme.css` gives to every `input[type="text"]`, like
-   the two other fields of the rail (the character add, the search query), and only
-   adds its serif: that is what makes it read as a field and not as a displayed
-   title, while the header's top row shows the same string at the same moment. It
-   carried `border: none` plus a bottom rule to look like an underlined title, and
-   those declarations never did anything: `input[type="text"]` (an element plus an
-   attribute) is more specific than a class alone, so the shared frame was already
-   winning back in the header days. They are removed rather than made to win, the
-   resulting appearance being the one we want here. */
+/* Keeps the frame theme.css gives every `input[type="text"]` and only adds its serif,
+   which is what makes it read as a field and not a title. (A `border: none` here never
+   did anything: `input[type="text"]` outranks a class alone.) */
 .play-title-input {
   flex: none;
   width: 100%;
@@ -1007,16 +591,9 @@ h3 {
   padding: 4px 8px;
 }
 
-/* The list is what scrolls in this section, like the characters' one, and for the
-   same reason: `flex: 0 1 auto` and above all not `flex: 1`, otherwise a play with
-   two acts pushes "+ Act" to the bottom of the panel, far from the outline it
-   completes.
-   It does carry the rule of `.search-results`, which the characters list does not:
-   the outline of a real play (ten scenes in the first act of ours) always scrolls,
-   so the boundary with the fixed title field is real, and a scene cut off at the
-   top of the list would read as a display glitch. It runs to the edges of the
-   panel (negative margins of its padding), otherwise it is a block underline and
-   not a division. */
+/* `flex: 0 1 auto` and not `flex: 1`, as the character list. It DOES carry the top
+   rule that list omits, a real outline always scrolling; negative margins run it to
+   the panel edges, or it is a block underline and not a division. */
 .structure-acts {
   list-style: none;
   margin: 0 -12px;
@@ -1031,12 +608,8 @@ h3 {
   border-top: 1px solid var(--border);
 }
 
-/* Three pixels between the rows: each is now a solid tile, so the panel's cream
-   must be visible between two neighbours, otherwise the stack reads as a single
-   cut-up surface. Two were enough back when the rows were transparent (the gap
-   only served to keep the rule of a hovered or open row from reading as a double
-   line with that of its neighbour). The same goes between the scenes of an act,
-   hence the flex on their list. */
+/* 3 px between rows: each is a solid tile now, so the panel must show between two
+   neighbours or the stack reads as one cut-up surface. Same between scenes. */
 .structure-act {
   display: flex;
   flex-direction: column;
@@ -1049,28 +622,14 @@ h3 {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  /* The indent of the scenes under their act, which says again through alignment
-     what the two tiles already say through colour (no rule and no vertical guide,
-     which in a column of 248 px add a line to read for information the alignment
-     already gives). It equals the handle plus its gap, so a scene starts where
-     the name of its act starts. */
+  /* Indent of the scenes under their act: the handle plus its gap, so a scene starts
+     where the name of its act starts. No rule and no guide, which in 248 px would add
+     a line to read for what the alignment already says. */
   padding: 0 0 0 19px;
 }
 
-/* A row of the outline: the handle, the name, the count, the ✕.
-   **It is a TILE, and its colour says its level.** Both rows were transparent,
-   hence the colour of the panel: the outline was only a column of text where the
-   open scene alone laid something down, and nothing distinguished an act from a
-   scene but its serif and its indent. An act now takes a tint of the page's violet
-   (`--ed-tile-act`) and a scene the white of the surfaces that carry content
-   (`--card`, like the character chips right next to it in the rail), so the act reads
-   as the band that contains the cards of its scenes, and it is IT that stands out. An
-   act is the only object of the panel not to be white, and that is deliberate: it is
-   not content, it is a subheading.
-   The padding goes from 1 to 3 px at the top and bottom and stops being zero on
-   the left: a tile needs air, and the handle was touching its edge.
-   The transparent rule at rest remains what keeps the current scene from shifting
-   its neighbours when it takes its own (same rule as `.search-hit`). */
+/* A row of the outline: handle, name, count, ✕. A TILE whose colour says its level.
+   The transparent rule at rest keeps the current scene from shifting its neighbours. */
 .structure-row {
   display: flex;
   align-items: center;
@@ -1091,25 +650,15 @@ h3 {
   color: var(--ed-title);
 }
 
-/* The one thing on an act row that the band's tint costs an override: the ✕'s hover.
-   Everything else keeps the ink it has on a white scene row (the handle and the ✕ at
-   rest in `--ink-soft`, 3.3:1 on the tint, above the 3:1 of a drawing; the name in
-   `--ed-title` at 9.8:1; the count on its cream pill, which is opaque, so the tint
-   does not reach it). `--ed-danger`, though, only holds 2.72:1 there, i.e. the ✕ goes
-   faint at the very moment one points at it, so it is darkened by a tenth for this row
-   alone: 3.25:1 on the band, and the same terracotta. */
+/* The one override the band's tint costs: `--ed-danger` falls to 2.72:1 there, so the
+   ✕ goes faint just as one points at it. Darkened a tenth for this row: 3.25:1. */
 .structure-row.act .chip-delete:hover {
   color: color-mix(in srgb, var(--ed-danger) 90%, #000);
 }
 
-/* A SCENE row opens as a whole, not only through its button: it is the line that
-   is the object, so the hover must light the line and not the word.
-   The `:not` is necessary, at equal specificity with the rule below. Act rows take
-   nothing of it: their name leads nowhere.
-   The white tile takes its rule from the resting state on, like a character chip:
-   the panel's cream is not enough to outline white. The hover moves it to the
-   accent's lilac, the open scene adds the solid rule to that: nothing moves on
-   screen between the three states, only the hue rises. */
+/* A SCENE row opens as a whole, so the hover lights the line and not the word. The
+   `:not` is needed at equal specificity with the rule below. Rest, hover and open
+   differ by hue alone: nothing moves on screen. */
 .structure-row.scene {
   cursor: pointer;
   background: var(--card);
@@ -1121,35 +670,21 @@ h3 {
   background: var(--ed-tile-lit);
 }
 
-/* The open scene, in accent: it is the row that says where one is, and it says so
-   through `aria-current` too (cf. StructurePanel.jsx). */
+/* The open scene, also carrying `aria-current`. */
 .structure-row.scene.current {
   border-color: var(--accent);
   background: var(--ed-tile-lit);
 }
 
-/* The act that contains it takes the accent on its name alone, and not the frame of
-   the scene: two framed rows one under the other would fight over the "you are here",
-   when the scene is the only object really open. It serves to find where one is in an
-   outline that exceeds the height of the panel, when the current scene has scrolled
-   out of view.
-   It is the DARKENED accent (`--ed-accent-ink`) and not `--accent`, the row carrying a
-   solid tile: on it the accent falls to 3.3:1 where this ink holds 4.76:1. That
-   measurement is what caps the tile's tint at 32 % (cf. `--ed-tile-act`), and it is
-   the difference in lightness between the two, on one single hue, that distinguishes
-   the current act's name from its count in grey. */
+/* Its act takes the accent on its NAME alone, not a frame: two framed rows would fight
+   over the "you are here". The darkened ink, the row carrying a solid tile (3.3:1 for
+   `--accent` against 4.76:1 here); that measurement is what caps the tint at 32 %. */
 .structure-row.act.current .structure-name {
   color: var(--ed-accent-ink);
 }
 
-/* Same handle as the lines (class `drag-handle` kept on the button): it is the same
-   gesture on another object of the play. All that is left to do is tighten the box,
-   sized over there for a row 40 px tall.
-   In `--ink-soft` and no longer in `--ed-ghost`, which is sized for white: it holds
-   5.1:1 on the white tile of a scene, 3.8:1 on the lilac of an open one and 3.3:1 on
-   the violet tile of an act, where `--ed-ghost` falls to 2.4:1, below the threshold
-   for a drawing. It is at the same time the ink of the ✕ that faces it at the end of
-   the row. */
+/* Same handle as the lines, box tightened for a shorter row. `--ink-soft` and not
+   `--ed-ghost`, which is sized for white and falls to 2.4:1 on the act tile. */
 .structure-handle {
   font-size: 13px;
   line-height: 1;
@@ -1157,10 +692,8 @@ h3 {
   color: var(--ink-soft);
 }
 
-/* The name takes the room and is cut off with "…" like that of a character, through
-   the same shared class `.truncate` (theme.css): a label of excessive length must
-   not push the count and the ✕ out of the panel. The theme's padding (8px 10px) is
-   taken over for a row of 13.5 px. */
+/* Cut off with "…" through `.truncate`, so an over-long label cannot push the count
+   and the ✕ out of the panel. */
 .structure-name {
   flex: 1;
   min-width: 0;
@@ -1169,35 +702,19 @@ h3 {
   padding: 2px 6px;
 }
 
-/* The name of an act: text, nothing more. It takes over the geometry of
-   `.structure-name` (so the row does not change height) and nothing else: no frame,
-   no background, no cursor, because there is nothing to do on it. */
+/* An act's name is text: it takes the geometry of `.structure-name` so the row keeps
+   its height, and nothing else. */
 .structure-name-static {
   cursor: default;
 }
 
-/* The name of a scene: a BUTTON, the only object of the outline one navigates with.
-   **No frame, no background**, exactly like the name of an act just above.
-   It carried some, inherited from the input field it replaces, and it was the last
-   place in the outline to lie: a framed white box in an editing column reads as a
-   text to type, and nothing is renamed here any more (the label comes from the rank,
-   cf. structureLabels.js). What responds to the hover and says where one is, is the
-   ROW, and it is also the surface one aims at to open the scene; lighting the word
-   on top of the row doubled the signal, on two geometries that do not overlap. The
-   only drawing that remains specific to the button is its focus ring, which belongs
-   to whatever has the keyboard.
-   Side benefit: the act and scene rows are finally the same height (the button's
-   rule gave the latter two pixels more).
-   `text-align: left` and the inherited font are here because a `<button>` centres
-   its text and takes the system font: without them, the outline read in Arial,
-   centred, in the middle of a left-aligned IBM Plex column. */
+/* A scene's name is a BUTTON, but frameless like an act's: what responds and says
+   where one is, is the ROW. `text-align: left` and the inherited font because a
+   `<button>` otherwise centres its text in the system font. */
 .structure-scene-name {
-  /* The three properties a `<button>` must unlearn, and NOT the `font: inherit`
-     shorthand: that one also resets `font-size`, so it overrode the 13.5 px
-     `.structure-name` sets just above (same specificity, rule further down), and
-     the name of a scene came out at 16 px, bigger than the name of its act and
-     taller than its row. Without `font-size` here, the button and the act's
-     `<span>` render exactly alike. */
+  /* These three and NOT the `font: inherit` shorthand, which also resets `font-size`
+     and would override the 13.5 px of `.structure-name` (same specificity, later
+     rule), rendering scene names at 16 px. */
   font-family: inherit;
   font-weight: inherit;
   line-height: inherit;
@@ -1205,29 +722,24 @@ h3 {
   cursor: pointer;
   background: none;
   border: none;
-  /* Nothing to round as long as nothing is painted: this radius is that of the
-     focus ring, which would otherwise follow the sharp corners of the box in the
-     middle of a panel where everything else is rounded. */
+  /* Nothing painted to round: this radius is the focus ring's. */
   border-radius: 6px;
 }
 
-/* The THEME's focus ring, and not the browser's: this button is the only keyboard
-   path to opening a scene, and the `input` it replaces got the ring for free through
-   `input:focus` (theme.css). Without this rule, it fell back on the default ring,
-   outside the palette. */
+/* The THEME's ring: this button is the only keyboard path to opening a scene, and the
+   `input` it replaces got one for free through `input:focus`. */
 .structure-scene-name:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
 
-/* The language of the play, under its title. The label is in soft ink and small:
-   it is a setting one sets once, it must not compete with the title just above nor
-   with the acts just below. */
+/* The language of the play, under its title: a setting one sets once, so it must not
+   compete with the title above nor the acts below. */
 .structure-language {
   display: flex;
   align-items: center;
-  /* `wrap` because the rail narrows down to 200 px: the flags go under their
-     label instead of pushing it out of the panel. */
+  /* `wrap` because the rail narrows to 200 px: the flags go under their label instead
+     of pushing it out of the panel. */
   flex-wrap: wrap;
   gap: 4px 8px;
   margin-top: 8px;
@@ -1238,24 +750,15 @@ h3 {
   color: var(--ink-soft);
 }
 
-/* The two flags, in place of the earlier `<select>` (cf. StructurePanel.jsx).
-   They are pushed to the right of the panel: the label opens the row, the value
-   closes it, as a field used to do. */
+/* Pushed right: the label opens the row, the value closes it, as a field used to. */
 .structure-language-flags {
   display: flex;
   gap: 4px;
   margin-left: auto;
 }
 
-/* A flag thumbnail, which RESPONDS like a row of the outline just below (the
-   accent's lilac on hover, a solid accent rule when it is chosen): these are the
-   only two things one points at in this section, and they must respond the same
-   way.
-   It does not take the TILE for all that: a flag is not an object of the outline,
-   it is the value of a field, and two framed white thumbnails above the acts would
-   read as two more rows.
-   `line-height: 0` because the box of a `<label>` otherwise reserves the room of a
-   line of text under the flag, which has none. */
+/* Responds like a scene row but takes no TILE: a flag is the value of a field.
+   `line-height: 0` or the `<label>` box reserves a text line under it. */
 .structure-language-flag {
   display: block;
   padding: 4px;
@@ -1265,9 +768,8 @@ h3 {
   cursor: pointer;
 }
 
-/* The radio button is the real control: hidden from the eye, never from tabbing,
-   hence `opacity: 0` and not `display: none`, which would take it out of the
-   keyboard path and would deprive the group of its arrow key navigation. */
+/* The radio is the real control: hidden from the eye, never from tabbing, hence
+   `opacity: 0` and not `display: none`, which would kill arrow key navigation. */
 .structure-language-flag input {
   position: absolute;
   width: 0;
@@ -1287,34 +789,16 @@ h3 {
   background: var(--ed-tile-lit);
 }
 
-/* The focus ring lands on the flag and not on the label that surrounds it: the
-   drawing is what one sees, and the `+` avoids having to trust `:has` for a
-   keyboard path. */
+/* The ring lands on the flag, not the label around it; the `+` avoids trusting `:has`
+   for a keyboard path. */
 .structure-language-flag input:focus-visible + .flag-icon {
   outline: var(--focus-ring);
   outline-offset: 3px;
 }
 
-/* The two additions of the outline, "+ Scene" and "+ Act", are the SAME thing at
-   two levels, so they are drawn the same way: a ghost tile with a dashed rule, at
-   the place and at the width of the object they create, with the accent's lilac on
-   hover like the rows they lengthen. It is the shape the page already uses to add
-   the first line of a scene (`.add-first-line-btn`).
-   The SHAPE is taken over, not the rule: these two keep the 7 px radius of the
-   rows they extend (over there it is `--radius`, in the middle of the line cards)
-   and the hover of their panel, accent lilac, when the column's takes the rail's
-   cream. Each responds like its neighbourhood, which is the reason to keep them
-   distinct rather than factor four declarations under a third class that neither
-   of them would carry in full.
-   They did not look alike at all: "+ Scene" was a grey word with no frame,
-   "+ Act" a real white `.btn small` aligned right, so two neighbouring gestures of
-   the same nature read as a link and a button. Now that the outline's rows are
-   tiles, the gap showed twice as much (a bare word in the middle of a stack of
-   tiles no longer looks like a control at all).
-   What distinguishes them is what distinguishes their objects: the indent of the
-   scenes and the size of the text. The DASHED rule is not decorative, it is what
-   separates them from the solid tiles of the outline: they are not an act nor a
-   scene of the play, they make one. */
+/* "+ Scene" and "+ Act" are the SAME thing at two levels: a ghost tile with a dashed
+   rule at the place and width of the object they create. The dash is what separates
+   them from the solid tiles: they are not an act or a scene, they make one. */
 .structure-add {
   align-self: stretch;
   text-align: left;
@@ -1327,55 +811,39 @@ h3 {
   transition: color 0.12s, background 0.12s, border-color 0.12s;
 }
 
-/* The darkened accent for the text (cf. `--ed-accent-ink`): on the lilac,
-   `--accent` only holds 4.4:1, and these two labels are the smallest of the panel.
-   The rule, for its part, takes the accent at full strength, like the row of an
-   open scene. */
+/* Darkened accent for the text: on the lilac `--accent` only holds 4.4:1 and these are
+   the panel's smallest labels. The rule takes the accent at full strength. */
 .structure-add:hover {
   color: var(--ed-accent-ink);
   border-color: var(--accent);
   background: var(--ed-tile-lit);
 }
 
-/* The theme's ring and not the browser's, and it is the PANEL that decides: its two
-   other drawn controls already carry it (`.structure-scene-name`, the flag
-   thumbnail), and these two additions now have the shape and the place of a row of
-   the outline. Without it, tabbing through the panel alternated two rings on
-   objects of the same silhouette. It was not a regression (as `.btn`, like today,
-   they fell back on the native ring), it is bringing them up to the level of their
-   neighbours. */
+/* The theme's ring, like the panel's two other drawn controls: without it, tabbing
+   alternated two rings on objects of the same silhouette. */
 .structure-add:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
 
-/* Under the scenes of ITS act and at their indent: that is where it adds, and it has
-   the width of the scene that is going to land there. */
+/* Under the scenes of ITS act and at their indent, at the width of the scene it adds. */
 .structure-add-scene {
   margin-left: 19px;
   font-size: 11.5px;
   padding: 3px 8px;
 }
 
-/* Outside the list's scrolling, like the character add form, and at the width of an
-   act. It no longer carries `.btn`: a white 13 px button aligned right could not look
-   like "+ Scene" without one of the two lying about what it does. */
+/* Outside the scrolling, at the width of an act. Not a `.btn`: a white 13 px button
+   aligned right could not look like "+ Scene" without one of the two lying. */
 .structure-add-act {
   flex: none;
   font-size: 13px;
   padding: 5px 10px;
 }
 
-/* ---- Search (the rail's "Search" section) ----
-
-   The order of the blocks: how I search (the two checkboxes), what I search for,
-   what I put in its place, how many and where, then the results. It is the two
-   FIELDS that must touch each other, as in a code editor: one types in the first,
-   one types in the second, one re-reads both before replacing, and the chevron
-   that opens the second must be next to what it makes appear. The checkboxes,
-   which tune the search, read very well before it; between the two fields, they
-   separated them by three blocks and the replacement no longer read as the
-   continuation of the query. */
+/* Search (the rail's "Search" section). Order: the two checkboxes, the query, the
+   replacement, the count, the results. The two FIELDS must touch, as in a code editor,
+   and the chevron opening the second must sit next to what it reveals. */
 
 /* The settings, at the head and outside the scrolling. */
 .search-controls {
@@ -1391,15 +859,9 @@ h3 {
   gap: 4px;
 }
 
-/* The disclosure chevron of the replacement. It points down when it is closed, up
-   when it is open: it designates what it makes appear.
-   **Framed at rest and as tall as the field** (`align-self: stretch`, hence no
-   height to keep in sync with the field's padding): it is the only path to the
-   replacement, and the first attempt was only a grey glyph with no frame set at the
-   edge of an input field, where it read as a decoration of the field rather than as
-   a button. A frame and a card background make it a control attached to the field,
-   like the search box of a code editor. Open, it moves to the accent, solid like a
-   ticked checkbox: it then says that the field below comes from it. */
+/* Disclosure chevron, framed and as tall as the field (`align-self: stretch`, hence
+   no height to keep in sync with its padding): a bare glyph at the edge of an input
+   read as a decoration and not the only path to the replacement. */
 .search-replace-toggle {
   flex: none;
   align-self: stretch;
@@ -1435,11 +897,8 @@ h3 {
   transform: rotate(180deg);
 }
 
-/* Offset by the width of the chevron plus the gutter of its row (26 + 4): the
-   replacement field thus aligns exactly on the query field, and the whole block
-   reads as the unfolding of the button that is to its left. Without this offset the
-   two fields were two different widths, and the second looked as if it belonged to
-   the panel rather than to the query. */
+/* Offset by the chevron plus its row gutter (26 + 4), so the replacement field aligns
+   exactly on the query one and the block reads as its unfolding. */
 .search-replace {
   display: flex;
   flex-direction: column;
@@ -1459,20 +918,16 @@ h3 {
   min-width: 0;
 }
 
-/* The two checkboxes side by side, and in `flex-wrap` like the four settings of the
-   Rehearsal page: never a fixed number of columns, which would align the short one
-   on the long one. They fit within the panel's default 248 px, and go back one under
-   the other by themselves when the panel is narrowed towards its 200 px. */
+/* `flex-wrap` like the Rehearsal page's settings: never a fixed column count, which
+   would align the short label on the long one. */
 .search-options {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 12px;
 }
 
-/* The geometry of the label (checkbox + text on one line, the whole label
-   clickable) comes from the shared rule `.checks-row label, .search-options label`
-   of theme.css: the Rehearsal page has the same row. All that is left here is the
-   panel's voice, smaller and in soft ink. */
+/* Geometry from the shared `.checks-row label, .search-options label` (theme.css);
+   only the panel's voice is local. */
 .search-options label {
   font-size: 13px;
   color: var(--ink-soft);
@@ -1484,10 +939,9 @@ h3 {
   gap: 8px;
 }
 
-/* While the rendering catches up with the typing (cf. `searching` in useSearch.js):
-   we fade instead of freezing, and with no transition in, otherwise a flicker is
-   added at every character typed. The return to full opacity, for its part, is
-   eased: that is the moment the list becomes correct. */
+/* While the rendering catches up with the typing (`searching`, useSearch.js) we fade
+   rather than freeze, with no transition IN or a flicker is added at every keystroke;
+   the return to full opacity is eased, that being the moment the list becomes correct. */
 .search-count.stale,
 .search-results.stale {
   opacity: 0.45;
@@ -1498,8 +952,8 @@ h3 {
   transition: opacity 0.12s ease;
 }
 
-/* The count takes the remaining room: the arrows stay stuck to the right edge of
-   the panel, so they do not move when the number changes length. */
+/* The count takes the remaining room so the arrows stay pinned right and do not move
+   when the number changes length. */
 .search-count {
   flex: 1;
   min-width: 0;
@@ -1518,14 +972,9 @@ h3 {
   gap: 6px;
 }
 
-/* The ONLY scrolling area of the section: the settings stay at the head.
-   The top rule is not decorative: once one part of the panel is fixed and the other
-   scrolling, nothing said any more where the boundary ran, and a result cut off at
-   the top of the list read as a display glitch rather than as the edge of an area
-   that scrolls. It runs to the edges of the panel (negative margins of its
-   padding): a line that stops twelve pixels from the edges reads as a block
-   underline, not as a division of the panel. The area gains full width in the
-   process, so its scrollbar sits at the edge of the panel. */
+/* The ONLY scrolling area of the section. The top rule says where the fixed part
+   ends; negative margins run it to the panel edges so it divides rather than
+   underlines. */
 .search-results {
   flex: 1;
   min-height: 0;
@@ -1536,13 +985,9 @@ h3 {
   padding: 0 12px;
 }
 
-/* ---- The height contract of the windowed list ----
-   `ResultList` (SearchPanel.jsx) only renders the visible slice and computes the
-   positions from TWO numbers: 66 px per row, 30 px per scene header. They are
-   written here and over there; making them diverge shifts the list under the
-   scrollbar. Every height below is therefore fixed and never derived from the
-   content, which also makes the total height exact from the very first render,
-   hence a scrollbar that does not re-adjust under the mouse along the way. */
+/* Height contract of the windowed list: `ResultList` (SearchPanel.jsx) computes
+   positions from 66 px per row and 30 px per scene header, written here and there.
+   Diverge and the list shifts, so every height below is fixed, never derived. */
 .search-flat {
   list-style: none;
   margin: 0;
@@ -1550,9 +995,8 @@ h3 {
   display: block;
 }
 
-/* 66 = 62 px of row + 4 px of gutter, as bottom PADDING and not as a `gap`: a
-   `gap` would not count in the height of the element, hence not in the computation
-   of the positions. */
+/* 66 = 62 px of row + 4 px of gutter, as PADDING and not a `gap`, which would not
+   count in the element's height hence not in the positions. */
 .search-row {
   height: 66px;
   padding-bottom: 4px;
@@ -1565,8 +1009,7 @@ h3 {
   padding-bottom: 6px;
 }
 
-/* On ONE line, cut off with "…": the header is part of the 30 px contract, and two
-   act and scene titles of excessive length would otherwise go to two lines. */
+/* On ONE line, cut with "…": the header is part of the 30 px contract. */
 .search-group-title {
   display: flex;
   align-items: baseline;
@@ -1586,13 +1029,8 @@ h3 {
   text-overflow: ellipsis;
 }
 
-/* The act steps back behind the scene: it is the scene one is going to open, the act
-   only serves to place it. Two weights, hence nothing to separate with a sign. */
-/* `--ink-soft` and not `--ed-ghost`: the latter is sized for the drag handle of a
-   line without a character, a drawing, hence aimed at "≥ 3:1"; here it is
-   informative text at 12 px, which requires the lightest ink allowed for text
-   (≥ 4.5:1). The act steps back behind the scene through its weight alone, which
-   was already enough to tell them apart. */
+/* The act steps back behind the scene through its WEIGHT alone. `--ink-soft` and not
+   `--ed-ghost`: informative text at 12 px needs >= 4.5:1, not the 3:1 of a drawing. */
 .search-group-act {
   color: var(--ink-soft);
   font-weight: 500;
@@ -1602,16 +1040,8 @@ h3 {
   color: var(--ink-soft);
 }
 
-/* A result: the character then the excerpt, on a white block laid on the rail's
-   cream, like the character chips right next to it.
-   `height: 100%` fills the row, which is the only way to have cards all of the same
-   height: an excerpt that fits on one line, or a line whose character has
-   disappeared, would otherwise make one shorter than its neighbours and the leading
-   of the list would look as if it changed from one row to the next (that is the bug
-   one `<li>` too many between the two earned us: a percentage resolves against the
-   height of the PARENT, hence against the 66 px of `.search-row`, and not against
-   an intermediate of automatic height). So nothing must be inserted between the row
-   and this button. */
+/* `height: 100%` is what makes all the cards the same height, and it resolves against
+   the PARENT: nothing may be inserted between `.search-row` and this button. */
 .search-hit {
   width: 100%;
   height: 100%;
@@ -1629,8 +1059,7 @@ h3 {
   border-color: var(--border);
 }
 
-/* The current match is not signalled by colour alone: its button also carries
-   `aria-current`. */
+/* Not signalled by colour alone: the button also carries `aria-current`. */
 .search-hit.current {
   border-color: var(--accent);
   background: var(--ed-tile-lit);
@@ -1638,23 +1067,15 @@ h3 {
 
 .search-hit-who {
   display: block;
-  /* Explicit line height: it is part of the sum making up the 62 px. */
-  line-height: 14px;
+  line-height: 14px; /* explicit: a term in the 62 px sum */
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-/* In Spectral, as everywhere the site quotes the play (line text, dialogue cards,
-   quotation in the confirmations).
-   Two lines, no more, and cut off beyond that: that is what gives the row its fixed
-   height, hence a scrollbar that does not lie and a list that can be windowed
-   (cf. `.search-row`). Nothing essential is lost, the excerpt serves to recognise
-   the line and not to read it, and the occurrence is guaranteed visible because
-   what precedes it is capped at about one line (EXCERPT_BEFORE in search.js).
-   `line-height` in pixels and not as a multiplier: it is a term in the sum making up
-   the 62 px, it must not depend on the rounding of a product. */
+/* Spectral, as everywhere the site quotes the play. Two lines then cut, which is what
+   gives the row its fixed height. `line-height` in pixels, a term in the 62 px sum. */
 .search-hit-text {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -1666,8 +1087,7 @@ h3 {
   color: var(--ink);
 }
 
-/* `<mark>` restyled: its default yellow is outside the palette, and it is the only
-   solid colour background the browser imposes. */
+/* `<mark>` restyled: its default yellow is outside the palette. */
 .search-hit mark {
   background: color-mix(in srgb, var(--accent) 22%, #fff);
   color: inherit;
@@ -1679,33 +1099,9 @@ h3 {
   background: color-mix(in srgb, var(--accent) 34%, #fff);
 }
 
-/* ---- Main column ----
-
-   The two titles are now nothing but titles: they SAY where one is writing, and
-   the play's outline (the rail's "Structure" section) does all the rest, including
-   renaming them. They used to be buttons that turned into a field on click, hence
-   the pair of classes `title-display` / `title-input` that has disappeared from
-   here, and hence too their padding of 2px 6px, which was the box of the button
-   and not that of the title: it went away with it, so the two titles now align on
-   the left edge of the lines panel, instead of being indented 6 px relative to it.
-   They are `<h2>` and `<h3>`, which take the serif from the heading rules; all that
-   is left here is their size, their weight, the gap to the next block and their
-   colour.
-   IN THE PAGE'S PURPLE, and no longer in the near-black `--ed-title` of the heading
-   rules: these two are the only titles of the column, and they name the same two
-   objects the rail's outline lists just beside them, at the same moment. Sharing the
-   accent is what ties the two halves of the page together, where a black title made
-   the column look like a document that had nothing to do with the panel selecting
-   inside it. It also separates them from what they are titles OF: the lines below are
-   in `--ink` on white cards, so the hierarchy no longer rests on size alone.
-   `--accent` at full strength and not the darkened `--ed-accent-ink`: this is text on
-   the column's cream (`--paper`), where the accent holds 4.73:1, above AA even for
-   small text, when the darkened ink is reserved for the pale purple SURFACES of the
-   rail (there the accent falls to 3.3:1, cf. its own comment). A title is also the
-   one place a hue can be frank without weighing anything down: it is a few words, not
-   a filled band (cf. `--ed-tile-act`, where full strength was too strong).
-   The count next to the scene title stays grey (`--ink-soft`): it is not part of the
-   title, it is a piece of information about it. */
+/* Main column. The two titles only SAY where one is writing, the rail's outline does
+   the renaming. `--accent` at full strength, which holds 4.73:1 on the cream `--paper`
+   (the darkened ink is reserved for the rail's pale purple SURFACES). */
 
 .act-title {
   font-size: 24px;
@@ -1745,11 +1141,8 @@ h3 {
   margin: 4px 0 10px;
 }
 
-/* ---- Line rows ("Rail") ----
-   One white panel per scene (same white-on-cream contrast as the dialogue
-   cards of the other pages), thin rows inside separated by a 1px rule. The
-   character's color only paints the ⠿ handle and the select (inline
-   styles). */
+/* Line rows: one white panel per scene, thin rows inside separated by a 1px rule. The
+   character's colour only paints the ⠿ handle and the select (inline styles). */
 
 .line-list {
   display: flex;
@@ -1761,9 +1154,9 @@ h3 {
   overflow: hidden;
 }
 
-/* An explicit grid rather than a flex that overflows: the four items have a
-   named place, and the narrow reflow (further down) simply redraws the grid;
-   no wrapping imposed on us that sends the ✕ onto a 3rd line. */
+/* An explicit grid rather than a flex that overflows: the four items have a named
+   place and the narrow reflow just redraws the grid, with no wrap sending the ✕ to a
+   third line. */
 .line-row {
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr) auto;
@@ -1795,8 +1188,7 @@ h3 {
   border: none;
   background: none;
   font-size: 15px;
-  /* Vertically aligned with the character name line. */
-  padding: 7px 2px;
+  padding: 7px 2px; /* aligned with the character name line */
   cursor: grab;
   touch-action: none;
 }
@@ -1806,9 +1198,8 @@ h3 {
 }
 
 .line-character {
-  /* Intrinsic width: a select sizes itself to its LONGEST option, so every
-     row's dropdown arrow aligns on the longest character name, with no dead
-     margin after short names. */
+  /* Intrinsic width: a select sizes to its LONGEST option, so every row's arrow
+     aligns and short names leave no dead margin. */
   width: auto;
   max-width: 220px;
   justify-self: start;
@@ -1842,9 +1233,8 @@ h3 {
   color: var(--ed-danger);
 }
 
-/* Hover-revealed insert point between two lines. Zero footprint: the band
-   spans the whole row width and overlaps the neighbouring rows (negative
-   margins), the pill floats over the 1px rule. */
+/* Hover-revealed insert point. Zero footprint: the band spans the row and overlaps its
+   neighbours (negative margins), the pill floating over the 1px rule. */
 .insert-zone {
   position: relative;
   height: 18px;
@@ -1855,14 +1245,12 @@ h3 {
   z-index: 5;
 }
 
-/* At the very end of the scene the panel's overflow would clip the lower
-   half of the band: keep it fully inside instead. */
+/* At the end of a scene the panel's overflow would clip the lower half of the band. */
 .insert-zone.end {
   margin-bottom: 0;
 }
 
-/* The button fills the whole band so a click anywhere in the (row-wide)
-   hover zone inserts, with no need to aim for the centred pill. */
+/* The button fills the band, so a click anywhere in the row-wide hover zone inserts. */
 .insert-zone button {
   position: absolute;
   inset: 0;
@@ -1876,7 +1264,7 @@ h3 {
   cursor: pointer;
 }
 
-/* Purely visual pill, centred inside the full-width hit area. */
+/* Purely visual pill, centred in the full-width hit area. */
 .insert-pill {
   font-family: var(--font-ui);
   font-size: 11px;
@@ -1914,9 +1302,8 @@ h3 {
   margin-top: 8px;
 }
 
-/* `--paper-dark` and not `--ed-sidebar`, which it used to take when that token was
-   a cream: this button lives in the TEXT column, which stays on the site's warm
-   paper. The purple belongs to the rail. */
+/* `--paper-dark`: this button lives in the TEXT column, which stays on warm paper.
+   The purple belongs to the rail. */
 .add-first-line-btn:hover {
   background: var(--paper-dark);
   color: var(--ink);
@@ -1930,26 +1317,11 @@ h3 {
   font-size: 14.5px;
 }
 
-/* ---- Narrow window ----
-   And not "mobile": the page does not open at all any more on a touch pointer
-   (cf. useTouchPointer.js), so everything that follows only targets the shrunk
-   window of a computer, mouse and keyboard included. The touch target rules that
-   used to live here (micro-buttons taken up to 40 px, click area of the colour
-   pill extended by an ::after) have been removed: no finger reaches them any
-   more, and they thickened the rows exactly where room is scarcest. */
+/* Narrow window, and not "mobile": the page does not open on a touch pointer at all
+   (useTouchPointer.js), so what follows only targets a shrunk desktop window. */
 
-/* Narrow reflow of the lines: the single row holds as long as the text keeps a
-   decent typing width (~280 px). Below that, two rows: handle + character + ✕ at
-   the head, text in full width underneath.
-   A CONTAINER query and not a window one (cf. `container: ed-column` at the head
-   of the file): now that the rail takes its width from the column, the width of
-   the window says nothing any more about the room left for typing. With the rail
-   open, a window of 940 px only leaves 620 px to the column, and a window query
-   did not fire; with the rail collapsed, the threshold comes at 668 px of window,
-   that is the 48 px of the icon strip. It is the same threshold, measured in the
-   right place, and the number therefore keeps its reason for being. Technical
-   basis: container queries are of the same generation as the `:has()` this file
-   already depends on, and the page is reserved for the computer. */
+/* Narrow reflow: one row while the text keeps ~280 px of typing width, then two. A
+   CONTAINER query and not a window one, the rail taking its width from the column. */
 @container ed-column (max-width: 620px) {
   .line-row {
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1965,29 +1337,19 @@ h3 {
   }
 
   .line-text {
-    /* Aligned on the edge of the panel, not on the character column: on a
-       narrow screen every pixel of typing width counts. */
-    padding-left: 2px;
+    padding-left: 2px; /* on a narrow screen every pixel of typing width counts */
   }
 }
 
-/* ---- Reduced motion ----
-   Counterpart of the block at the end of theme.css, which neutralises the header's
-   collapse: each file neutralises ITS own animations, and making the shared theme
-   aware of the editor's classes would break the meaning of both files. The rail
-   still collapses, it becomes instantaneous, and the replacement chevron still
-   rotates, it arrives at once. */
+/* Reduced motion: each file neutralises ITS own animations. */
 @media (prefers-reduced-motion: reduce) {
   .editor-rail,
   .search-replace-toggle svg {
     transition-duration: 0s;
   }
 
-  /* The upload tile is switched off in theme.css, the file its `transition` lives
-     in, but this page redeclares that transition to add `background` to the list
-     (`transition` being ONE property, the shorthand replaces the theme's), and that
-     redeclaration outranks the theme's switch-off. So the tile needs its twin here,
-     in the file that took the property over. */
+  /* This page redeclares the tile's `transition` to add `background`, which outranks
+     the theme's switch-off, so the twin has to live here too. */
   .editor-upload-tip .upload-tile {
     transition-duration: 0s;
   }

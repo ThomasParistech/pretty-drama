@@ -1,13 +1,6 @@
-"""Tests for the upload journals: each play's own (rendered by its Dashboard) and the
-root one (rendered by the play management page).
-
-It is the ONLY error channel of the project (no issue, no README status), so a lost
-entry is an error the coordinator will never see, and its shape is a contract with the
-front end (`filesOf` / `detailOf` in src/dashboard/App.jsx).
-
-`history-example.json` is the shared example journal: a test fixture here, and the
-file to copy into `data/` to see the page populated in dev. It is therefore bound to
-be exactly what the Action writes and what the front end reads."""
+"""The upload journals, each play's own plus the root one: the project's only error
+channel, its shape a contract with `filesOf` / `detailOf` (dashboard/App.jsx).
+`history-example.json` is the fixture and the file to copy into `data/` in dev."""
 
 import io
 import json
@@ -64,24 +57,16 @@ class TestAddRun(unittest.TestCase):
             self.assertEqual(len(updated["runs"]), 1)
 
     def test_no_stale_script_hash_is_carried_over(self):
-        # scriptHash went away with uploading straight into data/: promoting the
-        # script is now a file in the journal, not an inferred fingerprint.
         updated = add_run({"runs": [], "scriptHash": "abc"}, SCRIPT, "2026-07-27T10:00:00Z")
         self.assertNotIn("scriptHash", updated)
 
 
 class TestExampleJournal(unittest.TestCase):
-    """The shape contract with the front end, checked on the shared example: it
-    deliberately covers every case the page knows how to display (voices that succeeded,
-    voices refused, a script promotion with its diff, one that changed nothing, the birth
-    of the play, several files in one upload)."""
+    """The shape contract with the front, on an example covering every display case."""
 
     FILE_KEYS = {"file", "kind", "clips", "error", "changes"}
     KINDS = {"voix", "script", "inconnu"}
-    # The counts `script_changes` publishes, plus the flag `promote_script` adds. Written
-    # out here because this class checks the EXAMPLE file, which is a fixture and not a
-    # source: what holds the counts to the front that reads them is
-    # `TestScriptDiffFields` in test_contracts.py, which reads both real sides.
+    # A FIXTURE check; the two-sided contract is TestScriptDiffFields (contracts).
     CHANGE_FIELDS = {
         "linesAdded",
         "linesRemoved",
@@ -95,16 +80,12 @@ class TestExampleJournal(unittest.TestCase):
         "other",
         "created",
     }
-    # The ones that are FLAGS and not counts: there is one title, one language, one birth,
-    # and `other` is a yes or no. `changesOf` on the front reads the type of the value to
-    # know whether to interpolate a `{count}`, so a flag written as a number (or the other
-    # way round) renders the wrong sentence or none at all.
+    # Flags, not counts: `changesOf` reads the value TYPE to decide on `{count}`.
     CHANGE_FLAGS = {"title", "language", "other", "created"}
 
     def test_runs_are_newest_first(self):
         dates = [run["at"] for run in EXAMPLE["runs"]]
-        # ISO format to the second, suffixed with Z, so lexicographic order is
-        # chronological order (and `new Date()` reads it as is on the front end).
+        # ISO to the second with Z, so lexicographic order is chronological.
         self.assertTrue(all(d.endswith("Z") for d in dates))
         self.assertEqual(dates, sorted(dates, reverse=True))
 
@@ -125,18 +106,13 @@ class TestExampleJournal(unittest.TestCase):
                 self.assertNotIn("clips", file, "a refused file published no line at all")
                 self.assertIsInstance(file["error"], str)
             elif file["kind"] == "voix":
-                # detailOf counts the lines of a ZIP that succeeded.
                 self.assertIsInstance(file["clips"], int)
             else:
-                # A promoted script counts what it CHANGED instead: no clip merged, and
-                # the diff `promote_script` took between the two versions.
                 self.assertNotIn("clips", file)
                 self.assertIsInstance(file["changes"], dict)
 
     def test_a_refused_file_publishes_no_diff_either(self):
-        # Nothing was written, so there is nothing to have changed. The front would
-        # render the reason anyway (the error wins over the detail), but a diff sitting
-        # beside a failure in the repository would read as a promotion that happened.
+        # A diff beside a failure would read as a promotion that happened.
         for file in self.files():
             if "error" in file:
                 self.assertNotIn("changes", file)
@@ -151,10 +127,7 @@ class TestExampleJournal(unittest.TestCase):
                 if field in self.CHANGE_FLAGS:
                     self.assertIs(value, True)
                 else:
-                    # Zeros are OMITTED, not written: the entry reads by eye in the
-                    # repository, and the front treats a missing count as none. A zero
-                    # written out would also make an unchanged promotion look like a
-                    # diff that found nothing rather than one that says so.
+                    # Zeros are omitted: the front treats a missing count as none.
                     self.assertIsInstance(value, int)
                     self.assertGreater(value, 0)
 
@@ -164,9 +137,7 @@ class TestExampleJournal(unittest.TestCase):
         self.assertTrue(any(f["kind"] == "voix" and "error" in f for f in files))
         self.assertTrue(any(f["kind"] == "script" and "error" not in f for f in files))
         self.assertTrue(any(len(run["files"]) > 1 for run in EXAMPLE["runs"]))
-        # Every shape a script row can take, because each renders a different sentence and
-        # the example is what a screenshot of this page is taken from: counts, flags, the
-        # catch-all, the birth of the play, and the promotion that moved nothing.
+        # Every shape a script row can take: counts, flags, catch-all, birth, no-op.
         self.assertTrue(any(isinstance(v, int) for f in files for v in f.get("changes", {}).values()))
         self.assertTrue(any(f.get("changes", {}).get("title") for f in files))
         self.assertTrue(any(f.get("changes", {}).get("other") for f in files))
@@ -174,8 +145,7 @@ class TestExampleJournal(unittest.TestCase):
         self.assertTrue(any(f.get("changes") == {} for f in files))
 
     def test_the_example_is_a_journal_add_run_could_have_written(self):
-        # Stacked on top of itself, it stays well formed: the Action's function
-        # and the example file cannot diverge without breaking this test.
+        # The Action's function and the example cannot diverge without failing here.
         updated = add_run(EXAMPLE, VOIX, "2026-07-28T10:00:00Z")
         self.assertEqual(updated["runs"][1:], EXAMPLE["runs"])
         self.assertEqual(set(updated), {"runs"})
@@ -185,12 +155,7 @@ class TestExampleJournal(unittest.TestCase):
 
 
 class TestMain(unittest.TestCase):
-    """The script as the workflow calls it, on real files.
-
-    One journal PER PLAY (a play ignores the other plays' uploads, as it ignores
-    their lines), plus a ROOT journal for whatever no play claims. Without the
-    latter, a file dropped with no readable identifier would vanish without a word,
-    which is exactly what an error channel must never do."""
+    """One journal per play, plus a root one so a file no play claims never vanishes."""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -200,14 +165,12 @@ class TestMain(unittest.TestCase):
         self.result_path = Path(self.tmp.name) / "uploads_result.json"
 
     def run_main(self, result):
-        """Writes an uploads_result.json then runs main(). Returns the pair
-        (per-play journals, root journal), each None if nothing was written."""
+        """Write an uploads_result.json, run main(), return (per-play, root)."""
         if result is not None:
             self.result_path.write_text(json.dumps(result), encoding="utf-8")
         else:
             self.result_path.unlink(missing_ok=True)
-        # `PLAYS_DIR` is patched in common, where `play_data_dir` re-reads it on
-        # every call: that is what moves the play journals into the test folder.
+        # `play_data_dir` re-reads `common.PLAYS_DIR` on every call.
         with mock.patch.object(common, "PLAYS_DIR", self.plays), mock.patch.multiple(
             update_history, ROOT_HISTORY_PATH=self.root_history, RESULT_PATH=self.result_path
         ), redirect_stdout(io.StringIO()):
@@ -230,13 +193,10 @@ class TestMain(unittest.TestCase):
         self.assertRegex(
             journals["le-malade"]["runs"][0]["at"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$"
         )
-        # Nothing at the root: this upload found its play.
-        self.assertIsNone(root)
+        self.assertIsNone(root)  # this upload found its play
 
     def test_two_plays_get_two_journals_and_the_same_stamp(self):
-        # Two files uploaded together are ONE upload, even when they concern two
-        # plays: the date must be the same on both sides, or the journal would
-        # report two uploads that never happened.
+        # One upload, two plays: a differing date would report two that never happened.
         journals, _ = self.run_main(
             {"plays": {"le-malade": VOIX, "transport": SCRIPT}, "unrouted": []}
         )
@@ -266,9 +226,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(len(journals["le-malade"]["runs"]), 1)
 
     def test_a_malformed_result_is_not_a_failure(self):
-        # uploads_result.json is machine-written, but the journal is a convenience:
-        # an unexpected shape must not make the run fail, since it would then
-        # commit without logging the uploads it has already merged.
+        # Failing here would commit uploads already merged without logging them.
         for bad in ({"plays": "nope", "unrouted": "nope"}, [1, 2, 3], {"plays": {"x": "nope"}}):
             journals, root = self.run_main(bad)
             self.assertEqual(journals, {})

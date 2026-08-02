@@ -6,13 +6,9 @@ import ConfirmModal from "../shared/ConfirmModal.jsx";
 import { excerpt } from "../shared/data.js";
 import { fmt, t } from "../shared/locale.js";
 
-// One dialogue line: drag handle + character <select> + text + delete.
-// Enter inside the textarea inserts a new line right after (like typing in a
-// text file, but every "line" is a structured object with a stable id).
-//
-// React.memo + handlers built here from the stable `dispatch`/`addLine`
-// props: rows whose `line` object kept its identity skip re-rendering, so a
-// keystroke re-renders only the edited row's scene, not the whole play.
+// One dialogue line: drag handle + character select + text + delete.
+// React.memo with handlers built from the stable `dispatch`/`addLine`: a keystroke
+// re-renders only the edited scene, not the whole play.
 export default React.memo(function LineRow({
   line,
   characters,
@@ -28,10 +24,9 @@ export default React.memo(function LineRow({
   });
 
   const textareaRef = useRef(null);
-  // Deleting a line that has text asks first (an empty line goes silently).
+  // Deleting a line that has text asks first; an empty line goes silently.
   const [confirming, setConfirming] = useState(false);
 
-  // Auto-grow the textarea to fit its content.
   const autoGrow = () => {
     const el = textareaRef.current;
     if (!el) return;
@@ -40,25 +35,20 @@ export default React.memo(function LineRow({
   };
   useEffect(autoGrow, [line.text]);
 
-  // Focus and/or selection request addressed to THIS line (`{selection, focus}`,
-  // see App.jsx). It applies both to the line just created (focus, no selection)
-  // and to a search match (selection, and focus only when the result was clicked:
-  // on the Enter key the search field must keep the keyboard so as to stay
-  // repeatable).
+  // Focus/selection request for THIS line (App.jsx): a freshly created line (focus)
+  // or a search match (selection, focus only on click, so Enter keeps the search
+  // field and stays repeatable).
   useEffect(() => {
     const el = textareaRef.current;
     if (!focusRequest || !el) return;
     if (focusRequest.focus) el.focus();
     if (focusRequest.selection) {
       const [start, end] = focusRequest.selection;
-      // The browser clamps already, we clamp anyway: the request carries the
-      // offsets of one text, and nothing must depend on that text still being
-      // exactly the same.
+      // Clamped anyway: the request carries offsets into a text that may have moved on.
       const max = el.value.length;
       el.setSelectionRange(Math.min(start, max), Math.min(end, max));
-      // `focus()` brings the element into view, `setSelectionRange` does not:
-      // without this, keyboard navigation would select out of sight. The scrolled
-      // container is the editor's column, not the window.
+      // `setSelectionRange` does not scroll, unlike `focus()`: without this, keyboard
+      // navigation selects out of sight.
       el.scrollIntoView({
         behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
           ? "auto"
@@ -69,13 +59,8 @@ export default React.memo(function LineRow({
     onFocusHandled();
   }, [focusRequest, onFocusHandled]);
 
-  // "Rail" design: white background everywhere, the character's color is
-  // only an accent: it paints the drag handle and the character select.
-  //
-  // Both are TEXT (the ⠿ glyph and the name in the select, both at 15 px), so it
-  // is the ink and not the flat colour: the palette is made for surfaces, and its
-  // olive sits at 1.87:1 on white. Only the solid swatches keep the colour as is.
-  // See `characterInk`.
+  // The handle and the select are TEXT, so they take the INK and not the flat colour:
+  // the palette is made for surfaces and its olive measures 1.87:1 on white.
   const color = characterColor(characters, line.characterId);
   const ink = color === null ? null : characterInk(color);
   const style = {
@@ -122,8 +107,7 @@ export default React.memo(function LineRow({
         ))}
       </select>
 
-      {/* onBlur closes the undo step: a later edit of this same line becomes
-          a separate one (see history.js). */}
+      {/* onBlur closes the undo step (history.js). */}
       <textarea
         ref={textareaRef}
         className="line-text"

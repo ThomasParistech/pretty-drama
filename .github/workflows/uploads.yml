@@ -1,22 +1,14 @@
 name: uploads
 
-# Reacts to the coordinator's uploads: anything dropped into uploads/ (voice ZIPs, a
-# script.json produced by the Editor page). Processes them, writes the journal, commits,
-# then calls build.yml to publish.
+# Processes anything dropped into uploads/ (voice ZIPs, a script.json from the Editor),
+# writes the journal, commits, then calls build.yml to publish.
 #
-# Two workflows rather than one: this is the only one that writes to the repo and the
-# only one that writes the upload journals (each play's, plus the root one for whatever
-# no play claims), so a displayed journal contains ONLY uploads, never the site rebuilds
-# triggered by a code push.
+# The only workflow that writes to the repo and the only one that writes the journals,
+# so a journal holds ONLY uploads, never a site rebuild. The call to build.yml must be
+# explicit: a GITHUB_TOKEN push triggers no workflow.
 #
-# Why the explicit call to build.yml: a commit pushed with the GITHUB_TOKEN triggers NO
-# other workflow (GitHub's anti-recursion guard). Without this `uses:`, the site would
-# never be republished after an upload.
-#
-# Deliberate order: we commit before deploying (the deployment lives in another job, so
-# another runner; waiting for it would mean shipping plays/ and data/ as an artifact).
-# If the deployment fails, the data is still in the repo, nothing is lost, and the next
-# build publishes it.
+# Commit before deploy: the deploy runs on another runner, and if it fails the data is
+# still in the repo for the next build.
 
 on:
   push:
@@ -30,10 +22,8 @@ permissions:
   pages: write
   id-token: write
 
-# One processing run at a time: this workflow commits, and two concurrent runs would
-# step on each other when several files are dropped in a row. A DIFFERENT group from
-# build.yml: a called workflow that shares its caller's group is detected as a deadlock
-# and cancelled.
+# One at a time, since this commits. A DIFFERENT group from build.yml: a called workflow
+# sharing its caller's group is detected as a deadlock and cancelled.
 concurrency:
   group: uploads
   cancel-in-progress: false
@@ -41,34 +31,22 @@ concurrency:
 jobs:
   process:
     runs-on: ubuntu-latest
-    # The push that CREATES main is the template being copied, and it lands here because
-    # that commit adds `uploads/.gitkeep` and `uploads/<id>/.gitkeep`, which match the
-    # `paths` filter above. There is nothing to process in those zones, ever: the run is
-    # a proven no-op (no journal line, `commit_push.sh` finds an empty index). All it
-    # could produce is a green "Successful" on the initial commit, reading as an upload
-    # that was handled when none existed. Skipped instead, and `site` follows since it
-    # `needs` this job, so a fresh copy of the template shows grey everywhere rather than
-    # ticks it has not earned. Same reasoning, same one-liner, in build.yml.
+    # The push that CREATES main matches the paths filter (it adds the .gitkeep files)
+    # yet has nothing to process, so it would only put a green "upload handled" tick on
+    # a repo with no upload. Same one-liner in build.yml.
     if: github.event.created != true
-    # This job only writes to the repo; it has nothing to do with Pages. The
-    # `pages`/`id-token` permissions in the block above exist only so they can be
-    # delegated to the `site` job (a called workflow can never obtain more than its
-    # caller), not to be used here.
+    # This job never touches Pages; the pages/id-token permissions above exist only to
+    # be delegated to `site` (a called workflow never gets more than its caller).
     permissions:
       contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      # `-maxdepth 2` and not 1: a voice ZIP lives in its play's upload zone,
-      # `uploads/<id>/`, so one level deeper than back when there was a single play.
-      # At depth 1 no ZIP was found any more, ffmpeg was never installed, and
-      # `process_uploads.py` exited with "ffmpeg not found": the run failed, so it
-      # committed nothing AND wrote no journal, and the coordinator uploaded voices with
-      # nothing happening and nothing said.
-      # Not unlimited depth either: an upload zone has only one level, and a ZIP buried
-      # deeper would not be processed anyway (see `deposited_files`), so it has no
-      # business causing an ffmpeg install.
+      # -maxdepth 2, not 1: a ZIP lives in uploads/<id>/. At depth 1 none was found,
+      # ffmpeg was never installed, and the run failed on "ffmpeg not found" without
+      # committing or journalling anything. Not unlimited either: a ZIP buried deeper is
+      # not processed at all (see deposited_files), so it must not trigger an install.
       - name: Check for voice ZIPs
         id: zips
         run: |
@@ -89,33 +67,22 @@ jobs:
         with:
           python-version: "3.12"
 
-      # The upload FOLDER is what says which play a file belongs to:
-      # voices -> plays/<id>/clips/*.mp3 plus its clips.json; a script is validated then
-      # promoted into its data/. A faulty file is removed and logged, never blocking.
       - name: Process uploaded files
         run: python scripts/process_uploads.py
 
       - name: Update the upload journals
         run: python scripts/update_history.py
 
-      # One manifest per play, then the index that lists them for the two root pages.
       # In that order: the index reads the manifests.
       - name: Rebuild the manifests and the plays index
         run: |
           python scripts/build_manifest.py
           python scripts/build_plays_index.py
 
-      # The printable script. It lives beside the play's other data, committed, because
-      # it is the one derived file whose rebuild costs 45 s of apt: typesetting it here,
-      # on the rare run that promotes a script, takes it off every deployment (build.yml
-      # used to rebuild all of them before publishing, and paid that install even for a
-      # copy of the template with no play at all).
-      #
-      # `git status` and not uploads_result.json: what has to be re-typeset is exactly
-      # what CHANGED on disk, which git already knows, and a promotion that rewrites a
-      # script byte for byte then rightly typesets nothing. `-uall` because a play born
-      # in this run has an untracked script.json, and git would otherwise report the
-      # folder rather than the file. Play ids are `[a-z0-9-]`, so no quoting to undo.
+      # git status and not uploads_result.json: what needs re-typesetting is exactly what
+      # CHANGED on disk, so a byte-identical promotion typesets nothing. -uall because a
+      # play born in this run has an untracked script.json and git would report the
+      # folder. Play ids are [a-z0-9-], so no quoting to undo.
       - name: Look for scripts promoted by this run
         id: typeset
         run: |
@@ -132,28 +99,16 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             texlive-latex-recommended texlive-lang-french texlive-fonts-recommended lmodern
 
-      # Distro TeX packages, and nothing else. tectonic was tried and dropped: it is
-      # faster in steady state (a 26 MB static binary, ~0.5 s of compilation against
-      # 0.25 s here, against ~300 MB of packages), but it required a pinned release URL,
-      # a sha256 to carry forward on every version bump, and an `actions/cache` to avoid
-      # re-paying 40 s of TeX file downloads. Three things that rot, in a repo meant to
-      # be copied by a troupe and left alone for years. The apt packages are signed by
-      # the distro, still resolve in ten years, and add no trust relationship.
+      # Distro TeX and nothing else: tectonic is faster but wants a pinned release URL, a
+      # sha256 to bump and an actions/cache, three things that rot in a repo a troupe
+      # copies and leaves alone for years.
       #
-      # The PDF is a convenience and never a condition: `continue-on-error` here, and
-      # `build_script_pdf.py` exits 0 even when LaTeX chokes, so a script whose text
-      # breaks the typesetting still gets promoted, journalled and published.
+      # The PDF is a convenience, never a condition: continue-on-error here and
+      # build_script_pdf.py exits 0, so a script that breaks LaTeX is still promoted.
       #
-      # DELETED FIRST, on purpose. The script has just changed, so the PDF sitting there
-      # describes a play that no longer exists. If the typesetting then fails, the commit
-      # carries the deletion and the download button 404s, which is the truth; leaving
-      # the old file would hand the troupe a document that silently disagrees with the
-      # play they are rehearsing, and this project has no channel to warn them.
-      #
-      # Through `env:` and not interpolated into the script: `${{ }}` inside `run:` is
-      # substituted before bash sees it, so a path in the repo would be executing here.
-      # Word splitting of `$PLAYS` is wanted (one argument per play), and
-      # `build_script_pdf.py` validates every id it is handed anyway.
+      # DELETED FIRST: the script just changed, so a failed typesetting must commit an
+      # absence (button 404s, which is the truth) rather than a document that silently
+      # disagrees with the play. Through env:, never interpolated into run:.
       - name: Typeset the printable script of the plays that changed
         if: ${{ steps.typeset.outputs.plays != '' }}
         continue-on-error: true
@@ -165,20 +120,15 @@ jobs:
           done
           python scripts/build_script_pdf.py $PLAYS
 
-      # `plays` carries everything belonging to a play (script, clips, journal,
-      # manifest, printable PDF); `data` only holds the plays index and the journal of
+      # plays: everything belonging to a play. data: the index plus the journal of
       # uploads no play claimed.
       - name: Commit the plays, the index and the consumed uploads
         run: |
           bash scripts/ci/commit_push.sh "🤖 Process uploads and refresh manifests" \
             plays data uploads
 
-  # Publishes the result. Jobs in the same run: the coordinator sees one green line.
-  #
-  # `contents: write` and not `read`: build.yml's last job writes the published site's
-  # address into the README, and a called workflow can never obtain more than its caller
-  # granted it. Called with `read`, that job would fail its push. Nothing else in
-  # build.yml touches the repository.
+  # contents: write and not read, because build.yml's readme job pushes and a called
+  # workflow never gets more than its caller granted.
   site:
     needs: process
     permissions:

@@ -1,67 +1,36 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { buildReplaceEdits, replaceOneEdit, searchScript } from "./search.js";
 
-// The state of the editor's search: the query, the two options, the replacement
-// text, and the ANCHOR of the current match.
-//
-// It lives here and not in SearchPanel, because changing rail section unmounts the
-// panel: a query lost while going off to rename a character would be a regression
-// felt at every moment.
-//
-// **The matches are always FRESH**, recomputed by `useMemo` from the script. Never
-// a snapshot taken on submit: a snapshot would not merely be stale, it would be
-// wrong, its offsets pointing into a text that no longer exists, so a click would
-// select the wrong portion and a replacement would cut at the wrong index. The cost
-// is of the order of tens of microseconds per keystroke, the folding being memoised
-// per line (see search.js).
-//
-// **The anchor is not a rank.** Ranks slide on every keystroke and the number of
-// matches changes on every replacement: we remember a POSITION (`{lineId,
-// lineOrdinal, start}`) and find its rank again per render. When no match is exactly
-// there (after a replacement, after a keystroke that changed the found text, after a
-// change of query, after a Ctrl+Z on a "Replace all"), `currentIndex` is -1: the
-// count is displayed, no row is marked as current, and "next" picks up where one had
-// got to. All of that falls out of the derived computation, without one line of code
-// per case.
+// State of the editor's search. It lives here and not in SearchPanel because changing
+// rail section UNMOUNTS the panel and would drop the query.
+// Matches are always recomputed from the script, never snapshotted: stale offsets
+// point into a text that no longer exists, so a click would select the wrong span.
+// The anchor is a POSITION and not a rank: ranks slide on every keystroke. When no
+// match sits exactly there, `currentIndex` is -1 and "next" picks up where you were.
 export default function useSearch({ script, dispatch, goToMatch, isOpen, onOpen, onClose, enabled }) {
   const [query, setQuery] = useState("");
   const [replacement, setReplacement] = useState("");
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [wholeWord, setWholeWord] = useState(false);
   const [current, setCurrent] = useState(null);
-  // The replacement is FOLDED AWAY by default, as in a code editor: most of the
-  // time one searches for a line in order to go and touch it up by hand, and a
-  // "Replace with" field that is always open offers a mass rewrite to someone who
-  // only wanted to find a passage again. The flag lives here and not in SearchPanel,
-  // like the query: changing rail section unmounts the panel, and reopening on a
-  // folded-away replacement would lose the replacement text already typed.
+  // Folded away by default: most searches are for a passage to touch up by hand.
+  // Here and not in SearchPanel, like the query, because the panel unmounts.
   const [replaceOpen, setReplaceOpen] = useState(false);
-  // A counter and not a boolean: Ctrl+F on an ALREADY open panel must refocus the
-  // field and select everything, even though no state changes. A line's focus
-  // request, on the other hand, does not need one: it clears itself as soon as it is
-  // honoured (see focusRequest in App.jsx).
+  // A counter and not a boolean: Ctrl+F on an ALREADY open panel must refocus and
+  // select even though no state changes.
   const [focusSeq, setFocusSeq] = useState(0);
 
   const options = useMemo(() => ({ caseSensitive, wholeWord }), [caseSensitive, wholeWord]);
 
-  // **The keystroke does not render the list in the same task as itself.** Searching
-  // is free (a few tens of microseconds, see search.js), but DISPLAYING several
-  // thousand results costs React the creation of as many components: measured, a
-  // blocking task of 329 ms for the query "e" and its 6216 matches, 88 ms from 750
-  // onwards. During that time the field does not refresh, so the keystroke stutters.
-  // `content-visibility` (editor.css) does nothing about it: it spares the layout and
-  // the painting, not React's work.
-  // `useDeferredValue` gives the query back to the field straight away and the list
-  // in an interruptible pass: React can slice it up and ABANDON the slice that is
-  // already stale when the next keystroke arrives. So we no longer pay for the render
-  // of the intermediate states ("v", "vo", "vou" while typing "vous").
-  // Rejected alternative: putting a ceiling back on the number of results displayed,
-  // that is to say taking back with one hand what "show everything" had just given.
+  // Searching is free; DISPLAYING thousands of results is not (measured: 329 ms
+  // blocking for "e" and its 6216 matches), and the field stutters meanwhile.
+  // `useDeferredValue` gives the field its keystroke at once and lets React abandon
+  // an already stale list pass. `content-visibility` does not help: it spares layout
+  // and paint, not React's work.
   const shownQuery = useDeferredValue(query);
   const shownOptions = useDeferredValue(options);
-  // The render on screen lags behind the field: that is what makes it possible to
-  // signal that without lying (the count and the list describe the SAME query, that
-  // of the last render, never the one being typed).
+  // The count and the list describe the LAST RENDERED query, never the one being
+  // typed, so this is what lets the panel say so without lying.
   const searching = query !== shownQuery || options !== shownOptions;
 
   const { matches, total, groups } = useMemo(
@@ -88,11 +57,9 @@ export default function useSearch({ script, dispatch, goToMatch, isOpen, onOpen,
     [goToMatch]
   );
 
-  // `focus` distinguishes the two gestures, and that is not a detail: Enter in the
-  // field and F3 must NOT take the keyboard, otherwise the caret goes off into a
-  // line textarea where Enter already creates the next line, and the key stops
-  // repeating. A click on a result, on the other hand, does focus: one is going to
-  // edit there.
+  // `focus`: Enter and F3 must NOT take the keyboard, or the caret lands in a line
+  // textarea where Enter creates the next line and the key stops repeating. A click
+  // on a result does focus.
   const next = useCallback(
     (focus = false) => {
       if (total === 0) return;
@@ -134,8 +101,8 @@ export default function useSearch({ script, dispatch, goToMatch, isOpen, onOpen,
       type: "SET_LINE_TEXTS",
       edits: [{ lineId: edit.lineId, text: edit.text }],
     });
-    // The anchor moves PAST what has just been written: "next" therefore cannot
-    // land back on the replacement itself, which may contain the query.
+    // The anchor moves PAST what was written, or "next" lands back on a replacement
+    // that contains the query.
     setCurrent(anchorOn(match, edit.nextStart));
   }, [matches, currentIndex, replacement, dispatch]);
 
@@ -146,8 +113,8 @@ export default function useSearch({ script, dispatch, goToMatch, isOpen, onOpen,
     if (edits.length === 0) return;
     dispatch({ type: "SET_LINE_TEXTS", edits });
     setCurrent(null);
-    // The displayed query and not the field's: it is the count announced by the
-    // confirmation that must be rewritten, and it comes from the displayed list.
+    // The DISPLAYED query, not the field's: the confirmation announced a count that
+    // came from the displayed list.
   }, [script, shownQuery, shownOptions, replacement, dispatch]);
 
   const openAndFocus = useCallback(() => {
@@ -155,23 +122,17 @@ export default function useSearch({ script, dispatch, goToMatch, isOpen, onOpen,
     setFocusSeq((n) => n + 1);
   }, [onOpen]);
 
-  // The page's shortcuts. An effect SEPARATE from the undo/redo one (App.jsx), which
-  // resubscribes on every edit (its dependencies are `canUndo`/`canRedo`): mixing
-  // them would resubscribe both on every keystroke and would tangle two dependency
-  // lists. Both listen in the bubbling phase and share disjoint keys, so the order of
-  // registration is immaterial.
+  // SEPARATE from the undo/redo effect (App.jsx), which resubscribes on every edit:
+  // merged, both would resubscribe on every keystroke. Disjoint keys, both bubbling,
+  // so registration order does not matter.
   useEffect(() => {
     if (!enabled) return;
     const onKeyDown = (e) => {
-      // An open ConfirmModal listens for Escape in the CAPTURE phase and calls
-      // preventDefault without stopPropagation: without this guard, an Escape meant
-      // to close the modal would also close the panel behind it. The guard lives
-      // here and not in the shared component, which the Recording page uses too.
+      // An open ConfirmModal calls preventDefault in the CAPTURE phase without
+      // stopPropagation: without this, its Escape would close the panel behind it.
       if (e.defaultPrevented) return;
 
-      // Ctrl+H, the companion of Ctrl+F: it opens the search WITH its replacement
-      // unfolded. Without it, a replacement folded away by default costs one more
-      // click every single time.
+      // Ctrl+H opens the search WITH the replacement unfolded.
       if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "h") {
         e.preventDefault();
         seedFromSelection(setQuery);
@@ -180,9 +141,8 @@ export default function useSearch({ script, dispatch, goToMatch, isOpen, onOpen,
         return;
       }
       if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "f") {
-        // We take over the browser's Ctrl+F, on purpose: its search does not read
-        // the value of textareas, and only one scene is mounted at a time, so it
-        // would find almost nothing.
+        // Taking over the browser's Ctrl+F on purpose: it does not read textarea
+        // values, and only one scene is mounted, so it would find almost nothing.
         e.preventDefault();
         seedFromSelection(setQuery);
         openAndFocus();
@@ -206,11 +166,8 @@ export default function useSearch({ script, dispatch, goToMatch, isOpen, onOpen,
   return {
     query,
     setQuery,
-    // The RENDERED query, the one the count, the list and `replaceAll` describe.
-    // Exposed because the "Replace all" confirmation must quote that one and not the
-    // field's: its title announces a number that comes from the deferred render, so
-    // quoting the keystrokes in progress would make a sentence that counts one query
-    // and names another.
+    // The RENDERED query: the "Replace all" confirmation must quote the one its count
+    // came from, not the keystrokes in progress.
     shownQuery,
     replacement,
     setReplacement,
@@ -235,9 +192,8 @@ export default function useSearch({ script, dispatch, goToMatch, isOpen, onOpen,
   };
 }
 
-// Ctrl+F from a line picks up the selected text, like a code editor: it is the
-// gesture one makes to look for "that other place where I wrote this". A multiline
-// selection is ignored, one does not search for it.
+// Ctrl+F from a line picks up the selected text, like a code editor. A multiline
+// selection is ignored.
 function seedFromSelection(setQuery) {
   const el = document.activeElement;
   if (!el || el.tagName !== "TEXTAREA" || !el.classList.contains("line-text")) return;

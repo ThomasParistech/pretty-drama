@@ -7,11 +7,8 @@ import { setSeekDragging } from "./useScrollToActiveCard.js";
 // focusable, arrow keys step one item, Home/End jump to the edges.
 export default function ProgressBar({ value, count, onSeek, disabled = false }) {
   const ref = useRef(null);
-  // Drag in progress, which is what the two surfaces that used to lag behind
-  // the mouse need to know: the thumb and the fill lose their transition
-  // (`dragging` class, see `.progress-container.dragging` in theme.css), and the
-  // list swaps the browser's smooth scrolling, which is too long, for a fast
-  // follow (`setSeekDragging`, see `useScrollToActiveCard.js`).
+  // Drag in progress: the thumb and fill drop their transition, and the list swaps
+  // smooth scrolling for a fast follow (`setSeekDragging`, useScrollToActiveCard.js).
   const [dragging, setDragging] = useState(false);
 
   const scrub = (clientX) => {
@@ -51,25 +48,18 @@ export default function ProgressBar({ value, count, onSeek, disabled = false }) 
         scrub(e.clientX);
       }}
       onPointerMove={(e) => {
-        // The same guard as `scrub` and `onPointerDown`, and here it bears on
-        // the SHARED flag: a gesture that cannot move the cursor has no business
-        // announcing a drag to the list. Without it, hovering a disabled bar
-        // with the button held down raised a flag that only the end of the
-        // gesture puts back down, and there is no end (nothing captured the
-        // pointer), so the next recentring was done as a fast follow instead of
-        // the smooth scroll.
+        // Repeat `scrub`'s guard, here bearing on the SHARED flag: hovering a
+        // disabled bar button-down would raise a flag nothing ever lowers (no
+        // pointer captured, so no `lostpointercapture`).
         if (disabled || count === 0 || e.buttons === 0) return;
-        // The first movement of the gesture switches both easings off: from then
-        // on the thumb and the active card stick to the pointer. The shared flag
-        // is raised again at every notch because the recentring consumes it
-        // (see `useScrollToActiveCard.js`).
+        // Raised at every notch because the recentring CONSUMES it
+        // (useScrollToActiveCard.js).
         setDragging(true);
         setSeekDragging(true);
         scrub(e.clientX);
       }}
-      // `setPointerCapture` guarantees this event at the end of the gesture
-      // (released or cancelled), so this is the only place that gives the
-      // easings back.
+      // `setPointerCapture` guarantees this fires at the end of the gesture, released
+      // or cancelled, so it is the only place the easings come back.
       onLostPointerCapture={() => {
         setDragging(false);
         setSeekDragging(false);

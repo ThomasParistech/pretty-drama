@@ -1,34 +1,8 @@
-/* Speaking share page. Uses only the shared tokens of theme.css: this page re-skins
-   nothing (only the editor does that), and REDEFINING a `--header-*` token is
-   forbidden here by the CI (scripts/tests/test_contracts.py). READING one stays
-   allowed, and the legend bar does it (`--header-shadow`), just as the editor reads that
-   same token for its panels: two stacked bands must carry the same shadow.
-
-   The three panels are shared `.card` elements, like everything that carries content
-   on this site. This file only lays them out and draws what the theme does not know
-   about: a ring, a legend, and a block of squares. */
-
-/* ----------------------------------------------------------- the shell
-   The page does not scroll as a whole: the header and the character bar hold the
-   top, and only the content below scrolls. They are the shared classes
-   `.page-shell` / `.page-scroll` (theme.css), set in JSX, and this page has NO rule
-   to write here: its `--shell-height` is the theme's default, `100dvh`, because it is
-   among the actors' cards, hence on the phone, where an address bar that retracts
-   really does change the usable height (Editing, which only opens with a mouse, is
-   the one that has to set it to `100vh`). */
-
-/* ------------------------------------------- the character bar
-   The legend of the page, under the header and above the content. A card background
-   and a bottom rule like the header it extends, and the same shadow as it, for the
-   same reason: it is under it that the content passes. The padding and the maximum
-   width are those of `.container` (20 px, 900 px), so the first name lines up on the
-   edge of the cards below and not on that of the window.
-
-   The height cap is not a precaution: the legend wraps, and a cast of fifteen
-   characters on a phone took five rows of 40 px there, that is half the screen before
-   even the first drawing. Beyond that, it scrolls (precedent of the Progress page's
-   log); its buttons being focusable, this scrolling area does not need the `tabIndex`
-   that the grid of the Progress page has to give itself. */
+/* Speaking share. Re-skins nothing: it READS shared tokens, which the CI allows for a
+   `--header-*` where redefining one is forbidden. Shell is `.page-shell`/`.page-scroll`
+   from JSX, at the default `100dvh`.
+   The character bar extends the header, same shadow. The height cap is not a precaution:
+   a cast of fifteen took five 40 px rows on a phone. Beyond it, it scrolls. */
 .stats-legend-bar {
   flex: none;
   background: var(--card);
@@ -44,11 +18,9 @@
   padding: 8px 20px;
 }
 
-/* The two pie charts side by side, the block at full width below: that is the layout
-   of the original PDF (viz/main.tex: two minipages at 0.45 then one at 0.8).
-   `minmax(0, 1fr)` and not `1fr`: the minimum of an `fr` track is the min-content
-   contribution of its content, and a legend carries character names, so the two
-   columns overflowed on a narrow window instead of sharing the space. */
+/* `minmax(0, 1fr)` and not `1fr`: an `fr` track's minimum is its content's min-content
+   contribution, and a legend carries character names, so the two columns overflowed a
+   narrow window instead of sharing it. */
 .stats-pies {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -56,17 +28,8 @@
   margin-bottom: 16px;
 }
 
-/* ------------------------------------------------------ header settings */
-
-/* The scope row has no rule specific to this page: they are the two selects of
-   `.selects-row` (theme.css), shared with the Rehearsal and Recording pages, and the
-   three levels of scope fit in their lists (see App.jsx). A third control lived here,
-   a "Whole play" toggle button with the metrics of a select; it has been removed,
-   along with its `.scope-all` class. */
-
-/* The only display setting of the page. It therefore does not look like the selects
-   above: no frame, a label and a number in soft ink, like the documentation sentences
-   of the header. What is being set is the slider, and it is alone. */
+/* The page's only display setting, hence not shaped like the shared selects above: no
+   frame, label and number in soft ink. */
 .stats-scale {
   display: flex;
   align-items: center;
@@ -75,11 +38,8 @@
   color: var(--ink-soft);
 }
 
-/* `accent-color` rather than rebuilding the track and the thumb: that is what the
-   project already does with the checkboxes (theme.css), for the same reason, a native
-   control that would render blue in the middle of a burgundy page. The width is fixed
-   rather than flexible: with `flex: 1` the slider took the whole row of the header,
-   and a one-pixel move was worth less than one word per line. */
+/* `accent-color` rather than rebuilding track and thumb, as with the checkboxes. Fixed
+   width: with `flex: 1` a one-pixel move was worth less than one word per line. */
 .stats-scale input[type="range"] {
   accent-color: var(--accent);
   flex: none;
@@ -92,9 +52,7 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-/* The number, in fixed-width digits and on a reserved width: without that the whole
-   row shifted by two pixels when going from 99 to 100 while the slider is being
-   dragged. */
+/* Fixed-width digits on a reserved width, or the row shifts from 99 to 100. */
 .stats-scale-value {
   font-variant-numeric: tabular-nums;
   min-width: 3ch;
@@ -107,15 +65,11 @@
 }
 
 .stats-panel-title {
-  /* font-family and font-weight come from the h1,h2,h3 rule of theme.css:
-     redeclaring them here gave the only serif headings of the site in 600 instead of
-     700. The same choice as `.dash-journal h2`. */
+  /* Family and weight come from the shared h1,h2,h3 rule. */
   font-size: 20px;
   color: var(--ink);
   margin: 0 0 14px;
 }
-
-/* ---------------------------------------------------------------- pie chart */
 
 .stats-donut-row {
   display: flex;
@@ -137,44 +91,33 @@
   stroke-width: 13;
 }
 
-/* A slice = a fraction of the circumference, set as a `stroke-dasharray` by the
-   component. The quarter turn brings the start back to noon, where a pie chart begins.
-   `butt` and not `round`: a rounded end bites into the neighbouring slice, so a small
-   slice looked bigger than its figure. */
+/* A slice is a `stroke-dasharray` set by the component; the quarter turn puts the
+   start at noon. `butt` and not `round`, a rounded end biting into its neighbour. */
 .stats-slice {
   fill: none;
   stroke-width: 13;
   stroke-linecap: butt;
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
-  /* A slice designates its character: it can be hovered and pressed, like its legend
-     row (see `hoverProps` in App.jsx). */
+  /* A slice designates its character, like its legend row. */
   cursor: pointer;
   transition: opacity 0.12s;
 }
 
-/* The other characters when one is highlighted. At 0.18 the slice blends into the
-   track of the ring, which is just underneath: the ring stays a ring, one still sees the
-   place of the chosen slice within the whole, and that is what the reference showed by
-   cutting one file per character. Not the 0.12 of the block: over there the dimmed words
-   form a mass, here an arc 13 px thick would disappear. */
+/* At 0.18 the slice blends into the track underneath and the ring stays a ring. Not
+   the 0.12 of the block, where the dimmed words form a mass. */
 .stats-slice.dimmed {
   opacity: 0.18;
 }
 
-/* The track is decoration, not a target: without that, the hole of the ring and the
-   sliver sticking out of a slice responded to the pointer without designating
-   anything. */
+/* Decoration, not a target: the hole of the ring responded to the pointer. */
 .stats-donut-track {
   pointer-events: none;
 }
 
-/* The size of these two lines is NOT here: it comes down from the JSX as a style,
-   because stats.js computes it so that they fit inside the hole of the ring
-   (`centerFontSize`, `TOTAL_SIZE`, `UNIT_SIZE`). Setting it in CSS as well would put the
-   same number in two places, which would fall out of agreement at the first
-   adjustment. The `tabular-nums` of the total are not a detail: it is the fixed width of
-   the digits that this computation assumes. */
+/* The size of these two lines is NOT here: stats.js computes it to fit the hole of the
+   ring and the JSX passes it as a style. `tabular-nums` is what that computation
+   assumes. */
 .stats-donut-total {
   text-anchor: middle;
   font-family: var(--font-ui);
@@ -189,13 +132,9 @@
   fill: var(--ink-soft);
 }
 
-/* ------------------------------------------------------------------ legend */
-
-/* The 190 px basis is what makes the legend WRAP under the ring when the card
-   narrows, instead of letting it be crushed beside it: `flex-wrap` decides on the basis,
-   not on the content, so with `flex: 1` and `min-width: 0` it never asked to wrap and
-   all the names were cut down to "C." at 375 px. The `min-width: 0` stays, so that it can
-   shrink AFTER having wrapped. */
+/* The 190 px basis is what makes the legend WRAP under the ring rather than be crushed
+   beside it: `flex-wrap` decides on the basis, not the content. `min-width: 0` stays so
+   it can shrink AFTER wrapping. */
 .stats-legend {
   flex: 1 1 190px;
   min-width: 0;
@@ -205,18 +144,9 @@
   font-size: 13px;
 }
 
-/* Four columns: the dot, the name (which takes the room and cuts itself off), the
-   count and the share, both right-aligned in fixed-width digits. That is the reasoning of
-   the Progress grid: a column of numbers reads without comparing them one by one.
-
-   And it is a BUTTON in all three legends (it was one under the block alone): they all
-   designate a character, so they all behave the same. They must not look like buttons at
-   rest (they are legends), hence the transparent background, and they must announce
-   themselves on hover.
-   The horizontal padding and the negative margin that cancels it go together: they give
-   the hover wash something to overflow the text with, without moving the dot or the
-   column of shares by a single pixel, which stay where they were when the row was a plain
-   list line. */
+/* A BUTTON in all three legends, which must not look like one at rest. The horizontal
+   padding and the negative margin cancelling it go together: the hover wash gets room
+   to overflow with, and no column moves by a pixel. */
 .stats-legend-row {
   display: grid;
   grid-template-columns: 10px minmax(0, 1fr) auto auto;
@@ -229,9 +159,8 @@
   border: none;
   border-radius: 6px;
   font: inherit;
-  /* `color` in addition to `font`: a `<button>` takes the browser's `buttontext`, so
-     without it the `currentColor` of the rule of the dot (`.stats-legend-dot`) was a
-     system black and not the ink of the page. */
+  /* `color` too: a `<button>` takes `buttontext`, so the dot's `currentColor` came out
+     system black instead of the page's ink. */
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -247,12 +176,8 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-/* The highlighted character: the background says which one, and not only the look of
-   the drawings above (`aria-pressed` says it to the voice too, but that one only follows
-   the settled choice, see `CharacterLegend`).
-   The class is called `lit` and not `active` because it follows the HOVER as much as the
-   choice: it is a state of appearance, and confusing it with the state of the button was
-   the initial trap. */
+/* `lit` and not `active`: it follows the HOVER as much as the choice, so it is a state
+   of appearance and not the state of the button. */
 .stats-legend-row.lit {
   background: var(--paper-dark);
   box-shadow: inset 0 0 0 1px var(--border);
@@ -266,25 +191,18 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  /* An inner rule, without which the dot of an 11th character (the light tints of the
-     palette, at 1.3:1 on the cream) would have no silhouette. Taken from the ink of the
-     theme through `currentColor` and not from a black written by hand: the dot thus
-     follows the page, and the file sets no hard-coded colour. */
+  /* Inner rule, or the light tints of the palette (1.3:1 on cream) have no silhouette.
+     Through `currentColor`, so the file sets no hard-coded colour. */
   box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 22%, transparent);
 }
 
-/* The name takes the room and cuts itself off with "…" (shared class `.truncate` from
-   theme.css, set in JSX): a name that goes on and on must not push the count and the
-   share out of the card. All that remains here is its ink. */
+/* Cut with "…" through `.truncate` (set in JSX); only the ink is local. */
 .stats-legend-name {
   color: var(--ink);
 }
 
-/* Except in the legend of the top bar, where the button is the width of its name:
-   nothing follows it on its line, so there is nothing to protect, and a cut name there
-   would be a button one cannot name. `white-space: normal` goes with it, and not only for
-   comfort: without it, the absence of a cut let a name that goes on and on stick out of
-   the bar, hence scroll the whole page at 375 px. */
+/* Except in the top bar, where the button is the width of its name. `white-space:
+   normal` with it, or a long name sticks out and scrolls the page at 375 px. */
 .stats-legend-flow .stats-legend-name {
   overflow: visible;
   white-space: normal;
@@ -307,15 +225,9 @@
   text-align: right;
 }
 
-/* The legend of the top bar spreads out in a row: it has no numbers to align, and it
-   has the whole width of the page. It WRAPS rather than scrolling sideways: a
-   single-line bar would have pushed the last names out of sight (with ten characters,
-   the row exceeds the 900 px of the content), and this legend is the only place from
-   which one isolates somebody, so nothing in it may hide. The price is its height, and
-   it is the cap of `.stats-legend-bar` that bounds it.
-   No top margin: it is the padding of the bar that spaces it from the header, and this
-   legend no longer has anything above it since it left the foot of the timeline
-   card. */
+/* The top bar's legend spreads in a row and WRAPS rather than scrolling sideways: it
+   is the only place one isolates somebody from, so nothing in it may hide. Its height
+   is bounded by the cap on `.stats-legend-bar`. */
 .stats-legend-flow {
   display: flex;
   flex-wrap: wrap;
@@ -323,38 +235,17 @@
 }
 
 .stats-legend-flow .stats-legend-row {
-  /* `auto` and not `minmax(0, 1fr)`: here the buttons are laid side by side in a row
-     that wraps, so each one must be the width of its name. With the flexible track of
-     the pie chart legend, they shared the width of the card and all the names were cut
-     down to "Cather…".
-     The width and the margin of the legend with numbers do not apply here for the same
-     reason: each button is the size of its content, there is no column to hold in
-     place, and only the left margin is kept so that the first of each row lines up on
-     the edge of the content. */
+  /* `auto` and not `minmax(0, 1fr)`: side by side in a wrapping row, each button must
+     be the width of its name. Only the left margin is kept, so the first of each row
+     lines up on the edge of the content. */
   grid-template-columns: 10px auto;
   width: auto;
   margin-inline: -6px 0;
 }
 
-/* ---- Under the thumb ----
-   These buttons are the ONLY control of the content of the page, and the page is open to
-   the whole troupe, hence on a phone. At 13 px of text and 3 px of padding they were
-   only 24 px high, 2 px apart. The one of the top bar goes up to 40 px, the size the
-   contract asks of touch controls (the Rehearsal page stops at 32 px for its checkboxes,
-   but it has four of them to fit on one line; here the legend wraps by itself). It keeps
-   them now that it is permanent furniture at the top of the page: it is the only control
-   of the content, shrinking it to gain height would amount to making it less safe to aim
-   at at the very moment when it is always under the thumb, and it is the cap of
-   `.stats-legend-bar` that bounds what it can take. The vertical padding does not enlarge
-   the box: it is `min-height` plus the centring that carry the target, so the rows do not
-   move further apart from each other than from the edge of the bar.
-
-   The two pie chart legends stop at 32 px, like the checkboxes of the Rehearsal page and
-   for the same reason: they are first of all tables of numbers, one column per quantity,
-   and with ten characters 40 px per row added 400 px to each of the two panels on a phone
-   screen, that is two screens of legend for two rings. What makes up for the missing
-   12 px is the width: the whole row is the target, from one edge of the card to the
-   other. */
+/* These buttons are the page's ONLY control of the content. The top bar's go to 40 px
+   through `min-height` plus centring, so the rows do not move apart; the two pie
+   legends stop at 32 px, 40 would add 400 px per panel on a phone. */
 @media (max-width: 800px) {
   .stats-legend-row {
     min-height: 32px;
@@ -371,37 +262,12 @@
   }
 }
 
-/* --------------------------------------------------------------------- block */
-
-/* The block takes ALL the width of the card, ALWAYS, and its height follows its
-   viewBox: a word therefore makes the same square everywhere, whatever the window.
-   The "Words per line" slider changes the GRANULARITY of the drawing (how many words
-   in a row, hence the size of a square and the height of the whole), never its
-   geometry: the block occupies the same width at 50 words per line as at 200, and the
-   two settings can be compared because only what is inside the frame has changed. A
-   drawing that resized as the slider moved read as if the setting were zooming the
-   card, which it is not.
-   That is what the rounded width cost, and why it is gone: the width used to be
-   snapped DOWN to a whole multiple of the number of columns
-   (`round(down, 100%, var(--stats-columns) * 1px)`, with the block centred on the
-   remainder), so as to give every square a whole number of pixels. It worked, and it
-   made the block up to one square narrower than its card, differently for every value
-   of the slider, which is exactly the coupling this drawing must not have. Dropped
-   with it: the `min-width` floor of one pixel per square, which existed only to keep
-   `round(down, A, B)` from returning ZERO once the card was narrower than the setting
-   (a block that disappeared in silence, legend and caption staying in place).
-   What the fixed width costs in exchange, and it is worth knowing before "fixing" it:
-   a square is no longer a whole number of pixels (120 columns in 820 px is 6.833 px
-   per word), and `crispEdges` snaps each edge to the nearest screen pixel, so cells
-   come out 7, 7, 7, 6, 7… A periodic one-pixel difference, which on a dense grid can
-   read as a faint screen across the block. The alternative is to give up
-   `crispEdges`, and it is worse: antialiasing lets the background through at every
-   boundary between two runs (a grey sliver, measured), and closing that means
-   overflowing each rectangle onto its neighbour, which in the dimmed state
-   (`.stats-block-rect.dimmed`, 12 % opacity) paints the overlaps twice and draws a
-   lattice over the whole mosaic.
-   No `border-radius`: `--radius` is 10 px and would crop the words of the four
-   corners, which are data. The block is a rectangle of squares, it ends square. */
+/* The block takes ALL the width of the card, ALWAYS: the slider changes the grain
+   inside the viewBox, never the drawing's width (the rounded width and its `min-width`
+   floor are gone). Price: `crispEdges` snaps cells, so one can be 1 px wider than its
+   neighbour; dropping it is worse (a grey sliver at every boundary, and overlapping to
+   close it paints a lattice in the dimmed state).
+   No `border-radius`: it would crop the corner words, which are data. */
 .stats-block {
   display: block;
   width: 100%;
@@ -409,27 +275,19 @@
   shape-rendering: crispEdges;
 }
 
-/* No `cursor: pointer` here, and that is deliberate: the mosaic follows the
-   highlighting but does not take it (see App.jsx, a word is 8 px at the default setting
-   and 4 px at the end of the travel). */
+/* No `cursor: pointer`: the mosaic follows the highlighting but does not take it, a
+   word being 8 px at the default setting and 4 px at the end of the travel. */
 .stats-block-rect {
   transition: opacity 0.12s;
 }
 
-/* One character isolated: the others fade instead of disappearing, so that his place
-   WITHIN the play stays legible (that is what the all_image_<name>.svg files of the
-   printed version showed). */
+/* The others fade instead of disappearing, so a place WITHIN the play stays legible. */
 .stats-block-rect.dimmed {
   opacity: 0.12;
 }
 
-/* ------------------------------------------------------- panel sentences */
-
-/* The sentence that says how to read the mosaic lives ABOVE it, between the title of
-   the panel and the drawing: on the whole play, the block is several screens long, so a
-   sentence placed at the foot of the card only reached those who had already scrolled all
-   the way down. It keeps the 14 px of the title on either side, without which it would
-   stick to the drawing it explains. */
+/* How to read the mosaic, ABOVE it: the block is several screens long, so a sentence
+   at the foot of the card only reached those who had scrolled all the way down. */
 .stats-caption {
   color: var(--ink-soft);
   font-size: 13px;
@@ -437,11 +295,8 @@
   margin: 0 0 14px;
 }
 
-/* A paragraph, not a flex box: `WarnIcon` already carries its own alignment class
-   (`.warn-icon` in theme.css, which sits it on the baseline and sets its right margin),
-   and that is how the four other warnings of the site slip it in at the head of a
-   sentence. A flex box added a second gutter on top of that margin and aligned the
-   triangle on the TOP of the line instead of its base. */
+/* A paragraph and not a flex box: `WarnIcon` carries its own alignment (`.warn-icon`),
+   and a flex box doubled the gutter and aligned the triangle on the top of the line. */
 .stats-warning {
   color: var(--warn);
   font-size: 13px;
@@ -449,16 +304,8 @@
   margin: 10px 0 0;
 }
 
-/* ---- Narrow window ----
-   The two pie charts go one under the other: at 375 px, two columns left 150 px per
-   card, where the ring and its legend do not fit side by side. It is the only switch the
-   page needs, the block and the legends being already fluid, and the scope row wrapping by
-   itself.
-   A tooling trap, for anyone who would think they see an overflow here: headless Chrome
-   refuses windows of less than 500 px, it renders the page at 500 px then crops the
-   screenshot to the requested size, which looks feature for feature like a row that
-   overflows. A rule has already been written then removed on the strength of that
-   illusion; measuring `document.documentElement.scrollWidth` dispels it. */
+/* Tooling trap: headless Chrome refuses windows under 500 px, renders at 500 then
+   crops, which looks exactly like an overflowing row. Measure `scrollWidth` first. */
 @media (max-width: 700px) {
   .stats-pies {
     grid-template-columns: minmax(0, 1fr);

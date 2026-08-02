@@ -2,21 +2,15 @@ import React from "react";
 import PageHeader from "./PageHeader.jsx";
 import { t } from "./locale.js";
 
-// Full-page waiting or blocking screen (manifest/script not loaded yet, error,
-// incompatible browser…), shared by every page: brand header + a word in a card
-// (`.page-notice`, theme.css).
-// BOTH STATES take the card, the waiting one as much as the message: they are
-// two moments of the same screen, and the second almost always follows the
-// first, so a card that only arrived afterwards would read as a page change.
-// `.loading-state` now only softens the ink on top of it.
-// `error` may be a string or JSX; `className` adds to the card (e.g.
-// "load-error" on the editor side, which widens it for its paragraphs).
+// Full-page waiting or blocking screen, shared by every page. Both states take the
+// card: they are two moments of one screen, and a card appearing only on error would
+// read as a page change. `error` may be a string or JSX.
 export default function PageState({
   page,
   title,
   error = null,
-  // A default parameter, so it is evaluated per call and picks up the locale
-  // rather than freezing a string at module load.
+  // Default parameter: evaluated per call, so it picks up the locale instead of
+  // freezing a string at module load.
   loading = t("common.loadingPlay"),
   className = "",
 }) {

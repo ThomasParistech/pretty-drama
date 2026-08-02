@@ -1,14 +1,5 @@
-"""Tests for data/plays.json, the only file sitting above the plays.
-
-Two things it must never do, both of them costing the coordinator their way back in:
-lose a play whose manifest is damaged (the chooser would no longer link to it, and
-its upload area is reached through it), and crash on a hand-edited manifest (the file
-is committed, hence editable in the repository like every file the pages read).
-
-`count_words` is the TWIN of `countWords` (src/stats/stats.js): the chooser writes a
-word count on the very play whose Speaking share page breaks that same count down per
-character, so the two tokenisers must cut alike. Its cases below therefore mirror
-those of `src/stats/stats.test.js`."""
+"""data/plays.json: never lose or crash on a play whose manifest is damaged.
+`count_words` twins `countWords` (stats.js); its cases mirror stats.test.js."""
 
 import json
 import sys
@@ -55,19 +46,14 @@ class TestCountWords(unittest.TestCase):
 
 
 class TestPlayEntry(unittest.TestCase):
-    """One entry, read on real files and in degraded mode."""
-
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.plays = Path(self.tmp.name) / "plays"
 
     def entry(self, manifest, play_id="le-malade"):
-        """Writes a manifest (a string is written verbatim, to forge a damaged file,
-        and None writes nothing at all) then reads the entry back.
-
-        `PLAYS_DIR` is patched in common, where `play_data_dir` re-reads it on every
-        call: that is what moves the play folders into the test folder."""
+        """Write a manifest (str verbatim to forge a damaged file, None writes none)
+        then read the entry back."""
         data = self.plays / play_id / "data"
         data.mkdir(parents=True, exist_ok=True)
         if manifest is not None:
@@ -81,20 +67,18 @@ class TestPlayEntry(unittest.TestCase):
         self.assertEqual(entry["title"], "Le Malade imaginaire")
         self.assertEqual(entry["language"], "fr")
         self.assertEqual(entry["characters"], 2)
-        # 7 + 3 + 2, `count_words` splitting on the apostrophe ("J'suis" is two).
+        # 7 + 3 + 2, splitting on the apostrophe ("J'suis" is two).
         self.assertEqual(entry["words"], 12)
         self.assertEqual(entry["lines"], 3)
         self.assertEqual(entry["recorded"], 1)
 
     def test_the_cast_is_the_manifests_list_not_the_characters_who_speak(self):
-        # A character written but not yet given a line is still a role to hand out,
-        # and that is what the card counts.
+        # A character with no line yet is still a role to hand out.
         manifest = {**MANIFEST, "characters": MANIFEST["characters"] + [{"id": "c-x", "name": "X"}]}
         self.assertEqual(self.entry(manifest)["characters"], 3)
 
     def test_a_missing_manifest_still_gives_an_entry(self):
-        # The worst display is a play VANISHING: the coordinator would have no path
-        # left to its upload area to repair it.
+        # A vanished play leaves no path to its upload area to repair it.
         entry = self.entry(None)
         self.assertEqual(entry["id"], "le-malade")
         self.assertEqual(entry["title"], "")
@@ -118,8 +102,6 @@ class TestPlayEntry(unittest.TestCase):
             self.assertEqual(entry["words"], 0, f"manifest: {manifest!r}")
 
     def test_nothing_of_the_journal_reaches_the_index(self):
-        # The card no longer says when the last upload happened: that date is read in
-        # each play's own log, on its Progress page, next to what it explains.
         entry = self.entry(MANIFEST)
         self.assertEqual(
             set(entry), {"id", "title", "language", "characters", "words", "lines", "recorded"}
@@ -133,15 +115,11 @@ class TestPlayList(unittest.TestCase):
             for name in ("zebre", "malade", "Majuscule", "transport"):
                 (plays / name / "data").mkdir(parents=True)
             with mock.patch.object(common, "PLAYS_DIR", plays):
-                # `Majuscule` is not a valid play id, so it names no play: the order
-                # is by id and the front end is what sorts by title.
+                # `Majuscule` is no play id; order is by id, the front sorts by title.
                 self.assertEqual(common.play_ids(), ["malade", "transport", "zebre"])
 
     def test_the_test_bench_is_a_play_everywhere_but_in_the_list(self):
-        """`plays/dev/` is built, deployed and reachable by URL like the others; it is
-        only the two root pages that must not offer it, so that a company sees nothing
-        but its own plays. The pipeline still sees it, which is what lets a developer try
-        a page on it without leaving traces in the troupe's journal."""
+        # Built and deployed like any play; only the root pages must not offer it.
         with tempfile.TemporaryDirectory() as tmp:
             plays = Path(tmp) / "plays"
             for name in (common.DEV_PLAY_ID, "malade", "transport"):

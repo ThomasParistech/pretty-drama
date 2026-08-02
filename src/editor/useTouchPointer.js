@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react";
 
-// Editing is the only computer-only page: one drags lines around with the mouse
-// and types long texts on the keyboard. The criterion is the PRIMARY POINTER, not
-// the width: a phone in landscape is 844 px wide (it would pass a width threshold)
-// and stays unusable, whereas a shrunken computer window keeps mouse and keyboard,
-// so it has no reason to be refused (the page's CSS already knows how to fold).
+// Editing is computer-only. The criterion is the PRIMARY POINTER, not the width: a
+// phone in landscape is 844 px and unusable, a shrunken window keeps mouse and keyboard.
 const TOUCH_QUERY = "(pointer: coarse)";
 
-// Listened to and not merely read at mount: a hybrid can switch from finger to
-// mouse (keyboard detached/reattached), and the device emulation of the developer
-// tools changes the answer without reloading the page.
+// Listened to, not read once: a hybrid switches finger/mouse, and devtools emulation
+// changes the answer without a reload.
 export default function useTouchPointer() {
   const [touch, setTouch] = useState(() => matches());
 
@@ -26,8 +22,8 @@ export default function useTouchPointer() {
   return touch;
 }
 
-// Without matchMedia (very old browser, rendering outside a browser), we do not
-// block: better a cramped editor than a page walled off by mistake.
+// Without matchMedia, do not block: better a cramped editor than a page walled off
+// by mistake.
 function mediaQuery() {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
     return null;

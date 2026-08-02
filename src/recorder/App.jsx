@@ -33,57 +33,23 @@ import T from "../shared/T.jsx";
 import useRecorder, { extensionForMimeType } from "./useRecorder.js";
 import "./recorder.css";
 
-// Recording page, structured like the rehearsal page: same header (act /
-// scene / character selects), same dialogue cards, same fixed bottom bar.
-// The play button becomes a mic button that records the SELECTED line (one
-// of MY lines only). Takes are kept across character switches, so one
-// session can record several characters and export them in a single ZIP.
-//
-// Each of my lines is in one of three states, labelled in the card corner from
-// `recorder.status.*`:
-//  - "todo"  : no take and no up-to-date published clip;
-//  - "fresh" : take made THIS session, and it STAYS so after the ZIP download
-//              ("already recorded" only becomes true once the coordinator has merged
-//              the ZIP and the site was republished);
-//  - "done"  : up-to-date published clip (manifest only).
-// The error codes `useRecorder` can return, and their sentence. The hook is
-// covered by `node --test`, so it cannot import `locale.js` (which reads the URL,
-// the storage and the browser as soon as it is imported): it returns a code, the
-// page puts it into words. The `_KEY` name is also what makes these keys get
-// picked up by the guard in scripts/tests/test_contracts.py.
+// Three states per line of mine (`recorder.status.*`): "todo", "fresh" (a take from THIS
+// session, which STAYS fresh after the download, "done" meaning merged and republished) and
+// "done" (an up-to-date published clip).
+
+// useRecorder returns a CODE, running under `node --test`. The `_KEY` suffix is what the
+// guard in test_contracts.py looks for.
 const MIC_ERROR_KEY = { mic: "recorder.micError" };
 
-// How many of a character's lines a set of lines holds, and how many of THOSE are
-// still to record. The two travel together because an option needs both: nothing
-// left to record and nothing to record at all are not the same claim (see
-// `optionSuffix`). Over the WHOLE play for the character menu: the same scope and
-// the same figure as the intro card, which is on screen at the very same moment
-// (no character chosen yet), so the two cannot say different things.
+// Both, because nothing left to record and nothing to record at all differ (`optionSuffix`).
 function countLines(lines, characterId, isTodo) {
   const own = lines.filter((l) => l.characterId === characterId);
   return { own: own.length, todo: own.filter(isTodo).length };
 }
 
-// What the THREE menus of the header stick to a label, act, scene and character
-// alike: how many lines are still to record there, a tick when they are all done,
-// or "no lines" when the character never speaks there. `null` for the act and the
-// scene menus as long as no character is chosen, and then nothing is stuck at all:
-// there is no "left to record" for nobody yet.
-//
-// The three cases, and NOT two: a tick on an act one has no line in claims the work
-// there is finished, when the truth is that there was never any. That reading costs
-// an actor the one thing this menu exists to give them, which act to open, and the
-// distinction has to hold everywhere the suffix is used, not only under the
-// character menu where it was first written.
-//
-// The three stay plain `<select>`s, and that is a decision rather than a
-// leftover. A hand-built listbox was written, and dropped: an `<option>` is drawn
-// by the BROWSER, so on a phone the field opens the system picker, which is worth
-// more to an actor than anything we could draw, and the act menu next door could
-// never have been made to match a list of ours. The price is that the mark can
-// only be a character, an option holding no element of ours and a background laid
-// on it being honoured by some engines and ignored by others: hence the bare `✓`
-// of `recorder.optionDone`, and no colour anywhere in these menus.
+// Three cases and not two: a tick on an act one never speaks in would claim work that never
+// existed. Plain `<select>`s so a phone opens the system picker, which is why the mark can
+// only be a character and carries no colour (an option honours no element of ours).
 function optionSuffix(counts) {
   if (counts == null) return "";
   if (counts.own === 0) return t("common.optionNote", { note: t("recorder.noLines") });
@@ -98,7 +64,7 @@ export default function App() {
   const [sceneIndex, setSceneIndex] = useState(0);
   const [characterId, setCharacterId] = useState(""); // "" = not chosen yet
   const [myIndex, setMyIndex] = useState(0);
-  // In-memory takes of this one-shot session: lineId -> {blob, ext, text, url}
+  // In-memory only, lineId -> {blob, ext, text, url}. Never persisted.
   const [takes, setTakes] = useState({});
   const [downloaded, setDownloaded] = useState(false);
 
@@ -116,7 +82,7 @@ export default function App() {
     () => (characterId === "" ? [] : lines.filter((l) => l.characterId === characterId)),
     [lines, characterId]
   );
-  // "Name (n/total)" on my cards: numbering shared with the Rehearsal page.
+  // Numbering shared with the Rehearsal page.
   const myNumbers = useMemo(() => myLineNumbers(lines, characterId), [lines, characterId]);
 
   const lineState = useCallback(
@@ -128,13 +94,10 @@ export default function App() {
   );
   const isTodo = useCallback((line) => lineState(line) === "todo", [lineState]);
 
-  // The scenes the menu offers: once a character is chosen, only the ones where
-  // they speak (`sceneChoices`, shared with the Rehearsal header).
+  // `sceneChoices` (shared with Rehearsal) returns INDEXES into the act, never renumbered.
   const choices = useMemo(() => sceneChoices(scenes, characterId), [scenes, characterId]);
 
-  // Choosing a character can hide the scene one is standing in. Left alone, the
-  // `<select>` would then carry a value no option holds, which a browser renders
-  // as a blank field: we move to the first scene the menu still offers.
+  // Choosing a character can hide the current scene, blanking a `<select>` on a dead value.
   useEffect(() => {
     if (choices.length > 0 && !choices.includes(sceneIndex)) setSceneIndex(choices[0]);
   }, [choices, sceneIndex]);
@@ -142,9 +105,7 @@ export default function App() {
   const safeMyIndex = Math.max(0, Math.min(myIndex, myLines.length - 1));
   const currentLine = myLines[safeMyIndex] ?? null;
 
-  // Entering a scene/character: land on the first line still to record.
-  // (Deliberately NOT re-run when takes change: finishing a take must not
-  // yank the position away.)
+  // NOT re-run on takes: finishing one must not yank the position away.
   useEffect(() => {
     const first = myLines.findIndex(isTodo);
     setMyIndex(first === -1 ? 0 : first);
@@ -153,24 +114,21 @@ export default function App() {
 
   useScrollToActiveCard(listRef, [safeMyIndex, actIndex, sceneIndex, characterId]);
 
-  // Takes only live in memory: leaving the page while some are not in a
-  // downloaded ZIP loses them (see the LeaveGuard at the end of the render).
+  // Takes live in memory only, so leaving before the ZIP loses them (cf. LeaveGuard below).
   const takenCount = Object.keys(takes).length;
   const hasUnexported = takenCount > 0 && !downloaded;
 
   const saveTake = (line, blob, mimeType) => {
     if (!blob || blob.size === 0) return;
     setTakes((prev) => {
-      // A single take per line: replace (and free) the previous one.
+      // One take per line: revoke the replaced object URL.
       if (prev[line.id]?.url) URL.revokeObjectURL(prev[line.id].url);
       return {
         ...prev,
         [line.id]: {
           blob,
           ext: extensionForMimeType(mimeType),
-          // RAW text captured at recording time: no normalization in the
-          // browser (single implementation lives in the GitHub Action, which
-          // normalizes both sides when comparing).
+          // RAW text: normalization has one implementation, in the Action.
           text: line.text,
           url: URL.createObjectURL(blob),
         },
@@ -179,10 +137,7 @@ export default function App() {
     setDownloaded(false);
   };
 
-  // Discarding a take from this session: the line goes back to the state it had
-  // before ("Already recorded" if a published clip is up to date, otherwise "To
-  // record"). Concerns ONLY the in-memory takes: an already published clip is not
-  // deleted from the browser, it lives in the repo.
+  // Only the in-memory take: a published clip lives in the repo and is never touched here.
   const deleteTake = (line) => {
     setTakes((prev) => {
       const take = prev[line.id];
@@ -191,10 +146,8 @@ export default function App() {
       const { [line.id]: _dropped, ...rest } = prev;
       return rest;
     });
-    // As after redoing a take: the already downloaded ZIP no longer describes
-    // the session (it still contains the one just discarded), so it has to be
-    // redone. If that was the last take, there is nothing left to download and
-    // the warning is not shown (takenCount === 0).
+    // The downloaded ZIP still holds the discarded take, so it no longer describes the
+    // session and has to be redone.
     setDownloaded(false);
   };
 
@@ -214,44 +167,28 @@ export default function App() {
 
   const downloadZip = async () => {
     const zip = new JSZip();
-    // The clips of the manifest: a {lineId: raw text} mapping, the audio member
-    // always being named {lineId}.{ext}, so the Action finds it from the id alone.
-    // (It used to be the manifest ITSELF, a bare mapping with nothing around it. The
-    // `play` field below wrapped it; `parse_manifest` still reads both forms, so the
-    // ZIPs downloaded before that field keep working.)
+    // ZIP contract with `parse_manifest` (process_uploads.py): {lineId: raw text} plus one
+    // {lineId}.{ext} per line.
     const clips = {};
     for (const [lineId, take] of Object.entries(takes)) {
       zip.file(`${lineId}.${take.ext}`, take.blob);
       clips[lineId] = take.text;
     }
-    // `play` names the play these voices come from. It does NOT serve to route the
-    // upload: it is the `uploads/<id>/` folder where the coordinator drops the file that
-    // does that, otherwise a damaged ZIP (unreadable, hence without a readable id
-    // either) would have no journal in which to say so. It serves to VERIFY it,
-    // and that is what makes a ZIP dropped in another play's folder be refused
-    // with a readable reason, instead of writing one play's voices over another's.
-    // Empty on a play whose script has no id yet: the Action then processes the
-    // ZIP without verifying anything, like the ZIPs from before this field.
+    // `play` VERIFIES, never routes: the folder routes, so a corrupt ZIP still gets a journal.
     zip.file("manifest.json", JSON.stringify({ play: manifest.id, clips }, null, 2));
     const blob = await zip.generateAsync({ type: "blob" });
-    // One session may record several characters: name the file after all of
-    // them (readability only, the pipeline works from line ids).
+    // Several characters can be recorded in one session; the name is readability only.
     const characterOfLine = new Map(manifest.lines.map((l) => [l.id, l.characterId]));
     const recordedIds = new Set(Object.keys(takes).map((id) => characterOfLine.get(id)));
     const names = manifest.characters
       .filter((c) => recordedIds.has(c.id))
       .map((c) => slugify(c.name, t("recorder.characterSlug")));
-    // The file's NAME follows the reader's locale, like everything else: the
-    // Action never reads it (the type comes from the extension, the clips from
-    // their id), so the ZIP contract does not depend on it.
+    // The name follows the reader's locale: the Action never reads it.
     const stem = t("recorder.zipName", { names: names.join("-") || t("recorder.zipFallback") });
     downloadBlob(blob, `${stem}.zip`);
-    // Line statuses do NOT change: a take stays `recorder.status.fresh` until
-    // the coordinator has merged the ZIP and the site was republished; only the
-    // save-state note reacts here.
+    // Statuses do not change: a take stays "fresh" until merged and republished.
     setDownloaded(true);
-    // Recording session is over: turn the mic-in-use indicator off.
-    // (Recording again simply reopens the stream.)
+    // Turns the mic-in-use indicator off; recording again reopens the stream.
     release();
   };
 
@@ -263,12 +200,7 @@ export default function App() {
     return <PageState page="recorder" />;
   }
 
-  // A final screen (the browser will not record), and not a wait: it therefore
-  // names the play like the page's header, which it can do since it comes after
-  // the manifest has loaded. The two states above, on the other hand, name nothing
-  // at all: the play is not known yet, and `PageHeader` renders no title when
-  // there is no title (never a page label in its place, it would get covered by
-  // the title a fraction of a second later).
+  // A final screen and not a wait, so it can name the play, unlike the two states above.
   if (!supported) {
     return (
       <PageState
@@ -282,17 +214,13 @@ export default function App() {
   // With no character chosen, the list gives way to the intro card.
   const visibleLines = characterId === "" ? [] : lines;
 
-  // Selects one of MY lines (never while recording).
   const selectLine = (line) => {
     if (!isRecording) setMyIndex(myLines.findIndex((l) => l.id === line.id));
   };
 
   return (
     <div className="recorder-page">
-      {/* The instructions are only passed once the character is chosen: before
-          that, they live in the intro card, in place of the lines (no
-          duplication). The header's compact sentence, on the other hand, is
-          always there. */}
+      {/* The hint waits for a character: the intro card carries it until then. */}
       <PlayHeader
         page="recorder"
         title={manifest.title || t("common.untitledPlay")}
@@ -309,10 +237,7 @@ export default function App() {
             }}
           >
             {acts.map((a, i) => {
-              // An act counts what all its scenes still owe, so the reader can go
-              // straight to the act where the work is without opening the scene
-              // menu of each one in turn. An act they are absent from says so
-              // rather than showing the tick of an act they have finished.
+              // An act totals its scenes, so one goes straight to where the work is.
               const counts =
                 characterId === ""
                   ? null
@@ -336,15 +261,11 @@ export default function App() {
             onChange={(e) => setSceneIndex(Number(e.target.value))}
           >
             {choices.map((i) => {
-              // Scenes the character is absent from are normally hidden, so the
-              // "no lines" case only surfaces here in `sceneChoices`' fallback,
-              // where the whole act is offered because they speak nowhere in it.
-              // That is exactly when it has something to say.
+              // "no lines" only surfaces in `sceneChoices`' whole-act fallback.
               const counts =
                 characterId === "" ? null : countLines(scenes[i].lines, characterId, isTodo);
               return (
-                // The value is the scene's rank in the ACT, not its rank in this
-                // list: the menu hides scenes, it never renumbers them.
+                // The value is the scene's rank in the ACT: hiding never renumbers.
                 <option key={i} value={i}>
                   {sceneLabel(t, i)}
                   {optionSuffix(counts)}
@@ -363,9 +284,7 @@ export default function App() {
           >
             <option value="">{t("common.whoDoYouPlay")}</option>
             {manifest.characters.map((c) => (
-              // Over the whole play, and not over the scene on screen: one reads
-              // this menu to find oneself, before knowing where one will start.
-              // Same three cases, and the same words, as the intro card just below.
+              // Over the whole play: same figure as the intro card, on screen at once.
               <option key={c.id} value={c.id}>
                 {c.name}
                 {optionSuffix(countLines(manifest.lines, c.id, isTodo))}
@@ -373,13 +292,7 @@ export default function App() {
             ))}
           </select>
         </div>
-        {/* The hook returns a CODE (cf. useRecorder.js, covered by `node --test`):
-            the sentence is composed here, and it is composed from the code
-            RECEIVED. Rendering it as such rather than displaying today's single
-            message is what makes the seam real: a second code would otherwise
-            display the mic error. Fallback on that same message if the code is
-            unknown, a page without a sentence being worth less than an
-            approximate sentence. */}
+        {/* From the code RECEIVED, so a second code cannot silently show the mic error. */}
         {micError && (
           <p className="mic-error">{t(MIC_ERROR_KEY[micError] ?? MIC_ERROR_KEY.mic)}</p>
         )}
@@ -392,10 +305,7 @@ export default function App() {
         {downloaded && takenCount > 0 && (
           <p className="zip-note done">✓ {t("recorder.downloadedNote")}</p>
         )}
-        {/* This message lives in the header (and not in the list) because the
-            header is sticky: it stays in sight while one walks through the other
-            characters' lines. It takes the place of the status legend, the two
-            being mutually exclusive. */}
+        {/* In the sticky header, and mutually exclusive with the status legend. */}
         {characterId !== "" && myLines.length === 0 && (
           <p className="no-lines-note">{t("recorder.noLinesInScene")}</p>
         )}
@@ -415,9 +325,6 @@ export default function App() {
       </PlayHeader>
 
       <main className="dialogue-container" ref={listRef}>
-        {/* With no character, the page is of no use (no line is "mine", the mic
-            stays disabled): we replace the list with a card that says what to do,
-            and that gets it done. */}
         {characterId === "" && (
           <IntroCard
             characters={manifest.characters}
@@ -444,13 +351,8 @@ export default function App() {
               ]
                 .filter(Boolean)
                 .join(" ")}
-              // Pointer shortcut only: no role="button" and no tabIndex here.
-              // The card already contains a real button (the take player), and a
-              // control inside a control is not exposed correctly to assistive
-              // technologies. The keyboard has better anyway: the "my line"
-              // arrows of the bottom bar and the slider walk through ALL my
-              // lines, where tabbing from card to card forced one to cross the
-              // whole scene to reach the controls.
+              // Pointer only, no role/tabIndex: the card holds a real button, and the
+              // keyboard walks my lines from the bottom bar.
               onClick={mine ? () => selectLine(line) : undefined}
             >
               <div className="dialogue-meta">
@@ -483,8 +385,7 @@ export default function App() {
                   seed={line.id}
                   fresh={state === "fresh"}
                   lineText={line.text}
-                  // Only a take from this session can be deleted (the player also
-                  // serves to replay a published clip, which is not ours).
+                  // Only a session take is deletable; the player also replays published clips.
                   onDelete={take ? () => deleteTake(line) : null}
                   deleteDisabled={isRecording}
                 />
@@ -494,8 +395,7 @@ export default function App() {
         })}
       </main>
 
-      {/* Control bar hidden as long as no character is chosen: it would only
-          offer a disabled mic and a disabled download. */}
+      {/* Hidden without a character: it would offer a disabled mic and download only. */}
       {characterId !== "" && (
         <div className="controls">
           {isRecording && (
@@ -503,8 +403,8 @@ export default function App() {
               <span className="rec-live-dot" />
               <span className="rec-live-label">{t("recorder.recordingLabel")}</span>
               <LiveWaveform analyser={analyser} />
-              {/* aria-hidden: role="status" announces "Recording" once; the
-                  running timer must not be read out again every second. */}
+              {/* aria-hidden: role="status" announces once, the timer must not repeat it
+                  every second. */}
               <span className="rec-live-time" aria-hidden="true">{formatTime(elapsed)}</span>
             </div>
           )}
@@ -514,16 +414,8 @@ export default function App() {
             disabled={isRecording}
             onSeek={setMyIndex}
           />
-          {/* The FOUR buttons of this row carry their tooltip on a `.btn-tip`
-              wrapper (theme.css) and never on themselves, for the reason that gave
-              birth to it in the Editing page: a `disabled` control receives no
-              mouse event (Chrome, Safari), so its own `title` is not displayed, and
-              the explanation never arrives at the moment when it is useful. Here
-              all four go dark (during a take, at the end of the run, with no line
-              chosen, with no take to export), and the download button is icon
-              only: without this wrapper, a mouse user had no way of learning what
-              it does. The accessible name, on the other hand, stays on the button:
-              it is the `aria-label`, which does not depend on its state. */}
+          {/* Tooltips on a `.btn-tip` wrapper: a disabled control receives no mouse event
+              (Chrome, Safari), so its own `title` never shows, and all four disable. */}
           <div className="buttons-row">
             <span className="controls-side">
               {myLines.length > 0 && (
@@ -532,8 +424,7 @@ export default function App() {
                 </span>
               )}
             </span>
-            {/* These arrows walk through MY lines only: same design as the "my
-                line" jumps of the Rehearsal page (.my-jump). */}
+            {/* My lines only, like the Rehearsal page's .my-jump. */}
             <span className="btn-tip" title={t("common.prevMyLine")}>
               <button
                 className="ctrl-btn my-jump"
@@ -586,18 +477,15 @@ export default function App() {
         saveLabel={t("recorder.leaveSave")}
         onSave={downloadZip}
       >
-        {/* The number of takes has left the sentence: the plural now only settles
-            the agreement (cf. `recorder.leaveBody`). */}
+        {/* The count is not in the sentence; the plural only settles the agreement. */}
         <p>{t("recorder.leaveBody", { count: takenCount })}</p>
       </LeaveGuard>
     </div>
   );
 }
 
-// Intro card, in place of the lines as long as no character is chosen: the page's
-// instructions, then the characters as buttons (the header's select alone read as
-// a blocked page). The "to record" counter helps everyone recognise themselves and
-// shows the work left.
+// In place of the lines until a character is chosen: the header's select alone read as a
+// blocked page.
 function IntroCard({ characters, lines, isTodo, onPick }) {
   const stats = characters.map((c) => {
     const own = lines.filter((l) => l.characterId === c.id);
@@ -606,8 +494,7 @@ function IntroCard({ characters, lines, isTodo, onPick }) {
   return (
     <div className="intro-card card">
       <h2 className="intro-title">{t("common.whoDoYouPlay")}</h2>
-      {/* The bold word is a PARAMETER and not a JSX fragment: cutting the sentence
-          around the <strong> would freeze the French word order in it. */}
+      {/* The bold word is a PARAMETER: splitting the sentence freezes French word order. */}
       <p className="intro-lead">
         <T
           k="recorder.intro.lead"
@@ -661,13 +548,10 @@ function IntroCard({ characters, lines, isTodo, onPick }) {
   );
 }
 
-// Live recording waveform: instead of a jittery oscilloscope, it accumulates
-// one amplitude bar at a regular cadence so the signal *builds up* left to
-// right (like a voice-memo), then scrolls once the canvas is full. Reads the
-// recorder's AnalyserNode only, never the stream. Colour = theme accent.
-const BAR_W = 3; // width of a bar (CSS px)
-const BAR_GAP = 2; // space between bars (CSS px)
-const SAMPLE_MS = 55; // cadence at which a bar is added, hence "build-up" speed
+// One amplitude bar per tick, building left to right. Reads the AnalyserNode, not the stream.
+const BAR_W = 3; // CSS px
+const BAR_GAP = 2; // CSS px
+const SAMPLE_MS = 55; // one bar per tick, hence the build-up speed
 
 function LiveWaveform({ analyser }) {
   const canvasRef = useRef(null);
@@ -677,23 +561,19 @@ function LiveWaveform({ analyser }) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     const dpr = window.devicePixelRatio || 1;
-    // Physical resolution = CSS size × density (sharp on HiDPI screens).
+    // Physical resolution = CSS size x density, for HiDPI.
     const cssW = canvas.clientWidth || 240;
     const cssH = canvas.clientHeight || 26;
     canvas.width = Math.round(cssW * dpr);
     canvas.height = Math.round(cssH * dpr);
-    // The stroke colour comes from the canvas's `color` property, which
-    // recorder.css sets to `var(--accent)`. Read on the ELEMENT and not as a
-    // variable on `:root`: `color` is an inherited property and always resolved, so
-    // there is no fallback left to write, where reading `--accent` required one and
-    // hardcoded the brand's burgundy back into the JS with a "keep in sync". A
-    // canvas does not inherit a stroke colour, but it does inherit `color`.
+    // `color` on the ELEMENT (recorder.css): inherited and always resolved, so no hardcoded
+    // fallback. A canvas inherits no stroke colour, but it does inherit `color`.
     const accent = getComputedStyle(canvas).color;
     const slot = (BAR_W + BAR_GAP) * dpr;
     const barW = BAR_W * dpr;
     const capacity = Math.floor(canvas.width / slot);
 
-    // History of the levels (0..1), the most recent at the end of the array.
+    // Levels 0..1, most recent last.
     const levels = [];
 
     const drawBars = () => {
@@ -702,11 +582,9 @@ function LiveWaveform({ analyser }) {
       const mid = h / 2;
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = accent;
-      // Bars aligned to the left: it fills up progressively, then scrolls.
       for (let i = 0; i < levels.length; i++) {
         const bh = Math.max(barW, levels[i] * (h * 0.9));
         const x = i * slot;
-        // Bar centred vertically (mirrored), rounded corners.
         ctx.beginPath();
         const r = barW / 2;
         ctx.roundRect(x, mid - bh / 2, barW, bh, r);
@@ -714,7 +592,7 @@ function LiveWaveform({ analyser }) {
       }
     };
 
-    // No analyser (Web Audio missing): a discreet, frozen rest line.
+    // Web Audio missing: a frozen rest line.
     if (!analyser) {
       ctx.fillStyle = accent;
       ctx.globalAlpha = 0.25;
@@ -729,7 +607,7 @@ function LiveWaveform({ analyser }) {
       raf = requestAnimationFrame(tick);
       if (now - last < SAMPLE_MS) return;
       last = now;
-      // RMS level of the current window (128 = silence).
+      // RMS of the current window (128 = silence).
       analyser.getByteTimeDomainData(buf);
       let sum = 0;
       for (let i = 0; i < buf.length; i++) {
@@ -737,7 +615,7 @@ function LiveWaveform({ analyser }) {
         sum += v * v;
       }
       const rms = Math.sqrt(sum / buf.length);
-      // Gain + ceiling: a normal voice fills the height nicely.
+      // Gain and ceiling tuned so a normal voice fills the height.
       levels.push(Math.min(1, rms * 5));
       if (levels.length > capacity) levels.shift();
       drawBars();
@@ -751,9 +629,7 @@ function LiveWaveform({ analyser }) {
 
 const WAVE_BARS = 26;
 
-// Fallback waveform: deterministic bar heights derived from the line id (no
-// randomness, so re-renders are stable). Shown only while the real peaks are
-// being decoded, or if decoding fails (e.g. unsupported codec).
+// Derived from the line id so re-renders are stable. Shown while the real peaks decode.
 function waveHeights(seed, count = WAVE_BARS) {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
@@ -765,9 +641,7 @@ function waveHeights(seed, count = WAVE_BARS) {
   return heights;
 }
 
-// Shared AudioContext for decoding: browsers cap the number of live contexts,
-// so one lazily-created instance decodes every clip. Created on first use
-// (needs a user gesture on some browsers, which a recording session always has).
+// One shared context: browsers cap the live ones. Lazy, some needing a user gesture.
 let sharedAudioCtx = null;
 function getAudioContext() {
   const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -776,9 +650,7 @@ function getAudioContext() {
   return sharedAudioCtx;
 }
 
-// Real waveform: fetch the audio at `src`, decode it, and reduce channel 0 to
-// `count` peak amplitudes normalised to the loudest bar. Returns percentages
-// (6%..100%) so silence still shows a sliver. Throws if fetch/decode fails.
+// Channel 0 as `count` peaks normalised to the loudest, floored at 6 % so silence shows.
 async function decodePeaks(src, count = WAVE_BARS) {
   const ctx = getAudioContext();
   if (!ctx) throw new Error("Web Audio unavailable");
@@ -804,22 +676,14 @@ async function decodePeaks(src, count = WAVE_BARS) {
   return peaks.map((p) => (max > 0 ? floor + (100 - floor) * (p / max) : floor));
 }
 
-// "m:ss", the universal format of a short excerpt: it is written the same way in
-// both languages of the site, and `Intl` does not expose a duration formatter
-// everywhere (`Intl.DurationFormat` is too recent for a troupe's browsers). What is
-// interface text here is what JOINS the elapsed time and the total, and that has
-// been handed to the catalogue (`recorder.player.time`). Since a take never goes
-// beyond a few minutes, there is no thousands separator to group either.
+// "m:ss" is written the same way in both languages, and Intl.DurationFormat is too recent
+// for a troupe's browsers. What JOINS elapsed and total is catalogue text.
 function formatTime(seconds) {
   const s = Math.floor(seconds);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-// In-card audio player: round play button + elapsed/total + waveform, plus a
-// discreet delete button at the far end when the clip is a take of THIS
-// session (`onDelete`).
-// `fresh` switches the vivid-green palette (`recorder.status.fresh`) vs the
-// greyed green of already-recorded lines.
+// In-card player. `onDelete` only for a take of THIS session; `fresh` switches the palette.
 function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
@@ -827,11 +691,8 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
   const [duration, setDuration] = useState(0);
   const [confirming, setConfirming] = useState(false);
   const fallback = useMemo(() => waveHeights(seed), [seed]);
-  // Real peaks decoded from the audio; falls back to the decorative bars while
-  // decoding or if decode fails.
   const [peaks, setPeaks] = useState(null);
   const bars = peaks ?? fallback;
-  // Fraction played (0..1): colours the waveform up to the playhead.
   const progress = duration > 0 ? Math.min(1, time / duration) : 0;
 
   useEffect(() => {
@@ -865,9 +726,7 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
       >
         {playing ? <PauseIcon /> : <PlayIcon />}
       </button>
-      {/* The two durations arrive already composed as "m:ss" (cf. formatTime); what
-          JOINS them comes from the catalogue, it has no business being a "/"
-          written here. */}
+      {/* What joins the two durations comes from the catalogue, never a "/" written here. */}
       <span className="player-time">
         {t("recorder.player.time", { elapsed: formatTime(time), total: formatTime(duration) })}
       </span>
@@ -901,8 +760,7 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
             onDelete();
           }}
         >
-          {/* Nothing more than the quotation, like the editor's line deletion: the
-              title says the gesture, the quotation says on what. */}
+          {/* The title says the gesture, the quotation says on what. */}
           <p className="confirm-quote">{fmt.quote(excerpt(lineText))}</p>
         </ConfirmModal>
       )}
@@ -913,16 +771,14 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => setTime(0)}
-        // Take replaced (src swapped): reset the stale elapsed time and the
-        // play state; no pause event is guaranteed on a source change.
+        // No pause event is guaranteed on a source change, so reset here.
         onEmptied={() => {
           setPlaying(false);
           setTime(0);
         }}
         onTimeUpdate={(e) => setTime(e.target.currentTime)}
         onLoadedMetadata={(e) => {
-          // Chrome quirk: MediaRecorder blobs report an Infinity duration
-          // until seeked past the end: force it, then rewind.
+          // Chrome: MediaRecorder blobs report Infinity until seeked past the end.
           if (!Number.isFinite(e.target.duration)) e.target.currentTime = 1e7;
         }}
         onDurationChange={(e) => {

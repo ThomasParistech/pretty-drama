@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
-// MediaRecorder output differs per browser (webm/opus on Chrome/Firefox,
-// mp4/aac on Safari). We do NOT care: the GitHub Action transcodes everything
-// to mp3 with ffmpeg. We only pick a supported container and a matching
-// file extension for the ZIP.
+// The container does not matter, the Action transcoding everything to mp3.
 const PREFERRED_MIME_TYPES = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"];
 
 function pickMimeType() {
@@ -22,21 +19,12 @@ export function extensionForMimeType(mimeType) {
   return "webm";
 }
 
-// One-shot in-memory recorder: start(lineId), then stop() resolves with the
-// recorded Blob. A single line records at a time.
-//
-// The mic stream is reused across takes (so the browser asks permission
-// once per session), but release() stops the tracks: call it when the
-// recording session is over (ZIP downloaded, component unmounted) so the
-// browser's mic-in-use indicator turns off.
+// start(lineId), stop() resolves with the Blob, one line at a time. The stream is reused
+// across takes so permission is asked once; release() turns the mic-in-use indicator off.
 export default function useRecorder() {
   const [recordingLineId, setRecordingLineId] = useState(null);
   const [error, setError] = useState(null);
-  // Elapsed seconds of the current take (0 outside a recording): feeds the
-  // displayed timer, which makes it plain that recording is under way.
   const [elapsed, setElapsed] = useState(0);
-  // AnalyserNode wired to the mic during the take: used to draw the live
-  // oscilloscope. null outside a recording.
   const [analyser, setAnalyser] = useState(null);
   const streamRef = useRef(null);
   const recorderRef = useRef(null);
@@ -52,8 +40,7 @@ export default function useRecorder() {
     setElapsed(0);
   }, []);
 
-  // Tears down the preview's Web Audio graph (the analyser never touches the
-  // mic's tracks: the capture stays driven by the MediaRecorder).
+  // Only the preview's Web Audio graph: the analyser never touches the mic's tracks.
   const stopAnalyser = useCallback(() => {
     setAnalyser(null);
     if (audioCtxRef.current) {
@@ -69,7 +56,6 @@ export default function useRecorder() {
     }
   }, []);
 
-  // Stop capturing (and the timer + preview) when the page unmounts.
   useEffect(
     () => () => {
       stopTimer();
@@ -87,7 +73,6 @@ export default function useRecorder() {
   const start = useCallback(async (lineId) => {
     setError(null);
     try {
-      // Reuse the stream across takes so the browser asks permission once.
       if (!streamRef.current || !streamRef.current.active) {
         streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
       }
@@ -103,16 +88,13 @@ export default function useRecorder() {
       recorderRef.current = recorder;
       recorder.start();
       setRecordingLineId(lineId);
-      // Live timer: realigned on the clock at every tick (robust to the
-      // throttling of background tabs).
+      // Realigned on the clock at every tick, so background-tab throttling cannot drift it.
       const startedAt = Date.now();
       setElapsed(0);
       timerRef.current = setInterval(() => {
         setElapsed(Math.floor((Date.now() - startedAt) / 1000));
       }, 250);
-      // Preview of the audio profile: wires an analyser as a tap off the mic
-      // (never connected to the output, hence no feedback howl). Optional: if Web
-      // Audio is missing, we record all the same, without the preview.
+      // A tap off the mic, never connected to the output (no feedback howl), and optional.
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (AudioCtx) {
@@ -129,11 +111,8 @@ export default function useRecorder() {
         /* preview unavailable: of no consequence for the capture */
       }
     } catch (err) {
-      // A CODE and not a sentence: this module is covered by `node --test`
-      // (useRecorder.test.js holds the contract of the audio extension), so it
-      // must import nothing that touches the DOM, and `locale.js` reads the URL,
-      // the storage and the browser as soon as it is imported. The page
-      // translates this code.
+      // A CODE: this module runs under `node --test` and must never import locale.js, which
+      // reads URL, storage and navigator on import. The page translates it.
       setError("mic");
       throw err;
     }

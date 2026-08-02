@@ -1,9 +1,4 @@
-"""The site links written into the README after a deployment.
-
-This runs once per copy of the template and then never again, which is exactly
-the kind of code nobody notices has rotted. And it is the only thing standing
-between a fresh copy and a README whose links all lead to `example.com`.
-"""
+"""Site links written into the README after a deployment."""
 
 from __future__ import annotations
 
@@ -20,7 +15,7 @@ SITE = "https://troupe.github.io/piece/"
 
 class TestNormalize(unittest.TestCase):
     def test_adds_the_trailing_slash(self):
-        # PATHS are appended to this, and SITE_HOME appends nothing at all.
+        # PATHS are appended to this.
         self.assertEqual(
             normalize("https://x.github.io/troupe"), "https://x.github.io/troupe/"
         )
@@ -56,7 +51,7 @@ class TestUpdate(unittest.TestCase):
         self.assertIsNone(update(once, SITE))
 
     def test_the_display_text_is_never_touched(self):
-        # It is French prose belonging to the README. The script owns targets only.
+        # French prose belongs to the README; the script owns targets only.
         text = "[Le site de la troupe](https://example.com) <!-- ref: SITE_HOME -->\n"
         self.assertIn("[Le site de la troupe](", update(text, SITE))
 
@@ -70,7 +65,7 @@ class TestUpdate(unittest.TestCase):
         self.assertIn("[amis](https://example.com/autre)", out)
 
     def test_a_ref_outside_the_site_namespace_is_not_ours(self):
-        # A fork may use the same comment syntax for something else entirely.
+        # A fork may use the same comment syntax for its own purposes.
         text = (
             "[a](https://example.com) <!-- ref: SITE_HOME -->\n"
             "[b](https://example.com) <!-- ref: PATH_A_001 -->\n"
@@ -86,7 +81,6 @@ class TestUpdate(unittest.TestCase):
         self.assertEqual(update(text, SITE).count(f"]({SITE})"), 2)
 
     def test_an_empty_target_is_filled_in(self):
-        # `[x]()` is a link this script owns, not a shape to walk past.
         text = "[x]() <!-- ref: SITE_RESPO -->\n"
         self.assertIn(f"[x]({SITE}respo.html)", update(text, SITE))
 
@@ -94,14 +88,13 @@ class TestUpdate(unittest.TestCase):
         self.assertIsNone(update("# Ma troupe\n[x](https://y.test)\n", SITE))
 
     def test_an_unknown_site_ref_stops_the_run(self):
-        # A typo in our own namespace. Silently skipping it would leave a link
-        # pointing at example.com in every copy of the template, for good.
+        # Skipping a typo would strand a link on example.com in every copy.
         text = "[x](https://example.com) <!-- ref: SITE_TYPO -->\n"
         with self.assertRaises(ValueError):
             update(text, SITE)
 
     def test_nothing_is_returned_when_it_refuses(self):
-        # `update` is pure: main() only ever writes what it hands back.
+        # `update` is pure: main() writes only what it hands back.
         text = "[x](https://example.com) <!-- ref: SITE_TYPO -->\n"
         before = text
         with self.assertRaises(ValueError):
@@ -114,7 +107,6 @@ class TestPaths(unittest.TestCase):
         self.assertEqual(PATHS["SITE_HOME"], "")
 
     def test_no_path_starts_with_a_slash(self):
-        # They are appended to an address that already ends with one.
         for ref, path in PATHS.items():
             with self.subTest(ref=ref):
                 self.assertFalse(path.startswith("/"))

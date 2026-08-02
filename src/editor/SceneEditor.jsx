@@ -17,10 +17,9 @@ import LineRow from "./LineRow.jsx";
 import { sceneLabel } from "../shared/structureLabels.js";
 import { fmt, t, translator } from "../shared/locale.js";
 
-// React.memo: only the scene being edited changes identity per keystroke. Hence
-// the play's language received as a STRING and the translator built here: a bound
-// `t`, passed as a prop, would be a fresh value on every render of the parent and
-// would make the whole scene re-render on every keystroke.
+// React.memo: only the edited scene changes identity per keystroke. Hence `language`
+// as a STRING with the translator built here: a bound `t` passed as a prop would be a
+// fresh value on every parent render and defeat the memo.
 export default React.memo(function SceneEditor({
   scene,
   actIndex,
@@ -48,14 +47,8 @@ export default React.memo(function SceneEditor({
 
   return (
     <div className="scene-block">
-      {/* The title and the count, nothing more: renaming the scene and deleting it
-          are gestures of the play's plan (the rail's "Structure" section), not of
-          the text one writes. The column says where one is, the rail shapes and
-          names.
-          The title is in the language of the PLAY (it is the document's heading,
-          see structureLabels.js), the line count in the reader's (that is
-          interface): the two sit side by side, and they really do say two
-          different things. */}
+      {/* Title in the PLAY's language (a document heading), count in the READER's
+          (interface). They sit side by side and say two different things. */}
       <div className="scene-header">
         <h3 className="scene-title">{sceneLabel(translator(language), sceneIndex)}</h3>
         <span className="scene-line-count">
@@ -84,10 +77,8 @@ export default React.memo(function SceneEditor({
                     </button>
                   </div>
                 )}
-                {/* `focusRequest` is passed as is to the targeted row, and `null`
-                    to all the others: `null` is shallowly equal to their previous
-                    render, so React.memo keeps skipping them, and only the
-                    targeted row renders again. */}
+                {/* `null` to every other row: shallowly equal to their last render,
+                    so React.memo keeps skipping them. */}
                 <LineRow
                   line={line}
                   characters={characters}
@@ -112,16 +103,14 @@ export default React.memo(function SceneEditor({
         </SortableContext>
       </DndContext>
 
-      {/* No "+ Line" button: once a first line exists, Enter inside a
-          line creates the next one (faster). Empty scenes still need a way
-          to create that first line. */}
+      {/* No "+ Line" button: Enter inside a line creates the next one. An empty
+          scene still needs a way to create the first. */}
       {scene.lines.length === 0 && canAddLines && (
         <button className="add-first-line-btn" onClick={() => addLine(actIndex, sceneIndex, null)}>
           {t("scene.firstLine")}
         </button>
       )}
-      {/* The name of the rail's section is INTERPOLATED from its own key: copying
-          it out here would make it drift on the first rename. */}
+      {/* Section name INTERPOLATED from its own key: a copy would drift. */}
       {!canAddLines && (
         <p className="scene-empty-hint">
           {t("scene.needCharacter", { section: fmt.quote(t("rail.characters")) })}

@@ -1,22 +1,13 @@
 name: build
 
-# Builds the site and deploys it to GitHub Pages, then writes the address it was
-# published at into the README. Nothing else: no journal is ever written here, and the
-# `build` job itself stays read-only (the one commit lives in its own `readme` job, with
-# its own `contents: write`, and is explained there). The journals have a single writer,
-# uploads.yml, which processes uploads and then calls this workflow (`workflow_call`),
-# because a commit pushed with the GITHUB_TOKEN triggers no workflow. That same rule is
-# what keeps the README commit from looping back into a build.
+# Builds the site, deploys it to Pages, then writes the address into the README.
+# Writes nothing else to the repo: the journals have a single writer, uploads.yml,
+# which processes uploads then calls this workflow (a GITHUB_TOKEN push triggers no
+# workflow, so the call must be explicit; the same rule keeps the README commit from
+# looping back here).
 #
-# `paths-ignore: uploads/**`: an upload is uploads.yml's business, and it ends up
-# calling us. Without this filter an upload would trigger both in parallel and publish
-# a site without the new voices.
-#
-# The coordinator never visits GitHub except to drop files, so this workflow writes
-# nothing for them here, no issue and no README status. Their only feedback is the upload
-# journal on the Dashboard page. Single exception, the `pages-check` job below: when
-# publishing is off, that journal sits on a site that does not exist, so the run summary
-# has to say so itself. It says it without failing, so GitHub sends no e-mail either.
+# paths-ignore uploads/**: without it an upload triggers both workflows in parallel
+# and publishes a site without the new voices.
 
 on:
   push:
@@ -31,59 +22,33 @@ permissions:
   pages: write
   id-token: write
 
-# One Pages deployment at a time. A DIFFERENT group from uploads.yml: a called
-# workflow that shares its caller's group is detected as a deadlock and cancelled.
+# A DIFFERENT group from uploads.yml: a called workflow sharing its caller's group is
+# detected as a deadlock and cancelled.
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  # Pages is switched on BY HAND, once, and no workflow can ever do it for the
-  # coordinator: creating a Pages site needs `administration:write`, a permission a
-  # workflow token cannot even ask for (hence the `enablement` input of configure-pages
-  # wanting a PAT or a GitHub App). So this job does not try. It looks, and it explains.
-  #
-  # It FAILS the run when publishing is off, and the e-mail GitHub then sends is wanted,
-  # not tolerated. The one case where that e-mail would have been unfair is the push that
-  # creates the repository, and that push is skipped below, so every run that reaches
-  # here belongs to a repository whose install protocol is over: an upload that cannot go
-  # online, or a manual publish that cannot publish, is a real problem, and this project
-  # has no other way to say so (the Dashboard journal is on the very site that is
-  # missing). Silence, or a green tick over a site that never went up, would be worse
-  # than a scare.
-  #
-  # A SEPARATE JOB, not a first step of `build`: it fails in four seconds instead of
-  # after tests, npm ci and the site build, GitHub names the failing job in the mail, so
-  # "Is the site allowed to be published" is already the diagnosis, and `build` shows as
-  # skipped rather than dragging a red herring of its own.
-  #
-  # `build_type` and not mere existence: Pages switched on but publishing FROM A BRANCH
-  # would let the deploy fail much later AND serve the repository root, whose index.html
-  # points at /src/chooser/main.jsx, so the address answers with a blank page rather than
-  # a 404. Same missing setting, worse symptom, caught here too.
-  #
-  # English, like every other workflow here. The coordinator reads French, but this text
-  # lives in the Actions tab and the README is what walks them to it; guiding them is the
-  # README's job, not this one's.
+  # No workflow can switch Pages on (needs administration:write), so this looks and
+  # explains. It FAILS when publishing is off: the coordinator's only other channel is
+  # the Dashboard journal, which lives on the very site that is missing, so GitHub's
+  # e-mail is the report. A separate job so it answers in four seconds and GitHub names
+  # it in that mail. build_type and not mere existence: publishing from a branch serves
+  # the repo root, whose index.html points at /src/, so a blank page instead of a 404.
   pages-check:
     name: Is the site allowed to be published
     runs-on: ubuntu-latest
-    # The push that CREATES main, i.e. the template being copied, is the ONE run this
-    # check does not judge, and skipping it is what earns the right to fail all the
-    # others. At that instant the repository is seconds old, Pages cannot be on yet, and
-    # nothing is supposed to publish: the README's step 2 has not happened. Failing there
-    # would mail an English "Run failed" to someone doing exactly as told, and succeeding
-    # there would put a green tick on the initial commit of a repository that has no
-    # site. Grey is the only honest answer, and a job-level `if` is the only way to get
-    # it, since this job cannot skip itself on an answer that exists only at runtime.
+    # The push that CREATES main is the one run not judged, and skipping it is what
+    # earns the right to fail all the others: README step 2 has not happened yet, so
+    # failing would mail an English "Run failed" to someone doing as told. A job-level
+    # `if` is the only construct that can skip on that.
     if: github.event.created != true
     steps:
       - id: check
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # `|| true`: the endpoint answers 404 when Pages was never switched on, and
-          # `gh api` exits non-zero, which would fail the step before it can explain.
+          # `|| true`: 404 when Pages was never switched on, and gh exits non-zero.
           build_type="$(gh api "repos/${{ github.repository }}/pages" --jq .build_type 2>/dev/null || true)"
           if [ "$build_type" = "workflow" ]; then
             exit 0
@@ -115,29 +80,24 @@ jobs:
             echo "without having to upload anything."
           } >> "$GITHUB_STEP_SUMMARY"
 
-          # The annotation carries the whole fix, because it is what shows on the run page
-          # and in the checks list without opening anything. The summary above is the
-          # same thing with room to breathe.
+          # The annotation carries the whole fix: it is what shows on the run page and
+          # in the checks list without opening anything.
           echo "::error title=$title::Settings > Pages > Source > GitHub Actions, then Actions > build > Run workflow. Full instructions in this run's summary."
           exit 1
 
   build:
     runs-on: ubuntu-latest
-    # The address Pages actually answered on, handed to the `readme` job below. It is
-    # only knowable at this point: it is built from the owner and the repository name,
-    # and both change the moment the template is copied.
+    # Only knowable here: <owner>.github.io/<repo>/, and both halves change when the
+    # template is copied.
     outputs:
       page_url: ${{ steps.deploy.outputs.page_url }}
-    # No `if`: `needs` alone is the gate. pages-check failing (publishing off) or being
-    # skipped (the repository being created) both leave this job skipped, which is what
-    # should show in the checks list either way. The distinction the coordinator needs is
-    # carried by pages-check's own row, red or grey.
+    # `needs` alone is the gate: pages-check failing or skipping both leave this
+    # skipped, and its own row (red or grey) carries the distinction.
     needs: pages-check
     steps:
-      # Explicit `ref`: when called from uploads.yml we run inside the run of a push
-      # made BEFORE the commit that workflow just pushed. Without this, checkout would
-      # take that original SHA and publish a site without the voices we just
-      # processed.
+      # Explicit ref: called from uploads.yml we run inside the run of a push made
+      # BEFORE the commit that workflow pushed, so the triggering SHA would publish a
+      # site without the voices just processed.
       - name: Checkout (head of the branch, not the triggering SHA)
         uses: actions/checkout@v7
         with:
@@ -146,11 +106,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
-          # Node 24 (LTS Krypton): Node 20 has been end-of-life since April 2026.
-          # The `npm ci` below therefore runs with npm 11, which no longer runs
-          # install scripts without explicit consent and skips esbuild's postinstall.
-          # No consequence: the binary comes from the `@esbuild/linux-x64` platform
-          # package and `vite build` is happy with it (verified).
+          # Node 24: 20 is end-of-life since April 2026. npm 11 skips esbuild's
+          # postinstall, harmless since the binary comes from @esbuild/linux-x64.
           node-version: 24
           cache: npm
 
@@ -165,52 +122,27 @@ jobs:
       - name: Run tests (normalization + statuses + ZIP contract + journal + contracts)
         run: python -m unittest discover -s scripts/tests -v
 
-      # Pure front logic: repairing a dubious script.json, the undo stack, shared
-      # helpers. `node --test` ships with Node, so there is no test dependency to
-      # install.
       - name: Run front tests (reducer, undo stack, shared helpers)
         run: npm test
 
-      # Manifests are derived: we rebuild them so the deployed site matches the
-      # script.json and clips.json files even after a hand edit in the repo, and the
-      # plays index with them (it reads the manifests, so it comes after). Nothing is
-      # committed here; only uploads.yml writes to the repo.
+      # Derived, so rebuilt here to survive a hand edit in the repo. The index reads the
+      # manifests, hence the order. Nothing is committed: only uploads.yml writes.
       - name: Rebuild the manifests and the plays index
         run: |
           python scripts/build_manifest.py
           python scripts/build_plays_index.py
 
-      # No LaTeX here, and no PDF built: `plays/<id>/data/script.pdf` is COMMITTED data
-      # now, typeset by uploads.yml the moment a script is promoted, and the `rsync`
-      # below carries it into dist/ like any other file of the play. It used to be
-      # gitignored and rebuilt right here, which meant every deployment paid 45 s of apt
-      # to re-typeset documents that had not changed, including the very first
-      # deployment of a copy of the template that has no play at all. The install now
-      # runs where the work is: on a script upload, a few times in a play's life.
-      #
-      # Bought with one guarantee lost, and it is written down beside the other one it
-      # breaks: manifest.json and plays.json are rebuilt just above SO THAT a hand edit
-      # in the repo cannot leave the site stale, and the PDF no longer enjoys that. A
-      # script.json edited directly on GitHub keeps its old PDF until the next upload.
-      # Same note in .gitignore and in scripts/build_script_pdf.py.
+      # No PDF built here: script.pdf is committed data, typeset by uploads.yml on
+      # promotion, and rsync carries it into dist/ like any other file. The counterpart
+      # is written in .gitignore, uploads.yml and build_script_pdf.py: a script.json
+      # edited by hand IN THE REPO keeps its old PDF until the next upload.
 
-      # `npm run build` writes the seven pages of each play itself, from the templates
-      # in `pages/` (see vite.config.js), so dist/plays/<id>/ already exists when we
-      # copy the play's data and clips into it.
-      #
-      # Excluding the `.html` files is not a precaution, it is necessary:
-      # `plays/<id>/*.html` are the templates instantiated verbatim in the worktree
-      # (gitignored), whereas the ones in `dist/` are the version Vite wrote, with
-      # hashed asset URLs. Copying over them would serve a site referencing
-      # `/src/rehearsal/main.jsx`, so a blank page.
-      #
-      # The two `mkdir -p` are not decorative: a repo with no play at all is a
-      # reachable state (a brand new fork, or the example play deleted to start
-      # clean), and then `plays/` does not exist, `dist/plays/` does not either (Vite
-      # wrote no play page), and `rsync` would fail on a missing source directory. The
-      # site must build anyway: it is precisely the site that carries the page where
-      # you create your first play. Same precaution as the earlier `mkdir -p clips`,
-      # and for the same reason.
+      # --exclude='*.html' is mandatory, not a precaution: plays/<id>/*.html are the
+      # worktree templates, the dist/ ones are Vite's with hashed asset URLs, so
+      # copying over them serves /src/rehearsal/main.jsx and a blank page.
+      # The mkdir -p cover a repo with no play at all (fresh fork): plays/ and
+      # dist/plays/ then do not exist and rsync fails on a missing source, yet that
+      # site is precisely the one carrying the create-a-play page.
       - name: Build site
         run: |
           npm run build
@@ -218,21 +150,14 @@ jobs:
           cp -r data dist/data
           rsync -a --exclude='*.html' plays/ dist/plays/
 
-      # No `enablement: true` here, and that is not an omission: it needs
-      # `administration:write`, which GITHUB_TOKEN cannot carry, so it could only ever
-      # answer 403 ("Resource not accessible by integration"), and the action THROWS on
-      # anything but a 409. It never enabled anything; it just moved the failure. The
-      # `pages-check` job is what guarantees Pages is on and building from a workflow,
-      # and this job does not even start otherwise, so there is nothing left to enable.
+      # No `enablement: true`: it needs administration:write, so it could only answer
+      # 403, and the action throws on anything but a 409. pages-check already
+      # guarantees Pages is on and building from a workflow.
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6
 
-      # Since v4 this action EXCLUDES hidden files from the artifact (there is an
-      # `include-hidden-files` to bring them back). No effect here, and to be kept
-      # that way: nothing the site serves starts with a dot. The dotfiles that reach
-      # dist/ are the `.gitkeep` files rsync carries along with the plays (one keeps
-      # `plays/` alive in git, one per play keeps its `clips/`), and none of them has
-      # any reason to be published.
+      # Since v4 this action excludes hidden files. Keep it that way: the only dotfiles
+      # reaching dist/ are the .gitkeep rsync carries along.
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v5
         with:
@@ -242,24 +167,11 @@ jobs:
         id: deploy
         uses: actions/deploy-pages@v5
 
-      # The two addresses, on the page the coordinator is ALREADY looking at. Step 3 of
-      # the README leaves them watching this run; without this they then had to walk to
-      # Settings > Pages to learn where their own site went, and the management address
-      # is not written there at all (it is the site's address plus `respo.html`, which
-      # only this project knows). GitHub does show the deploy URL on the run page, in
-      # the environment chip beside this job, which is small, unlabelled and easy to miss.
-      #
-      # `$GITHUB_STEP_SUMMARY` and not an `::notice::`: this is not a problem to report,
-      # it is the answer to "where is my site", it deserves room, and the summary is what
-      # opens at the top of the run. Same channel as `pages-check`'s failure, so the two
-      # things this workflow ever says to a human are said in the same place.
-      #
-      # English, like every workflow here, and for the same reason: the README is what
-      # walks the coordinator to this screen and it tells them what they will find.
-      # The same two addresses the `readme` job writes into the README, which is the
-      # only reason they are hard-coded here rather than read from PATHS: this table is
-      # what a coordinator sees at install time, and it must not depend on the README
-      # step having worked. Add a page here and it belongs in PATHS too.
+      # The two addresses on the page the coordinator is already looking at (README
+      # step 3 leaves them here). The management one exists nowhere else, being the
+      # site's plus respo.html. Hard-coded rather than read from PATHS so this table
+      # cannot depend on the README job having worked; add a page here and it belongs
+      # in PATHS too.
       - name: Print the site's addresses in the run summary
         env:
           PAGE_URL: ${{ steps.deploy.outputs.page_url }}
@@ -277,59 +189,36 @@ jobs:
             echo "have to come back here to find them."
           } >> "$GITHUB_STEP_SUMMARY"
 
-  # Points the README's site links at the site, and it is the ONE place this workflow
-  # touches the repository. The reason it has to: the address is
-  # `<owner>.github.io/<repo>/`, so it is unknown until a copy of this template exists
-  # and has deployed once. The template ships those links on `example.com` placeholders,
-  # each tagged with an invisible `<!-- ref: SITE_… -->` naming the page it wants; the
-  # script fills the targets in. Without this the coordinator's only recourse was
-  # Settings > Pages, a place the README otherwise spends its length keeping them out of.
-  #
-  # A SEPARATE JOB, like `pages-check`, and for the same kind of reason: `build` keeps
-  # `contents: read`, the commit is visibly one gesture with one permission, and the
-  # checkout it commits from is a clean one rather than the build's worktree full of
-  # rebuilt manifests and a dist/.
-  #
-  # No loop: a push made with the GITHUB_TOKEN triggers no workflow (the same rule that
-  # forces uploads.yml to call this file explicitly). And even without it there would be
-  # nothing to loop on, `update_readme_urls.py` being a no-op from the second run on.
-  #
-  # `continue-on-error`, so it can never redden a run that PUBLISHED. Same trade as the
-  # printable PDF in uploads.yml: the site is what matters, the convenience beside it is
-  # not worth an English "Run failed" in the coordinator's mailbox. Nothing is lost by
-  # giving up either: the links still point at the placeholder, so the next deployment
-  # tries again.
+  # The ONE place this workflow touches the repo. The README ships its site links on
+  # example.com placeholders tagged `<!-- ref: SITE_… -->`; the script fills the
+  # targets in, the address being unknowable before a deployment.
+  # A separate job so `build` keeps contents: read and commits from a clean checkout
+  # rather than a worktree full of rebuilt manifests. continue-on-error so a
+  # convenience can never redden a run that PUBLISHED; the next deployment retries.
+  # No loop: a GITHUB_TOKEN push triggers no workflow, and the script is a no-op from
+  # the second run on.
   readme:
     name: Write the site address into the README
     needs: build
     runs-on: ubuntu-latest
     continue-on-error: true
-    # The only `contents: write` of this workflow, and the reason uploads.yml has to
-    # delegate it on its `site` job: a called workflow can never obtain more than its
-    # caller granted. `pages: read` is for the fallback below.
+    # The only contents: write here, and the reason uploads.yml must delegate it on its
+    # `site` job: a called workflow never gets more than its caller. pages: read is for
+    # the fallback below.
     permissions:
       contents: write
       pages: read
     steps:
-      # `ref` for the same reason as the build's checkout: called from uploads.yml we
-      # run inside the run of a push made BEFORE the commit that workflow pushed, and
-      # committing on top of that older SHA would mean rebasing away a whole upload.
+      # Same ref reason as the build's checkout: committing on the older SHA would
+      # rebase away a whole upload.
       - name: Checkout (head of the branch, not the triggering SHA)
         uses: actions/checkout@v7
         with:
           ref: ${{ github.ref_name }}
 
-      # Two sources for one address, because losing it here means the README keeps
-      # pointing at `example.com` and only another deployment can fix that. `page_url`
-      # is the deployment's own answer and the one to trust; the Pages API is asked only
-      # if that came back empty, which is what a renamed output of a future
-      # deploy-pages would look like. An empty result from both is a real failure and
-      # says so, rather than handing the script a blank it would reject anyway.
-      #
-      # Through `env:`, not interpolated into the script: `${{ }}` inside `run:` is
-      # substituted before bash sees it. The values come from GitHub here, not from the
-      # repo, but the habit is the protection. `$GITHUB_REPOSITORY` is a built-in, so
-      # there is no third interpolation to write.
+      # Two sources: losing the address leaves the links on example.com until another
+      # deployment. page_url is the one to trust; the Pages API covers a renamed output
+      # of a future deploy-pages. Through env:, never interpolated into the script.
       - name: Point the README's links at the address the deployment answered on
         env:
           PAGE_URL: ${{ needs.build.outputs.page_url }}
@@ -346,7 +235,6 @@ jobs:
           fi
           python3 scripts/ci/update_readme_urls.py "$url"
 
-      # No-op when the links already point at the site, which is every run but the first
-      # of a copy of the template: `commit_push.sh` finds an empty index and stops.
+      # No-op once the links point at the site: commit_push.sh finds an empty index.
       - name: Commit the README if its links changed
         run: bash scripts/ci/commit_push.sh "🤖 Write the site address into the README" README.md

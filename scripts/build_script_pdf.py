@@ -1,40 +1,12 @@
-"""Build plays/<id>/data/script.pdf: a play's script, laid out for printing.
+"""Build plays/<id>/data/script.pdf, a play's script laid out for printing.
 
-One PDF per play, in the play's folder, like its manifest: the download button of
-its Progress page designates it as a relative path, without knowing which play it is
-running in.
+Derived from script.json but COMMITTED, written by uploads.yml alone on the runs that
+promote a script: rebuilding it every deploy cost 45 s of LaTeX install. So nothing
+refreshes it at deploy time, and a script.json edited by hand keeps its old PDF until
+the next upload. Two rules not to undo: this script CANNOT FAIL the deployment (it
+complains on stderr and exits 0), and the text is ESCAPED before entering the .tex.
 
-Derived from its script.json, like manifest.json: nothing is stored here, everything
-gets recomputed. Unlike manifest.json, it is COMMITTED, and written by uploads.yml
-ALONE, on the runs that actually promote a script (`git status` names them). It used
-to be gitignored and rebuilt by build.yml before every deployment, which cost 45 s of
-LaTeX install per deploy to re-typeset documents nobody had touched.
-
-The consequence to keep in mind, written here because this is the file one reads
-before changing any of it: NOTHING refreshes this PDF at deploy time any more. The
-manifests are rebuilt on every deployment precisely so a hand edit in the repo cannot
-leave the site stale; a script.json edited directly on GitHub keeps its old PDF until
-the next upload promotes one. Run this script by hand, or re-upload the script.
-
-The layout reuses that of the troupe's LaTeX script (two-column article, babel
-french, name in bold capitals followed by a colon): the PDF must look like the
-script the actors have already held in their hands. The packages loaded without
-serving anything have gone, among them pgfornament, which dragged all of TikZ
-behind it for nothing.
-
-Two rules not to undo:
-
- - **This script cannot fail the deployment.** LaTeX stops over trifles, and a
-   failed run is recounted nowhere (build.yml writes neither issue nor journal,
-   cf. CLAUDE.md): the coordinator would only see the site stop updating itself. A
-   failed compilation complains on stderr and hands back control with code 0, the
-   site ships without its PDF.
- - **The text of the lines is escaped** before it enters the .tex. It is typed into
-   the editor by a human, so a "50 %" or an "R&D" will eventually turn up, and
-   those characters are code for LaTeX.
-
-Usage: python scripts/build_script_pdf.py [play id ...]
-       (with no argument: every play in the repo)
+Usage: python scripts/build_script_pdf.py [play id ...]  (no argument: every play)
 """
 
 import json
@@ -48,18 +20,11 @@ from pathlib import Path
 from common import is_play_id, play_data_dir, play_ids
 from build_manifest import sanitize_script
 
-# pdflatex first: it is the CI's engine (TeX packages from the distribution,
-# cf. build.yml) and the one of the troupe's original LaTeX script, so the PDF
-# obtained locally is the one that will be published. tectonic next, for whoever
-# already has it: the rendering is equivalent, down to the space before the colon
-# (in XeTeX, it follows the French rule more closely). Neither of the two is
-# required to import this module: the tests are about the .tex produced, not about
-# the PDF.
+# pdflatex first: it is the CI's engine, so a local PDF matches the published one.
 ENGINES = ("pdflatex", "tectonic")
 
-# Characters that are code for LaTeX. A single re.sub pass, never a str.replace per
-# character: replacing "\" first would reintroduce backslashes that the following
-# replacements would escape again.
+# Characters that are code for LaTeX. ONE re.sub pass, never a str.replace per
+# character: replacing "\" first would reintroduce backslashes the rest escapes again.
 _ESCAPES = {
     "\\": r"\textbackslash{}",
     "&": r"\&",
@@ -74,25 +39,15 @@ _ESCAPES = {
 }
 _ESCAPE_RE = re.compile("[" + re.escape("".join(_ESCAPES)) + "]")
 
-# Whitespace is brought back to a single space at the same time, and that is not
-# cosmetic: an EMPTY LINE becomes a \par for TeX, and \lhead (running title) and
-# \MakeUppercase (character name) do not tolerate an end of paragraph inside their
-# argument. LaTeX stops there, and since this module cannot fail the deployment, the
-# PDF of the whole play vanishes without a word. A title or a name spread over two
-# paragraphs does not come from the editor (two one-line fields) but script.json is
-# hand-editable in the repo, and every consumer must survive it. Since LaTeX brings
-# any run of whitespace back to a single space anyway, there is nothing to lose in
-# doing it here: a line even gains from staying a single paragraph, therefore from
-# keeping its character name at its head (an empty line in the middle compiled, but
-# the end of the line started again with no speaker).
+# Whitespace collapsing is not cosmetic: an EMPTY LINE is a \par, which \lhead and
+# \MakeUppercase refuse, and LaTeX stopping there loses the whole play's PDF silently.
 _BLANKS_RE = re.compile(r"\s+")
 
 
 def latex_escape(text) -> str:
     if not isinstance(text, str):
         return ""
-    # Flatten first: normalizing whitespace introduces no special character, the
-    # other way round would not be true.
+    # Flatten first: collapsing whitespace adds no special character.
     return _ESCAPE_RE.sub(lambda m: _ESCAPES[m.group()], _BLANKS_RE.sub(" ", text))
 
 
@@ -146,26 +101,11 @@ PREAMBLE = r"""\documentclass[10pt,a4paper,twocolumn]{article}
 """
 
 
-# The act and scene labels, DERIVED from their rank, and babel's language.
-#
-# Mirror of src/shared/structureLabels.js and of the catalogues: an act and a scene
-# have no title in script.json, so the PDF composes its own. It composes them in
-# the language of the PLAY (`language`) and not in that of a reader: on screen an
-# act label is navigation, on paper it is the document. The numeral is the same on
-# both sides, so nobody loses their place.
-#
-# A guard in scripts/tests/test_contracts.py compares these words with those of the
-# JS catalogues: letting them diverge would print "Acte II" under a screen that
-# announces "Act II".
-#
-# `babel`: NO apt package to add for English, and that is verified rather than
-# assumed. `english.ldf` comes from `texlive-latex-base`, which
-# `texlive-latex-recommended` (already installed by build.yml) depends on; only
-# French requires its own package, `texlive-lang-french`. An English play therefore
-# typesets without touching the workflow. Should a third language be added one day,
-# this is the first place to check: without its `.ldf`, LaTeX fails, and since this
-# script returns 0 even on failure (cf. below), the PDF would vanish without a word
-# to the coordinator.
+# Act and scene labels, derived from rank, in the language of the PLAY. Mirror of
+# src/shared/structureLabels.js and the catalogues, compared by test_contracts.py.
+# `babel`: English needs no apt package (english.ldf ships with texlive-latex-base),
+# only French does. Check this first when adding a language: a missing .ldf fails LaTeX
+# and this script exits 0, so the PDF would vanish silently.
 STRUCTURE = {
     "fr": {
         "act": "Acte %s",
@@ -183,10 +123,7 @@ STRUCTURE = {
     },
 }
 
-# Roman numerals for the acts, Arabic ones for the scenes, like the printed script
-# this module reproduces. Mirror of `romanNumeral` (structureLabels.js), including
-# its giving up beyond 39: no play has forty acts, and a wrong Roman numeral would
-# read worse than a number.
+# Mirror of `romanNumeral` (structureLabels.js), including giving up beyond 39.
 _TENS = ("", "X", "XX", "XXX")
 _UNITS = ("", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX")
 
@@ -198,8 +135,8 @@ def roman_numeral(n: int) -> str:
 
 
 def render_tex(script: dict) -> str:
-    """script.json -> complete LaTeX source. A pure function: this is what the tests
-    read, there is no need to open a PDF to check the layout."""
+    """script.json -> complete LaTeX source. Pure, so the tests check layout without
+    opening a PDF."""
     script = sanitize_script(script)
     words = STRUCTURE.get(script["language"], STRUCTURE["fr"])
     title = script["title"].strip() or words["untitled"]
@@ -207,41 +144,16 @@ def render_tex(script: dict) -> str:
 
     out = [PREAMBLE % {"running_title": latex_escape(title), "babel": words["babel"]}]
 
-    # Title page: the title alone, centred. No cast, no place and no date,
-    # script.json carries none (and an invented front page would age badly).
     out.append(r"\onecolumn")
-    # Centring a title on an empty page requires three precautions, each of them
-    # measured on the rendered PDF (the gap can be read by eye on a page that
-    # contains nothing else):
-    #  - `\newgeometry`: the body's geometry reserves 1.5 inch at the top for the
-    #    running header against 0.75 at the bottom, and `nohead,nofoot` removes on
-    #    top of that the header and footer height geometry would keep all the
-    #    same. Without it the text block goes down half an inch, and the title
-    #    with it.
-    #  - `\topskip` set to zero: TeX places the first box of a page at least
-    #    \topskip from the top of the block, which pushes the title downwards
-    #    without giving anything back to the spring below.
-    #  - a `\vbox to \textheight`: two `\vspace*{\fill}` on either side still left
-    #    about a dozen pixels of discrepancy (constant, whatever the length of the
-    #    title). A box of the exact height of the block with named springs places
-    #    the title to the pixel, over one line as well as two.
-    #    `\hsize\textwidth` gives it back the full width: in a two-column
-    #    document, it would otherwise be worth half a page and the title would be
-    #    cut.
-    #
-    # The springs are in a 3:5 ratio and not 1:1: the title sits at the OPTICAL
-    # centre, at two fifths of the height, not at the geometric middle. A title
-    # mathematically centred on an otherwise empty page reads as having fallen too
-    # low (the eye places the middle of a page higher than the ruler does). The
-    # neighbouring ratios were compared on the rendering: 1:1 falls, 1:2 rises too
-    # much and the page becomes unbalanced by the emptiness below.
+    # Three measured precautions for centring the title on an empty page: nohead,nofoot
+    # (the body reserves 1.5 in at the top, dropping the title half an inch); `\topskip`
+    # to zero; and a `\vbox to \textheight` with named springs, `\hsize\textwidth`
+    # restoring the full width. Springs are 3:5 so the title sits at the OPTICAL centre;
+    # measured, 1:1 reads as fallen and 1:2 rises too much.
     out.append(r"\newgeometry{margin=0.75in,nohead,nofoot}")
     out.append(r"\begin{titlepage}\setlength{\topskip}{0pt}%")
-    # 36 pt and not 52: that is the size at which "Transport de Femmes" fits on one
-    # line. The original LaTeX script asked for 52 pt and was silently given
-    # 35.83 pt instead (non-vector T1 fonts), so that is indeed the size the troupe
-    # has always seen printed; lmodern would honour 52 pt for real and would cut the
-    # title in two.
+    # 36 pt, not 52: the size at which "Transport de Femmes" fits on one line, and what
+    # the troupe has always seen (the original 52 pt was silently served at 35.83 pt).
     out.append(
         r"\noindent\vbox to \textheight{\hsize\textwidth\vskip 0pt plus 3fil\centering "
         + r"{\fontsize{36}{42}\selectfont\scshape "
@@ -249,31 +161,21 @@ def render_tex(script: dict) -> str:
         + r"\par}\vskip 0pt plus 5fil}%"
     )
     out.append(r"\end{titlepage}")
-    # Blank verso. Printed double-sided, the text must begin on a recto page:
-    # without this page, the first line falls on the back of the title.
-    # \null is mandatory, a page empty of all content would be dropped.
+    # Blank verso so printing starts on a recto. `\null`: an empty page is dropped.
     out.append(r"\thispagestyle{empty}")
     out.append(r"\null")
-    # \restoregeometry AFTER the verso, never before: it causes a page break, and
-    # placed right after the title page it shipped one more empty page, that one
-    # with the running title and its number at the top.
+    # \restoregeometry AFTER the verso: placed before, it shipped an extra empty page.
     out.append(r"\restoregeometry")
     out.append(r"\twocolumn")
-    # Numbering starts again at 1 on the first page of text: the title and its verso
-    # are not pages of the script.
     out.append(r"\setcounter{page}{1}")
     out.append("")
 
     empty = True
-    # A play in a single act does not display its act title: it distinguishes
-    # nothing, and the reader of a one-act script has only scenes to find. It stays
-    # in script.json (the editor always works act by act), it is the layout that
-    # keeps quiet about it.
+    # A one-act play does not show its act title: it distinguishes nothing.
     show_acts = len(script["acts"]) > 1
     for act_index, act in enumerate(script["acts"]):
         act_title = words["act"] % roman_numeral(act_index + 1)
-        # Every act but the first opens a page: \clearpage and not \newpage, which
-        # would only move to the next column.
+        # \clearpage and not \newpage, which would only move to the next column.
         if act_index > 0:
             out.append(r"\clearpage")
         if show_acts and act_title:
@@ -281,8 +183,6 @@ def render_tex(script: dict) -> str:
 
         for scene_index, scene in enumerate(act["scenes"]):
             scene_title = words["scene"] % (scene_index + 1)
-            # The rule separates two scenes: it has nothing to separate before the
-            # first one, where the act title has just gone by.
             if scene_index > 0:
                 out.append(r"\hlinecol")
             if scene_title:
@@ -293,16 +193,12 @@ def render_tex(script: dict) -> str:
                 if not text:
                     continue
                 empty = False
-                # Unknown character: "?", as in build_manifest. An orphan id is a
-                # script to repair, not a reason to lose the line.
+                # Unknown character: "?", as in build_manifest, never a lost line.
                 who = names.get(line["characterId"], "?")
                 out.append(r"\speak{" + latex_escape(who) + "} " + latex_escape(text))
             out.append("")
 
     if empty:
-        # In the language of the PLAY, like the fallback title and the headings:
-        # it is the only sentence this module writes of its own accord, and it was
-        # the only one to stay in French on the paper of an English play.
         out.append(r"\textit{" + latex_escape(words["empty"]) + "}")
         out.append("")
 
@@ -318,8 +214,7 @@ def _engine():
 
 
 def compile_pdf(tex: str, out_path: Path) -> bool:
-    """Compile the .tex and put the PDF at out_path. Returns False (without raising)
-    if anything at all is missing or fails: the caller must be able to carry on."""
+    """Compile the .tex to out_path. Returns False without raising on any failure."""
     engine = _engine()
     if engine is None:
         print(
@@ -351,16 +246,12 @@ def compile_pdf(tex: str, out_path: Path) -> bool:
                 cwd=tmp_dir,
                 capture_output=True,
                 timeout=180,
-                # errors="replace" is mandatory: pdflatex's log spits font file
-                # names back out in latin-1, and a strict decoding raises in the
-                # middle of subprocess.run, therefore well before we could have
-                # looked at the return code.
+                # errors="replace" is mandatory: pdflatex logs font names in latin-1 and
+                # a strict decode raises inside subprocess.run.
                 encoding="utf-8",
                 errors="replace",
             )
-        # Deliberately broad: this module's promise is that it cannot fail the
-        # deployment, and a LaTeX compilation has too many ways of ending badly for
-        # us to enumerate them.
+        # Broad on purpose: this module cannot fail the deployment.
         except Exception as exc:  # noqa: BLE001
             print(f"{engine} could not be launched ({exc}): PDF not generated", file=sys.stderr)
             return False
@@ -368,8 +259,7 @@ def compile_pdf(tex: str, out_path: Path) -> bool:
         produced = tmp_dir / "script.pdf"
         if done.returncode != 0 or not produced.exists():
             print(f"{engine} failed: PDF not generated", file=sys.stderr)
-            # The last lines of the log tell the error; the rest is package loading
-            # noise.
+            # The last lines hold the error; the rest is package-loading noise.
             for row in (done.stdout or "").strip().splitlines()[-25:]:
                 print("  " + row, file=sys.stderr)
             return False
@@ -380,9 +270,8 @@ def compile_pdf(tex: str, out_path: Path) -> bool:
 
 
 def build_one(play_id: str) -> None:
-    """ONE play's PDF, in its folder. Never raises and never exits: cf. the module
-    header, this file is a convenience and not a condition of deployment, and a play
-    whose script is unreadable must not take the other plays' PDFs down with it."""
+    """ONE play's PDF. Never raises and never exits: one unreadable script must not take
+    the other plays' PDFs down."""
     data = play_data_dir(play_id)
     out_path = data / "script.pdf"
     try:
@@ -402,18 +291,13 @@ def build_one(play_id: str) -> None:
 
 
 def main() -> None:
-    # With no argument, every play; with some, the ones named. The old argument was
-    # an OUTPUT path, which no longer makes sense: the destination is derived from
-    # the play, and what one wants to choose while developing is the play being
-    # recompiled while it is being reread.
     wanted = sys.argv[1:] or play_ids()
     for play_id in wanted:
         if not is_play_id(play_id):
             print(f"{play_id} is not a play id: skipped", file=sys.stderr)
             continue
         build_one(play_id)
-    # No sys.exit(1): this PDF is a convenience, not a condition of deployment. See
-    # the module header.
+    # No sys.exit(1): this PDF is a convenience, not a condition of deployment.
 
 
 if __name__ == "__main__":

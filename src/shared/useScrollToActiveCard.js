@@ -1,53 +1,32 @@
 import { useEffect } from "react";
 
-// True for as long as a pointer is DRAGGING the handle of the bottom bar
-// (`ProgressBar`, its only producer, through `setSeekDragging`). A module flag
-// rather than a prop: the producer and the consumer are these two shared modules,
-// neither of the two pages has any decision to make about it (and the site being
-// multi-page, a document never carries more than one bar).
+// True while a pointer DRAGS the bottom bar's handle. A module flag and not a prop:
+// producer and consumer are these two shared modules, and a document has one bar.
 let dragging = false;
 
 export function setSeekDragging(on) {
   dragging = on;
 }
 
-// Following the drag: 90% of the way in 110 ms. This is what replaces
-// `scrollIntoView({ behavior: "smooth" })` DURING a drag, and the two problems
-// must not be confused. The browser's smoothing is not too gentle, it is too LONG:
-// several hundred milliseconds, restarted from the current position at every new
-// notch, so the list can only, by construction, lag behind the mouse, and this is
-// precisely the gesture where you are watching where you are arriving. An abrupt
-// scroll fixed the lag but made the list jump from card to card. Here the target
-// moves and the position catches up with it in a tenth of a second: it glides, and
-// the eye does not measure the delay. The approach is exponential and not a fixed
-// duration, deliberately: a new notch RESTARTS nothing, it moves the target, hence
-// no discontinuity in the middle of the gesture. It carries on after the release,
-// long enough to finish centring the last card.
+// Follow the drag: 90% of the way in 110 ms, replacing smooth `scrollIntoView`, whose
+// several hundred ms restart at every notch and leave the list lagging the mouse.
+// Exponential and not a fixed duration on purpose: a new notch MOVES the target rather
+// than restarting, so there is no discontinuity mid-gesture.
 const FOLLOW_MS = 110;
 let followTarget = 0;
 let followFrame = 0;
 let followAt = 0;
 
-// The two pages that carry this list scroll with the DOCUMENT (the control bar is
-// `fixed`, `.dialogue-container` has no `overflow`). A future list inside its own
-// scrolling container would require walking up to the first scrolling ancestor;
-// `scrollIntoView`, on the other hand, does that by itself, so the discrete jumps
-// below do not have this limit.
+// Both pages scroll with the DOCUMENT (the bar is `fixed`, the container has no
+// `overflow`). A list in its own scroller would need walking up to the scrolling
+// ancestor; `scrollIntoView` below does that by itself.
 const scroller = () => document.scrollingElement;
 
-// The scroll position that centres the card. Relative to the CURRENT position,
-// hence correct even if an animation is in flight: we read the gap left to close,
-// never a memorised absolute coordinate.
-//
-// **Bounded to the scroller's real travel**, and this is not caution: a card from
-// the very beginning or the very end of the play CANNOT be centred, there is no
-// travel beyond the edges, so the wanted position falls outside [0, travel]. The
-// browser, for its part, clamps any assignment to `scrollTop`, so the gap never
-// closed: the loop below started over on every frame with a constant `delta`,
-// indefinitely, until the next discrete jump. Dragging the bottom bar to its first
-// notch, that is, the gesture that returns to the start of the scene, therefore
-// left the page burning one frame every 16 ms for as long as it was left open, and
-// that on the two pages that are opened by touch for a whole rehearsal.
+// Scroll position that centres the card, read from the CURRENT position so it stays
+// correct with an animation in flight.
+// CLAMPED to the real travel: a card at either end cannot be centred, the browser
+// clamps the `scrollTop` assignment, and the loop below would then spin one frame
+// every 16 ms forever with a constant `delta`.
 function centerTarget(card, el) {
   const rect = card.getBoundingClientRect();
   const wanted = el.scrollTop + rect.top + rect.height / 2 - el.clientHeight / 2;
@@ -67,12 +46,8 @@ function followStep(now) {
   }
   const before = el.scrollTop;
   el.scrollTop += delta * (1 - Math.pow(0.1, dt / FOLLOW_MS));
-  // The second exit, the one that holds when the travel changes UNDER the loop
-  // (the sticky header collapsed mid-gesture, a font that finishes loading): the
-  // target being fixed for the duration of the step, a frame that has not moved by
-  // a single pixel will not move any more on the next one. The clamping in
-  // `centerTarget` is enough at the start of the gesture, this one catches it in
-  // flight.
+  // Second exit, for the travel changing UNDER the loop (header collapsed mid-gesture,
+  // font finishing loading): a frame that moved zero pixels will not move on the next.
   if (el.scrollTop === before) {
     followFrame = 0;
     return;
@@ -95,29 +70,23 @@ function followCard(card, instant) {
   followFrame = requestAnimationFrame(followStep);
 }
 
-// Keeps the list's `.dialogue-card.active` centred on screen whenever the
-// selection changes (shared by the Rehearsal and Recording pages).
-// `deps`: the indices whose change should trigger the re-centring.
+// Keeps `.dialogue-card.active` centred when the selection changes (Rehearsal and
+// Recording). `deps`: the indices whose change re-centres.
 export default function useScrollToActiveCard(listRef, deps) {
   useEffect(() => {
     const card = listRef.current?.querySelector(".dialogue-card.active");
     if (!card) return;
-    // The rest of the site neutralises its animations under "reduced motion" (the
-    // `prefers-reduced-motion` block of theme.css): a smoothed scroll is exactly
-    // what that setting asks to remove, and it cannot be reached from CSS since it
-    // comes from scrollIntoView.
+    // Read here and not in CSS: a scroll smoothed from JS is out of reach of the
+    // `prefers-reduced-motion` block.
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     if (dragging) {
-      // The flag is CONSUMED: a drag raises it again at every notch, so the
-      // discrete jumps get their smoothing back by themselves if the end of the
-      // gesture goes missing (pointer lost, handle disabled along the way).
+      // The flag is CONSUMED: the drag raises it again at every notch, so smoothing
+      // comes back by itself if the end of the gesture goes missing.
       dragging = false;
       followCard(card, reduced);
       return;
     }
-    // A discrete jump (click on the track, arrows of the bottom bar, keyboard,
-    // playback moving on): the browser's smoothing, which is what it was put there
-    // for. A follow loop still in flight would fight against it.
+    // Discrete jump: the browser's smoothing. A follow loop in flight would fight it.
     if (followFrame) cancelAnimationFrame(followFrame);
     followFrame = 0;
     card.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });

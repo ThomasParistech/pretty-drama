@@ -1,27 +1,9 @@
-"""Build plays/<id>/data/manifest.json: the single file the app pages read.
+"""Build plays/<id>/data/manifest.json, the single file the app pages read.
 
-One manifest PER PLAY, in the play's folder: a play's pages live in that folder
-too, so they read `data/manifest.json` as a relative path, exactly as back when the
-site knew only one play. That is what makes it unnecessary for any page to know
-which play it is running in.
-
-Stateless join of the play's data/script.json (source of truth, produced by the
-editor) and data/clips.json (state of processed clips, maintained by
-process_uploads). Copied in here too is the journal of THIS play's latest uploads
-(data/history.json, kept by update_history.py): the pages read only this file, so
-this is where everything they display gets assembled.
-
-Status per line (spec §6):
- - clip exists and normalized text matches  -> "ok"
- - clip exists but normalized text differs  -> "perime"   ("À refaire")
- - no clip for this line id                 -> "manquant" ("À enregistrer")
-
-Orphan clips (id no longer present in the script) are simply not part of the
-manifest: the mp3 may linger in clips/ but is never served to the app.
-
-script.json is hand-uploadable (and hand-editable) on github.com, so this
-script must tolerate the same malformed entries the editor's sanitizeScript
-tolerates: a missing key must never crash the whole workflow run.
+Stateless join of script.json, clips.json and history.json, one manifest per play.
+Status per line: "ok", "perime" (clip exists, normalized text differs), "manquant".
+script.json is hand-editable on github.com, so this reader tolerates the same malformed
+entries the editor's sanitizeScript does.
 """
 
 import json
@@ -36,19 +18,10 @@ def _is_id(value) -> bool:
     return isinstance(value, str) and len(value) > 0
 
 
-# A character colour as the editor writes it: a hex from the shared palette
-# (src/shared/characterColors.js). We validate the FORM and not the membership of
-# the palette: the list of twenty colours has only one implementation, in JS, and
-# copying it here would make a second one to keep in sync. This guard rail is
-# enough for no unexpected value to end up in a browser `style` attribute; the
-# front fills in what is missing on its side.
-# A contract test checks that the JS palette does pass this expression.
+# Validate the FORM only: the palette has one implementation, in JS.
 COLOR_PATTERN = re.compile(r"#[0-9a-fA-F]{6}\Z")
 
-# The languages the editor knows how to write in `language`, and the fallback.
-# Mirror of LOCALES / DEFAULT_LOCALE in src/shared/i18n.js: letting them diverge
-# would fall back to French for a play the front can nonetheless write, and a guard
-# in scripts/tests/test_contracts.py compares the two lists.
+# Mirror of LOCALES / DEFAULT_LOCALE (src/shared/i18n.js), compared by test_contracts.
 LANGUAGES = ("fr", "en")
 DEFAULT_LANGUAGE = "fr"
 
@@ -63,22 +36,10 @@ def sanitize_script(raw: dict) -> dict:
     instead of crashing on them (the two consumers must agree on tolerance)."""
     if not isinstance(raw, dict):
         raw = {}
-    # The colour travels all the way to the manifest, otherwise the Speaking share
-    # page has nothing to colour its pie charts with. It is COPIED and never repaired:
-    # filling in a missing colour has only one implementation, in JS
-    # (`assignColors`), and two independent fillings would end up no longer agreeing
-    # on the same colours, so Editing and Speaking share would show two
-    # different casts. The field is simply omitted when it is missing or malformed.
+    # Colour is COPIED, never repaired: `assignColors` (JS) is the one filling.
     characters = []
     for c in raw.get("characters") or []:
-        # The name must be NON EMPTY, as on the editor side (`c.name.trim()` in
-        # sanitizeScript): the two mirrors must drop the same entries. A character
-        # with no name cannot come from the editor (ADD_ and RENAME_CHARACTER both
-        # refuse an empty name), so it is a hand edit in the repo; keeping it here
-        # put an anonymous row in the Progress grid, a button with no label in the
-        # Speaking share legend and a bare ":" in the PDF, where Editing, for its
-        # part, showed its lines as unattributed. Dropped, its lines fall back on
-        # build_manifest's "?", which is what the editor already shows.
+        # Non-empty name, as on the editor side: the mirrors must drop the same entries.
         if not (
             isinstance(c, dict)
             and _is_id(c.get("id"))
@@ -110,23 +71,14 @@ def sanitize_script(raw: dict) -> dict:
                         "text": line["text"] if isinstance(line.get("text"), str) else "",
                     }
                 )
-            # Neither an act nor a scene carries a title: their label is DERIVED
-            # from their rank (mirror of src/shared/structureLabels.js). A `title`
-            # left behind by an older file is therefore ignored, not copied.
+            # Labels derive from rank, so a stale `title` is dropped.
             scenes.append({"lines": lines})
         acts.append({"scenes": scenes})
     return {
-        # The play's id, the one that names its folder (`plays/<id>/`) and its
-        # upload zone. Validated here as it is on the browser side, and that is an
-        # accepted exception to this reader's tolerance: everything else in this
-        # function accepts what it can read, whereas that value becomes a PATH.
-        # Absent or malformed, it is the empty string, and it is then
-        # `process_uploads` that will refuse the upload rather than guess.
+        # Validated, unlike the rest here, because it becomes a PATH.
         "id": raw["id"] if is_play_id(raw.get("id")) else "",
         "title": raw.get("title") if isinstance(raw.get("title"), str) else "",
-        # The language the play is WRITTEN in, not that of the reader's interface.
-        # It serves the PDF (headings and hyphenation) and Rehearsal's speech
-        # synthesis. Absent or unknown, it is French.
+        # The language the play is WRITTEN in, not the reader's interface locale.
         "language": raw["language"] if raw.get("language") in LANGUAGES else DEFAULT_LANGUAGE,
         "characters": characters,
         "acts": acts,
@@ -137,9 +89,7 @@ def compute_status(line: dict, clips: dict) -> str:
     recorded_text = clips.get(line["id"])
     if not isinstance(recorded_text, str):
         return "manquant"
-    # Both sides are RAW text (current script vs text at recording time);
-    # normalization happens here and only here, single implementation, no
-    # cross-language mismatch possible.
+    # Both sides are RAW text; normalization happens here only, single implementation.
     if normalize_text(line["text"]) == normalize_text(recorded_text):
         return "ok"
     return "perime"
@@ -162,9 +112,7 @@ def build_manifest(script: dict, clips: dict, history=None) -> dict:
             "text": line["text"],
             "status": status,
             "clip": f"clips/{line['id']}.mp3" if status != "manquant" else None,
-            # RANKS and not labels: it is the front that puts them into words, in
-            # the reader's language (src/shared/structureLabels.js). The manifest
-            # thus stays without a single word of French.
+            # Ranks and not labels: the front words them, so the manifest has no French.
             "actIndex": act_index,
             "sceneIndex": scene_index,
         }
@@ -180,18 +128,11 @@ def build_manifest(script: dict, clips: dict, history=None) -> dict:
         acts.append({"scenes": scenes})
 
     return {
-        # Copied so that the pages know WHICH play they are running in without
-        # having to read their own URL: the Recording page writes it into the
-        # ZIP it produces, which is what lets the Action refuse a ZIP dropped in
-        # another play's zone.
+        # The Recorder copies this into its ZIP, which is how a misplaced ZIP is caught.
         "id": script["id"],
         "title": script["title"],
         "language": script["language"],
-        # Journal of the latest uploads, displayed by the Progress page: without
-        # it the coordinator has no feedback at all on what became of their file. No run
-        # timestamp here: a field rewritten on every execution would make
-        # manifest.json differ on every push, therefore a robot commit every time
-        # (that is what cost the README status its place).
+        # No run timestamp: it would make manifest.json differ on every push.
         "history": history,
         "characters": script["characters"],
         "acts": acts,
@@ -200,23 +141,15 @@ def build_manifest(script: dict, clips: dict, history=None) -> dict:
 
 
 def build_one(play_id: str) -> bool:
-    """Write ONE play's manifest. Returns False when it was skipped.
-
-    A skipped play is a play whose `script.json` will not read, and its manifest is
-    then left AS IS: rebuilding it empty would erase the play from the whole site
-    (grid, rehearsal, PDF) over a syntax error, whereas yesterday's file is still
-    there and remains correct. The run ends in failure, which is the only signal the
-    CI has, and the other plays are built all the same: the silo holds for breakdowns
-    too.
-    """
+    """Write ONE play's manifest. Returns False when skipped: a play whose script.json
+    will not read keeps its manifest AS IS, since rebuilding it empty would erase the
+    play from the whole site over a syntax error. The run still fails."""
     data = play_data_dir(play_id)
     try:
         script = json.loads((data / "script.json").read_text(encoding="utf-8"))
     except FileNotFoundError:
-        # A play folder WITHOUT a script: that is what a refused creation upload
-        # leaves behind (the file is gone, the journal was written). We publish an
-        # empty manifest rather than nothing, so that this play's Progress page opens
-        # and shows the journal that says why it is empty.
+        # A refused creation leaves a play folder with no script: an empty manifest lets
+        # its Dashboard open and show the journal saying why.
         script = {}
     except json.JSONDecodeError as exc:
         print(
@@ -227,15 +160,12 @@ def build_one(play_id: str) -> bool:
             file=sys.stderr,
         )
         return False
-    # clips.json is written by the machine; damaged, we start over from scratch
-    # rather than block the site (statuses fall back to "manquant" until the next
-    # upload).
+    # Damaged clips.json: start from scratch rather than block the site.
     clips = load_json(
         data / "clips.json",
         {},
         f"plays/{play_id}/data/clips.json unreadable: ignored (statuses recomputed without it)",
     )
-    # The journal is only a display convenience: never a reason to fail.
     history = load_json(
         data / "history.json", {}, f"plays/{play_id}/data/history.json unreadable: journal ignored"
     )
@@ -251,14 +181,10 @@ def build_one(play_id: str) -> bool:
 def main() -> None:
     ids = play_ids()
     if not ids:
-        # Not an error: a freshly forked repo has no play yet, and the site must
-        # build all the same in order to offer the page that creates one.
         print("no play in plays/: nothing to build")
         return
-    # The LIST is deliberate, and it is not an oversight to be "simplified" into a
-    # generator: `all()` stops at the first false value, so one play with an
-    # unreadable script would prevent the building of every play that follows it in
-    # the alphabet. We build them all, then fail if one is missing.
+    # The LIST is deliberate: `all()` short-circuits, so a generator would stop building
+    # at the first unreadable script. Build them all, then fail.
     if not all([build_one(play_id) for play_id in ids]):
         sys.exit(1)
 

@@ -1,9 +1,5 @@
-// Tests for the derived act and scene labels.
-//
-// These labels replaced a stored `title`, so they are now the ONLY way a scene is
-// named anywhere on the site and in the printed script. The numeral is the part
-// worth testing: an actor finds their place by it, and Python derives the same
-// labels for the PDF (build_script_pdf.py), so the two must agree.
+// Derived act and scene labels. The numeral is what matters: an actor finds their
+// place by it, and build_script_pdf.py derives the same labels for the PDF.
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -26,7 +22,6 @@ test("roman numerals cover every act count a play could plausibly have", () => {
 });
 
 test("romanNumeral gives up on digits rather than inventing a numeral", () => {
-  // No play has 40 acts, and a wrong numeral would be worse than a number.
   assert.equal(romanNumeral(40), "40");
   assert.equal(romanNumeral(0), "0");
   assert.equal(romanNumeral(-3), "-3");
@@ -35,8 +30,6 @@ test("romanNumeral gives up on digits rather than inventing a numeral", () => {
 });
 
 test("the labels are 1-based while the indexes are 0-based", () => {
-  // The whole codebase indexes acts and scenes from zero; the reader counts from
-  // one. Getting this backwards would silently misname every scene.
   const t = makeT("fr", CATALOGUES);
   assert.equal(actLabel(t, 0), "Acte I");
   assert.equal(sceneLabel(t, 0), "Scène 1");
@@ -51,9 +44,6 @@ test("the labels follow the locale", () => {
 });
 
 test("the numeral is identical in both languages, so a place stays findable", () => {
-  // An English reader and a French one must agree on WHICH scene, even when the
-  // word differs; the PDF is derived from the play's language, the screen from
-  // the reader's.
   const fr = makeT("fr", CATALOGUES);
   const en = makeT("en", CATALOGUES);
   for (let i = 0; i < 12; i++) {
