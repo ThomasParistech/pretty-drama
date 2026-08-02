@@ -141,7 +141,15 @@ looks stale. It is NOT the install's first deploy: switching Pages on fires no e
 something must push, and asking a non-technical coordinator to find the Actions tab is
 four clicks into a vocabulary they do not have. The install ends on the everyday
 create-a-play gesture instead (`../../new/<BRANCH>?filename=uploads/<NEW_PLAY_DIR>/…`),
-which lands in `uploads/**`, so `uploads.yml` runs and CALLS `build.yml`: the site
+the same file in the same zone the site's "Nouvelle pièce" tile writes. **Markdown cannot
+import `githubNewPlayUrl`**, so the link is hand-written and `test_contracts.py` is what
+holds the two together, pinning the branch, the zone and the prefilled body; a JS helper
+would only add an abstraction with one caller. **The prefilled first line is EMPTY on
+purpose**: the coordinator types the title there, and a file committed untouched is
+refused by name instead of minting a play called after the placeholder. Everything BELOW
+that line is `manage.new.fileNote` verbatim, because the box is the same box whichever
+route opened it, and one gesture must not explain itself two ways. It
+lands in `uploads/**`, so `uploads.yml` runs and CALLS `build.yml`: the site
 publishes as a side effect of the first useful thing they do, and they end the install
 with a play rather than an empty list. `process_uploads.py` exits 0 even when it refuses
 a file, so a mistyped title still deploys the site and reports itself in the root
@@ -226,6 +234,7 @@ copying expected values. Breaking a pair breaks CI.
 | Creation zone `_new-play`, never a valid play id | `NEW_PLAY_DIR` (`shared/data.js`), `NEW_PLAY_DIR` (`process_uploads.py`), and the README's install link, which hand-writes both it and `BRANCH` |
 | The test bench `dev`, a real play id no title may take | `DEV_PLAY_ID` (`shared/plays.js`) refuses the title, `DEV_PLAY_ID` (`common.py`) hides the play |
 | `---` closes the title and opens the note | `TITLE_SEPARATOR` (`shared/data.js`) writes it, (`process_uploads.py`) reads it, and the README's install link prefills it. That link is checked by CALLING `read_title` on the body it prefills: untouched it must be REFUSED, titled it must yield the title |
+| The note prefilled into GitHub's editor, one sentence for ONE box reached two ways | `manage.new.fileNote` (`locales/fr.js`), which the site passes through `githubNewPlayUrl`, and the README's install link, which spells the same French out because markdown cannot call a catalogue. Compared whole, non-breaking spaces included |
 | Act/scene labels, roman numerals | `shared/structureLabels.js`, `build_script_pdf.py` |
 | Vite entries = root `.html` files | `vite.config.js` |
 | ZIP format | `downloadZip` (`recorder/App.jsx`), `parse_manifest` (`process_uploads.py`) |

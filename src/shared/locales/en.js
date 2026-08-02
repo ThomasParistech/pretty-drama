@@ -586,8 +586,8 @@ export const EN = {
   // `manage.new.hint`). The button keeps its English label on this side, which is the
   // same rule as the French one: GitHub is read in the reader's language.
   "manage.new.fileNote":
-    'Just click the green "Commit changes" button.\n' +
-    "The new play, whose title is written above, will be online\n" +
+    "The first line of this file is the play's title.\n" +
+    'Click the green "Commit changes" button, and it will be online\n' +
     "in a few minutes.",
   "manage.new.emptyTitle": "Give the play a title.",
   "manage.new.badTitle": "This title leaves no usable address: add letters or digits to it.",

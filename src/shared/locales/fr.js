@@ -851,9 +851,14 @@ export const FR = {
   // the separator line, where the Action stops reading. A box holding one bare word
   // explains nothing, and this is the only screen of the whole journey the site does not
   // own: it can put a sentence there, so it does.
-  // Two sentences and no more: the gesture that finishes the job, and what to expect
-  // afterwards. The title is not asked for, it is already on the line above, and saying
-  // "add nothing" invited reading the box as a form to fill in.
+  // Two sentences and no more: what the first line IS, then the gesture that finishes
+  // the job. It has to read correctly on BOTH routes into this box, so it names that
+  // line instead of assuming its state: opened from the site the title is already
+  // there (the modal asked for it), opened from the README's install link the line is
+  // empty and the coordinator types it here. Saying "add nothing" invited reading the
+  // box as a form to fill in, so that is still not said.
+  // The README hand-writes this same French text into its link, GitHub's editor being
+  // unable to call a catalogue; test_contracts.py holds the two to each other.
   // The GitHub button is NAMED, where `manage.new.hint` only describes it, and it is
   // named in the reader's language like everything else in this catalogue: github.com is
   // translated too, and the company that reads the site in French reads its GitHub in
@@ -865,9 +870,9 @@ export const FR = {
   // nothing: as one long line it reads as a wall. So the source lines below are the
   // file's lines, and they are kept short enough to be read in that box.
   "manage.new.fileNote":
-    "Cliquez simplement sur le bouton vert « Valider les modifications ».\n" +
-    "La nouvelle pièce, dont le titre est écrit au-dessus, sera en ligne\n" +
-    "dans quelques minutes.",
+    "La première ligne de ce fichier est le titre de la pièce.\n" +
+    "Cliquez sur le bouton vert « Valider les modifications », elle sera\n" +
+    "en ligne dans quelques minutes.",
   "manage.new.emptyTitle": "Donnez un titre à la pièce.",
   "manage.new.badTitle":
     "Ce titre ne laisse aucune adresse utilisable : ajoutez-y des lettres ou des chiffres.",

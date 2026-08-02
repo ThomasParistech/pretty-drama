@@ -7,9 +7,9 @@ seule, et vous dites vos répliques au bon moment.
 
 **Aucune installation, aucun logiciel: tout se passe dans le navigateur.**
 
-## Créer votre première pièce
+## Mise en place
 
-[**Créer une pièce**](../../new/main?filename=uploads/_new-play/nouvelle-piece.txt&value=%0A---%0ARemplacez%20la%20premi%C3%A8re%20ligne%20par%20le%20titre%20de%20votre%20pi%C3%A8ce%2C%20puis%20validez.%20Elle%20sera%20en%20ligne%20dans%20quelques%20minutes.%0A)
+[**Créer une pièce**](../../new/main?filename=uploads/_new-play/nouvelle-piece.txt&value=%0A---%0ALa%20premi%C3%A8re%20ligne%20de%20ce%20fichier%20est%20le%20titre%20de%20la%20pi%C3%A8ce.%0ACliquez%20sur%20le%20bouton%20vert%20%C2%AB%C2%A0Valider%20les%20modifications%C2%A0%C2%BB%2C%20elle%20sera%0Aen%20ligne%20dans%20quelques%20minutes.%0A)
 ouvre une page GitHub où le fichier est déjà préparé. Écrivez le titre de votre pièce
 sur la première ligne, puis validez avec le bouton vert. Quelques minutes plus tard,
 la pièce est en ligne et le site est publié.

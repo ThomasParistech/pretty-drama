@@ -71,6 +71,23 @@ README_CREATION = re.compile(
 )
 
 
+def catalogue_value(locale: str, key: str) -> str:
+    """A catalogue entry's TEXT, source-read like everything else here (no JS engine).
+    Handles the entries written as several literals joined by `+`: `manage.new.fileNote`
+    is the one whose line breaks are DATA, being written into a file GitHub's editor
+    does not wrap."""
+    source = read(SRC / "shared" / "locales" / f"{locale}.js")
+    entry = re.search(
+        rf'^  "{re.escape(key)}":((?:.|\n)*?),\n(?=  (?:"|//|\}}))', source, re.MULTILINE
+    )
+    if entry is None:
+        raise AssertionError(f"{key} not found in src/shared/locales/{locale}.js")
+    # Both quote styles: en.js single-quotes the line that carries GitHub's own label.
+    parts = re.findall(r"\"((?:[^\"\\]|\\.)*)\"|'((?:[^'\\]|\\.)*)'", entry.group(1))
+    joined = "".join(double or single for double, single in parts)
+    return joined.replace("\\n", "\n").replace('\\"', '"').replace("\\'", "'")
+
+
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
@@ -297,15 +314,25 @@ class TestCreationZone(unittest.TestCase):
         # committed untouched is refused by name rather than minting a play called
         # after the placeholder. read_title is the arbiter, so call it.
         body = unquote(value)
-        self.assertIn(
-            f"\n{TITLE_SEPARATOR}\n",
-            body,
-            "the README's creation link prefills a body whose separator is not "
-            "TITLE_SEPARATOR: everything below it would be read as part of the title.",
-        )
         with self.assertRaises(UploadError):
             read_title(self.written(body))
-        self.assertEqual(read_title(self.written("Le Malade imaginaire" + body)), "Le Malade imaginaire")
+        self.assertEqual(
+            read_title(self.written("Le Malade imaginaire" + body)),
+            "Le Malade imaginaire",
+        )
+        # ONE box, ONE sentence: the coordinator reaches GitHub's editor either from the
+        # site's "Nouvelle pièce" tile, which passes `manage.new.fileNote` through
+        # `githubNewPlayUrl`, or from this link, which cannot call a catalogue and so
+        # spells the French out. Drifted, the same gesture would explain itself twice,
+        # differently. The empty title line is the only allowed difference: the site
+        # already knows the title, the README does not.
+        self.assertEqual(
+            body,
+            f"\n{TITLE_SEPARATOR}\n{catalogue_value('fr', 'manage.new.fileNote')}\n",
+            "the README's creation link and manage.new.fileNote (src/shared/locales/"
+            "fr.js) prefill different notes: the same file, opened the same way, would "
+            "carry different instructions depending on where the coordinator started.",
+        )
 
     def written(self, text: str) -> Path:
         folder = tempfile.TemporaryDirectory()
