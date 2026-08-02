@@ -21,7 +21,9 @@ Si vous n'avez pas encore de compte GitHub, [créez-en un](https://github.com/si
 
 <div align="center">
 
-[![Créer une pièce](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjIwIiBoZWlnaHQ9IjUwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIyMjAiIGhlaWdodD0iNTAiIHJ4PSI4IiBmaWxsPSIjMmVhNDRmIi8+PHRleHQgeD0iMTEwIiB5PSIzMSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE2IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuKcjSBDcsOpZXIgdW5lIHBpw6hjZTwvdGV4dD48L3N2Zz4=)](../../new/main?filename=uploads/_new-play/nouvelle-piece.txt&value=%0A---%0ALa%20premi%C3%A8re%20ligne%20de%20ce%20fichier%20est%20le%20titre%20de%20la%20pi%C3%A8ce.%0ACliquez%20sur%20le%20bouton%20vert%20%C2%AB%C2%A0Valider%20les%20modifications%C2%A0%C2%BB%2C%20elle%20sera%0Aen%20ligne%20dans%20quelques%20minutes.%0A)
+<!-- GitHub's markdown sanitizer drops `data:` image sources: the button is a committed
+     file, referenced by a repo-relative path so a fork serves its own copy. -->
+[![Créer une pièce](design/new-play-button.svg)](../../new/main?filename=uploads/_new-play/nouvelle-piece.txt&value=%0A---%0ALa%20premi%C3%A8re%20ligne%20de%20ce%20fichier%20est%20le%20titre%20de%20la%20pi%C3%A8ce.%0ACliquez%20sur%20le%20bouton%20vert%20%C2%AB%C2%A0Valider%20les%20modifications%C2%A0%C2%BB%2C%20elle%20sera%0Aen%20ligne%20dans%20quelques%20minutes.%0A)
 
 </div>
 
