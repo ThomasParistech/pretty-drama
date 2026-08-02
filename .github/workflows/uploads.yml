@@ -83,13 +83,33 @@ jobs:
       # CHANGED on disk, so a byte-identical promotion typesets nothing. -uall because a
       # play born in this run has an untracked script.json and git would report the
       # folder. Play ids are [a-z0-9-], so no quoting to undo.
+      #
+      # DELETED HERE, before the install, for every changed play: the script just
+      # changed, so a typesetting that then fails must leave an absence (the button 404s,
+      # which is the truth) rather than a document that silently disagrees with the play.
+      #
+      # A script with NO LINES is not typeset, it is given `scripts/blank-script.pdf`:
+      # what LaTeX would print for it is one page with nothing on it, and that is the
+      # state a play is BORN in, so paying the 30 s install for it would put the install's
+      # first deploy behind an empty document. Same rule for a script emptied of its
+      # lines, which is why the copy comes after the delete and not instead of it: it must
+      # lose the PDF of the lines it no longer has.
       - name: Look for scripts promoted by this run
         id: typeset
         run: |
-          plays="$(git status --porcelain -uall -- 'plays/*/data/script.json' \
-            | awk '{print $2}' | cut -d/ -f2 | sort -u | tr '\n' ' ')"
-          echo "plays=$plays" >> "$GITHUB_OUTPUT"
-          if [ -n "$plays" ]; then echo "Scripts to typeset: $plays"; fi
+          typeset=""
+          for play in $(git status --porcelain -uall -- 'plays/*/data/script.json' \
+            | awk '{print $2}' | cut -d/ -f2 | sort -u); do
+            rm -f "plays/$play/data/script.pdf"
+            if python scripts/ci/has_lines.py "plays/$play/data/script.json"; then
+              typeset="$typeset $play"
+            else
+              cp scripts/blank-script.pdf "plays/$play/data/script.pdf"
+              echo "No line in $play: blank PDF."
+            fi
+          done
+          echo "plays=$typeset" >> "$GITHUB_OUTPUT"
+          if [ -n "$typeset" ]; then echo "Scripts to typeset:$typeset"; fi
 
       - name: Install LaTeX (only when a script was promoted)
         if: ${{ steps.typeset.outputs.plays != '' }}
@@ -105,20 +125,14 @@ jobs:
       #
       # The PDF is a convenience, never a condition: continue-on-error here and
       # build_script_pdf.py exits 0, so a script that breaks LaTeX is still promoted.
-      #
-      # DELETED FIRST: the script just changed, so a failed typesetting must commit an
-      # absence (button 404s, which is the truth) rather than a document that silently
-      # disagrees with the play. Through env:, never interpolated into run:.
+      # The old PDF is already gone, deleted by the step that listed these plays.
+      # Through env:, never interpolated into run:.
       - name: Typeset the printable script of the plays that changed
         if: ${{ steps.typeset.outputs.plays != '' }}
         continue-on-error: true
         env:
           PLAYS: ${{ steps.typeset.outputs.plays }}
-        run: |
-          for play in $PLAYS; do
-            rm -f "plays/$play/data/script.pdf"
-          done
-          python scripts/build_script_pdf.py $PLAYS
+        run: python scripts/build_script_pdf.py $PLAYS
 
       # plays: everything belonging to a play. data: the index plus the journal of
       # uploads no play claimed.

@@ -37,22 +37,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # No workflow can switch Pages on (needs administration:write), so this looks and
-  # explains. It FAILS when publishing is off: the coordinator's only other channel is
-  # the Dashboard journal, which lives on the very site that is missing, so GitHub's
-  # e-mail is the report. A separate job so it answers in four seconds and GitHub names
-  # it in that mail. build_type and not mere existence: publishing from a branch serves
-  # the repo root, whose index.html points at /src/, so a blank page instead of a 404.
-  pages-check:
-    name: Is the site allowed to be published
+  build:
     runs-on: ubuntu-latest
     # The push that CREATES main is the one run not judged, and skipping it is what
     # earns the right to fail all the others: the coordinator has not been asked to
     # switch Pages on yet, so failing would mail an English "Run failed" to someone
-    # doing as told. A job-level `if` is the only construct that can skip on that.
+    # doing as told. A job-level `if` is the only construct that can skip on that,
+    # the check below having an answer only at runtime.
     if: github.event.created != true
     steps:
-      - id: check
+      # No workflow can switch Pages on (needs administration:write), so this looks and
+      # explains. It FAILS when publishing is off: the coordinator's only other channel
+      # is the Dashboard journal, which lives on the very site that is missing, so
+      # GitHub's e-mail is the report. build_type and not mere existence: publishing from
+      # a branch serves the repo root, whose index.html points at /src/, so a blank page
+      # instead of a 404.
+      #
+      # FIRST step of this job, before the checkout and the toolchains, and not a job of
+      # its own: it still answers in seconds, and it costs no second runner, which was a
+      # good ten seconds of the wait between the coordinator's commit and their live site.
+      # What is lost is the name GitHub puts in the failure mail, now the workflow's; the
+      # `::error::` annotation below carries the title instead, and it is what shows on
+      # the run page and in the checks list.
+      - name: Is the site allowed to be published
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -93,12 +100,6 @@ jobs:
           echo "::error title=$title::Settings > Pages > Source > GitHub Actions, then Actions > build > Run workflow. Full instructions in this run's summary."
           exit 1
 
-  build:
-    runs-on: ubuntu-latest
-    # `needs` alone is the gate: pages-check failing or skipping both leave this
-    # skipped, and its own row (red or grey) carries the distinction.
-    needs: pages-check
-    steps:
       # Explicit ref: called from uploads.yml we run inside the run of a push made
       # BEFORE the commit that workflow pushed, so the triggering SHA would publish a
       # site without the voices just processed.
@@ -155,8 +156,8 @@ jobs:
           rsync -a --exclude='*.html' plays/ dist/plays/
 
       # No `enablement: true`: it needs administration:write, so it could only answer
-      # 403, and the action throws on anything but a 409. pages-check already
-      # guarantees Pages is on and building from a workflow.
+      # 403, and the action throws on anything but a 409. The first step of this job
+      # already guarantees Pages is on and building from a workflow.
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6
 

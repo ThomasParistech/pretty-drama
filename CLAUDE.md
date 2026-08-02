@@ -117,28 +117,31 @@ answer with the repo home page otherwise), and absolute they are the severe case
 they would commit the troupe's play or voices INTO the template.
 
 **The install is the only moment the coordinator is on GitHub**, so it is the only moment
-a workflow speaks to them there, in ONE channel, `$GITHUB_STEP_SUMMARY`: `pages-check`
+a workflow speaks to them there, in ONE channel, `$GITHUB_STEP_SUMMARY`: the pages check
 when publishing is off, and the two addresses once the deploy succeeded. Outside the
 install neither workflow reports to them (no issue, no README status): the only feedback
 channel is the Dashboard's upload journal, so a failed run goes unreported and the commit
 precedes the deploy.
 
 **One exception, the one the journal cannot cover**: publishing off means the journal
-sits on a site that does not exist. Hence the `pages-check` job. **No workflow can switch
+sits on a site that does not exist. Hence the pages check. **No workflow can switch
 Pages on** (needs `administration:write`, which is why `enablement:` is deliberately not
 set on `configure-pages`), so it checks: Pages on AND `build_type == "workflow"`, since
 publishing from a branch serves the repo root and answers a blank page rather than a 404.
 When off it writes the fix into `$GITHUB_STEP_SUMMARY`, raises an `::error::` with the
-same fix in one line, and **fails**; `build` needs it, so it shows as skipped. A separate
-job so it fails in four seconds and GitHub names it in the e-mail.
+same fix in one line, and **fails**. It is the FIRST step of `build`, before the checkout
+and the toolchains, so it still answers in seconds; it was a job of its own until a second
+runner cost more wall clock (a good ten seconds of the coordinator's wait) than the name
+GitHub then put in the failure mail. That name is now the workflow's, and the `::error::`
+title is what carries the reason.
 
 **Failing is the point, and the push that CREATES main is what pays for it.** Both
 workflows skip that push (`if: github.event.created != true`). A fresh copy triggers both
 yet has nothing to publish and nothing to process: the coordinator has not been asked to
 switch Pages on yet, so failing would mail an English "Run failed" to someone doing as
 told, and succeeding would
-green-tick a repo with no site. `pages-check` cannot skip itself (its answer exists only
-at runtime), hence the job-level `if`. Every run that DOES reach the check belongs to a
+green-tick a repo with no site. The pages check cannot skip itself (its answer exists
+only at runtime), hence the job-level `if` on `build`. Every run that DOES reach the check belongs to a
 repo whose install is over, where a publish that cannot publish is a real problem.
 
 **`workflow_dispatch` on `build.yml` is the republish button**, the answer to a site that
@@ -224,6 +227,12 @@ a problem.
    costs 45 s of apt. **The counterpart**: a `script.json` edited by hand IN THE REPO
    keeps its old PDF until the next upload. Written at all four sites (`.gitignore`,
    `build.yml`, `uploads.yml`, `build_script_pdf.py`).
+   **A script with no lines is not typeset at all**: it is given
+   `scripts/blank-script.pdf`, a committed blank page, because that is what LaTeX would
+   print and it is the state a play is BORN in. So the install's first deploy never waits
+   for the apt, and `ci/has_lines.py` is what decides (any surprise answers "no lines",
+   the side that skips). An emptied script gets the blank page too, hence copy AFTER the
+   delete: it must lose the PDF of the lines it no longer has.
 
 ## Cross-file contracts
 
