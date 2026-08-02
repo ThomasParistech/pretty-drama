@@ -7,36 +7,37 @@ seule, et vous dites vos répliques au bon moment.
 
 **Aucune installation, aucun logiciel: tout se passe dans le navigateur.**
 
-## Liens
+## Créer votre première pièce
 
-- [Le site de la troupe](https://thomasparistech.github.io/pretty-drama/) <!-- ref: SITE_HOME -->
-  elle y choisit une pièce, puis Répétition, Enregistrement ou Répartition.
-  C'est ce lien que vous partagez.
-- [La gestion des pièces](https://thomasparistech.github.io/pretty-drama/respo.html) <!-- ref: SITE_RESPO -->
-  pour vous : les pièces, et les cinq pages de chacune. **Mettez-le en favori**,
-  rien n'y mène depuis l'autre adresse.
+[**Créer une pièce**](../../new/main?filename=uploads/_new-play/nouvelle-piece.txt&value=%0A---%0ARemplacez%20la%20premi%C3%A8re%20ligne%20par%20le%20titre%20de%20votre%20pi%C3%A8ce%2C%20puis%20validez.%20Elle%20sera%20en%20ligne%20dans%20quelques%20minutes.%0A)
+ouvre une page GitHub où le fichier est déjà préparé. Écrivez le titre de votre pièce
+sur la première ligne, puis validez avec le bouton vert. Quelques minutes plus tard,
+la pièce est en ligne et le site est publié.
 
-Ces deux adresses s'écrivent toutes seules : chaque mise en ligne les réinscrit
-ici. Elles pointent sur `example.com` tant que le site n'a pas été publié une
-première fois.
+C'est exactement le geste que vous referez ensuite depuis la page de gestion, avec la
+tuile « Nouvelle pièce ».
+
 
 <!--
-  Maintainer note, in English like the rest of the repo. The links above are the
-  only ones this repository rewrites, and the `ref:` comment after each is how:
-  GitHub renders it as nothing, and ci/update_readme_urls.py replaces the TARGET of
-  every link carrying a ref it knows, leaving the display text (French, ours) and
-  everything outside the parentheses untouched. The ref names the destination page,
-  not the current value, so there is nothing to keep in step: running it again just
-  computes the same address.
+  Maintainer note, in English like the rest of the repo. This file NEVER carries the
+  site's address, and no workflow writes into it. The address is not knowable before a
+  deployment (both halves of <owner>.github.io/<repo>/ change when the template is
+  copied), and GitHub already shows it in two places the coordinator owns: Settings >
+  Pages, always live, and the About panel once they tick "Use your GitHub Pages
+  website", which is a snapshot into the repo's `homepage` field and goes dead on a
+  rename. Worth naming both. A third copy HERE bought nothing and cost a bot commit in
+  every troupe's history, a contents: write on build.yml, and a rewriting script with
+  its own test suite. All three are gone.
 
-  Adding a link is two steps and no cleverness: write it with a new `SITE_…` ref,
-  add that ref to PATHS in the script. A `SITE_…` ref missing from PATHS stops the
-  run rather than silently never updating; a ref outside the `SITE_` namespace is
-  not this script's and is left alone.
-
-  Only link pages that exist in EVERY copy. This prose is written once and never
-  regenerated, so a page a fork can delete (the `plays/<id>/` test bench, a given
-  play) would leave a link into a 404 in every README that inherited it.
+  Every link into GitHub in this file is RELATIVE and climbs exactly `../../`: a root
+  README renders at /<owner>/<repo>/blob/<branch>/README.md, so `../../x` names the
+  reader's OWN repository without knowing either half of the address, while an absolute
+  one sends every troupe to the template. Only routes GitHub really serves:
+  /deployments/<environment> is NOT one (measured 404), and a relative link at a dead
+  path renders exactly like a live one, which no test can reach from CI.
+  test_readme.py checks the depth, the absence of a branch name outside /new/ and
+  /upload/ (the two routes that require a real one), and that no absolute link names a
+  repository sub-page.
 -->
 
 

@@ -127,12 +127,13 @@ jobs:
           bash scripts/ci/commit_push.sh "🤖 Process uploads and refresh manifests" \
             plays data uploads
 
-  # contents: write and not read, because build.yml's readme job pushes and a called
-  # workflow never gets more than its caller granted.
+  # contents: read, because build.yml writes nothing to the repo. A called workflow
+  # never gets more than its caller granted, so anything build.yml ever starts
+  # committing has to be delegated here too.
   site:
     needs: process
     permissions:
-      contents: write
+      contents: read
       pages: write
       id-token: write
     uses: ./.github/workflows/build.yml

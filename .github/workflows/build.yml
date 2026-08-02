@@ -1,10 +1,18 @@
 name: build
 
-# Builds the site, deploys it to Pages, then writes the address into the README.
-# Writes nothing else to the repo: the journals have a single writer, uploads.yml,
-# which processes uploads then calls this workflow (a GITHUB_TOKEN push triggers no
-# workflow, so the call must be explicit; the same rule keeps the README commit from
-# looping back here).
+# Builds the site and deploys it to Pages. Writes NOTHING to the repo, hence
+# `contents: read` throughout and nothing to delegate when uploads.yml calls it: the
+# journals have a single writer, uploads.yml, which processes uploads then calls this
+# workflow (a GITHUB_TOKEN push triggers no workflow, so the call must be explicit).
+#
+# The site's address is not written anywhere by this workflow. It is not knowable
+# before a deployment (<owner>.github.io/<repo>/, both halves change when the template
+# is copied), and GitHub already displays it in two places the coordinator owns:
+# Settings > Pages, and the repository's About panel once they tick "Use your GitHub
+# Pages website". Settings > Pages is the live one; the About panel is a SNAPSHOT into
+# the repo's `homepage` field, so a rename leaves it dead until re-ticked. Neither
+# needs a commit, and neither can be automated: writing `homepage` needs
+# administration:write, the same permission that blocks enabling Pages.
 #
 # paths-ignore uploads/**: without it an upload triggers both workflows in parallel
 # and publishes a site without the new voices.
@@ -39,9 +47,9 @@ jobs:
     name: Is the site allowed to be published
     runs-on: ubuntu-latest
     # The push that CREATES main is the one run not judged, and skipping it is what
-    # earns the right to fail all the others: README step 2 has not happened yet, so
-    # failing would mail an English "Run failed" to someone doing as told. A job-level
-    # `if` is the only construct that can skip on that.
+    # earns the right to fail all the others: the coordinator has not been asked to
+    # switch Pages on yet, so failing would mail an English "Run failed" to someone
+    # doing as told. A job-level `if` is the only construct that can skip on that.
     if: github.event.created != true
     steps:
       - id: check
@@ -87,10 +95,6 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    # Only knowable here: <owner>.github.io/<repo>/, and both halves change when the
-    # template is copied.
-    outputs:
-      page_url: ${{ steps.deploy.outputs.page_url }}
     # `needs` alone is the gate: pages-check failing or skipping both leave this
     # skipped, and its own row (red or grey) carries the distinction.
     needs: pages-check
@@ -167,11 +171,11 @@ jobs:
         id: deploy
         uses: actions/deploy-pages@v5
 
-      # The two addresses on the page the coordinator is already looking at (README
-      # step 3 leaves them here). The management one exists nowhere else, being the
-      # site's plus respo.html. Hard-coded rather than read from PATHS so this table
-      # cannot depend on the README job having worked; add a page here and it belongs
-      # in PATHS too.
+      # NOT the delivery channel: the install's last step is a commit, not a workflow
+      # run, so the coordinator never lands here. GitHub shows them the site itself
+      # (Settings > Pages, and the About panel). This is for whoever does open a run,
+      # and it is the only place the MANAGEMENT address is spelled out, that one being
+      # the site's plus respo.html and linked from nowhere by design.
       - name: Print the site's addresses in the run summary
         env:
           PAGE_URL: ${{ steps.deploy.outputs.page_url }}
@@ -185,56 +189,7 @@ jobs:
             echo "| <$base/> | the troupe. This is the link you share. |"
             echo "| <$base/respo.html> | you: managing the plays. Bookmark it, nothing links to it from the other address. |"
             echo
-            echo "They are written into this repository's README as well, so you never"
-            echo "have to come back here to find them."
+            echo "The first one is also on this repository's Settings > Pages, and in"
+            echo "the About panel of its front page once you tick \"Use your GitHub"
+            echo "Pages website\" there."
           } >> "$GITHUB_STEP_SUMMARY"
-
-  # The ONE place this workflow touches the repo. The README ships its site links on
-  # example.com placeholders tagged `<!-- ref: SITE_… -->`; the script fills the
-  # targets in, the address being unknowable before a deployment.
-  # A separate job so `build` keeps contents: read and commits from a clean checkout
-  # rather than a worktree full of rebuilt manifests. continue-on-error so a
-  # convenience can never redden a run that PUBLISHED; the next deployment retries.
-  # No loop: a GITHUB_TOKEN push triggers no workflow, and the script is a no-op from
-  # the second run on.
-  readme:
-    name: Write the site address into the README
-    needs: build
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    # The only contents: write here, and the reason uploads.yml must delegate it on its
-    # `site` job: a called workflow never gets more than its caller. pages: read is for
-    # the fallback below.
-    permissions:
-      contents: write
-      pages: read
-    steps:
-      # Same ref reason as the build's checkout: committing on the older SHA would
-      # rebase away a whole upload.
-      - name: Checkout (head of the branch, not the triggering SHA)
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ github.ref_name }}
-
-      # Two sources: losing the address leaves the links on example.com until another
-      # deployment. page_url is the one to trust; the Pages API covers a renamed output
-      # of a future deploy-pages. Through env:, never interpolated into the script.
-      - name: Point the README's links at the address the deployment answered on
-        env:
-          PAGE_URL: ${{ needs.build.outputs.page_url }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          url="$PAGE_URL"
-          if [ -z "$url" ]; then
-            echo "deploy-pages returned no page_url; asking the Pages API instead."
-            url="$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq .html_url 2>/dev/null || true)"
-          fi
-          if [ -z "$url" ]; then
-            echo "::error title=README site links::the site's address could not be determined."
-            exit 1
-          fi
-          python3 scripts/ci/update_readme_urls.py "$url"
-
-      # No-op once the links point at the site: commit_push.sh finds an empty index.
-      - name: Commit the README if its links changed
-        run: bash scripts/ci/commit_push.sh "🤖 Write the site address into the README" README.md

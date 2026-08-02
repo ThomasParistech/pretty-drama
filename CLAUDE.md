@@ -71,7 +71,10 @@ Two workflows, airtight roles:
 - `uploads.yml` (push touching `uploads/**`) processes uploads, writes the journal,
   commits, **then calls `build.yml`**.
 - `build.yml` (any other push, dispatch, `workflow_call`) builds and deploys Pages, and
-  **writes nothing to the repo but the site's address in the README**. No journal, ever.
+  **writes nothing to the repo at all**. No journal, ever. It is `contents: read` from
+  end to end, so `uploads.yml`'s `site` job has nothing to delegate; anything it ever
+  starts committing must be granted in BOTH files, a called workflow never getting more
+  than its caller.
 
 Do not break: the explicit call (a `GITHUB_TOKEN` push triggers no workflow); **distinct
 `concurrency` groups** (a called workflow sharing its caller's group is killed as a
@@ -79,26 +82,22 @@ deadlock); `paths-ignore: uploads/**` in `build.yml`; its checkout on `ref:
 github.ref_name`, not the run SHA, **in both jobs that check out**.
 
 **The site's address is not knowable before a deployment** (`<owner>.github.io/<repo>/`,
-both halves change when the template is copied), so the README ships its site links on
-`example.com` placeholders. Each carries an invisible `<!-- ref: SITE_… -->` naming the
-PAGE it wants; the `readme` job feeds `deploy`'s `page_url` to
-`scripts/ci/update_readme_urls.py`, which rewrites the target of every ref in `PATHS`
-(`SITE_HOME` -> ``, `SITE_RESPO` -> `respo.html`) and commits only if something changed.
-**The README's French is never generated**: only targets inside the parentheses change.
+both halves change when the template is copied) and **nothing in this repo stores it**.
+GitHub shows it in two places the coordinator owns: **Settings → Pages**, always live and
+documented, and the repository's **About** panel once they tick "Use your GitHub Pages
+website", which is a SNAPSHOT into the repo's `homepage` field (a rename leaves it dead
+until re-ticked) and is nowhere in GitHub's docs, label included. Hence both, not one.
+Neither can be automated: writing `homepage` needs `administration:write`, the very
+permission that blocks enabling Pages. The README therefore describes the SHAPE of the two addresses (the site itself,
+and the same plus `respo.html`) rather than their values, and no workflow writes into it.
 
-The ref names the DESTINATION, so idempotence is arithmetic and there is no memory to
-keep in step. `SITE_` is the claimed namespace; a `SITE_…` ref absent from `PATHS` stops
-the run rather than silently never updating. **Only pages present in EVERY copy belong in
-`PATHS`** (this prose is never regenerated, so a page a fork can delete would leave a 404
-in every inherited README). `test_readme.py` holds `PATHS` and the README to the same set
-of refs, both directions. The `build` job prints the same two addresses into
-`$GITHUB_STEP_SUMMARY`, which must not depend on the README step having worked.
-
-The `readme` job is separate so `build` stays read-only (hence `uploads.yml`'s `site` job
-must delegate `contents: write`: a called workflow never gets more than its caller), and
-`continue-on-error` so a convenience cannot redden a run that PUBLISHED. The address has
-two sources, `page_url` then the Pages API, because losing it leaves the links on
-`example.com` until another deployment. A fork that removes the links exits 0.
+That is a deletion, not an omission. Storing a third copy meant a rewriting script, its
+own test suite, a `<!-- ref: SITE_… -->` micro-format, a `contents: write` on `build.yml`
+that `uploads.yml` had to delegate, and a bot commit in every troupe's history, all to
+restate something GitHub renders for free on the repo's front page. **Do not reintroduce
+it.** The `build` job still prints both addresses into `$GITHUB_STEP_SUMMARY`, the only
+place the MANAGEMENT one is spelled out, but nobody is expected to read it: the install
+ends on a commit, not a workflow run.
 
 **Any link into GitHub the README carries is RELATIVE, `../../…`.** A root README renders
 at `/<owner>/<repo>/blob/<branch>/README.md`, so `../../x` names the reader's own repo
@@ -107,7 +106,10 @@ template. Only routes GitHub really serves: `/deployments/<environment>` is NOT 
 (measured 404; use `/deployments/activity_log?environment=…`), and a relative link at a
 dead path renders exactly like a live one, which no test can reach from CI.
 `test_readme.py` checks the depth, the absence of a branch name, and that no absolute
-link names a repository sub-page.
+link names a repository sub-page. Two exceptions, both deliberate: `/new/<branch>` and
+`/upload/<branch>` DO name a branch, because those two routes need a real one (they
+answer with the repo home page otherwise), and absolute they are the severe case, since
+they would commit the troupe's play or voices INTO the template.
 
 **The install is the only moment the coordinator is on GitHub**, so it is the only moment
 a workflow speaks to them there, in ONE channel, `$GITHUB_STEP_SUMMARY`: `pages-check`
@@ -127,15 +129,33 @@ job so it fails in four seconds and GitHub names it in the e-mail.
 
 **Failing is the point, and the push that CREATES main is what pays for it.** Both
 workflows skip that push (`if: github.event.created != true`). A fresh copy triggers both
-yet has nothing to publish and nothing to process: README step 2 has not happened, so
-failing would mail an English "Run failed" to someone doing as told, and succeeding would
+yet has nothing to publish and nothing to process: the coordinator has not been asked to
+switch Pages on yet, so failing would mail an English "Run failed" to someone doing as
+told, and succeeding would
 green-tick a repo with no site. `pages-check` cannot skip itself (its answer exists only
 at runtime), hence the job-level `if`. Every run that DOES reach the check belongs to a
 repo whose install is over, where a publish that cannot publish is a real problem.
 
-**`workflow_dispatch` on `build.yml` is the republish button**, named as such in the
-README: step 3 of the install (switching Pages on fires no event) and the answer to a
-site that looks stale.
+**`workflow_dispatch` on `build.yml` is the republish button**, the answer to a site that
+looks stale. It is NOT the install's first deploy: switching Pages on fires no event, so
+something must push, and asking a non-technical coordinator to find the Actions tab is
+four clicks into a vocabulary they do not have. The install ends on the everyday
+create-a-play gesture instead (`../../new/<BRANCH>?filename=uploads/<NEW_PLAY_DIR>/…`),
+which lands in `uploads/**`, so `uploads.yml` runs and CALLS `build.yml`: the site
+publishes as a side effect of the first useful thing they do, and they end the install
+with a play rather than an empty list. `process_uploads.py` exits 0 even when it refuses
+a file, so a mistyped title still deploys the site and reports itself in the root
+journal: the install cannot dead-end. Nothing else can do this job. GitHub starts no run
+when Pages is switched on ("GitHub Pages does not associate a specific workflow to the
+GitHub Pages settings"); a job that WAITS for the human jams `concurrency: pages` and
+silently cancels the coordinator's next upload; a `schedule:` poller mails the TEMPLATE
+author from every fork and auto-disables at 60 days.
+
+**The README is copied verbatim** by "Use this template", which is the other reason it
+carries no address: a value written here would open the TEMPLATE's live site in every
+copy ever made, two links that work and belong to someone else, reading as a finished
+install until the first upload never lands. Worse than a 404, which at least looks like
+a problem.
 
 ## Commands
 
@@ -203,9 +223,9 @@ copying expected values. Breaking a pair breaks CI.
 | `^[a-z0-9][a-z0-9-]{0,63}$` | `SAFE_PLAY_ID` (`shared/plays.js`), `PLAY_ID_PATTERN` (`common.py`) |
 | Title -> play id, through `scripts/tests/play-id-cases.json` (read by both suites) | `mintPlayId` (`shared/plays.js`) announces, `mint_play_id` (`common.py`) decides |
 | Fields of a brand new play | `EMPTY_SCRIPT` (`editor/reducer.js`), `new_play_script` (`common.py`) |
-| Creation zone `_new-play`, never a valid play id | `NEW_PLAY_DIR` (`shared/data.js`), `NEW_PLAY_DIR` (`process_uploads.py`) |
+| Creation zone `_new-play`, never a valid play id | `NEW_PLAY_DIR` (`shared/data.js`), `NEW_PLAY_DIR` (`process_uploads.py`), and the README's install link, which hand-writes both it and `BRANCH` |
 | The test bench `dev`, a real play id no title may take | `DEV_PLAY_ID` (`shared/plays.js`) refuses the title, `DEV_PLAY_ID` (`common.py`) hides the play |
-| `---` closes the title and opens the note | `TITLE_SEPARATOR` (`shared/data.js`) writes it, (`process_uploads.py`) reads it |
+| `---` closes the title and opens the note | `TITLE_SEPARATOR` (`shared/data.js`) writes it, (`process_uploads.py`) reads it, and the README's install link prefills it. That link is checked by CALLING `read_title` on the body it prefills: untouched it must be REFUSED, titled it must yield the title |
 | Act/scene labels, roman numerals | `shared/structureLabels.js`, `build_script_pdf.py` |
 | Vite entries = root `.html` files | `vite.config.js` |
 | ZIP format | `downloadZip` (`recorder/App.jsx`), `parse_manifest` (`process_uploads.py`) |

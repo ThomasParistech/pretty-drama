@@ -6,8 +6,10 @@ from __future__ import annotations
 import json
 import re
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from urllib.parse import unquote
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -25,7 +27,13 @@ from common import (
     play_data_dir,
     play_ids,
 )
-from process_uploads import LINE_ID_PATTERN, NEW_PLAY_DIR, TITLE_SEPARATOR
+from process_uploads import (
+    LINE_ID_PATTERN,
+    NEW_PLAY_DIR,
+    TITLE_SEPARATOR,
+    UploadError,
+    read_title,
+)
 from script_diff import script_changes
 
 SRC = REPO_ROOT / "src"
@@ -53,6 +61,14 @@ FORBIDDEN_IN_HEADER = (
 # colour, carrying `page-${page}` itself (HomeLink.jsx), which CSS alone cannot show.
 HEADER_TOKEN_EXEMPT_PREFIX = ".play-header-home"
 EXEMPT_TOKENS = ("--page-mark", "--page-mark-soft")
+
+# The README's play-creation link, relative like every link it carries into GitHub:
+# `../../new/<branch>?filename=uploads/<zone>/<name>&value=<prefilled file>`. The Action
+# reads neither the name nor the extension of what lands in the zone, so what is pinned
+# is the branch, the zone, and the body the link prefills.
+README_CREATION = re.compile(
+    r"\.\./\.\./new/([^/?\s)]+)\?filename=uploads/([^/?\s)]+)/[^?\s)&]*(?:&value=([^)\s]*))?"
+)
 
 
 def read(path: Path) -> str:
@@ -242,6 +258,61 @@ class TestCreationZone(unittest.TestCase):
         # The constant could exist and be used nowhere.
         source = js_without_comments(read(SRC / "shared" / "data.js"))
         self.assertIn("uploads/${NEW_PLAY_DIR}/", source)
+
+    def js_branch(self) -> str:
+        found = re.search(r'const BRANCH = "([^"]+)";', read(SRC / "shared" / "data.js"))
+        self.assertIsNotNone(found, "BRANCH not found in src/shared/data.js")
+        return found.group(1)
+
+    def test_the_readme_opens_the_same_creation_zone_as_the_site(self):
+        """The install's last step is the everyday create-a-play gesture, so the README
+        hand-writes by hand the URL `githubNewPlayUrl` builds from these constants, and
+        becomes a third side of both. Absence is not an error: a fork may rewrite its
+        front page. A WRONG one is silent twice over: a bad branch answers with the
+        repository home page rather than a 404, and a bad folder commits where no
+        workflow watches, so the play simply never appears.
+        """
+        found = README_CREATION.search(read(REPO_ROOT / "README.md"))
+        if found is None:
+            self.skipTest("README.md carries no play-creation link")
+        branch, zone, value = found.group(1), found.group(2), found.group(3)
+        self.assertEqual(
+            branch,
+            self.js_branch(),
+            "the README's creation link and BRANCH (src/shared/data.js) name different "
+            "branches: GitHub answers a branch it does not know with the repository "
+            "home page, so the button looks alive and creates nothing.",
+        )
+        self.assertEqual(
+            zone,
+            NEW_PLAY_DIR,
+            "the README's creation link and NEW_PLAY_DIR (src/shared/data.js, "
+            "scripts/process_uploads.py) name different folders: the install's last "
+            "step would commit into a folder the Action does not read.",
+        )
+        if value is None:
+            return
+        # The body the link prefills, read exactly as the Action will read it. An EMPTY
+        # first line on purpose: the coordinator types the title there, and a file
+        # committed untouched is refused by name rather than minting a play called
+        # after the placeholder. read_title is the arbiter, so call it.
+        body = unquote(value)
+        self.assertIn(
+            f"\n{TITLE_SEPARATOR}\n",
+            body,
+            "the README's creation link prefills a body whose separator is not "
+            "TITLE_SEPARATOR: everything below it would be read as part of the title.",
+        )
+        with self.assertRaises(UploadError):
+            read_title(self.written(body))
+        self.assertEqual(read_title(self.written("Le Malade imaginaire" + body)), "Le Malade imaginaire")
+
+    def written(self, text: str) -> Path:
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        path = Path(folder.name) / "creation.txt"
+        path.write_text(text, encoding="utf-8")
+        return path
 
 
 class TestDevPlay(unittest.TestCase):
