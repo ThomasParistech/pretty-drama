@@ -40,18 +40,24 @@ Félicitations, le site est en ligne!
 En tant que responsable du projet, vous pouvez également accéder à plus de fonctionnalités sur le site en rajoutant `/respo` à la page d'accueil. Pour retrouvez plus facilement ces deux liens, pensez à les ajouter à vos favoris.
 
 
+Chaque page du site a son sceau, celui que vous retrouverez en haut de l'écran.
+Les trois premières sont pour toute la troupe, les deux dernières pour le responsable.
 
 
 https://github.com/user-attachments/assets/469964b7-4fd0-4b01-9db4-08bd1b4841bb
 
 
 
-Chaque page du site a son sceau, celui que vous retrouverez en haut de l'écran.
-Les trois premières sont pour toute la troupe, les deux dernières pour le responsable.
 
 ## <img src="design/seal-rehearsal.svg" width="26" align="top" alt=""> Répétition
 
-Répétez à l'italienne, avec les vraies voix de la troupe.
+Répétez à l'italienne, avec les vraies voix de la troupe. 
+
+Si une réplique n'a pas encore été enregistrée, elle sera jouée avec une voix synthétique en attendant.
+
+> [!NOTE]
+> Activez le son lors de la lecture de le vidéo de démo ci-dessous.
+
 
 
 
@@ -62,6 +68,10 @@ https://github.com/user-attachments/assets/9802ed65-1e0f-46ce-8093-9f5b0d4b056f
 ## <img src="design/seal-recorder.svg" width="26" align="top" alt=""> Enregistrement
 
 Enregistrez vos répliques, puis envoyez le fichier au responsable.
+
+> [!NOTE]
+> Activez le son lors de la lecture de le vidéo de démo ci-dessous.
+
 
 
 
