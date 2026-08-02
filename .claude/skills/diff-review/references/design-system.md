@@ -85,6 +85,10 @@ The guard is about REDEFINITION, not reading. Not findings:
   cream.
 - `.confirm-quote` consuming `--font-serif` **on purpose**: a quoted line reads in the
   serif of ITS page (Cormorant on the Recorder, Spectral on the Editor).
+- The two ELEMENT rules of `theme.css` that read `--accent` deliberately, so a re-skinned
+  page tints its own controls: `select:focus/input:focus/textarea:focus` (the focus ring)
+  and `input[type="checkbox"]`'s `accent-color`. What is shared there is the GEOMETRY, not
+  the colour, so the Editor's boxes and rings are violet and Rehearsal's wine.
 
 Corollary: every font a shared component consumes must be loaded by the Google Fonts
 `<link>` of each `.html` concerned, weight included, or it renders as a faux weight.
@@ -140,7 +144,7 @@ values are for genuinely local cases and must stay harmonious on cream.
 | Mounting a page | `src/shared/mountPage.jsx`: `applyDocumentLanguage` then `createRoot(...).render(...)`, and the `theme.css` import, whose ORDER matters (before the page CSS that overrides it), hence importing this module BEFORE `App.jsx` in every entry point | the nine entry points |
 | "(3/12)" numbering of my lines | `src/shared/data.js`: `myLineNumbers` (Map) and `myLineNumber` (label, `t` as an argument, this module being under `node --test`) | Rehearsal, Recorder |
 | Manifest fetch | `src/shared/useManifest.js` | Rehearsal, Recorder, Stats, Dashboard (the home page calls `fetchManifest` directly: no loading and no error screen, a missing manifest just leaves the title empty) |
-| Full-page loading/error screen | `src/shared/PageState.jsx`: BOTH states take the shared `.page-notice` card, being one screen at two moments | all but the home page |
+| Full-page loading/error screen | `src/shared/PageState.jsx`: BOTH states take the shared `.page-notice` card, being one screen at two moments | the five play pages (Rehearsal, Recorder, Stats, Dashboard, Editor). The four BRAND pages have no `page` key and so no seal to head a state with: a play's home page leaves the title empty, the two root pages report inline (`.chooser-error`, `.chooser-new-error`) |
 
 **No header writes its page label**, without exception: the seal says the page and the tab
 repeats it. Both headers' `title` is the play title, and it is optional.

@@ -305,8 +305,13 @@
 
 /* The page's only irreversible gesture: red, but a line drawing on a pale fill so it
    stays second to the green player. Only ever on a take from this session. */
-.player-delete {
+/* The auto margin sits on the TOOLTIP WRAPPER, not the button: the wrapper is what
+   `.card-player` lays out, so on the button it would push nothing. */
+.player-delete-tip {
   margin-left: auto;
+}
+
+.player-delete {
   border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
   background: var(--accent-soft);
   padding: 0;

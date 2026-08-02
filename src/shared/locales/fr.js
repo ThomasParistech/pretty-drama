@@ -272,7 +272,9 @@ export const FR = {
     "probablement abîmé dans le dépôt ; sur GitHub, ouvrez l'historique du fichier, choisissez une " +
     "version antérieure et affichez-la en version brute, puis redéposez-la avant de continuer.",
   "editor.touchOnly":
-    "Pour des raisons de praticité, le mode {page} n'est disponible que depuis un ordinateur.",
+    // "la page {page}", as the five other sentences naming a page: `{page}` is that
+    // page's own label, so calling it a "mode" here named one thing two ways.
+    "Pour des raisons de praticité, la page {page} n'est disponible que depuis un ordinateur.",
 
   // The two sentences of the `hint`, in the order of the work: what serves while
   // typing, then what serves once you are done.
@@ -324,10 +326,15 @@ export const FR = {
 
   // ---------------------------------------------------------------- characters
 
-  "characters.empty": "Aucun personnage pour l'instant :",
+  // The sentence ENDS: it renders alone in its own paragraph, so the colon it used to
+  // carry enumerated nothing (the catalogue's rule keeps a colon for an enumeration).
+  // "ci-dessous" is exact, the name field and its button following in this same panel.
+  "characters.empty": "Aucun personnage pour l'instant : ajoutez-en un ci-dessous.",
   "characters.namePlaceholder": "Nom du personnage",
   "characters.add": "+ Personnage",
-  "characters.rename": "Renommer",
+  // Only the NAMED form: the button's `title` carries the name itself (`.truncate`
+  // cuts it in a 200 px rail), so the gesture is worded in the accessible name alone.
+  "characters.renameNamed": "Renommer {name}",
   "characters.changeColor": "Changer la couleur",
   "characters.changeColorOf": "Changer la couleur de {name}",
   "characters.delete": "Supprimer ce personnage",

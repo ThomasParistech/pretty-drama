@@ -7,10 +7,6 @@
   --accent-soft: #e8eef8;
   --accent-dark: #163d6c;
 
-  /* Lit state of a filled tile, the accent at 22 % as `--ed-tile-lit`. It must sit at
-     `:root`: as a `color-mix` on `--page-mark` it computed to guaranteed-invalid. */
-  --dash-tile-lit: color-mix(in srgb, var(--accent) 22%, #fff);
-
   /* Status column, second of the two frozen ones; fixed, its content being. The names
      column sizes itself (`width: 1%` below), so this one's `left` offset needs a
      measured length, which `ProgressTable` writes into `--dash-name-w`. */
@@ -43,34 +39,16 @@
   display: none;
 }
 
-/* The PDF tile takes EVERYTHING from `.upload-tile`; this is what living in the HEADER
-   adds, the same repaint as the Editing page's update tile. The accent pair and not the
-   seal one, so the tile does not depend on sitting inside `page-dashboard`. `color` on
-   the tile, the arrow following `currentColor`.
-   `transition` written out in full is MANDATORY: one property, so this REPLACES the
-   theme's and must keep `transform` and `box-shadow` or `.lift-hover` snaps. Hence the
-   reduced-motion twin at the end of this file. */
+/* The PDF tile takes EVERYTHING from `.upload-tile.in-header` (theme.css), which carries
+   the header repaint, the lit hover and the reduced-motion twin. What is left here is the
+   INK: the accent pair and not the seal one, so the tile does not depend on sitting inside
+   `page-dashboard`, `color` on the tile and the arrow following `currentColor`. */
 .dash-script-tile {
-  background: var(--accent-soft);
-  border-color: var(--accent-soft);
   color: var(--accent);
-  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
-}
-
-/* `:not(:disabled)` on an `<a>` that can never be disabled is the whole point: it gives
-   this rule the specificity of the theme's `.upload-tile:hover:not(:disabled)`, which
-   would otherwise ring a flat tile with the full-strength accent. */
-.dash-script-tile:hover:not(:disabled) {
-  background: var(--dash-tile-lit);
-  border-color: var(--dash-tile-lit);
-}
-
-.dash-script-tile .upload-tile-text,
-.dash-script-tile .upload-tile-word {
-  color: inherit;
 }
 
 .dash-script-tile .upload-tile-text {
+  color: inherit;
   font-weight: 700;
 }
 
@@ -550,10 +528,5 @@
   }
 }
 
-/* Reduced motion. The PDF tile is switched off HERE because it is here that it
-   redeclares its `transition`, and this file loads after theme.css. */
-@media (prefers-reduced-motion: reduce) {
-  .dash-script-tile {
-    transition-duration: 0s;
-  }
-}
+/* No reduced-motion block: this file no longer redeclares any `transition`. The PDF tile's
+   is `.upload-tile.in-header`'s, switched off in theme.css beside the rule that sets it. */

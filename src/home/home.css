@@ -37,6 +37,15 @@
   margin-bottom: 8px;
 }
 
+/* The step the chooser's heading already takes, at the same 600 px: this is the page an
+   actor opens on a phone, and a real title ("Le Bourgeois gentilhomme") ran to three
+   lines of 44 px there, pushing the cards it exists to introduce off the screen. */
+@media (max-width: 600px) {
+  .home-play-title {
+    font-size: 32px;
+  }
+}
+
 /* Three cards per row on a wide window, which is how the ROW says who the page is
    addressed to. A bonus, not a contract: below ~1060 px they wrap into 2 + 2 + 1, and
    the separation that counts is that of the ADDRESSES, not the layout.

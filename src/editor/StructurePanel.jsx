@@ -265,7 +265,12 @@ function ActItem({
           label={t("structure.moveAct", { act: actLabel(tPlay, actIndex) })}
         />
         {/* Plain text: an act's name is derived and leads nowhere. The label is in the
-            PLAY's language, the sentence quoting it in the READER's. */}
+            PLAY's language, the sentence quoting it in the READER's.
+            NO `title` here, unlike the `.truncate` rule's default: the label is DERIVED
+            FROM RANK, so it is bounded ("Acte XXXIX" at worst, and `romanNumeral` gives
+            up past 39). It is not user data and cannot grow, so `.truncate` is a safety
+            net, not a promise that something was hidden. A tooltip would only repeat a
+            label already fully on screen. Same for the scene button below. */}
         <span className="structure-name structure-name-static truncate">
           {actLabel(tPlay, actIndex)}
         </span>
@@ -350,7 +355,10 @@ function SceneItem({
         />
         {/* A BUTTON, so the keyboard can still open a scene, but drawn as no field:
             a white frame would promise an entry that no longer exists. `aria-current`
-            so the open scene is not signalled by colour alone. */}
+            so the open scene is not signalled by colour alone.
+            `title` is the GESTURE and not the label, on purpose: the label is derived
+            from rank (see the act row above), so nothing is ever hidden by `.truncate`,
+            and this title is also the button's accessible name. */}
         <button
           type="button"
           className="structure-name structure-scene-name truncate"

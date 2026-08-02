@@ -220,10 +220,10 @@ export const EN = {
 
   // ---------------------------------------------------------------- characters
 
-  "characters.empty": "No characters yet:",
+  "characters.empty": "No characters yet: add one below.",
   "characters.namePlaceholder": "Character name",
   "characters.add": "+ Character",
-  "characters.rename": "Rename",
+  "characters.renameNamed": "Rename {name}",
   "characters.changeColor": "Change the colour",
   "characters.changeColorOf": "Change the colour of {name}",
   "characters.delete": "Delete this character",

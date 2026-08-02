@@ -155,30 +155,14 @@ h3 {
   border-color: var(--border);
 }
 
-/* The page's main action, hence the filled thing in the row. Shape from theme.css.
-   Ink `--ed-accent-ink` (the accent measures 4.47:1 here), as on `.dirty-hint`.
-   `transition` written out in full is MANDATORY: one property, so this REPLACES the
-   theme's and must keep `transform` and `box-shadow` or `.lift-hover` snaps.
-   The fill is NOT guarded by `:not(:disabled)`, only faded; the HOVER is, `:hover`
-   still firing on a disabled button. */
-.editor-upload-tip .upload-tile {
-  background: var(--accent-soft);
-  border-color: var(--accent-soft);
-  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
-}
-
+/* The page's main action, hence the filled thing in the row. Fill, lit hover, transition
+   and reduced-motion all come from `.upload-tile.in-header` (theme.css); the `--accent`
+   this page re-skins is what makes them violet, and `--tile-lit` re-derives from it.
+   What is left here is the INK: `--ed-accent-ink`, because the accent itself measures
+   4.47:1 on this fill, as on `.dirty-hint`. */
 .editor-upload-tip .upload-tile .upload-tile-text {
   color: var(--ed-accent-ink);
   font-weight: 700;
-}
-
-.editor-upload-tip .upload-tile .upload-tile-word {
-  color: inherit;
-}
-
-.editor-upload-tip .upload-tile:not(:disabled):hover {
-  background: var(--ed-tile-lit);
-  border-color: var(--ed-tile-lit);
 }
 
 /* Below 860 px the row's flex shrinks the title (`flex: 1`) long before wrapping, and
@@ -1348,9 +1332,6 @@ h3 {
     transition-duration: 0s;
   }
 
-  /* This page redeclares the tile's `transition` to add `background`, which outranks
-     the theme's switch-off, so the twin has to live here too. */
-  .editor-upload-tip .upload-tile {
-    transition-duration: 0s;
-  }
+  /* Nothing for the update tile: this page no longer redeclares its `transition`, which
+     is `.upload-tile.in-header`'s and is switched off in theme.css beside its own rule. */
 }

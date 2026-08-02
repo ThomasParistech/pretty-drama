@@ -99,9 +99,14 @@ function CharacterItem({ character, lineCount, onRename, onSetColor, onDelete })
             }}
           />
         ) : (
+          // `title` carries the NAME, as `.truncate` requires: the rail is 200 px wide
+          // and a character's name is the one piece of user data here, so a cut one is
+          // readable nowhere else. The gesture moves to `aria-label`, which also keeps
+          // the name in the accessible name, exactly as `chip-delete` does below.
           <button
             className="character-name truncate"
-            title={t("characters.rename")}
+            title={character.name}
+            aria-label={t("characters.renameNamed", { name: character.name })}
             onClick={() => setEditing(true)}
           >
             {character.name}
@@ -129,7 +134,16 @@ function CharacterItem({ character, lineCount, onRename, onSetColor, onDelete })
               <button
                 key={color}
                 className={`swatch ${color === character.color ? "current" : ""}`}
-                /* Every swatch NAMES its colour: otherwise twenty homonyms. */
+                /* Every swatch NAMES its colour: otherwise twenty homonyms.
+                   The `.toLowerCase()` below looks like casing decided in a component,
+                   and it is not a slip. The twenty names are capitalised because they
+                   also stand ALONE (in `colorCurrent` and in the `title`), and only the
+                   mid-sentence use needs them folded: French says "Choisir la couleur
+                   bleu", English "Choose blue". Both are right, and both stay right in
+                   any language whose colour names are not capitalised mid-sentence.
+                   The alternative is a second set of TWENTY lowercase entries per
+                   catalogue to serve one sentence; refused as such. A language that
+                   really needs the capital there must gain those entries. */
                 aria-label={
                   color === character.color
                     ? t("characters.colorCurrent", { color: t(CHARACTER_COLOR_KEYS[i]) })

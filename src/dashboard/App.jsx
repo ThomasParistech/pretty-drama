@@ -422,7 +422,7 @@ function ScriptPdfLink({ title }) {
   return (
     // `download` renames it: "script.pdf" says nothing in a downloads folder.
     <a
-      className="upload-tile card lift-hover dash-script-tile"
+      className="upload-tile card lift-hover in-header dash-script-tile"
       href={SCRIPT_PDF_HREF}
       download={`${name}.pdf`}
     >

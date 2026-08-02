@@ -40,12 +40,8 @@
   white-space: nowrap;
 }
 
-/* A fifth bigger than the 11.5 px label, sat on the baseline. */
-.tts-icon {
-  width: 1.2em;
-  height: 1.2em;
-  vertical-align: -0.25em;
-}
+/* `.tts-icon` lives in theme.css beside `.warn-icon`: `SparkleIcon` sets that class on
+   ITSELF, so the rule belongs with the shared component and not with its first caller. */
 
 .dialogue-card.muted.hide-text .dialogue-text {
   filter: blur(8px);

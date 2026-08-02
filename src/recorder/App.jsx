@@ -738,18 +738,27 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, recording }) {
       className={`card-player ${fresh ? "fresh" : "done"}`}
       onClick={(e) => e.stopPropagation()}
     >
-      <button
-        className="player-play"
+      {/* Tooltip on the `.btn-tip` wrapper, as the bottom bar: both these buttons disable
+          while recording, and a disabled control receives no mouse event, so a `title`
+          worn by the button is absent in the very state it explains. The accessible name
+          stays on the button, `aria-label` doing what the `title` used to. */}
+      <span
+        className="btn-tip"
         title={playing ? t("recorder.player.pause") : t("recorder.player.play")}
-        disabled={recording}
-        onClick={() => {
-          const audio = audioRef.current;
-          if (audio.paused) audio.play();
-          else audio.pause();
-        }}
       >
-        {playing ? <PauseIcon /> : <PlayIcon />}
-      </button>
+        <button
+          className="player-play"
+          aria-label={playing ? t("recorder.player.pause") : t("recorder.player.play")}
+          disabled={recording}
+          onClick={() => {
+            const audio = audioRef.current;
+            if (audio.paused) audio.play();
+            else audio.pause();
+          }}
+        >
+          {playing ? <PauseIcon /> : <PlayIcon />}
+        </button>
+      </span>
       {/* What joins the two durations comes from the catalogue, never a "/" written here. */}
       <span className="player-time">
         {t("recorder.player.time", { elapsed: formatTime(time), total: formatTime(duration) })}
@@ -764,15 +773,16 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, recording }) {
         ))}
       </span>
       {onDelete && (
-        <button
-          className="player-delete"
-          title={t("recorder.player.delete")}
-          aria-label={t("recorder.player.delete")}
-          disabled={recording}
-          onClick={() => setConfirming(true)}
-        >
-          <TrashIcon />
-        </button>
+        <span className="btn-tip player-delete-tip" title={t("recorder.player.delete")}>
+          <button
+            className="player-delete"
+            aria-label={t("recorder.player.delete")}
+            disabled={recording}
+            onClick={() => setConfirming(true)}
+          >
+            <TrashIcon />
+          </button>
+        </span>
       )}
       {confirming && (
         <ConfirmModal

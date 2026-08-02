@@ -10,6 +10,10 @@
   --accent: #8b2635;
   --accent-dark: #6f1e2a;
   --accent-soft: #f6e8ea;
+  /* Lit hover surface of a header file tile (`.upload-tile.in-header`): the accent at
+     22 % on white, the tile's own fill being `--accent-soft`. Declared beside the accent
+     it mixes, so a page re-skinning `--accent` on its own `:root` re-derives this too. */
+  --tile-lit: color-mix(in srgb, var(--accent) 22%, #fff);
   --gold: #b98a2f;
   --border: #e3dbcd;
   --ok: #2e7d32;
@@ -25,6 +29,14 @@
   --focus-ring-offset: 2px;
   /* Full-page cards centre with `margin: auto`; this inset is their only phone gutter. */
   --notice-gutter: 32px;
+  /* NEITHER family is loaded with an italic axis, and that is deliberate. The tree holds
+     exactly three `font-style: italic` (an empty play card, an empty journal, a capped
+     journal), all three on `--font-ui` and all three secondary notes, so the browser's
+     synthesised oblique is enough; loading Inter's `ital` for them would fetch a face for
+     three small labels. The serif italic WAS requested by all nine documents and had no
+     consumer at all (no `font-style: italic` on a serif element, no `<em>`, no `<i>`), so
+     it is gone from the queries. Adding a real italic means adding the axis back HERE and
+     in every `.html`. */
   --font-ui: "Inter", system-ui, sans-serif;
   --font-serif: "Cormorant Garamond", Georgia, serif;
   /* Header tokens, NEVER re-skinned by a page (the editor sets --shadow: none, which
@@ -75,6 +87,15 @@
 .warn-icon {
   vertical-align: -0.15em;
   margin-right: 0.35em;
+}
+
+/* SparkleIcon, which sets this class on itself like WarnIcon above: a fifth bigger than
+   the 11.5 px label beside it, sat on the baseline. HERE and not with its one caller, or
+   the second page to draw it gets an unsized icon. */
+.tts-icon {
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: -0.25em;
 }
 
 /* FlagIcon, shared by both language switches. Not an icon of the site: fixed size, own
@@ -233,7 +254,10 @@ textarea:focus {
 }
 
 /* Accent, not system blue. Element selector and shared: two pages have checkboxes and
-   they must be identical. */
+   their GEOMETRY must be identical. The colour is not: like the focus ring just above,
+   `accent-color` reads `--accent`, so a re-skinned page tints its own boxes (wine on
+   Rehearsal, violet in the Editor). Both element rules are deliberate reads, listed as
+   such in design-system.md. */
 input[type="checkbox"] {
   accent-color: var(--accent);
   width: 16px;
@@ -784,6 +808,34 @@ input[type="checkbox"] {
   cursor: not-allowed;
 }
 
+/* A file tile living in a page HEADER (Progress' PDF download, Editing's script update):
+   the same tile, repainted onto the page's accent so it reads as part of the header band
+   rather than as a card dropped into it. Both carriers wore this block each, token for
+   token, before it came here; what stays theirs is the INK on the label, which follows
+   each re-skin.
+   `transition` is written out in FULL and that is mandatory: it is one property, so it
+   REPLACES the base tile's above and has to carry `transform` and `box-shadow` back or
+   `.lift-hover` snaps. Hence the reduced-motion twin at the foot of this file, which is
+   now the only one (each carrier used to keep its own).
+   `--tile-lit` sits at `:root` with the accents it is mixed from, so a page re-skinning
+   `--accent` on its own `:root` gets its own lit surface for free. */
+.upload-tile.in-header {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+/* `:not(:disabled)` is what gives this the specificity of the accent rule above, which
+   would otherwise ring a flat tile with the full-strength accent. */
+.upload-tile.in-header:hover:not(:disabled) {
+  background: var(--tile-lit);
+  border-color: var(--tile-lit);
+}
+
+.upload-tile.in-header .upload-tile-word {
+  color: inherit;
+}
+
 /* Seal of the page that produced the file. Optional: the Editing tile has none. */
 .upload-tile-mark {
   width: 34px;
@@ -968,8 +1020,11 @@ input[type="checkbox"] {
     transition-delay: 0s;
   }
 
-  /* The tile declares its own `transition` (`.lift-hover` leaves it to each surface). */
-  .upload-tile {
+  /* The tile declares its own `transition` (`.lift-hover` leaves it to each surface).
+     The header variant redeclares it AGAIN to add `background`, so it needs its own
+     switch-off; both carriers used to keep this twin in their own file. */
+  .upload-tile,
+  .upload-tile.in-header {
     transition-duration: 0s;
   }
 }

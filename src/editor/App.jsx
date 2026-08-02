@@ -342,7 +342,9 @@ export default function App() {
               className="btn-tip editor-upload-tip"
               title={t(dirty ? "editor.upload.tip" : "editor.upload.none")}
             >
-              <UploadTile onClick={upload} disabled={!dirty}>
+              {/* `in-header`: the shared header repaint (theme.css), the same one the
+                  Progress page's PDF tile wears. This page's accent makes it violet. */}
+              <UploadTile className="in-header" onClick={upload} disabled={!dirty}>
                 {/* The coloured words are a PARAMETER, so each language keeps its word
                     order. No extension: the file does not exist yet, this button makes
                     it, so the label says what the gesture DOES. */}
