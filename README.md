@@ -61,7 +61,10 @@ Si une réplique n'a pas encore été enregistrée, elle sera jouée avec une vo
 
 
 
-https://github.com/user-attachments/assets/9802ed65-1e0f-46ce-8093-9f5b0d4b056f
+
+https://github.com/user-attachments/assets/adf8ce2f-4f1e-4dc2-9ce0-4036f787e95e
+
+
 
 
 
