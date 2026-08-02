@@ -1,13 +1,3 @@
 {
-  "plays": [
-    {
-      "id": "transport-de-femmes",
-      "title": "Transport de Femmes",
-      "language": "fr",
-      "characters": 10,
-      "words": 10307,
-      "lines": 1144,
-      "recorded": 37
-    }
-  ]
+  "plays": []
 }
