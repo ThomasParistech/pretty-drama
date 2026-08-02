@@ -3,7 +3,7 @@ import PageState from "../shared/PageState.jsx";
 import useScrollToActiveCard from "../shared/useScrollToActiveCard.js";
 import PlayHeader from "../shared/PlayHeader.jsx";
 import ProgressBar from "../shared/ProgressBar.jsx";
-import { myLineNumbers, myLineNumber, sceneChoices } from "../shared/data.js";
+import { myLineNumbers, myLineNumber, actChoices, sceneChoices } from "../shared/data.js";
 import {
   PlayIcon,
   PauseIcon,
@@ -55,7 +55,8 @@ export default function App() {
   const scene = scenes[sceneIndex] ?? null;
   const lines = useMemo(() => scene?.lines ?? [], [scene]);
 
-  // `sceneChoices` (shared with the Recorder) returns INDEXES into the act, never renumbered.
+  // `actChoices`/`sceneChoices` (shared with the Recorder) return INDEXES, never renumbered.
+  const actOptions = useMemo(() => actChoices(acts, characterId), [acts, characterId]);
   const choices = useMemo(() => sceneChoices(scenes, characterId), [scenes, characterId]);
 
   // Mirrors the values the imperative engine needs.
@@ -227,8 +228,14 @@ export default function App() {
     setIndex(0);
   };
 
-  // Choosing a character can hide the current scene, blanking a `<select>` on a dead value.
-  // Through `changeScene`, so playback stops too.
+  // Choosing a character can hide the current act or scene, blanking a `<select>` on a dead
+  // value. Through `changeAct`/`changeScene`, so playback stops too. The act first: it
+  // renews `scenes`, and the scene effect then runs on the act one really is in.
+  useEffect(() => {
+    if (actOptions.length > 0 && !actOptions.includes(actIndex)) changeAct(actOptions[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actOptions, actIndex]);
+
   useEffect(() => {
     if (choices.length > 0 && !choices.includes(sceneIndex)) changeScene(choices[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -265,7 +272,8 @@ export default function App() {
             value={actIndex}
             onChange={(e) => changeAct(Number(e.target.value))}
           >
-            {acts.map((_, i) => (
+            {actOptions.map((i) => (
+              // The value is the act's rank in the PLAY: hiding never renumbers.
               <option key={i} value={i}>
                 {actLabel(t, i)}
               </option>

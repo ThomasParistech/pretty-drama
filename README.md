@@ -9,7 +9,7 @@ seule, et vous dites vos répliques au bon moment.
 
 
 
-## Mise en place
+# Mise en place
 
 Suivez les étapes de la vidéo ci-dessous:
 
@@ -17,13 +17,11 @@ Suivez les étapes de la vidéo ci-dessous:
 > Pas encore de compte GitHub ? [Créez-en un](https://github.com/signup) avant de commencer. Le bouton vert **"Use this template"** mentionné au début de la vidéo ne sera disponible que lorsque vous serez connecté avec votre compte GitHub.
 
 
-VIDEO
-
-
 > [!WARNING]
 > **Étape obligatoire avant de créer ma 1ère pièce**
 >
-> Comme indiqué dans la vidéo, il est primordial de sélectionner l'option "GitHub Actions" sur la page [**Settings → Pages**](../../settings/pages) pour que le site prenne vie. Sans cette étape, le bouton de création de la 1ère place échouera.
+> Comme indiqué dans la vidéo, il est primordial de sélectionner l'option **"GitHub Actions"** sur la page [**Settings → Pages**](../../settings/pages) pour que le site prenne vie. Sans cette étape, le bouton de création de la 1ère place échouera.
+
 
 <div align="center">
 
@@ -34,12 +32,93 @@ VIDEO
 </div>
 
 
+<div align="center">
 
-## Utilisation
+<video src="design/setup.mp4" controls width="720">
+  <a href="design/setup.mp4">Voir la vidéo de mise en place</a>
+</video>
 
-TODO
+</div>
 
-## Licence
+# Utilisation
+## Page du responsable
+Félicitations, le site est en ligne!
+
+En tant que responsable du projet, vous pouvez également accéder à plus de fonctionnalités sur le site en rajoutant `/respo` à la page d'accueil. Pour retrouvez plus facilement ces deux liens, pensez à les ajouter à vos favoris.
+
+
+<div align="center">
+
+<video src="design/respo_pages.mp4" controls width="720">
+  <a href="design/respo_pages.mp4">Voir la vidéo de la page de respo</a>
+</video>
+
+</div>
+
+Chaque page du site a son sceau, celui que vous retrouverez en haut de l'écran.
+Les trois premières sont pour toute la troupe, les deux dernières pour le responsable.
+
+## <img src="design/seal-rehearsal.svg" width="26" align="top" alt=""> Répétition
+
+Répétez à l'italienne, avec les vraies voix de la troupe.
+
+<div align="center">
+
+<video src="design/demo_rehearsal.mp4" controls width="720">
+  <a href="design/demo_rehearsal.mp4">Voir la vidéo de la répétition</a>
+</video>
+
+</div>
+
+## <img src="design/seal-recorder.svg" width="26" align="top" alt=""> Enregistrement
+
+Enregistrez vos répliques, puis envoyez le fichier au responsable.
+
+<div align="center">
+
+<video src="design/demo_recording.mp4" controls width="720">
+  <a href="design/demo_recording.mp4">Voir la vidéo de l'enregistrement</a>
+</video>
+
+</div>
+
+## <img src="design/seal-stats.svg" width="26" align="top" alt=""> Répartition
+
+Voyez comment la parole se répartit entre les personnages, en mots et en répliques, scène par scène.
+
+<div align="center">
+
+<video src="design/demo_stats.mp4" controls width="720">
+  <a href="design/demo_stats.mp4">Voir la vidéo de la répartition</a>
+</video>
+
+</div>
+
+## <img src="design/seal-editor.svg" width="26" align="top" alt=""> Édition
+
+Éditez la pièce : personnages, actes, scènes et répliques.
+
+<div align="center">
+
+<video src="design/demo_editor.mp4" controls width="720">
+  <a href="design/demo_editor.mp4">Voir la vidéo de l'édition</a>
+</video>
+
+</div>
+
+## <img src="design/seal-dashboard.svg" width="26" align="top" alt=""> Avancement
+
+Suivez l'avancement des enregistrements et déposez les fichiers de voix que vous recevez.
+
+<div align="center">
+
+<video src="design/demo_dashboard.mp4" controls width="720">
+  <a href="design/demo_dashboard.mp4">Voir la vidéo de l'avancement</a>
+</video>
+
+</div>
+
+# Licence
 
 PrettyDrama Voices est un logiciel libre, publié sous licence
 [MIT](LICENSE): vous pouvez le forker, le modifier et le réutiliser

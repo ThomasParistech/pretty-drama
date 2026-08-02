@@ -226,8 +226,9 @@ export function SparkleIcon() {
 }
 
 // ---- Page icons (the "seal" of PageMark.jsx) ----
-// The paths are reused as they are in the favicons of the .html files: retouching one
-// here must be carried over there.
+// The paths are reused as they are in the favicons of the .html files and in
+// `design/seal-<page>.svg`, the seals the README puts next to each page's demo:
+// retouching one here must be carried over there.
 
 // Home, and therefore the brand: the two theatre masks.
 // GEOMETRY SUPPLIED, NOT TO BE RETOUCHED. The 8 paths come as they are from

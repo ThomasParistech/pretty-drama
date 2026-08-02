@@ -11,6 +11,7 @@ import {
   slugify,
   myLineNumbers,
   myLineNumber,
+  actChoices,
   sceneChoices,
   excerpt,
 } from "../shared/data.js";
@@ -94,10 +95,20 @@ export default function App() {
   );
   const isTodo = useCallback((line) => lineState(line) === "todo", [lineState]);
 
-  // `sceneChoices` (shared with Rehearsal) returns INDEXES into the act, never renumbered.
+  // `actChoices`/`sceneChoices` (shared with Rehearsal) return INDEXES, never renumbered.
+  const actOptions = useMemo(() => actChoices(acts, characterId), [acts, characterId]);
   const choices = useMemo(() => sceneChoices(scenes, characterId), [scenes, characterId]);
 
-  // Choosing a character can hide the current scene, blanking a `<select>` on a dead value.
+  // Choosing a character can hide the current act or scene, blanking a `<select>` on a dead
+  // value. The act first: it renews `scenes`, and the scene effect then runs on the act one
+  // really is in.
+  useEffect(() => {
+    if (actOptions.length > 0 && !actOptions.includes(actIndex)) {
+      setActIndex(actOptions[0]);
+      setSceneIndex(0);
+    }
+  }, [actOptions, actIndex]);
+
   useEffect(() => {
     if (choices.length > 0 && !choices.includes(sceneIndex)) setSceneIndex(choices[0]);
   }, [choices, sceneIndex]);
@@ -236,17 +247,18 @@ export default function App() {
               setSceneIndex(0);
             }}
           >
-            {acts.map((a, i) => {
+            {actOptions.map((i) => {
               // An act totals its scenes, so one goes straight to where the work is.
               const counts =
                 characterId === ""
                   ? null
                   : countLines(
-                      a.scenes.flatMap((s) => s.lines),
+                      acts[i].scenes.flatMap((s) => s.lines),
                       characterId,
                       isTodo
                     );
               return (
+                // The value is the act's rank in the PLAY: hiding never renumbers.
                 <option key={i} value={i}>
                   {actLabel(t, i)}
                   {optionSuffix(counts)}

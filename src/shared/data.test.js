@@ -10,6 +10,7 @@ import {
   githubUploadUrl,
   myLineNumbers,
   sceneChoices,
+  actChoices,
   slugify,
 } from "./data.js";
 import { isPlayId } from "./plays.js";
@@ -213,6 +214,30 @@ test("a character silent in the whole act gets the whole act, not an empty menu"
 
 test("sceneChoices takes an act with no scene at all", () => {
   assert.deepEqual(sceneChoices([], "c1"), []);
+});
+
+// ---------------------------------------------------------------- actChoices
+
+const PLAY = [
+  { scenes: [{ lines: [{ characterId: "c1" }] }, { lines: [] }] },
+  { scenes: [{ lines: [{ characterId: "c2" }] }] },
+  { scenes: [{ lines: [{ characterId: "c2" }, { characterId: "c1" }] }] },
+];
+
+test("actChoices keeps only the acts where the character speaks, by INDEX", () => {
+  assert.deepEqual(actChoices(PLAY, "c1"), [0, 2]);
+});
+
+test("with no character chosen, actChoices offers the whole play", () => {
+  assert.deepEqual(actChoices(PLAY, ""), [0, 1, 2]);
+});
+
+test("a character silent in the whole play gets every act, not an empty menu", () => {
+  assert.deepEqual(actChoices(PLAY, "ghost"), [0, 1, 2]);
+});
+
+test("actChoices takes a play with no act at all", () => {
+  assert.deepEqual(actChoices([], "c1"), []);
 });
 
 // ------------------------------------------------------------------- excerpt

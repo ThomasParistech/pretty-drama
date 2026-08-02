@@ -75,6 +75,16 @@ export function sceneChoices(scenes, characterId) {
   return mine.length > 0 ? mine : all;
 }
 
+// Same rule one level up: a character who speaks in one act only must not be offered the
+// others, where every scene menu would fall back to the whole act and every line be
+// someone else's. Same INDEX and same whole-play fallback as `sceneChoices`.
+export function actChoices(acts, characterId) {
+  return sceneChoices(
+    acts.map((a) => ({ lines: a.scenes.flatMap((s) => s.lines) })),
+    characterId
+  );
+}
+
 export function setBeforeUnloadGuard(enabled) {
   window.onbeforeunload = enabled
     ? (e) => {
