@@ -45,6 +45,11 @@
     "id": "eee"
   },
   {
+    "name": "a mark outside the Latin block (here a sheva, written escaped because it is invisible) is dropped like an accent instead of becoming a separator: both sides fold marks by CATEGORY, not by block",
+    "title": "Ch\u05b0alom",
+    "id": "chalom"
+  },
+  {
     "name": "a ligature has no decomposition, so it is dropped like any unknown character, and the leading hyphen it would leave goes with it",
     "title": "Æschyle & C°",
     "id": "schyle-c"

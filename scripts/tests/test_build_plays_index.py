@@ -40,6 +40,11 @@ class TestCountWords(unittest.TestCase):
         self.assertEqual(count_words("Éléonore où être"), 3)
         self.assertEqual(count_words("Acte 2 scène 10"), 4)
 
+    def test_the_underscore_separates_here_as_it_does_on_the_front(self):
+        # The one place `\w` and `[\p{L}\p{N}]` disagree, so the mirrored case in
+        # stats.test.js is what this asserts against.
+        self.assertEqual(count_words("a_b"), 2)
+
     def test_it_returns_zero_on_anything_that_is_not_a_text(self):
         for raw in (None, 42, [], {}, ""):
             self.assertEqual(count_words(raw), 0, f"input: {raw!r}")

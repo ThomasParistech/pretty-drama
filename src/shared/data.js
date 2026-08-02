@@ -180,12 +180,18 @@ export function githubNewPlayUrl(playId, title, note) {
 // `fallback` is MANDATORY: it lands in a file name, so it is interface text. The empty
 // test stays HERE though: "???" is a non-empty string that slugs to nothing, so only
 // the result knows.
+//
+// `\p{M}` and not the Latin block `[\u0300-\u036f]`: the block leaves every other mark
+// standing, and `[^a-z0-9]+` then turns it into a HYPHEN while `mint_play_id`
+// (scripts/common.py) drops it, so "x\u05b0y" was announced as "x-y" and minted as "xy".
+// `\p{M}` is the exact mirror of that side's rule (measured: the two agree on all 2268
+// mark code points), and it is the only one JS can express without a table.
 export function slugify(name, fallback) {
   return (
     name
       .toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\p{M}/gu, "")
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "") || fallback
   );

@@ -11,11 +11,12 @@ Usage: python scripts/ci/has_lines.py <path to script.json>
 
 import json
 import sys
+from pathlib import Path
 
 
 def has_lines(path) -> bool:
     try:
-        script = json.loads(open(path, encoding="utf-8").read())
+        script = json.loads(Path(path).read_text(encoding="utf-8"))
         return any(
             scene.get("lines")
             for act in script.get("acts") or []

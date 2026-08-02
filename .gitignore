@@ -8,8 +8,10 @@ uploads_result.json
 # plays/*/data/script.pdf is deliberately absent: derived but COMMITTED, because its
 # rebuild costs 45 s of LaTeX, so uploads.yml typesets it on promotion only. Counterpart:
 # a script.json edited by hand in the repo keeps a stale PDF (cf. build_script_pdf.py).
-# Only the interrupted-write temp file stays out of the folder the Action commits whole.
-plays/*/data/script.pdf.part
+# Nothing else of the PDF is ignored: `build_script_pdf.py` typesets into a temporary
+# DIRECTORY and copies the result in, so no half-written file is ever left in the folder
+# the Action commits whole (a `script.pdf.part` rule sat here guarding a name no code
+# has ever written).
 # A play's pages are generated from pages/ at every config load (vite.config.js): derived
 # and free to rebuild, unlike the PDF above.
 plays/*/*.html

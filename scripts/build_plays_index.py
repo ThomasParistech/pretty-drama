@@ -16,7 +16,10 @@ INDEX_PATH = REPO_ROOT / "data" / "plays.json"
 
 # TWIN of `countWords` (src/stats/stats.js) and must stay one, or the chooser and the
 # Stats page would contradict each other. Apostrophes separate: "l'crâne" is two words.
-WORD_RE = re.compile(r"\w+")
+# `[^\W_]` and not `\w`: `\w` also takes the UNDERSCORE, which `[\p{L}\p{N}]` on the JS
+# side does not, so "a_b" was one word here and two there. Measured: the two agree on
+# every code point up to U+3000 plus a spread of astral, Arabic-indic and numeral ones.
+WORD_RE = re.compile(r"[^\W_]+")
 
 
 def count_words(text: object) -> int:

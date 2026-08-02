@@ -20,7 +20,7 @@ Suivez les étapes de la vidéo ci-dessous:
 > [!WARNING]
 > **Étape obligatoire avant de créer ma 1ère pièce**
 >
-> Comme indiqué dans la vidéo, il est primordial de sélectionner l'option **"GitHub Actions"** sur la page [**Settings → Pages**](../../settings/pages) pour que le site prenne vie. Sans cette étape, le bouton de création de la 1ère place échouera.
+> Comme indiqué dans la vidéo, il est primordial de sélectionner l'option **"GitHub Actions"** sur la page [**Settings → Pages**](../../settings/pages) pour que le site prenne vie. Sans cette étape, le bouton de création de la 1ère pièce échouera.
 
 
 <div align="center">
@@ -37,7 +37,7 @@ https://github.com/user-attachments/assets/87185624-02a7-4d0f-bb85-6c8752777d93
 ## Page du responsable
 Félicitations, le site est en ligne!
 
-En tant que responsable du projet, vous pouvez également accéder à plus de fonctionnalités sur le site en rajoutant `/respo` à la page d'accueil. Pour retrouvez plus facilement ces deux liens, pensez à les ajouter à vos favoris.
+En tant que responsable du projet, vous pouvez également accéder à plus de fonctionnalités sur le site en ajoutant `respo.html` à la fin de l'adresse du site. Pour retrouver plus facilement ces deux liens, pensez à les ajouter à vos favoris.
 
 
 Chaque page du site a son sceau, celui que vous retrouverez en haut de l'écran.
@@ -56,7 +56,7 @@ Répétez à l'italienne, avec les vraies voix de la troupe.
 Si une réplique n'a pas encore été enregistrée, elle sera jouée avec une voix synthétique en attendant.
 
 > [!NOTE]
-> Activez le son lors de la lecture de le vidéo de démo ci-dessous.
+> Activez le son lors de la lecture de la vidéo de démo ci-dessous.
 
 
 
@@ -73,7 +73,7 @@ https://github.com/user-attachments/assets/adf8ce2f-4f1e-4dc2-9ce0-4036f787e95e
 Enregistrez vos répliques, puis envoyez le fichier au responsable.
 
 > [!NOTE]
-> Activez le son lors de la lecture de le vidéo de démo ci-dessous.
+> Activez le son lors de la lecture de la vidéo de démo ci-dessous.
 
 
 

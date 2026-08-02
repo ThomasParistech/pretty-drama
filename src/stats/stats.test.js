@@ -56,6 +56,12 @@ test("countWords ignores punctuation and counts accents as letters", () => {
   assert.equal(countWords("Acte 2 scène 10"), 4, "numbers are words");
 });
 
+test("countWords separates on the underscore, as the Python reference does", () => {
+  // The one place `[\p{L}\p{N}]` and Python's `\w` disagreed: mirrored in
+  // scripts/tests/test_build_plays_index.py.
+  assert.equal(countWords("a_b"), 2);
+});
+
 test("countWords returns zero on anything that is not a text", () => {
   // The manifest is hand-editable.
   for (const raw of [null, undefined, 42, [], {}, ""]) {

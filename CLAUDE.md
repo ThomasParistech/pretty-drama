@@ -272,10 +272,12 @@ copying expected values. Breaking a pair breaks CI.
   (they name a folder and a URL). Validate a play id **before** building a path. A play id
   is minted in **one** place, `mint_play_id`; the front's `mintPlayId` only announces it.
 - **`sanitize_script` (Python) tolerantly mirrors `sanitizeScript` (JS)**: malformed input
-  is ignored, never a crash. Three deliberate asymmetries: JS re-mints bad or duplicate
-  ids, Python only requires a non-empty string; JS floors the structure, Python never; the
-  play id is validated identically. Everything else must agree, including that a character
-  with no real name is dropped by both.
+  is ignored, never a crash. Four deliberate asymmetries: JS re-mints bad or duplicate
+  ids, Python only requires a non-empty string; JS floors the structure, Python never; JS
+  FILLS a missing colour (`firstFreeColor`, the same rule the manifest-reading pages apply
+  through `assignColors`), Python only copies a `#rrggbb` through; the play id is validated
+  identically. Everything else must agree, including that a character with no real name is
+  dropped by both.
 - **`sanitizeScript` never moves a line between characters.** On a duplicate id the first
   holder keeps id and lines, the second gets a fresh id and none.
 - **A no-op must not create a new state** (`updateScene`, `scriptReducer`, and
@@ -321,6 +323,7 @@ multi-page site, and switching language navigates.
 | Root pages | `src/chooser/` (one component, `manage` flag; no link from chooser to management). One `PlayCard` for both, the whole card a link, `manage` adding the recorded share. `NewPlay.jsx`: `NewPlayTile` ends the GRID (dashed, `aria-haspopup`) and opens the shared `ConfirmModal`, never a panel. ONE click from there, `githubNewPlayUrl` (`shared/data.js`), nothing downloaded; the tile hides when the repo is unknown |
 | A play's 2 home pages | `src/home/App.jsx` + `ACTOR_CARDS`/`RESPO_CARDS` (`shared/pages.js`); the actor list omits the editor |
 | Headers | `shared/PlayHeader.jsx` (five pages), `shared/PageHeader.jsx` (manifest-less, via `PageState`), `shared/HomeLink.jsx` (at the header foot, not the top row) |
+| The 4 brand pages | `shared/HomeHero.jsx` / `shared/HomeFooter.jsx`, worn by the 2 root pages and a play's 2 home pages, so the brand is written once. `LocaleSwitch` lives in the FOOTER and nowhere else: a language is a site setting, chosen on the way in |
 | Shared look | `shared/theme.css`: `.dialogue-card`, `.page-shell`/`.page-scroll`, `.truncate`, `.btn-tip`, `.lift-hover`, `.page-notice`, `.confirm-quote`, `.flag-icon`, `.upload-tile`, `--shadow-float` |
 | Rehearsal / Recorder | `shared/ProgressBar.jsx`, `shared/useScrollToActiveCard.js`, `recorder/useRecorder.js`, `downloadZip` (`recorder/App.jsx`). Both act and scene menus offer `actChoices`/`sceneChoices` (`shared/data.js`, one rule at two levels): once a character is chosen, only the acts and scenes they speak in, as INDEXES into the play / into the act (hiding an option never renumbers the rest), and the whole level when they speak nowhere in it. Each page then moves off an act or scene the menu no longer holds, ACT FIRST since it renews the scenes, the Recorder with `setActIndex`/`setSceneIndex`, Rehearsal through `changeAct`/`changeScene` so playback stops too. `recorder.noLinesInScene` therefore survives only for a character silent in the WHOLE play, where both fallbacks fire |
 | Colours | `shared/characterColors.js` (Tableau 10, stored per character; lightness distinguishes). Filling has one implementation: the front's `assignColors` |
