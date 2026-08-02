@@ -34,9 +34,10 @@ Suivez les étapes de la vidéo ci-dessous:
 
 <div align="center">
 
-<video src="design/setup.mp4" controls width="720">
-  <a href="design/setup.mp4">Voir la vidéo de mise en place</a>
-</video>
+<!-- A LINK to the .mp4, never a `<video>`: GitHub's sanitizer keeps the tag but does not
+     rewrite a relative `src`, so the player stays empty. The blob page of an mp4 plays it,
+     and the path stays repo-relative, so a fork serves its own copy. -->
+[▶ Voir la vidéo de mise en place](design/setup.mp4)
 
 </div>
 
@@ -49,9 +50,7 @@ En tant que responsable du projet, vous pouvez également accéder à plus de fo
 
 <div align="center">
 
-<video src="design/respo_pages.mp4" controls width="720">
-  <a href="design/respo_pages.mp4">Voir la vidéo de la page de respo</a>
-</video>
+[▶ Voir la vidéo des pages du responsable](design/respo_pages.mp4)
 
 </div>
 
@@ -64,9 +63,7 @@ Répétez à l'italienne, avec les vraies voix de la troupe.
 
 <div align="center">
 
-<video src="design/demo_rehearsal.mp4" controls width="720">
-  <a href="design/demo_rehearsal.mp4">Voir la vidéo de la répétition</a>
-</video>
+[▶ Voir la vidéo de la répétition](design/demo_rehearsal.mp4)
 
 </div>
 
@@ -76,9 +73,7 @@ Enregistrez vos répliques, puis envoyez le fichier au responsable.
 
 <div align="center">
 
-<video src="design/demo_recording.mp4" controls width="720">
-  <a href="design/demo_recording.mp4">Voir la vidéo de l'enregistrement</a>
-</video>
+[▶ Voir la vidéo de l'enregistrement](design/demo_recording.mp4)
 
 </div>
 
@@ -88,9 +83,7 @@ Voyez comment la parole se répartit entre les personnages, en mots et en répli
 
 <div align="center">
 
-<video src="design/demo_stats.mp4" controls width="720">
-  <a href="design/demo_stats.mp4">Voir la vidéo de la répartition</a>
-</video>
+[▶ Voir la vidéo de la répartition](design/demo_stats.mp4)
 
 </div>
 
@@ -100,9 +93,7 @@ Voyez comment la parole se répartit entre les personnages, en mots et en répli
 
 <div align="center">
 
-<video src="design/demo_editor.mp4" controls width="720">
-  <a href="design/demo_editor.mp4">Voir la vidéo de l'édition</a>
-</video>
+[▶ Voir la vidéo de l'édition](design/demo_editor.mp4)
 
 </div>
 
@@ -112,9 +103,7 @@ Suivez l'avancement des enregistrements et déposez les fichiers de voix que vou
 
 <div align="center">
 
-<video src="design/demo_dashboard.mp4" controls width="720">
-  <a href="design/demo_dashboard.mp4">Voir la vidéo de l'avancement</a>
-</video>
+[▶ Voir la vidéo de l'avancement](design/demo_dashboard.mp4)
 
 </div>
 
