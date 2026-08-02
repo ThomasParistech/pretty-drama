@@ -4,7 +4,7 @@
       "at": "2026-07-26T18:12:00Z",
       "files": [
         {
-          "file": "voix-charlotte.zip",
+          "file": "voix-lucas.zip",
           "kind": "voix",
           "error": "le fichier n'est pas un ZIP valide (peut-être abîmé pendant l'envoi ?)"
         }
@@ -14,12 +14,12 @@
       "at": "2026-07-24T20:41:00Z",
       "files": [
         {
-          "file": "voix-annie.zip",
+          "file": "voix-sganarelle.zip",
           "kind": "voix",
           "clips": 2
         },
         {
-          "file": "voix-serge.zip",
+          "file": "voix-martine.zip",
           "kind": "voix",
           "clips": 2
         }
@@ -81,7 +81,7 @@
       "at": "2026-07-19T17:48:00Z",
       "files": [
         {
-          "file": "Le Malade imaginaire",
+          "file": "Le Médecin malgré lui",
           "kind": "script",
           "changes": {
             "created": true

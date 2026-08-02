@@ -1,36 +1,62 @@
 {
   "id": "dev",
-  "title": "Dev",
+  "title": "Le Médecin malgré lui",
   "language": "fr",
   "characters": [
     {
-      "id": "dev-c-alceste",
-      "name": "Alceste",
+      "id": "dev-c-sganarelle",
+      "name": "Sganarelle",
       "color": "#1f77b4"
     },
     {
-      "id": "dev-c-eleonore",
-      "name": "Éléonore de Trois-Rivières",
+      "id": "dev-c-martine",
+      "name": "Martine",
       "color": "#ff7f0e"
     },
     {
-      "id": "dev-c-choeur",
-      "name": "Le Chœur",
+      "id": "dev-c-monsieur-robert",
+      "name": "Monsieur Robert",
       "color": "#2ca02c"
     },
     {
-      "id": "dev-c-un",
-      "name": "Un",
+      "id": "dev-c-lucas",
+      "name": "Lucas",
       "color": "#d62728"
     },
     {
-      "id": "dev-c-ingenue",
-      "name": "L'Ingénue",
+      "id": "dev-c-valere",
+      "name": "Valère",
       "color": "#9467bd"
     },
     {
-      "id": "dev-c-souffleur",
-      "name": "Le Souffleur"
+      "id": "dev-c-geronte",
+      "name": "Géronte",
+      "color": "#8c564b"
+    },
+    {
+      "id": "dev-c-jacqueline",
+      "name": "Jacqueline",
+      "color": "#e377c2"
+    },
+    {
+      "id": "dev-c-lucinde",
+      "name": "Lucinde",
+      "color": "#7f7f7f"
+    },
+    {
+      "id": "dev-c-leandre",
+      "name": "Léandre",
+      "color": "#bcbd22"
+    },
+    {
+      "id": "dev-c-thibaut",
+      "name": "Thibaut",
+      "color": "#17becf"
+    },
+    {
+      "id": "dev-c-perrin",
+      "name": "Perrin",
+      "color": "#aec7e8"
     }
   ],
   "acts": [
@@ -39,63 +65,1224 @@
         {
           "lines": [
             {
-              "id": "dev-l01",
-              "characterId": "dev-c-alceste",
-              "text": "Qui va là ? Cette pièce n'est jouée par personne."
+              "id": "dev-l001",
+              "characterId": "dev-c-sganarelle",
+              "text": "Non, je te dis que je n’en veux rien faire, et que c’est à moi de parler et d’être le maître."
             },
             {
-              "id": "dev-l02",
-              "characterId": "dev-c-eleonore",
-              "text": "Personne, en effet : nous sommes le banc d'essai du site."
+              "id": "dev-l002",
+              "characterId": "dev-c-martine",
+              "text": "Et je te dis, moi, que je veux que tu vives à ma fantaisie, et que je ne me suis point mariée avec toi pour souffrir tes fredaines !"
             },
             {
-              "id": "dev-l03",
-              "characterId": "dev-c-choeur",
-              "text": "Nous n'existons que pour être affichés, comptés et relus."
+              "id": "dev-l003",
+              "characterId": "dev-c-sganarelle",
+              "text": "Oh ! la grande fatigue que d’avoir une femme ! et qu’Aristote a bien raison, quand il dit qu’une femme est pire qu’un démon !"
             },
             {
-              "id": "dev-l04",
-              "characterId": "dev-c-alceste",
-              "text": "Tenons-nous droit : quelqu'un regarde la grille d'avancement."
+              "id": "dev-l004",
+              "characterId": "dev-c-martine",
+              "text": "Voyez un peu l’habile homme, avec son benêt d’Aristote."
             },
             {
-              "id": "dev-l05",
-              "characterId": "dev-c-eleonore",
-              "text": "« Enregistrée », « À refaire », « Manquante » : les trois états tiennent dans cet acte."
+              "id": "dev-l005",
+              "characterId": "dev-c-sganarelle",
+              "text": "Oui, habile homme. Trouve-moi un faiseur de fagots qui sache comme moi raisonner des choses, qui ait servi six ans un fameux médecin, et qui ait su dans son jeune âge son rudiment par cœur."
             },
             {
-              "id": "dev-l06",
-              "characterId": "dev-c-choeur",
-              "text": "Et la barre ne doit jamais atteindre le bout."
+              "id": "dev-l006",
+              "characterId": "dev-c-martine",
+              "text": "Peste du fou fieffé !"
             },
             {
-              "id": "dev-l07",
-              "characterId": "dev-c-alceste",
-              "text": "Plus fort, on ne t'entend pas au fond du casque."
+              "id": "dev-l007",
+              "characterId": "dev-c-sganarelle",
+              "text": "Peste de la carogne !"
             },
             {
-              "id": "dev-l08",
-              "characterId": "dev-c-eleonore",
-              "text": "C'est que ma réplique n'a pas encore de voix."
+              "id": "dev-l008",
+              "characterId": "dev-c-martine",
+              "text": "Que maudits soient l’heure et le jour où je m’avisai d’aller dire oui !"
+            },
+            {
+              "id": "dev-l009",
+              "characterId": "dev-c-sganarelle",
+              "text": "Que maudit soit le bec cornu de notaire qui me fit signer ma ruine !"
+            },
+            {
+              "id": "dev-l010",
+              "characterId": "dev-c-martine",
+              "text": "C’est bien à toi, vraiment, à te plaindre de cette affaire ! Devrais-tu être un seul moment sans rendre grâces au ciel de m’avoir pour ta femme ? et méritais-tu d’épouser une femme comme moi ?"
+            },
+            {
+              "id": "dev-l011",
+              "characterId": "dev-c-sganarelle",
+              "text": "Il est vrai que tu me fis trop d’honneur, et que j’eus lieu de me louer la première nuit de mes noces ! Hé ! morbleu ! ne me fais point parler là-dessus : je dirais de certaines choses…"
+            },
+            {
+              "id": "dev-l012",
+              "characterId": "dev-c-martine",
+              "text": "Quoi ? que dirais-tu ?"
+            },
+            {
+              "id": "dev-l013",
+              "characterId": "dev-c-sganarelle",
+              "text": "Baste, laissons là ce chapitre. Il suffit que nous savons ce que nous savons, et que tu fus bien heureuse de me trouver."
+            },
+            {
+              "id": "dev-l014",
+              "characterId": "dev-c-martine",
+              "text": "Qu’appelles-tu bien heureuse de te trouver ? Un homme qui me réduit à l’hôpital, un débauché, un traître, qui me mange tout ce que j’ai !…"
+            },
+            {
+              "id": "dev-l015",
+              "characterId": "dev-c-sganarelle",
+              "text": "Tu as menti : j’en bois une partie."
+            },
+            {
+              "id": "dev-l016",
+              "characterId": "dev-c-martine",
+              "text": "Qui me vend, pièce à pièce, tout ce qui est dans le logis !…"
+            },
+            {
+              "id": "dev-l017",
+              "characterId": "dev-c-sganarelle",
+              "text": "C’est vivre de ménage."
+            },
+            {
+              "id": "dev-l018",
+              "characterId": "dev-c-martine",
+              "text": "Qui m’a ôté jusqu’au lit que j’avais !…"
+            },
+            {
+              "id": "dev-l019",
+              "characterId": "dev-c-sganarelle",
+              "text": "Tu t’en lèveras plus matin."
+            },
+            {
+              "id": "dev-l020",
+              "characterId": "dev-c-martine",
+              "text": "Enfin qui ne laisse aucun meuble dans toute la maison…"
+            },
+            {
+              "id": "dev-l021",
+              "characterId": "dev-c-sganarelle",
+              "text": "On en déménage plus aisément."
+            },
+            {
+              "id": "dev-l022",
+              "characterId": "dev-c-martine",
+              "text": "Et qui, du matin jusqu’au soir, ne fait que jouer et que boire !"
+            },
+            {
+              "id": "dev-l023",
+              "characterId": "dev-c-sganarelle",
+              "text": "C’est pour ne me point ennuyer."
+            },
+            {
+              "id": "dev-l024",
+              "characterId": "dev-c-martine",
+              "text": "Et que veux-tu, pendant ce temps, que je fasse avec ma famille ?"
+            },
+            {
+              "id": "dev-l025",
+              "characterId": "dev-c-sganarelle",
+              "text": "Tout ce qu’il te plaira."
+            },
+            {
+              "id": "dev-l026",
+              "characterId": "dev-c-martine",
+              "text": "J’ai quatre pauvres petits enfants sur les bras…"
+            },
+            {
+              "id": "dev-l027",
+              "characterId": "dev-c-sganarelle",
+              "text": "Mets-les à terre."
+            },
+            {
+              "id": "dev-l028",
+              "characterId": "dev-c-martine",
+              "text": "Qui me demandent à toute heure du pain."
+            },
+            {
+              "id": "dev-l029",
+              "characterId": "dev-c-sganarelle",
+              "text": "Donne-leur le fouet : quand j’ai bien bu et bien mangé, je veux que tout le monde soit soûl dans ma maison."
+            },
+            {
+              "id": "dev-l030",
+              "characterId": "dev-c-martine",
+              "text": "Et tu prétends, ivrogne, que les choses aillent toujours de même ?"
+            },
+            {
+              "id": "dev-l031",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ma femme, allons tout doucement, s’il vous plaît."
+            },
+            {
+              "id": "dev-l032",
+              "characterId": "dev-c-martine",
+              "text": "Que j’endure éternellement tes insolences et tes débauches ?"
+            },
+            {
+              "id": "dev-l033",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ne nous emportons point, ma femme."
+            },
+            {
+              "id": "dev-l034",
+              "characterId": "dev-c-martine",
+              "text": "Et que je ne sache pas trouver le moyen de te ranger à ton devoir ?"
+            },
+            {
+              "id": "dev-l035",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ma femme, vous savez que je n’ai pas l’ame endurante, et que j’ai le bras assez bon."
+            },
+            {
+              "id": "dev-l036",
+              "characterId": "dev-c-martine",
+              "text": "Je me moque de tes menaces."
+            },
+            {
+              "id": "dev-l037",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ma petite femme, ma mie, votre peau vous démange, à votre ordinaire."
+            },
+            {
+              "id": "dev-l038",
+              "characterId": "dev-c-martine",
+              "text": "Je te montrerai bien que je ne te crains nullement."
+            },
+            {
+              "id": "dev-l039",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ma chère moitié, vous avez envie de me dérober quelque chose."
+            },
+            {
+              "id": "dev-l040",
+              "characterId": "dev-c-martine",
+              "text": "Crois-tu que je m’épouvante de tes paroles ?"
+            },
+            {
+              "id": "dev-l041",
+              "characterId": "dev-c-sganarelle",
+              "text": "Doux objet de mes vœux, je vous frotterai les oreilles."
+            },
+            {
+              "id": "dev-l042",
+              "characterId": "dev-c-martine",
+              "text": "Ivrogne que tu es !"
+            },
+            {
+              "id": "dev-l043",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je vous battrai."
+            },
+            {
+              "id": "dev-l044",
+              "characterId": "dev-c-martine",
+              "text": "Sac à vin !"
+            },
+            {
+              "id": "dev-l045",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je vous rosserai."
+            },
+            {
+              "id": "dev-l046",
+              "characterId": "dev-c-martine",
+              "text": "Infâme !"
+            },
+            {
+              "id": "dev-l047",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je vous étrillerai."
+            },
+            {
+              "id": "dev-l048",
+              "characterId": "dev-c-martine",
+              "text": "Traître ! insolent ! trompeur ! lâche ! coquin ! pendard ! gueux ! belître ! fripon ! maraud ! voleur ! …"
+            },
+            {
+              "id": "dev-l049",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ah ! vous en voulez donc !\nSganarelle prend un bâton et bat sa femme"
+            },
+            {
+              "id": "dev-l050",
+              "characterId": "dev-c-martine",
+              "text": "(criant.)\nAh ! ah ! ah ! ah !"
+            },
+            {
+              "id": "dev-l051",
+              "characterId": "dev-c-sganarelle",
+              "text": "Voilà le vrai moyen de vous apaiser."
             }
           ]
         },
         {
           "lines": [
             {
-              "id": "dev-l09",
-              "characterId": "dev-c-un",
-              "text": "Moi ?"
+              "id": "dev-l052",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "Holà ! holà ! holà ! Fi ! Qu’est ceci ? Quelle infamie ! Peste soit le coquin, de battre ainsi sa femme !"
             },
             {
-              "id": "dev-l10",
-              "characterId": "dev-c-choeur",
-              "text": "Toi. Ton nom tient en deux lettres : il éprouve les colonnes étroites."
+              "id": "dev-l053",
+              "characterId": "dev-c-martine",
+              "text": "(les mains sur les côtés, parle à M. Robert en le faisant reculer, et à la fin lui donne un soufflet.)\nEt je veux qu’il me batte, moi."
             },
             {
-              "id": "dev-l11",
-              "characterId": "dev-c-un",
-              "text": "Bien."
+              "id": "dev-l054",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "Ah ! j’y consens de tout mon cœur."
+            },
+            {
+              "id": "dev-l055",
+              "characterId": "dev-c-martine",
+              "text": "De quoi vous mêlez-vous ?"
+            },
+            {
+              "id": "dev-l056",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "J’ai tort."
+            },
+            {
+              "id": "dev-l057",
+              "characterId": "dev-c-martine",
+              "text": "Est-ce là votre affaire ?"
+            },
+            {
+              "id": "dev-l058",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "Vous avez raison."
+            },
+            {
+              "id": "dev-l059",
+              "characterId": "dev-c-martine",
+              "text": "Voyez un peu cet impertinent, qui veut empêcher les maris de battre leurs femmes !"
+            },
+            {
+              "id": "dev-l060",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "Je me rétracte."
+            },
+            {
+              "id": "dev-l061",
+              "characterId": "dev-c-martine",
+              "text": "Qu’avez-vous à voir là-dessus ?"
+            },
+            {
+              "id": "dev-l062",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "Rien."
+            },
+            {
+              "id": "dev-l063",
+              "characterId": "dev-c-martine",
+              "text": "Est-ce à vous d’y mettre le nez ?"
+            },
+            {
+              "id": "dev-l064",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "Non."
+            },
+            {
+              "id": "dev-l065",
+              "characterId": "dev-c-martine",
+              "text": "Mêlez-vous de vos affaires."
+            },
+            {
+              "id": "dev-l066",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "Je ne dis plus mot."
+            },
+            {
+              "id": "dev-l067",
+              "characterId": "dev-c-martine",
+              "text": "Il me plaît d’être battue."
+            },
+            {
+              "id": "dev-l068",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "D’accord."
+            },
+            {
+              "id": "dev-l069",
+              "characterId": "dev-c-martine",
+              "text": "Ce n’est pas à vos dépens"
+            },
+            {
+              "id": "dev-l070",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "Il est vrai."
+            },
+            {
+              "id": "dev-l071",
+              "characterId": "dev-c-martine",
+              "text": "Et vous êtes un sot de venir vous fourrer où vous n’avez que faire.\n(Il passe ensuite vers Sganarelle, qui pareillement lui parle toujours en le faisant reculer, le frappe avec le même bâton et le met en fuite.)"
+            },
+            {
+              "id": "dev-l072",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "Compère, je vous demande pardon de tout mon cœur. Faites, rossez, battez comme il faut votre femme ; je vous aiderai si vous le voulez."
+            },
+            {
+              "id": "dev-l073",
+              "characterId": "dev-c-sganarelle",
+              "text": "Il ne me plaît pas, moi."
+            },
+            {
+              "id": "dev-l074",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "Ah ! c’est une autre chose."
+            },
+            {
+              "id": "dev-l075",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je la veux battre, si je le veux ; et ne la veux pas battre, si je ne le veux pas."
+            },
+            {
+              "id": "dev-l076",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "Fort bien."
+            },
+            {
+              "id": "dev-l077",
+              "characterId": "dev-c-sganarelle",
+              "text": "C’est ma femme et non pas la vôtre."
+            },
+            {
+              "id": "dev-l078",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "Sans doute."
+            },
+            {
+              "id": "dev-l079",
+              "characterId": "dev-c-sganarelle",
+              "text": "Vous n’avez rien à me commander."
+            },
+            {
+              "id": "dev-l080",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "D’accord."
+            },
+            {
+              "id": "dev-l081",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je n’ai que faire de votre aide."
+            },
+            {
+              "id": "dev-l082",
+              "characterId": "dev-c-monsieur-robert",
+              "text": "Très volontiers."
+            },
+            {
+              "id": "dev-l083",
+              "characterId": "dev-c-sganarelle",
+              "text": "Et vous êtes un impertinent de vous ingérer des affaires d’autrui. Apprenez que Cicéron dit qu’entre l’arbre et le doigt il ne faut point mettre l’écorce.\n(Il le chasse ; ensuite il revient vers sa femme et lui dit en lui pressant la main.)"
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l084",
+              "characterId": "dev-c-sganarelle",
+              "text": "Oh çà ! faisons la paix nous deux. Touche là."
+            },
+            {
+              "id": "dev-l085",
+              "characterId": "dev-c-martine",
+              "text": "Oui, après m’avoir ainsi battue !"
+            },
+            {
+              "id": "dev-l086",
+              "characterId": "dev-c-sganarelle",
+              "text": "Cela n’est rien. Touche."
+            },
+            {
+              "id": "dev-l087",
+              "characterId": "dev-c-martine",
+              "text": "Je ne veux pas."
+            },
+            {
+              "id": "dev-l088",
+              "characterId": "dev-c-sganarelle",
+              "text": "Hé ?"
+            },
+            {
+              "id": "dev-l089",
+              "characterId": "dev-c-martine",
+              "text": "Non."
+            },
+            {
+              "id": "dev-l090",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ma petite femme !"
+            },
+            {
+              "id": "dev-l091",
+              "characterId": "dev-c-martine",
+              "text": "Point."
+            },
+            {
+              "id": "dev-l092",
+              "characterId": "dev-c-sganarelle",
+              "text": "Allons, te dis-je."
+            },
+            {
+              "id": "dev-l093",
+              "characterId": "dev-c-martine",
+              "text": "Je n’en ferai rien."
+            },
+            {
+              "id": "dev-l094",
+              "characterId": "dev-c-sganarelle",
+              "text": "Viens, viens, viens."
+            },
+            {
+              "id": "dev-l095",
+              "characterId": "dev-c-martine",
+              "text": "Non ; je veux être en colère."
+            },
+            {
+              "id": "dev-l096",
+              "characterId": "dev-c-sganarelle",
+              "text": "Fi ! c’est une bagatelle. Allons, allons."
+            },
+            {
+              "id": "dev-l097",
+              "characterId": "dev-c-martine",
+              "text": "Laisse-moi là."
+            },
+            {
+              "id": "dev-l098",
+              "characterId": "dev-c-sganarelle",
+              "text": "Touche, te dis-je."
+            },
+            {
+              "id": "dev-l099",
+              "characterId": "dev-c-martine",
+              "text": "Tu m’as trop maltraitée."
+            },
+            {
+              "id": "dev-l100",
+              "characterId": "dev-c-sganarelle",
+              "text": "Hé bien ! va, je te demande pardon ; mets là ta main."
+            },
+            {
+              "id": "dev-l101",
+              "characterId": "dev-c-martine",
+              "text": "Je te pardonne ; (bas, à part.) mais tu le paieras."
+            },
+            {
+              "id": "dev-l102",
+              "characterId": "dev-c-sganarelle",
+              "text": "Tu es une folle de prendre garde à cela : ce sont petites choses qui sont de temps en temps nécessaires dans l’amitié ; et cinq ou six coups de bâton, entre gens qui s’aiment, ne font que ragaillardir l’affection. Va, je m’en vais au bois, et je te promets aujourd’hui plus d’un cent de fagots."
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l103",
+              "characterId": "dev-c-martine",
+              "text": "Va, quelque mine que je fasse, je n’oublierai pas mon ressentiment ; et je brûle en moi-même de trouver les moyens de te punir des coups que tu m’as donnés. Je sais bien qu’une femme a toujours dans les mains de quoi se venger d’un mari : mais c’est une punition trop délicate pour mon pendard : je veux une vengeance qui se fasse un peu mieux sentir ; et ce n’est pas contentement pour l’injure que j’ai reçue."
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l104",
+              "characterId": "dev-c-lucas",
+              "text": "(à Valère, sans voir Martine.)\nParguienne ! j’avons pris là tous deux une guèble de commission ; et je ne sais pas, moi, ce que je pensons attraper."
+            },
+            {
+              "id": "dev-l105",
+              "characterId": "dev-c-valere",
+              "text": "(à Lucas, sans voir Martine.)\nQue veux-tu, mon pauvre nourricier ? il faut bien obéir à notre maître : et puis, nous avons intérêt, l’un et l’autre, à la santé de sa fille, notre maîtresse ; et sans doute son mariage, différé par sa maladie, nous vaudra quelque récompense. Horace, qui est libéral, a bonne part aux prétentions qu’on peut avoir sur sa personne ; et quoiqu’elle ait fait voir de l’amitié pour un certain Léandre, tu sais bien que son père n’a jamais voulu consentir à le recevoir pour son gendre."
+            },
+            {
+              "id": "dev-l106",
+              "characterId": "dev-c-martine",
+              "text": "(rêvant à part, se croyant seule.)\nNe puis-je point trouver quelque invention pour me venger ?"
+            },
+            {
+              "id": "dev-l107",
+              "characterId": "dev-c-lucas",
+              "text": "(à Valère.)\nMais quelle fantaisie s’est-il boutée là dans la tête, puisque les médecins y avont tous pardu leur latin ?"
+            },
+            {
+              "id": "dev-l108",
+              "characterId": "dev-c-valere",
+              "text": "(à Lucas.)\nOn trouve quelquefois, à force de chercher, ce qu’on ne trouve pas d’abord ; et souvent en de simples lieux…"
+            },
+            {
+              "id": "dev-l109",
+              "characterId": "dev-c-martine",
+              "text": "(se croyant toujours seule.)\nOui, il faut que je me venge à quelque prix que ce soit. Ces coups de bâton me reviennent au cœur, je ne les saurois digérer ; et… (Elle dit tout ceci en rêvant, de sorte que, ne prenant pas garde à ces deux hommes, elle les heurte en se retournant, et leur dit :) Ah ! messieurs, je vous demande pardon ; je ne vous voyois pas, et cherchois dans ma tête quelque chose qui m’embarrasse,"
+            },
+            {
+              "id": "dev-l110",
+              "characterId": "dev-c-valere",
+              "text": "Chacun a ses soins dans le monde, et nous cherchons aussi ce que nous voudrions bien trouver."
+            },
+            {
+              "id": "dev-l111",
+              "characterId": "dev-c-martine",
+              "text": "Seroit-ce quelque chose où je vous puisse aider ?"
+            },
+            {
+              "id": "dev-l112",
+              "characterId": "dev-c-valere",
+              "text": "Cela se pourroit faire ; et nous tâchons de rencontrer quelque habile homme, quelque médecin particulier qui pût donner quelque soulagement à la fille de notre maître, attaquée d’une maladie qui lui a ôté tout d’un coup l’usage de la langue. Plusieurs médecins ont déjà épuisé toute leur science après elle : mais on trouve parfois des gens avec des secrets admirables, de certains remèdes particuliers, qui font le plus souvent ce que les autres n’ont su faire ; et c’est là ce que nous cherchons."
+            },
+            {
+              "id": "dev-l113",
+              "characterId": "dev-c-martine",
+              "text": "(bas, à part.)\nAh ! que le ciel m’inspire une admirable invention pour me venger de mon pendard ! (haut.) Vous ne pouviez jamais vous mieux adresser pour rencontrer ce que vous cherchez ; et nous avons un homme, le plus merveilleux homme du monde pour les maladies désespérées."
+            },
+            {
+              "id": "dev-l114",
+              "characterId": "dev-c-valere",
+              "text": "Hé ! de grâce, où pouvons-nous le rencontrer ?"
+            },
+            {
+              "id": "dev-l115",
+              "characterId": "dev-c-martine",
+              "text": "Vous le trouverez maintenant vers ce petit lieu que voilà, qui s’amuse à couper du bois."
+            },
+            {
+              "id": "dev-l116",
+              "characterId": "dev-c-lucas",
+              "text": "Un médecin qui coupe du bois !"
+            },
+            {
+              "id": "dev-l117",
+              "characterId": "dev-c-valere",
+              "text": "Qui s’amuse à cueillir des simples, voulez-vous dire ?"
+            },
+            {
+              "id": "dev-l118",
+              "characterId": "dev-c-martine",
+              "text": "Non ; c’est un homme extraordinaire qui se plaît à cela, fantasque, bizarre, quinteux, et que vous ne prendriez jamais pour ce qu’il est. Il va vêtu d’une façon extravagante, affecte quelquefois de paroître ignorant, tient sa science renfermée, et ne fuit rien tant tous les jours que d’exercer les merveilleux talents qu’il a eus du ciel pour la médecine."
+            },
+            {
+              "id": "dev-l119",
+              "characterId": "dev-c-valere",
+              "text": "C’est une chose admirable que tous les grands hommes ont toujours du caprice, quelque petit grain de folie mêlé à leur science."
+            },
+            {
+              "id": "dev-l120",
+              "characterId": "dev-c-martine",
+              "text": "La folie de celui-ci est plus grande qu’on ne peut croire, car elle va parfois jusqu’à vouloir être battu pour demeurer d’accord de sa capacité ; et je vous donne avis que vous n’en viendrez pas à bout, qu’il n’avouera jamais qu’il est médecin, s’il se le met en fantaisie, que vous ne preniez chacun en bâton, et ne le réduisiez, à force de coups, à vous confesser à la fin ce qu’il vous cachera d’abord. C’est ainsi que nous en usons quand nous avons besoin de lui."
+            },
+            {
+              "id": "dev-l121",
+              "characterId": "dev-c-valere",
+              "text": "Voilà une étrange folie !"
+            },
+            {
+              "id": "dev-l122",
+              "characterId": "dev-c-martine",
+              "text": "Il est vrai ; mais, après cela, vous verrez qu’il fait des merveilles."
+            },
+            {
+              "id": "dev-l123",
+              "characterId": "dev-c-valere",
+              "text": "Comment s’appelle-t-il ?"
+            },
+            {
+              "id": "dev-l124",
+              "characterId": "dev-c-martine",
+              "text": "Il s’appelle Sganarelle. Mais il est aisé à connoître : c’est un homme qui a une large barbe noire, et qui porte une fraise, avec un habit jaune et vert."
+            },
+            {
+              "id": "dev-l125",
+              "characterId": "dev-c-lucas",
+              "text": "Un habit jaune et vart ! C’est donc le médecin des parroquets ?"
+            },
+            {
+              "id": "dev-l126",
+              "characterId": "dev-c-valere",
+              "text": "Mais est-il bien vrai qu’il soit si habile que vous le dites ?"
+            },
+            {
+              "id": "dev-l127",
+              "characterId": "dev-c-martine",
+              "text": "Comment ! c’est un homme qui fait des miracles. Il y a six mois qu’une femme fut abandonnée de tous les autres médecins ; on la tenoit morte il y avoit déjà six heures, et l’on se disposoit à l’ensevelir, lorsqu’on y fit venir de force l’homme dont nous parlons. Il lui mit, l’ayant vue, une petite goutte de je ne sais quoi dans la bouche ; et, dans le même instant, elle se leva de son lit, et se mit aussitôt à promener dans sa chambre comme si de rien n’eût été."
+            },
+            {
+              "id": "dev-l128",
+              "characterId": "dev-c-lucas",
+              "text": "Ah !"
+            },
+            {
+              "id": "dev-l129",
+              "characterId": "dev-c-valere",
+              "text": "Il falloit que ce fût quelque goutte d’or potable."
+            },
+            {
+              "id": "dev-l130",
+              "characterId": "dev-c-martine",
+              "text": "Cela pourroit bien être. Il n’y a pas trois semaines encore qu’un jeune enfant de douze ans tomba du haut du clocher en bas, et se brisa sur le pavé la tête, les bras, et les jambes. On n’y eut pas plus tôt amené notre homme, qu’il le frotta par tout le corps d’un certain onguent qu’il sait faire ; et l’enfant aussitôt se leva sur ses pieds, et courut jouer à la fossette."
+            },
+            {
+              "id": "dev-l131",
+              "characterId": "dev-c-lucas",
+              "text": "Ah !"
+            },
+            {
+              "id": "dev-l132",
+              "characterId": "dev-c-valere",
+              "text": "Il faut que cet homme-là ait la médecine universelle."
+            },
+            {
+              "id": "dev-l133",
+              "characterId": "dev-c-martine",
+              "text": "Qui en doute ?"
+            },
+            {
+              "id": "dev-l134",
+              "characterId": "dev-c-lucas",
+              "text": "Téligué ! v’là justement l’homme qu’il nous faut. Allons vite le charcher."
+            },
+            {
+              "id": "dev-l135",
+              "characterId": "dev-c-valere",
+              "text": "Nous vous remercions du plaisir que vous nous faites."
+            },
+            {
+              "id": "dev-l136",
+              "characterId": "dev-c-martine",
+              "text": "Mais souvenez-vous bien au moins de l’avertissement que je vous ai donné."
+            },
+            {
+              "id": "dev-l137",
+              "characterId": "dev-c-lucas",
+              "text": "Hé ! morguenne ! laissez-nous faire : s’il ne tient qu’à battre, la vache est à nous."
+            },
+            {
+              "id": "dev-l138",
+              "characterId": "dev-c-valere",
+              "text": "(à Lucas.)\nNous sommes bien heureux d’avoir fait cette rencontre ; et j’en conçois, pour moi, la meilleure espérance du monde."
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l139",
+              "characterId": "dev-c-sganarelle",
+              "text": "(chantant derrière le théâtre.)\nLa, la, la …"
+            },
+            {
+              "id": "dev-l140",
+              "characterId": "dev-c-valere",
+              "text": "J’entends quelqu’un qui chante, et qui coupe du bois."
+            },
+            {
+              "id": "dev-l141",
+              "characterId": "dev-c-sganarelle",
+              "text": "(entrant sur le théâtre, avec une bouteille à la main, sans apercevoir Valère ni Lucas.)\nLa, la, la … Ma foi, c’est assez travaille pour boire un coup. Prenons un peu d’haleine. (Après avoir bu.) Voilà du bois qui est salé comme tous les diables\n(Il chante.)\n﻿Qu’ils sont doux, ﻿Bouteille jolie, ﻿Qu’ils sont doux ﻿Vos petits glouglous ! Mais mon sort feroit bien des jaloux, ﻿Si vous étiez toujours remplie. ﻿Ah ! bouteille, ma mie, ﻿Pourquoi vous videz-vous ?\nAllons, morbleu ! il ne faut point engendrer de mélancolie."
+            },
+            {
+              "id": "dev-l142",
+              "characterId": "dev-c-valere",
+              "text": "(bas, à Lucas.)\nLe voilà lui-même."
+            },
+            {
+              "id": "dev-l143",
+              "characterId": "dev-c-lucas",
+              "text": "(bas, à Valère.)\nJe pense que vous dites vrai, et que j’avons bouté le nez dessus."
+            },
+            {
+              "id": "dev-l144",
+              "characterId": "dev-c-valere",
+              "text": "Voyons de près."
+            },
+            {
+              "id": "dev-l145",
+              "characterId": "dev-c-sganarelle",
+              "text": "(embrassant sa bouteille.)\nAh ! petite friponne ! que je t’aime, mon petit bouchon ! (Il chante. Apercevant Valère et Lucas qui l’examinent, il baisse la voix.)\nMais mon sort… feroit… bien des… jaloux, ﻿ Si… (Voyant qu’on l’examine de plus près.)\nQue diable ! à qui en veulent ces gens-là ?"
+            },
+            {
+              "id": "dev-l146",
+              "characterId": "dev-c-valere",
+              "text": "(à Lucas.)\nC’est lui assurément."
+            },
+            {
+              "id": "dev-l147",
+              "characterId": "dev-c-lucas",
+              "text": "(à Valère.)\nLe v’là tout craché comme on nous l’a défiguré."
+            },
+            {
+              "id": "dev-l148",
+              "characterId": "dev-c-sganarelle",
+              "text": "(à part.)\n(Ici il pose sa bouteille à terre, et, Valère se baissant pour le saluer comme il croit que c’est à dessein de la prendre, il la met de l’autre côté, ensuite de quoi, Lucas faisant la même chose, il la reprend et la tient contre son estomac, avec divers gestes qui font un grand jeu de théâtre.)\nIls consultent en me regardant. Quel dessein auroient-ils ?"
+            },
+            {
+              "id": "dev-l149",
+              "characterId": "dev-c-valere",
+              "text": "Monsieur, n’est-ce pas vous qui vous appelez Sganarelle ?"
+            },
+            {
+              "id": "dev-l150",
+              "characterId": "dev-c-sganarelle",
+              "text": "Hé ! quoi ?"
+            },
+            {
+              "id": "dev-l151",
+              "characterId": "dev-c-valere",
+              "text": "Je vous demande si ce n’est pas vous qui se nomme Sganarelle."
+            },
+            {
+              "id": "dev-l152",
+              "characterId": "dev-c-sganarelle",
+              "text": "(se tournant vers Valère, puis vers Lucas.)\nOui et non, selon ce que vous lui voulez."
+            },
+            {
+              "id": "dev-l153",
+              "characterId": "dev-c-valere",
+              "text": "Nous ne voulons que lui faire toutes les civilités que nous pourrons."
+            },
+            {
+              "id": "dev-l154",
+              "characterId": "dev-c-sganarelle",
+              "text": "En ce cas, c’est moi qui se nomme Sganarelle."
+            },
+            {
+              "id": "dev-l155",
+              "characterId": "dev-c-valere",
+              "text": "Monsieur, nous sommes ravis de vous voir. On nous a adressés à vous pour ce que nous cherchons ; et nous venons implorer votre aide, dont nous avons besoin."
+            },
+            {
+              "id": "dev-l156",
+              "characterId": "dev-c-sganarelle",
+              "text": "Si c’est quelque chose, messieurs, qui dépende de mon petit négoce, je suis tout prêt à vous rendre service."
+            },
+            {
+              "id": "dev-l157",
+              "characterId": "dev-c-valere",
+              "text": "Monsieur, c’est trop de grâce que vous nous faites. Mais, monsieur, couvrez-vous, s’il vous plaît ; le soleil pourroit vous incommoder."
+            },
+            {
+              "id": "dev-l158",
+              "characterId": "dev-c-lucas",
+              "text": "Monsieu, boutez dessus."
+            },
+            {
+              "id": "dev-l159",
+              "characterId": "dev-c-sganarelle",
+              "text": "(à part.)\nVoici des gens bien pleins de cérémonie\n(Il se couvre.)"
+            },
+            {
+              "id": "dev-l160",
+              "characterId": "dev-c-valere",
+              "text": "Monsieur, il ne faut pas trouver étrange que nous venions à vous ; les habiles gens sont toujours recherchés, et nous sommes instruits de votre capacité."
+            },
+            {
+              "id": "dev-l161",
+              "characterId": "dev-c-sganarelle",
+              "text": "Il est vrai, messieurs, que je suis le premier homme du monde pour faire des fagots."
+            },
+            {
+              "id": "dev-l162",
+              "characterId": "dev-c-valere",
+              "text": "Ah ! monsieur !…"
+            },
+            {
+              "id": "dev-l163",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je n’y épargne aucune chose, et les fais d’une façon qu’il n’y a rien à dire."
+            },
+            {
+              "id": "dev-l164",
+              "characterId": "dev-c-valere",
+              "text": "Monsieur, ce n’est pas cela dont il est question."
+            },
+            {
+              "id": "dev-l165",
+              "characterId": "dev-c-sganarelle",
+              "text": "Mais aussi je les vends cent dix sous le cent."
+            },
+            {
+              "id": "dev-l166",
+              "characterId": "dev-c-valere",
+              "text": "Ne parlons point de cela, s’il vous plaît."
+            },
+            {
+              "id": "dev-l167",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je vous promets que je ne saurois les donner à moins."
+            },
+            {
+              "id": "dev-l168",
+              "characterId": "dev-c-valere",
+              "text": "Monsieur, nous savons les choses."
+            },
+            {
+              "id": "dev-l169",
+              "characterId": "dev-c-sganarelle",
+              "text": "Si vous savez les choses, vous savez que je les vends cela."
+            },
+            {
+              "id": "dev-l170",
+              "characterId": "dev-c-valere",
+              "text": "Monsieur, c’est se moquer que…"
+            },
+            {
+              "id": "dev-l171",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je ne me moque point, je n’en puis rien rabattre."
+            },
+            {
+              "id": "dev-l172",
+              "characterId": "dev-c-valere",
+              "text": "Parlons d’autre façon, de grâce."
+            },
+            {
+              "id": "dev-l173",
+              "characterId": "dev-c-sganarelle",
+              "text": "Vous en pourrez trouver autre part à moins ; il y a fagots et fagots : mais pour ceux que je fais…"
+            },
+            {
+              "id": "dev-l174",
+              "characterId": "dev-c-valere",
+              "text": "Hé ! monsieur, laissons là ce discours."
+            },
+            {
+              "id": "dev-l175",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je vous jure que vous ne les auriez pas, s’il s’en falloit un double."
+            },
+            {
+              "id": "dev-l176",
+              "characterId": "dev-c-valere",
+              "text": "Hé ! fi !"
+            },
+            {
+              "id": "dev-l177",
+              "characterId": "dev-c-sganarelle",
+              "text": "Non, en conscience ; vous en paierez cela. Je vous parle sincèrement, et ne suis pas homme à surfaire."
+            },
+            {
+              "id": "dev-l178",
+              "characterId": "dev-c-valere",
+              "text": "Faut-il, monsieur, qu’une personne comme vous s’amuse à ces grossières feintes, s’abaisse à parler de la sorte ! qu’un homme si savant, un fameux médecin, comme vous êtes veuille se déguiser aux yeux du monde, et tenir enterré des beaux talents qu’il a !"
+            },
+            {
+              "id": "dev-l179",
+              "characterId": "dev-c-sganarelle",
+              "text": "(à part.)\nIl est fou."
+            },
+            {
+              "id": "dev-l180",
+              "characterId": "dev-c-valere",
+              "text": "De grâce, monsieur, ne dissimulez point avec nous."
+            },
+            {
+              "id": "dev-l181",
+              "characterId": "dev-c-sganarelle",
+              "text": "Comment ?"
+            },
+            {
+              "id": "dev-l182",
+              "characterId": "dev-c-lucas",
+              "text": "Tout ce tripotage ne sart de rian ; je savons cen que je savons."
+            },
+            {
+              "id": "dev-l183",
+              "characterId": "dev-c-sganarelle",
+              "text": "Quoi donc ! que me voulez-vous dire ? Pour qui me prenez-vous ?"
+            },
+            {
+              "id": "dev-l184",
+              "characterId": "dev-c-valere",
+              "text": "Pour ce que vous êtes, pour un grand médecin."
+            },
+            {
+              "id": "dev-l185",
+              "characterId": "dev-c-sganarelle",
+              "text": "Médecin vous-même ; je ne le suis point, et je ne l’ai jamais été."
+            },
+            {
+              "id": "dev-l186",
+              "characterId": "dev-c-valere",
+              "text": "(bas.)\nVoilà sa folie qui le tient. (Haut.) Monsieur, ne veuillez point nier les choses davantage ; et n’en venons point, s’il vous plaît, à de fâcheuses extrémités."
+            },
+            {
+              "id": "dev-l187",
+              "characterId": "dev-c-sganarelle",
+              "text": "À quoi donc ?"
+            },
+            {
+              "id": "dev-l188",
+              "characterId": "dev-c-valere",
+              "text": "À de certaines choses dont nous serions marris."
+            },
+            {
+              "id": "dev-l189",
+              "characterId": "dev-c-sganarelle",
+              "text": "Parbleu ! venez-en à tout ce qu’il vous plaira ; je ne suis point médecin, et ne sais ce que vous me voulez dire."
+            },
+            {
+              "id": "dev-l190",
+              "characterId": "dev-c-valere",
+              "text": "(bas.)\nJe vois bien qu’il faut se servir du remède. (Haut.) Monsieur, encore un coup, je vous prie d’avouer ce que vous êtes."
+            },
+            {
+              "id": "dev-l191",
+              "characterId": "dev-c-lucas",
+              "text": "Hé ! tétigué ! ne lantiponez point davantage, et confessez à la franquette que v’s êtes médecin."
+            },
+            {
+              "id": "dev-l192",
+              "characterId": "dev-c-sganarelle",
+              "text": "(à part.)\nJ’enrage."
+            },
+            {
+              "id": "dev-l193",
+              "characterId": "dev-c-valere",
+              "text": "À quoi bon nier ce qu’on sait ?"
+            },
+            {
+              "id": "dev-l194",
+              "characterId": "dev-c-lucas",
+              "text": "Pourquoi toutes ces fraimes-là ? À quoi est-ce que ça vous sert ?"
+            },
+            {
+              "id": "dev-l195",
+              "characterId": "dev-c-sganarelle",
+              "text": "Messieurs, en un mot autant qu’en deux mille, je vous dis que je ne suis point médecin."
+            },
+            {
+              "id": "dev-l196",
+              "characterId": "dev-c-valere",
+              "text": "Vous n’êtes point médecin ?"
+            },
+            {
+              "id": "dev-l197",
+              "characterId": "dev-c-valere",
+              "text": "Non."
+            },
+            {
+              "id": "dev-l198",
+              "characterId": "dev-c-lucas",
+              "text": "V’s n’êtes pas médecin ?"
+            },
+            {
+              "id": "dev-l199",
+              "characterId": "dev-c-sganarelle",
+              "text": "Non, vous dis-je."
+            },
+            {
+              "id": "dev-l200",
+              "characterId": "dev-c-valere",
+              "text": "Puisque vous le voulez, il faut donc s’y résoudre.\n(Ils prennent chacun un bâton, et le frappent.)"
+            },
+            {
+              "id": "dev-l201",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ah ! ah ! ah ! messieurs, je suis tout ce qu’il vous plaira."
+            },
+            {
+              "id": "dev-l202",
+              "characterId": "dev-c-valere",
+              "text": "Pourquoi, monsieur, nous obligez-vous à cette violence ?"
+            },
+            {
+              "id": "dev-l203",
+              "characterId": "dev-c-lucas",
+              "text": "À quoi bon nous bailler la peine de vous battre ?"
+            },
+            {
+              "id": "dev-l204",
+              "characterId": "dev-c-valere",
+              "text": "Je vous assure que j’en ai tous les regrets du monde."
+            },
+            {
+              "id": "dev-l205",
+              "characterId": "dev-c-lucas",
+              "text": "Par ma figué ! j’en sis fâché, franchement."
+            },
+            {
+              "id": "dev-l206",
+              "characterId": "dev-c-sganarelle",
+              "text": "Que diable est ceci, messieurs ? De grâce, est-ce pour rire, ou si tous deux vous extravaguez, de vouloir que je sois médecin ?"
+            },
+            {
+              "id": "dev-l207",
+              "characterId": "dev-c-valere",
+              "text": "Quoi ! vous ne vous rendez pas encore, et vous vous défendez d’être médecin ?"
+            },
+            {
+              "id": "dev-l208",
+              "characterId": "dev-c-sganarelle",
+              "text": "Diable emporte si je le suis !"
+            },
+            {
+              "id": "dev-l209",
+              "characterId": "dev-c-lucas",
+              "text": "Il n’est pas vrai qu’ous sayez médecin ?"
+            },
+            {
+              "id": "dev-l210",
+              "characterId": "dev-c-sganarelle",
+              "text": "Non, la peste m’étouffe ! (Ils recommencent à le battre.) Ah ! ah ! Hé bien ! messieurs, oui, puisque vous le voulez, je suis médecin, je suis médecin ; apothicaire encore, si vous le trouvez bon. J’aime mieux consentir à tout que de me faire assommer."
+            },
+            {
+              "id": "dev-l211",
+              "characterId": "dev-c-valere",
+              "text": "Ah ! voilà qui va bien, monsieur : je suis ravi de vous voir raisonnable."
+            },
+            {
+              "id": "dev-l212",
+              "characterId": "dev-c-lucas",
+              "text": "Vous me boutez la joie au cœur, quand je vous vois parler comme ça."
+            },
+            {
+              "id": "dev-l213",
+              "characterId": "dev-c-valere",
+              "text": "Je vous demande pardon de toute mon ame."
+            },
+            {
+              "id": "dev-l214",
+              "characterId": "dev-c-lucas",
+              "text": "Je vous demandons excuse de la libarté que j’avons prise."
+            },
+            {
+              "id": "dev-l215",
+              "characterId": "dev-c-sganarelle",
+              "text": "(à part.)\nOuais ! seroit-ce bien moi qui me tromperois, et serois-je devenu médecin sans m’en être aperçu ?"
+            },
+            {
+              "id": "dev-l216",
+              "characterId": "dev-c-valere",
+              "text": "Monsieur, vous ne vous repentirez pas de nous montrer ce que vous êtes ; et vous verrez assurément que vous en serez satisfait."
+            },
+            {
+              "id": "dev-l217",
+              "characterId": "dev-c-sganarelle",
+              "text": "Mais, messieurs, dites-moi, ne vous trompez-vous point vous-mêmes ? Est-il bien assuré que je sois médecin ?"
+            },
+            {
+              "id": "dev-l218",
+              "characterId": "dev-c-lucas",
+              "text": "Oui, par ma figué !"
+            },
+            {
+              "id": "dev-l219",
+              "characterId": "dev-c-sganarelle",
+              "text": "Tout de bon ?"
+            },
+            {
+              "id": "dev-l220",
+              "characterId": "dev-c-valere",
+              "text": "Sans doute."
+            },
+            {
+              "id": "dev-l221",
+              "characterId": "dev-c-sganarelle",
+              "text": "Diable emporte si je le savois !"
+            },
+            {
+              "id": "dev-l222",
+              "characterId": "dev-c-valere",
+              "text": "Comment, vous êtes le plus habile médecin du monde."
+            },
+            {
+              "id": "dev-l223",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ah ! ah !"
+            },
+            {
+              "id": "dev-l224",
+              "characterId": "dev-c-lucas",
+              "text": "Un médecin qui a gari je ne sais combien de maladies."
+            },
+            {
+              "id": "dev-l225",
+              "characterId": "dev-c-sganarelle",
+              "text": "Tudieu !"
+            },
+            {
+              "id": "dev-l226",
+              "characterId": "dev-c-valere",
+              "text": "Une femme étoit tenue pour morte il y avoit six heures ; elle étoit prête à ensevelir, lorsque, avec une goutte de quelque chose, vous la fîtes revenir et marcher d’abord par la chambre."
+            },
+            {
+              "id": "dev-l227",
+              "characterId": "dev-c-sganarelle",
+              "text": "Peste !"
+            },
+            {
+              "id": "dev-l228",
+              "characterId": "dev-c-lucas",
+              "text": "Un petit enfant de douze ans se laissit choir du haut d’un clocher, de quoi il eut la tête, les jambes et les bras cassés ; et vous, avec je ne sais quel onguent, vous fîtes qu’aussitôt il se relevit sur ses pieds, et s’en fut jouer à la fossette."
+            },
+            {
+              "id": "dev-l229",
+              "characterId": "dev-c-sganarelle",
+              "text": "Diantre !"
+            },
+            {
+              "id": "dev-l230",
+              "characterId": "dev-c-sganarelle",
+              "text": "Enfin, monsieur, vous aurez contentement avec nous, et vous gagnerez ce que vous voudrez en vous laissant conduire où nous prétendons vous mener."
+            },
+            {
+              "id": "dev-l231",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je gagnerai ce que je voudrai ?"
+            },
+            {
+              "id": "dev-l232",
+              "characterId": "dev-c-valere",
+              "text": "Oui."
+            },
+            {
+              "id": "dev-l233",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ah ! je suis médecin, sans contredit. Je l’avois oublié ; mais je m’en ressouviens. De quoi est-il question ? Où faut-il se transporter ?"
+            },
+            {
+              "id": "dev-l234",
+              "characterId": "dev-c-valere",
+              "text": "Nous vous conduirons. Il est question d’aller voir une fille qui a perdu la parole."
+            },
+            {
+              "id": "dev-l235",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ma foi, je ne l’ai pas trouvée."
+            },
+            {
+              "id": "dev-l236",
+              "characterId": "dev-c-valere",
+              "text": "(bas, à Lucas.)\nIl aime à rire. à Sganarelle. Allons, monsieur."
+            },
+            {
+              "id": "dev-l237",
+              "characterId": "dev-c-sganarelle",
+              "text": "Sans une robe de médecin ?"
+            },
+            {
+              "id": "dev-l238",
+              "characterId": "dev-c-valere",
+              "text": "Nous en prendrons une."
+            },
+            {
+              "id": "dev-l239",
+              "characterId": "dev-c-sganarelle",
+              "text": "(présentant sa bouteille à Valère.)\nTenez cela, vous : voilà où je mets mes juleps.\n(puis se tournant vers Lucas en crachant.)\nVous, marchez là-dessus, par ordonnance du médecin."
+            },
+            {
+              "id": "dev-l240",
+              "characterId": "dev-c-lucas",
+              "text": "Palsanguenne ! v’là un médecin qui me plaît ; je pense qu’il réussira, car il est bouffon."
             }
           ]
         }
@@ -106,44 +1293,1093 @@
         {
           "lines": [
             {
-              "id": "dev-l12",
-              "characterId": "dev-c-eleonore",
-              "text": "Écoutez-moi jusqu'au bout, car cette tirade est ici pour occuper la place : elle déborde d'une ligne, elle déborde de deux, elle finira par déborder de la carte elle-même, et c'est très bien ainsi, puisqu'il faut bien qu'une réplique quelque part vérifie que le texte s'enroule proprement, que la carte grandit avec lui, que la colonne du tableau d'avancement le tronque sans le couper au milieu d'un mot, et que le PDF ne la laisse pas seule en bas d'une page."
+              "id": "dev-l241",
+              "characterId": "dev-c-valere",
+              "text": "Oui, monsieur, je crois que vous serez satisfait ; et nous vous avons amené le plus grand médecin du monde."
             },
             {
-              "id": "dev-l13",
-              "characterId": "dev-c-alceste",
-              "text": ""
+              "id": "dev-l242",
+              "characterId": "dev-c-lucas",
+              "text": "Oh ! morguenne ! il faut tirer l’échelle après ceti-là, et tous les autres ne sont pas daignes de li déchausser ses souliés."
             },
             {
-              "id": "dev-l14",
-              "characterId": "dev-c-un",
-              "text": "Une réplique sans texte vient de passer : la carte doit rester lisible."
+              "id": "dev-l243",
+              "characterId": "dev-c-valere",
+              "text": "C’est un homme qui a fait des cures merveilleuses."
             },
             {
-              "id": "dev-l15",
-              "characterId": "dev-c-alceste",
-              "text": "Et celle-ci a changé de mots depuis son enregistrement."
+              "id": "dev-l244",
+              "characterId": "dev-c-lucas",
+              "text": "Qui a gari des gens qui étiant morts."
             },
             {
-              "id": "dev-l16",
-              "characterId": "dev-c-eleonore",
-              "text": "Une apostrophe qui s’enjolive n’est pas une correction."
+              "id": "dev-l245",
+              "characterId": "dev-c-valere",
+              "text": "Il est un peu capricieux, comme je vous ai dit ; et, parfois, il a des moments où son esprit s’échappe, et ne paroît pas ce qu’il est."
             },
             {
-              "id": "dev-l17",
-              "characterId": "dev-c-choeur",
-              "text": "Le souffleur, lui, n'a pas une seule réplique."
+              "id": "dev-l246",
+              "characterId": "dev-c-lucas",
+              "text": "Oui, il aime à bouffonner ; et l’an diroit parfois, ne v’s en déplaise, qu’il a quelque petit coup de hache à la tête."
             },
             {
-              "id": "dev-l18",
-              "characterId": "dev-c-alceste",
-              "text": "Il compte tout de même dans la distribution."
+              "id": "dev-l247",
+              "characterId": "dev-c-valere",
+              "text": "Mais, dans le fond, il est toute science ; et bien souvent il dit des choses tout à fait relevées."
+            },
+            {
+              "id": "dev-l248",
+              "characterId": "dev-c-lucas",
+              "text": "Quand il s’y boute, il parle tout fin drait comme s’il lisoit dans un livre."
+            },
+            {
+              "id": "dev-l249",
+              "characterId": "dev-c-valere",
+              "text": "Sa réputation s’est déjà répandue ici ; et tout le monde vient à lui."
+            },
+            {
+              "id": "dev-l250",
+              "characterId": "dev-c-geronte",
+              "text": "Je meurs d’envie de le voir ; faites-le-moi vite venir."
+            },
+            {
+              "id": "dev-l251",
+              "characterId": "dev-c-valere",
+              "text": "Je le vais quérir."
             }
           ]
         },
         {
-          "lines": []
+          "lines": [
+            {
+              "id": "dev-l252",
+              "characterId": "dev-c-jacqueline",
+              "text": "Par ma fi, monsieu, ceti-ci fera justement ce qu’ant fait les autres. Je pense que ce sera quessi queumi ; et la meilleure médeçaine que l’an pourroit bailler à votre fille, ce seroit, selon moi, un biau et bon mari, pour qui alle eût de l’amiquié."
+            },
+            {
+              "id": "dev-l253",
+              "characterId": "dev-c-geronte",
+              "text": "Ouais ! nourrice, ma mie, vous vous mêlez de bien des choses !"
+            },
+            {
+              "id": "dev-l254",
+              "characterId": "dev-c-lucas",
+              "text": "Taisez-vous, notre minagère Jacquelaine ; ce n’est pas à vous à bouter là votre nez."
+            },
+            {
+              "id": "dev-l255",
+              "characterId": "dev-c-jacqueline",
+              "text": "Je vous dis et vous douze que tous ces médecins n’y feront rian que de l’iau claire ; que votre fille a besoin d’autre chose que de rhibarbe et de séné, et qu’un mari est un emplâtre qui garit tous les maux des filles."
+            },
+            {
+              "id": "dev-l256",
+              "characterId": "dev-c-geronte",
+              "text": "Est-elle en état maintenant qu’on s’en voulût charger, avec l’infirmité qu’elle a ? Et lorsque j’ai été dans le dessein de la marier, ne s’est-elle pas opposée à mes volontés ?"
+            },
+            {
+              "id": "dev-l257",
+              "characterId": "dev-c-jacqueline",
+              "text": "Je le crois bian ; vous l’y vouliez bailler eun homme qu’alle n’aime point. Que ne preniais-vous ce monsieur Liandre, qui li touchoit au cœur ? alle auroit été fort obéissante ; et je m’en vas gager qu’il la prendroit, li, comme alle est, si vous la li vouillais donner."
+            },
+            {
+              "id": "dev-l258",
+              "characterId": "dev-c-geronte",
+              "text": "Ce Léandre n’est pas ce qu’il faut ; il n’a pas du bien comme l’autre."
+            },
+            {
+              "id": "dev-l259",
+              "characterId": "dev-c-jacqueline",
+              "text": "Il a eun oncle qui est si riche, dont il est hériquié."
+            },
+            {
+              "id": "dev-l260",
+              "characterId": "dev-c-geronte",
+              "text": "Tous ces biens à venir me semblent autant de chansons. Il n’est rien tel que ce qu’on tient ; et l’on court grand risque de s’abuser, lorsque l’on compte sur le bien qu’un autre vous garde. La mort n’a pas toujours les oreilles ouvertes aux vœux et aux prières de messieurs les héritiers ; et l’on a le temps d’avoir les dents longues, lorsqu’on attend pour vivre le trépas de quelqu’un."
+            },
+            {
+              "id": "dev-l261",
+              "characterId": "dev-c-jacqueline",
+              "text": "Enfin, j’ai toujours ouï dire qu’en mariage, comme ailleurs, contentement passe richesse. Les pères et les mères ant cette maudite couteume de demander toujours, Qu’a-t-il ? et Qu’a-t-elle ? et le compère Piarre a marié sa fille Simonette au gros Thomas pour un quarquié de vaigne qu’il avait davantage que le jeune Robin, où alle avoit bouté son amiquié ; et v’là que la pauvre criature en est devenue jaune comme un coing, et n’a pas profité tout depuis ce temps-là. C’est un bel exemple pour vous, monsieu. On n’a que son plaisir en ce monde ; et j’aimerois mieux bailler à ma fille eun bon mari qui li fût agriable, que toutes les rentes de la Biausse."
+            },
+            {
+              "id": "dev-l262",
+              "characterId": "dev-c-geronte",
+              "text": "Peste ! madame la nourrice, comme vous dégoisez. Taisez-vous, je vous prie ; vous prenez trop de soin, et vous échauffez votre lait."
+            },
+            {
+              "id": "dev-l263",
+              "characterId": "dev-c-lucas",
+              "text": "(frappant, à chaque phrase qu’il dit, sur l’épaule de Géronte.)\nMorgue ! tais-toi, t’es eune impartinente. Monsieu n’a que faire de tes discours, et il sait ce qu’il a à faire. Mèle-toi de donner à teter à ton enfant, sans tant faire la raisonneuse. Monsieu est le père de sa fille ; et il est bon et sage pour voir ce qu’il ly faut."
+            },
+            {
+              "id": "dev-l264",
+              "characterId": "dev-c-geronte",
+              "text": "Tout doux ! Oh ! tout doux."
+            },
+            {
+              "id": "dev-l265",
+              "characterId": "dev-c-lucas",
+              "text": "(frappant encore sur l’épaule de Geronte.)\nMonsieu, je veux un peu la mortifier, et ly apprendre le respect qu’alle vous doit."
+            },
+            {
+              "id": "dev-l266",
+              "characterId": "dev-c-geronte",
+              "text": "Oui. Mais ces gestes ne sont pas nécessaires."
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l267",
+              "characterId": "dev-c-valere",
+              "text": "Monsieur, préparez-vous. Voici notre médecin qui entre."
+            },
+            {
+              "id": "dev-l268",
+              "characterId": "dev-c-geronte",
+              "text": "(à Sganarelle.)\nMonsieur, je suis ravi de vous voir chez moi, et nous avons grand besoin de vous."
+            },
+            {
+              "id": "dev-l269",
+              "characterId": "dev-c-sganarelle",
+              "text": "(en robe de médecin, avec un chapeau des plus pointus.)\nHippocrate dit… que nous nous couvrions tous deux."
+            },
+            {
+              "id": "dev-l270",
+              "characterId": "dev-c-geronte",
+              "text": "Hippocrate dit cela ?"
+            },
+            {
+              "id": "dev-l271",
+              "characterId": "dev-c-sganarelle",
+              "text": "Oui."
+            },
+            {
+              "id": "dev-l272",
+              "characterId": "dev-c-geronte",
+              "text": "Dans quel chapitre, s’il vous plaît ?"
+            },
+            {
+              "id": "dev-l273",
+              "characterId": "dev-c-sganarelle",
+              "text": "Dans son chapitre… des chapeaux."
+            },
+            {
+              "id": "dev-l274",
+              "characterId": "dev-c-geronte",
+              "text": "Puisque Hippocrate le dit, il le faut faire."
+            },
+            {
+              "id": "dev-l275",
+              "characterId": "dev-c-sganarelle",
+              "text": "Monsieur le médecin, ayant appris les merveilleuses choses…"
+            },
+            {
+              "id": "dev-l276",
+              "characterId": "dev-c-geronte",
+              "text": "À qui parlez-vous, de grâce ?"
+            },
+            {
+              "id": "dev-l277",
+              "characterId": "dev-c-sganarelle",
+              "text": "À vous."
+            },
+            {
+              "id": "dev-l278",
+              "characterId": "dev-c-geronte",
+              "text": "Je ne suis pas médecin"
+            },
+            {
+              "id": "dev-l279",
+              "characterId": "dev-c-sganarelle",
+              "text": "Vous n’êtes pas médecin ?"
+            },
+            {
+              "id": "dev-l280",
+              "characterId": "dev-c-geronte",
+              "text": "Non, vraiment"
+            },
+            {
+              "id": "dev-l281",
+              "characterId": "dev-c-sganarelle",
+              "text": "Tout de bon ?"
+            },
+            {
+              "id": "dev-l282",
+              "characterId": "dev-c-geronte",
+              "text": "Tout de bon.\n(Sganarelle prend un bâton, et bat Géronte comme on l’a battu.)\nAh ! ah ! ah !"
+            },
+            {
+              "id": "dev-l283",
+              "characterId": "dev-c-sganarelle",
+              "text": "Vous êtes médecin maintenant ; je n’ai jamais eu d’autres licences."
+            },
+            {
+              "id": "dev-l284",
+              "characterId": "dev-c-geronte",
+              "text": "(à Valère.)\nQuel diable d’homme m’avez-vous là amené ?"
+            },
+            {
+              "id": "dev-l285",
+              "characterId": "dev-c-valere",
+              "text": "Je vous ai bien dit que c’étoit un médecin goguenard."
+            },
+            {
+              "id": "dev-l286",
+              "characterId": "dev-c-geronte",
+              "text": "Oui : mais je l’enverrois promener avec ses goguenarderies."
+            },
+            {
+              "id": "dev-l287",
+              "characterId": "dev-c-lucas",
+              "text": "Ne prenez pas garde à ça, monsieu ; ce n’est que pour rire."
+            },
+            {
+              "id": "dev-l288",
+              "characterId": "dev-c-geronte",
+              "text": "Cette raillerie ne me plaît pas."
+            },
+            {
+              "id": "dev-l289",
+              "characterId": "dev-c-sganarelle",
+              "text": "Monsieur, je vous demande pardon de la liberté que j’ai prise."
+            },
+            {
+              "id": "dev-l290",
+              "characterId": "dev-c-geronte",
+              "text": "Monsieur, je suis votre serviteur."
+            },
+            {
+              "id": "dev-l291",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je suis fâché…"
+            },
+            {
+              "id": "dev-l292",
+              "characterId": "dev-c-geronte",
+              "text": "Cela n’est rien."
+            },
+            {
+              "id": "dev-l293",
+              "characterId": "dev-c-sganarelle",
+              "text": "Des coups de bâton…"
+            },
+            {
+              "id": "dev-l294",
+              "characterId": "dev-c-geronte",
+              "text": "Il n’y a pas de mal."
+            },
+            {
+              "id": "dev-l295",
+              "characterId": "dev-c-sganarelle",
+              "text": "Que j’ai eu l’honneur de vous donner."
+            },
+            {
+              "id": "dev-l296",
+              "characterId": "dev-c-geronte",
+              "text": "Ne parlons plus de cela. Monsieur, j’ai une fille qui est tombée dans une étrange maladie."
+            },
+            {
+              "id": "dev-l297",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je suis ravi, monsieur, que votre fille ait besoin de moi ; et je souhaiterois de tout mon cœur que vous en eussiez besoin aussi, vous et toute votre famille, pour vous témoigner l’envie que j’ai de vous servir."
+            },
+            {
+              "id": "dev-l298",
+              "characterId": "dev-c-geronte",
+              "text": "Je vous suis obligé de ces sentiments."
+            },
+            {
+              "id": "dev-l299",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je vous assure que c’est du meilleur de mon ame que je vous parle."
+            },
+            {
+              "id": "dev-l300",
+              "characterId": "dev-c-geronte",
+              "text": "C’est trop d’honneur que vous me faites."
+            },
+            {
+              "id": "dev-l301",
+              "characterId": "dev-c-sganarelle",
+              "text": "Comment s’appelle votre fille ?"
+            },
+            {
+              "id": "dev-l302",
+              "characterId": "dev-c-geronte",
+              "text": "Lucinde."
+            },
+            {
+              "id": "dev-l303",
+              "characterId": "dev-c-sganarelle",
+              "text": "Lucinde ! Ah ! beau nom à médicamenter ! Lucinde !"
+            },
+            {
+              "id": "dev-l304",
+              "characterId": "dev-c-geronte",
+              "text": "Je m’en vais voir un peu ce qu’elle fait."
+            },
+            {
+              "id": "dev-l305",
+              "characterId": "dev-c-sganarelle",
+              "text": "Qui est cette grande femme-là ?"
+            },
+            {
+              "id": "dev-l306",
+              "characterId": "dev-c-geronte",
+              "text": "C’est la nourrice d’un petit enfant que j’ai."
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l307",
+              "characterId": "dev-c-sganarelle",
+              "text": "(à part.)\nPeste ! le joli meuble que voilà ! (Haut.) Ah ! nourrice, charmante nourrice, ma médecine est la très humble esclave de votre nourricerie, et je voudrois bien être le petit poupon fortuné qui tetât le lait de vos bonnes grâces. (Il lui porte la main sur le sein.) Tous mes remèdes, toute ma science, toute ma capacité est à votre service ; et…"
+            },
+            {
+              "id": "dev-l308",
+              "characterId": "dev-c-lucas",
+              "text": "Avec votre parmission, monsieu le médecin, laissez là ma femme, je vous prie."
+            },
+            {
+              "id": "dev-l309",
+              "characterId": "dev-c-sganarelle",
+              "text": "Quoi ! elle est votre femme ?"
+            },
+            {
+              "id": "dev-l310",
+              "characterId": "dev-c-lucas",
+              "text": "Oui."
+            },
+            {
+              "id": "dev-l311",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ah ! vraiment je ne savois pas cela, et je m’en réjouis pour l’amour de l’un et de l’autre.\n(Il fait semblant de vouloir embrasser Lucas et embrasse la nourrice.)"
+            },
+            {
+              "id": "dev-l312",
+              "characterId": "dev-c-lucas",
+              "text": "(tirant Sganarelle, et se remettant entre lui et sa femme.)\nTout doucement, s’il vous plaît."
+            },
+            {
+              "id": "dev-l313",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je vous assure que je suis ravi que vous soyez unis ensemble : je la félicite d’avoir un mari comme vous ; et je vous félicite, vous, d’avoir une femme si belle, si sage, et si bien faite comme elle est.\n(Faisant encore semblant d’embrasser Lucas, qui lui tend les bras, il passe dessous, et embrasse encore la nourrice.)"
+            },
+            {
+              "id": "dev-l314",
+              "characterId": "dev-c-lucas",
+              "text": "(le tirant encore.)\nHé ! tétigué ! point tant de compliments, je vous supplie."
+            },
+            {
+              "id": "dev-l315",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ne voulez-vous pas que je me réjouisse avec vous d’un si bel assemblage ?"
+            },
+            {
+              "id": "dev-l316",
+              "characterId": "dev-c-lucas",
+              "text": "Avec moi tant qu’il vous plaira, mais avec ma femme, trêve de sarimonie."
+            },
+            {
+              "id": "dev-l317",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je prends part également au bonheur de tous deux : et si je vous embrasse pour vous témoigner ma joie, je l’embrasse de même pour lui en témoigner aussi.\n(Il continue le même jeu.)"
+            },
+            {
+              "id": "dev-l318",
+              "characterId": "dev-c-lucas",
+              "text": "(le tirant pour la troisième fois.)\nAh ! vartigué, monsieur le médecin, que de lantiponages !"
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l319",
+              "characterId": "dev-c-geronte",
+              "text": "Monsieur, voici tout à l’heure ma fille qu’on va vous amener."
+            },
+            {
+              "id": "dev-l320",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je l’attends, monsieur, avec toute la médecine."
+            },
+            {
+              "id": "dev-l321",
+              "characterId": "dev-c-geronte",
+              "text": "Où est-elle ?"
+            },
+            {
+              "id": "dev-l322",
+              "characterId": "dev-c-sganarelle",
+              "text": "(se touchant le front.)\nLà-dedans."
+            },
+            {
+              "id": "dev-l323",
+              "characterId": "dev-c-geronte",
+              "text": "Fort bien."
+            },
+            {
+              "id": "dev-l324",
+              "characterId": "dev-c-sganarelle",
+              "text": "(en voulant toucher les tetons de la nourrice.)\nMais, comme je m’intéresse à toute votre famille, il faut que j’essaie un peu le lait de votre nourrice, et que je visite son sein.\n(Il s’approche de Jacqueline.)"
+            },
+            {
+              "id": "dev-l325",
+              "characterId": "dev-c-lucas",
+              "text": "(le tirant, et lui faisant faire la pirouette.)\nNannain, nannain ; je n’avons que faire de ça."
+            },
+            {
+              "id": "dev-l326",
+              "characterId": "dev-c-sganarelle",
+              "text": "C’est l’office du médecin de voir les tétons des nourrices."
+            },
+            {
+              "id": "dev-l327",
+              "characterId": "dev-c-lucas",
+              "text": "Il gnia office qui quienne, je sis votre sarviteur."
+            },
+            {
+              "id": "dev-l328",
+              "characterId": "dev-c-sganarelle",
+              "text": "As-tu bien la hardiesse de t’opposer au médecin ? Hors de là."
+            },
+            {
+              "id": "dev-l329",
+              "characterId": "dev-c-lucas",
+              "text": "Je me moque de ça."
+            },
+            {
+              "id": "dev-l330",
+              "characterId": "dev-c-sganarelle",
+              "text": "(en le regardant de travers.)\nJe te donnerai la fièvre."
+            },
+            {
+              "id": "dev-l331",
+              "characterId": "dev-c-jacqueline",
+              "text": "(prenant Lucas par le bras, et lui faisant faire aussi la pirouette.)\nOte-toi de là aussi ; est-ce que je ne sis pas assez grande pour me défendre moi-même, s’il me fait queuque chose qui ne soit pas à faire ?"
+            },
+            {
+              "id": "dev-l332",
+              "characterId": "dev-c-lucas",
+              "text": "Je ne veux pas qu’il te tâte, moi."
+            },
+            {
+              "id": "dev-l333",
+              "characterId": "dev-c-sganarelle",
+              "text": "Fi, le vilain, qui est jaloux de sa femme !"
+            },
+            {
+              "id": "dev-l334",
+              "characterId": "dev-c-geronte",
+              "text": "Voici ma fille."
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l335",
+              "characterId": "dev-c-sganarelle",
+              "text": "Est-ce là la malade ?"
+            },
+            {
+              "id": "dev-l336",
+              "characterId": "dev-c-geronte",
+              "text": "Oui, Je n’ai qu’elle de fille ; et j’aurois tous les regrets du monde si elle venoit à mourir."
+            },
+            {
+              "id": "dev-l337",
+              "characterId": "dev-c-sganarelle",
+              "text": "Qu’elle s’en garde bien ! Il ne faut pas qu’elle meure sans l’ordonnance du médecin."
+            },
+            {
+              "id": "dev-l338",
+              "characterId": "dev-c-geronte",
+              "text": "Allons, un siège."
+            },
+            {
+              "id": "dev-l339",
+              "characterId": "dev-c-sganarelle",
+              "text": "(assis entre Géronte et Lucinde.)\nVoilà une malade qui n’est pas tant dégoûtante, et je tiens qu’un homme bien sain s’en accommoderoit assez."
+            },
+            {
+              "id": "dev-l340",
+              "characterId": "dev-c-geronte",
+              "text": "Vous l’avez fait rire, monsieur."
+            },
+            {
+              "id": "dev-l341",
+              "characterId": "dev-c-sganarelle",
+              "text": "Tant mieux : lorsque le médecin fait rire le malade, c’est le meilleur signe du monde. (à Lucinde.) Hé bien ! de quoi est-il question ? Qu’avez-vous ? quel est le mal que vous sentez ?"
+            },
+            {
+              "id": "dev-l342",
+              "characterId": "dev-c-lucinde",
+              "text": "(répond par signes, en portant la main à sa bouche, à sa tête et son menton.)\nHan, hi, hou, han."
+            },
+            {
+              "id": "dev-l343",
+              "characterId": "dev-c-sganarelle",
+              "text": "Hé ! que dites-vous ?"
+            },
+            {
+              "id": "dev-l344",
+              "characterId": "dev-c-lucinde",
+              "text": "(continue les mêmes gestes.)\nHan, hi, hon, han, han, hi, hon."
+            },
+            {
+              "id": "dev-l345",
+              "characterId": "dev-c-sganarelle",
+              "text": "Quoi ?"
+            },
+            {
+              "id": "dev-l346",
+              "characterId": "dev-c-lucinde",
+              "text": "Han, hi, hon."
+            },
+            {
+              "id": "dev-l347",
+              "characterId": "dev-c-sganarelle",
+              "text": "(la contrefaisant.)\nHan, hi, hon, han, ha. Je ne vous entends point. Quel diable de langage est-ce là ?"
+            },
+            {
+              "id": "dev-l348",
+              "characterId": "dev-c-geronte",
+              "text": "Monsieur, c’est là sa maladie. Elle est devenue muette, sans que jusques ici on en ait pu savoir la cause ; et c’est un accident qui a fait reculer son mariage."
+            },
+            {
+              "id": "dev-l349",
+              "characterId": "dev-c-sganarelle",
+              "text": "Et pourquoi ?"
+            },
+            {
+              "id": "dev-l350",
+              "characterId": "dev-c-geronte",
+              "text": "Celui qu’elle doit épouser veut attendre sa guérison pour conclure les choses."
+            },
+            {
+              "id": "dev-l351",
+              "characterId": "dev-c-sganarelle",
+              "text": "Et qui est ce sot-là, qui ne veut pas que sa femme soit muette ? Plût à Dieu que la mienne eût cette maladie ! je me garderois bien de la vouloir guérir."
+            },
+            {
+              "id": "dev-l352",
+              "characterId": "dev-c-geronte",
+              "text": "Enfin, monsieur, nous vous prions d’employer tous vos soins pour la soulager de son mal."
+            },
+            {
+              "id": "dev-l353",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ah ! ne vous mettez pas en peine. Dites-moi un peu : ce mal l’oppresse-t-il beaucoup ?"
+            },
+            {
+              "id": "dev-l354",
+              "characterId": "dev-c-geronte",
+              "text": "Oui, monsieur."
+            },
+            {
+              "id": "dev-l355",
+              "characterId": "dev-c-sganarelle",
+              "text": "Tant mieux. Sent-elle de grandes douleurs ?"
+            },
+            {
+              "id": "dev-l356",
+              "characterId": "dev-c-geronte",
+              "text": "Fort grandes."
+            },
+            {
+              "id": "dev-l357",
+              "characterId": "dev-c-sganarelle",
+              "text": "C’est fort bien fait Va-t-elle où vous savez ?"
+            },
+            {
+              "id": "dev-l358",
+              "characterId": "dev-c-geronte",
+              "text": "Oui."
+            },
+            {
+              "id": "dev-l359",
+              "characterId": "dev-c-sganarelle",
+              "text": "Copieusement ?"
+            },
+            {
+              "id": "dev-l360",
+              "characterId": "dev-c-geronte",
+              "text": "Je n’entends rien à cela."
+            },
+            {
+              "id": "dev-l361",
+              "characterId": "dev-c-sganarelle",
+              "text": "La matière est-elle louable ?"
+            },
+            {
+              "id": "dev-l362",
+              "characterId": "dev-c-geronte",
+              "text": "Je ne me connois pas à ces choses."
+            },
+            {
+              "id": "dev-l363",
+              "characterId": "dev-c-sganarelle",
+              "text": "(se tournant vers la malade.)\nDonnez-moi votre bras. (à Géronte.) Voilà un pouls qui marque que votre fille est muette."
+            },
+            {
+              "id": "dev-l364",
+              "characterId": "dev-c-geronte",
+              "text": "Hé ! oui, monsieur, c’est là son mal ; vous l’avez trouvé tout du premier coup."
+            },
+            {
+              "id": "dev-l365",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ha ! ha !"
+            },
+            {
+              "id": "dev-l366",
+              "characterId": "dev-c-jacqueline",
+              "text": "Voyez comme il a deviné sa maladie !"
+            },
+            {
+              "id": "dev-l367",
+              "characterId": "dev-c-sganarelle",
+              "text": "Nous autres grands médecins, nous connoissons d’abord les choses. Un ignorant auroit été embarrassé, et vous eût été dire, C’est ceci, c’est cela ; mais moi, je touche au but du premier coup, et je vous apprends que votre fille est muette."
+            },
+            {
+              "id": "dev-l368",
+              "characterId": "dev-c-geronte",
+              "text": "Oui : mais je voudrois bien que vous me pussiez dire d’où cela vient."
+            },
+            {
+              "id": "dev-l369",
+              "characterId": "dev-c-sganarelle",
+              "text": "Il n’est rien de plus aisé ; cela vient de ce qu’elle a perdu la parole."
+            },
+            {
+              "id": "dev-l370",
+              "characterId": "dev-c-geronte",
+              "text": "Fort bien. Mais la cause, s’il vous plaît, qui fait qu’elle a perdu la parole ?"
+            },
+            {
+              "id": "dev-l371",
+              "characterId": "dev-c-sganarelle",
+              "text": "Tous nos meilleurs auteurs vous diront que c’est l’empêchement de l’action de sa langue."
+            },
+            {
+              "id": "dev-l372",
+              "characterId": "dev-c-geronte",
+              "text": "Mais encore, vos sentiments sur cet empêchement de l’action de sa langue ?"
+            },
+            {
+              "id": "dev-l373",
+              "characterId": "dev-c-sganarelle",
+              "text": "Aristote, là-dessus, dit… de fort belles choses."
+            },
+            {
+              "id": "dev-l374",
+              "characterId": "dev-c-geronte",
+              "text": "Je le crois."
+            },
+            {
+              "id": "dev-l375",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ah ! c’étoit un grand homme !"
+            },
+            {
+              "id": "dev-l376",
+              "characterId": "dev-c-geronte",
+              "text": "Sans doute."
+            },
+            {
+              "id": "dev-l377",
+              "characterId": "dev-c-sganarelle",
+              "text": "Grand homme tout à fait ; (levant le bras depuis le coude.) un homme qui étoit plus grand que moi de tout cela. Pour revenir donc à notre raisonnement, je tiens que cet empêchement de l’action de sa langue est causé par de certaines humeurs, qu’entre nous autres savants nous appelons humeurs peccantes ; peccantes, c’est-à-dire… humeurs peccantes ; d’autant que les vapeurs formées par les exhalaisons des influences qui s’élèvent dans la région des maladies, venant… pour ainsi dire… à… Entendez-vous le latin ?"
+            },
+            {
+              "id": "dev-l378",
+              "characterId": "dev-c-geronte",
+              "text": "En aucune façon."
+            },
+            {
+              "id": "dev-l379",
+              "characterId": "dev-c-sganarelle",
+              "text": "(se levant brusquement.)\nVous n’entendez point le latin ?"
+            },
+            {
+              "id": "dev-l380",
+              "characterId": "dev-c-geronte",
+              "text": "Non."
+            },
+            {
+              "id": "dev-l381",
+              "characterId": "dev-c-sganarelle",
+              "text": "(en faisant diverses plaisantes postures.)\nCabricias, arci thuram, catalamus, singulariter, nominativo, hœc musa, la muse, bonus, bona, bonum. Deus sanctus, est-ne oratio latinas ? Etiam, oui. Quare ? pourquoi ? Quia substantivo, et adjectivum, concordat in generi, numerum, et casus."
+            },
+            {
+              "id": "dev-l382",
+              "characterId": "dev-c-geronte",
+              "text": "Ah ! que n’ai-je étudié !"
+            },
+            {
+              "id": "dev-l383",
+              "characterId": "dev-c-jacqueline",
+              "text": "L’habile homme que v’là !"
+            },
+            {
+              "id": "dev-l384",
+              "characterId": "dev-c-lucas",
+              "text": "Oui, ça est si biau que je n’y entends goutte."
+            },
+            {
+              "id": "dev-l385",
+              "characterId": "dev-c-sganarelle",
+              "text": "Or, ces vapeurs dont je vous parle venant à passer, du côté gauche où est le foie, au côté droit où est le cœur, il se trouve que le poumon, que nous appelons en latin armyan, ayant communication avec le cerveau, que nous nommons en grec nasmus, par le moyen de la veine cave, que nous appelons en hébreu cubile, rencontre en son chemin lesdites vapeurs qui remplissent les ventricules de l’omoplate ; et parceque lesdites vapeurs… comprenez bien ce raisonnement, je vous prie ; et parceque lesdites vapeurs ont certaine malignité… écoutez bien ceci, je vous conjure."
+            },
+            {
+              "id": "dev-l386",
+              "characterId": "dev-c-geronte",
+              "text": "Oui."
+            },
+            {
+              "id": "dev-l387",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ont une certaine malignité qui est causée… soyez attentifs, s’il vous plaît."
+            },
+            {
+              "id": "dev-l388",
+              "characterId": "dev-c-geronte",
+              "text": "Je le suis."
+            },
+            {
+              "id": "dev-l389",
+              "characterId": "dev-c-sganarelle",
+              "text": "Qui est causée par l’âcreté des humeurs engendrées dans la concavité du diaphragme, il arrive que ces vapeurs… Ossabandus, nequeis, nequer, polarinum, quipsa milus. Voilà justement ce qui fait que votre fille est muette."
+            },
+            {
+              "id": "dev-l390",
+              "characterId": "dev-c-jacqueline",
+              "text": "Ah ! que ça est bian dit, notre homme !"
+            },
+            {
+              "id": "dev-l391",
+              "characterId": "dev-c-lucas",
+              "text": "Que n’ai-je la langue aussi bian pendue !"
+            },
+            {
+              "id": "dev-l392",
+              "characterId": "dev-c-geronte",
+              "text": "On ne peut pas mieux raisonner, sans doute. Il n’y a qu’une seule chose qui m’a choquée : c’est l’endroit du foie et du cœur. Il me semble que vous les placez autrement qu’ils ne sont ; que le cœur est du côté gauche, et le foie du côté droit."
+            },
+            {
+              "id": "dev-l393",
+              "characterId": "dev-c-sganarelle",
+              "text": "Oui ; cela étoit autrefois ainsi : mais nous avons changé tout cela, et nous faisons maintenant la médecine d’une méthode toute nouvelle."
+            },
+            {
+              "id": "dev-l394",
+              "characterId": "dev-c-geronte",
+              "text": "C’est ce que je ne savois pas, et je vous demande pardon de mon ignorance."
+            },
+            {
+              "id": "dev-l395",
+              "characterId": "dev-c-sganarelle",
+              "text": "Il n’y a point de mal ; et vous n’ètes pas obligé d’être aussi habile que nous."
+            },
+            {
+              "id": "dev-l396",
+              "characterId": "dev-c-geronte",
+              "text": "Assurément. Mais, monsieur, que croyez-vous qu’il faille faire à cette maladie ?"
+            },
+            {
+              "id": "dev-l397",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ce que je crois qu’il faille faire ?"
+            },
+            {
+              "id": "dev-l398",
+              "characterId": "dev-c-geronte",
+              "text": "Oui."
+            },
+            {
+              "id": "dev-l399",
+              "characterId": "dev-c-sganarelle",
+              "text": "Mon avis est qu’on la remette sur son lit, et qu’on lui fasse prendre pour remède quantité de pain trempé dans du vin."
+            },
+            {
+              "id": "dev-l400",
+              "characterId": "dev-c-geronte",
+              "text": "Pourquoi cela, monsieur ?"
+            },
+            {
+              "id": "dev-l401",
+              "characterId": "dev-c-sganarelle",
+              "text": "Parcequ’il y a dans le vin et le pain, mêlés ensemble, une vertu sympathique qui fait parler. Ne voyez-vous pas bien qu’on ne donne autre chose aux perroquets, et qu’ils apprennent à parler en mangeant de cela ?"
+            },
+            {
+              "id": "dev-l402",
+              "characterId": "dev-c-geronte",
+              "text": "Cela est vrai ! Ah ! le grand homme ! Vite, quantité de pain et de vin."
+            },
+            {
+              "id": "dev-l403",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je reviendrai voir sur le soir en quel état elle sera."
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l404",
+              "characterId": "dev-c-sganarelle",
+              "text": "(à Jacqueline.)\nDoucement, vous. (à Géronte) Monsieur, voilà une nourrice à laquelle il faut que je fasse quelques petits remèdes.."
+            },
+            {
+              "id": "dev-l405",
+              "characterId": "dev-c-jacqueline",
+              "text": "Qui ? moi ? Je me porte le mieux du monde."
+            },
+            {
+              "id": "dev-l406",
+              "characterId": "dev-c-sganarelle",
+              "text": "Tant pis, nourrice ; tant pis. Cette grande santé est à craindre, et il ne sera pas mauvais de vous faire quelque petite saignée amiable, de vous donner quelque petit clystère dulcifiant."
+            },
+            {
+              "id": "dev-l407",
+              "characterId": "dev-c-geronte",
+              "text": "Mais, monsieur, voilà une mode que je ne comprends point. Pourquoi s’aller faire saigner quand on n’a point de maladie ?"
+            },
+            {
+              "id": "dev-l408",
+              "characterId": "dev-c-sganarelle",
+              "text": "Il n’importe, la mode en est salutaire ; et, comme on boit pour la soif à venir, il faut se faire aussi saigner pour la maladie à venir."
+            },
+            {
+              "id": "dev-l409",
+              "characterId": "dev-c-jacqueline",
+              "text": "(en s’en allant.)\nMa fi, je me moque de ça, et je ne veux point faire de mon corps une boutique d’apothicaire."
+            },
+            {
+              "id": "dev-l410",
+              "characterId": "dev-c-sganarelle",
+              "text": "Vous êtes rétive aux remèdes, mais nous saurons vous soumettre à la raison."
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l411",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je vous donne le bonjour."
+            },
+            {
+              "id": "dev-l412",
+              "characterId": "dev-c-geronte",
+              "text": "Attendez un peu, s’il vous plaît."
+            },
+            {
+              "id": "dev-l413",
+              "characterId": "dev-c-sganarelle",
+              "text": "Que voulez-vous faire ?"
+            },
+            {
+              "id": "dev-l414",
+              "characterId": "dev-c-geronte",
+              "text": "Vous donner de l’argent, monsieur."
+            },
+            {
+              "id": "dev-l415",
+              "characterId": "dev-c-sganarelle",
+              "text": "(tendant sa main derrière, par-dessous sa robe, tandis que Géronte ouvre sa bourse.)\nJe n’en prendrai pas, monsieur."
+            },
+            {
+              "id": "dev-l416",
+              "characterId": "dev-c-geronte",
+              "text": "Monsieur…"
+            },
+            {
+              "id": "dev-l417",
+              "characterId": "dev-c-sganarelle",
+              "text": "Point du tout."
+            },
+            {
+              "id": "dev-l418",
+              "characterId": "dev-c-geronte",
+              "text": "Un petit moment."
+            },
+            {
+              "id": "dev-l419",
+              "characterId": "dev-c-sganarelle",
+              "text": "En aucune façon."
+            },
+            {
+              "id": "dev-l420",
+              "characterId": "dev-c-geronte",
+              "text": "De grâce !"
+            },
+            {
+              "id": "dev-l421",
+              "characterId": "dev-c-sganarelle",
+              "text": "Vous vous moquez."
+            },
+            {
+              "id": "dev-l422",
+              "characterId": "dev-c-geronte",
+              "text": "Voilà qui est fait."
+            },
+            {
+              "id": "dev-l423",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je n’en ferai rien."
+            },
+            {
+              "id": "dev-l424",
+              "characterId": "dev-c-geronte",
+              "text": "Hé !"
+            },
+            {
+              "id": "dev-l425",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ce n’est pas l’argent qui me fait agir."
+            },
+            {
+              "id": "dev-l426",
+              "characterId": "dev-c-geronte",
+              "text": "Je le crois."
+            },
+            {
+              "id": "dev-l427",
+              "characterId": "dev-c-sganarelle",
+              "text": "(après avoir pris l’argent.)\nCela est-il de poids ?"
+            },
+            {
+              "id": "dev-l428",
+              "characterId": "dev-c-geronte",
+              "text": "Oui, monsieur."
+            },
+            {
+              "id": "dev-l429",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je ne suis pas un médecin mercenaire."
+            },
+            {
+              "id": "dev-l430",
+              "characterId": "dev-c-geronte",
+              "text": "Je le sais bien."
+            },
+            {
+              "id": "dev-l431",
+              "characterId": "dev-c-sganarelle",
+              "text": "L’intérêt ne me gouverne point."
+            },
+            {
+              "id": "dev-l432",
+              "characterId": "dev-c-geronte",
+              "text": "Je n’ai pas cette pensée."
+            },
+            {
+              "id": "dev-l433",
+              "characterId": "dev-c-sganarelle",
+              "text": "(seul, regardant l’argent qu’il a reçu.)\nMa foi, cela ne va pas mal ; et pourvu que…"
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l434",
+              "characterId": "dev-c-leandre",
+              "text": "Monsieur, il y a longtemps que je vous attends ; et je viens implorer votre assistance."
+            },
+            {
+              "id": "dev-l435",
+              "characterId": "dev-c-sganarelle",
+              "text": "(lui tâtant le pouls.)\nVoilà un pouls qui est fort mauvais."
+            },
+            {
+              "id": "dev-l436",
+              "characterId": "dev-c-leandre",
+              "text": "Je ne suis point malade, monsieur ; et ce n’est pas pour cela que je viens à vous."
+            },
+            {
+              "id": "dev-l437",
+              "characterId": "dev-c-sganarelle",
+              "text": "Si vous n’êtes pas malade, que diable ne le dites-vous donc ?"
+            },
+            {
+              "id": "dev-l438",
+              "characterId": "dev-c-leandre",
+              "text": "Non. Pour vous dire la chose en deux mots, je m’appelle Léandre, qui suis amoureux de Lucinde, que vous venez de visiter ; et comme, par la mauvaise humeur de son père, toute sorte d’accès m’est fermé auprès d’elle, je me hasarde à vous prier de vouloir servir mon amour, et de me donner lieu d’exécuter un stratagème que j’ai trouvé pour lui pouvoir dire deux mots d’où dépendent absolument mon bonheur et ma vie."
+            },
+            {
+              "id": "dev-l439",
+              "characterId": "dev-c-sganarelle",
+              "text": "(paroissant en colère.)\nPour qui me prenez-vous ? Comment ! oser vous adresser à moi pour vous servir dans votre amour, et vouloir ravaler la dignité de médecin à des emplois de cette nature !"
+            },
+            {
+              "id": "dev-l440",
+              "characterId": "dev-c-leandre",
+              "text": "Monsieur, ne faites point de bruit."
+            },
+            {
+              "id": "dev-l441",
+              "characterId": "dev-c-sganarelle",
+              "text": "(en le faisant reculer.)\nJ’en veux faire, moi. Vous êtes un impertinent."
+            },
+            {
+              "id": "dev-l442",
+              "characterId": "dev-c-leandre",
+              "text": "Hé ! monsieur, doucement."
+            },
+            {
+              "id": "dev-l443",
+              "characterId": "dev-c-sganarelle",
+              "text": "Un malavisé."
+            },
+            {
+              "id": "dev-l444",
+              "characterId": "dev-c-leandre",
+              "text": "De grâce !"
+            },
+            {
+              "id": "dev-l445",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je vous apprendrai que je ne suis point homme à cela, et que c’est une insolence extrême…"
+            },
+            {
+              "id": "dev-l446",
+              "characterId": "dev-c-leandre",
+              "text": "(tirant une bourse.)\nMonsieur…"
+            },
+            {
+              "id": "dev-l447",
+              "characterId": "dev-c-sganarelle",
+              "text": "De vouloir m’employer… (tenant la bourse.) Je ne parle pas pour vous, car vous êtes honnête homme ; et je serois ravi de vous rendre service : mais il y a de certains impertinents au monde qui viennent prendre les gens pour ce qu’ils ne sont pas ; et je vous avoue que cela me met en colère."
+            },
+            {
+              "id": "dev-l448",
+              "characterId": "dev-c-leandre",
+              "text": "Je vous demande pardon, monsieur, de la liberté que…"
+            },
+            {
+              "id": "dev-l449",
+              "characterId": "dev-c-sganarelle",
+              "text": "Vous vous moquez. De quoi est-il question ?"
+            },
+            {
+              "id": "dev-l450",
+              "characterId": "dev-c-leandre",
+              "text": "Vous saurez donc, monsieur, que cette maladie que vous voulez guérir est une feinte maladie. Les médecins ont raisonné là-dessus comme il faut ; et ils n’ont pas manqué de dire que cela procédoit, qui du cerveau, qui des entrailles, qui de la rate, qui du foie : mais il est certain que l’amour en est la véritable cause, et que Lucinde n’a trouvé cette maladie que pour se délivrer d’un mariage dont elle étoit importunée. Mais, de crainte qu’on ne nous voie ensemble, retirons-nous d’ici, et je vous dirai en marchant ce que je souhaite de vous."
+            },
+            {
+              "id": "dev-l451",
+              "characterId": "dev-c-sganarelle",
+              "text": "Allons, monsieur : vous m’avez donné pour votre amour une tendresse qui n’est pas concevable ; et j’y perdrai toute ma médecine, ou la malade crèvera, ou bien elle sera à vous."
+            }
+          ]
         }
       ]
     },
@@ -152,24 +2388,764 @@
         {
           "lines": [
             {
-              "id": "dev-l19",
-              "characterId": "dev-c-ingenue",
-              "text": "J'arrive au dernier acte, et je n'ai parlé nulle part ailleurs."
+              "id": "dev-l452",
+              "characterId": "dev-c-leandre",
+              "text": "Il me semble que je ne suis pas mal ainsi pour un apothicaire ; et, comme le père ne m’a guère vu, ce changement d’habit et de perruque est assez capable, je crois, de me déguiser à ses yeux."
             },
             {
-              "id": "dev-l20",
-              "characterId": "dev-c-alceste",
-              "text": "Le menu des scènes ne te proposera donc que celle-ci."
+              "id": "dev-l453",
+              "characterId": "dev-c-sganarelle",
+              "text": "Sans doute."
             },
             {
-              "id": "dev-l21",
-              "characterId": "dev-c-ingenue",
-              "text": "Et l'acte entier à qui ne parle pas du tout."
+              "id": "dev-l454",
+              "characterId": "dev-c-leandre",
+              "text": "Tout ce que je souhaiterois seroit de savoir cinq ou six grands mots de médecine, pour parer mon discours et me donner l’air d’habile homme."
             },
             {
-              "id": "dev-l22",
-              "characterId": "dev-c-choeur",
-              "text": "Rideau. Rien de tout cela n'est arrivé."
+              "id": "dev-l455",
+              "characterId": "dev-c-sganarelle",
+              "text": "Allez, allez, tout cela n’est pas nécessaire, il suffit de l’habit : et je n’en sais pas plus que vous."
+            },
+            {
+              "id": "dev-l456",
+              "characterId": "dev-c-leandre",
+              "text": "Comment !"
+            },
+            {
+              "id": "dev-l457",
+              "characterId": "dev-c-sganarelle",
+              "text": "Diable emporte si j’entends rien en médecine ! Vous êtes honnête homme, et je veux bien me confier à vous comme vous vous confiez à moi."
+            },
+            {
+              "id": "dev-l458",
+              "characterId": "dev-c-leandre",
+              "text": "Quoi ! vous n’êtes pas effectivement…"
+            },
+            {
+              "id": "dev-l459",
+              "characterId": "dev-c-sganarelle",
+              "text": "Non, vous dis-je ; ils m’ont fait médecin malgré mes dents. Je ne m’étois jamais mêlé d’être si savant que cela ; et toutes mes études n’ont été que jusqu’en sixième. Je ne sais point sur quoi cette imagination leur est venue ; mais quand j’ai vu qu’à toute force ils vouloient que je fusse médecin, je me suis résolu de l’être aux dépens de qui il appartiendra. Cependant vous ne sauriez croire comment l’erreur s’est répandue, et de quelle façon chacun est endiablé à me croire habile homme. On me vient chercher de tous côtés ; et, si les choses vont toujours de même, je suis d’avis de m’en tenir toute la vie à la médecine. Je trouve que c’est le métier le meilleur de tous ; car, soit qu’on fasse bien, ou soit qu’on fasse mal, on est toujours payé de même sorte. La méchante besogne ne retombe jamais sur notre dos ; et nous taillons comme il nous plaît sur l’étoffe où nous travaillons. Un cordonnier, en faisant des souliers, ne sauroit gâter un morceau de cuir qu’il n’en paie les pots cassés ; mais ici l’on peut gâter un homme sans qu’il en coûte rien. Les bévues ne sont point pour nous, et c’est toujours la faute de celui qui meurt. Enfin le bon de cette profession est qu’il y a parmi les morts une honnêteté, une discrétion la plus grande du monde ; et jamais on n’en voit se plaindre du médecin qui l’a tué"
+            },
+            {
+              "id": "dev-l460",
+              "characterId": "dev-c-leandre",
+              "text": "Il est vrai que les morts sont fort honnêtes gens sur cette matière."
+            },
+            {
+              "id": "dev-l461",
+              "characterId": "dev-c-sganarelle",
+              "text": "(voyant des hommes qui viennent à lui.)\nVoilà des gens qui ont la mine de me venir consulter, (à Léandre.) Allez toujours m’attendre auprès du logis de votre maîtresse."
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l462",
+              "characterId": "dev-c-thibaut",
+              "text": "Monsieu, je venons vous charcher, mon fils Perrin et moi."
+            },
+            {
+              "id": "dev-l463",
+              "characterId": "dev-c-sganarelle",
+              "text": "Qu’y a-t-il ?"
+            },
+            {
+              "id": "dev-l464",
+              "characterId": "dev-c-thibaut",
+              "text": "Sa pauvre mère, qui a nom Parrette, est dans un lit malade il y a six mois."
+            },
+            {
+              "id": "dev-l465",
+              "characterId": "dev-c-sganarelle",
+              "text": "(tendant la main comme pour recevoir de l’argent.)\nQue voulez-vous que j’y fasse ?"
+            },
+            {
+              "id": "dev-l466",
+              "characterId": "dev-c-thibaut",
+              "text": "Je voudrions, monsieu, que vous nous baillissiez queuque petite drôlerie pour la garir."
+            },
+            {
+              "id": "dev-l467",
+              "characterId": "dev-c-sganarelle",
+              "text": "Il faut voir de quoi est-ce qu’elle est malade."
+            },
+            {
+              "id": "dev-l468",
+              "characterId": "dev-c-thibaut",
+              "text": "Alle est malade d’hypocrisie, monsieu."
+            },
+            {
+              "id": "dev-l469",
+              "characterId": "dev-c-sganarelle",
+              "text": "D’hypocrisie ?"
+            },
+            {
+              "id": "dev-l470",
+              "characterId": "dev-c-thibaut",
+              "text": "Oui, c’est-à-dire qu’aile est enflée partout ; et l’an dit que c’est quantité de sériosités qu’alle a dans le corps, et que son foie, son ventre, ou sa rate, comme vous voudrois l’appeler, au glieu de faire du sang, ne fait plus que de l’iau. Alle a, de deux jours l’un, la fièvre quotiguienne, avec des\nlassitudes et des douleurs dans les mufles des jambes. On entend dans sa gorge des fleumes qui sont tout prêts à l’étouffer ; et parfois il li prend des syncoles et des conversions, que je crayons qu’alle est passée. J’avons dans notre village un apothicaire, révérence parler, qui li a donné je ne sais combien d’histoires ; et il m’en coûte plus d’eune douzaine de bons écus en lavements, ne v’s en déplaise, en aposthumes qu’on li a fait prendre, en infections de jacinthe, et en portions cordales. Mais tout ça, comme dit l’autre, n’a été que de l’onguent miton-mitaine. Il veloit li bailler d’eune certaine drogue que l’on appelle du vin amétile ; mais j’ai-z-eu peur franchement que ça l’envoyît a patres ; et l’an dit que ces gros médecins tuont je ne sais combien de monde avec cette invention-là."
+            },
+            {
+              "id": "dev-l471",
+              "characterId": "dev-c-sganarelle",
+              "text": "(tendant toujours la main, et la branlant comme pour signe qu’il demande de l’argent.)\nVenons au fait, mon ami, venons au fait."
+            },
+            {
+              "id": "dev-l472",
+              "characterId": "dev-c-thibaut",
+              "text": "Le fait est, monsieu, que je venons vous prier de nous dire ce qu’il faut que je fassions."
+            },
+            {
+              "id": "dev-l473",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je ne vous entends point du tout."
+            },
+            {
+              "id": "dev-l474",
+              "characterId": "dev-c-perrin",
+              "text": "Monsieu, ma mère est malade ; et v’là deux écus que je vous apportons pour nous bailler queuque remède."
+            },
+            {
+              "id": "dev-l475",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ah ! je vous entends, vous. Voilà un garçon qui parle clairement, et qui s’explique comme il faut. Vous dites que votre mère est malade d’hydropisie, qu’elle est enflée par tout le corps, qu’elle a la fièvre, avec des douleurs dans les jambes, et qu’il lui prend parfois des syncopes et des convulsions, c’est-à-dire des évanouissements ?"
+            },
+            {
+              "id": "dev-l476",
+              "characterId": "dev-c-perrin",
+              "text": "Hé ! oui, monsieu, c’est justement ça."
+            },
+            {
+              "id": "dev-l477",
+              "characterId": "dev-c-sganarelle",
+              "text": "J’ai compris d’abord vos paroles. Vous avez un père qui ne sait ce qu’il dit. Maintenant vous me demandez un remède ?"
+            },
+            {
+              "id": "dev-l478",
+              "characterId": "dev-c-perrin",
+              "text": "Oui, monsieu."
+            },
+            {
+              "id": "dev-l479",
+              "characterId": "dev-c-sganarelle",
+              "text": "Un remède pour la guérir ?"
+            },
+            {
+              "id": "dev-l480",
+              "characterId": "dev-c-perrin",
+              "text": "C’est comme je l’entendons."
+            },
+            {
+              "id": "dev-l481",
+              "characterId": "dev-c-sganarelle",
+              "text": "Tenez, voilà un morceau de fromage qu’il faut que vous lui fassiez prendre."
+            },
+            {
+              "id": "dev-l482",
+              "characterId": "dev-c-perrin",
+              "text": "Du fromage, monsieu ?"
+            },
+            {
+              "id": "dev-l483",
+              "characterId": "dev-c-sganarelle",
+              "text": "Oui, c’est un fromage préparé, où il entre de l’or, du corail et des perles, et quantité d’autres choses précieuses."
+            },
+            {
+              "id": "dev-l484",
+              "characterId": "dev-c-perrin",
+              "text": "Monsieu, je vous sommes bien obligés ; et j’allons li faire prendre ça tout à l’heure."
+            },
+            {
+              "id": "dev-l485",
+              "characterId": "dev-c-sganarelle",
+              "text": "Allez. Si elle meurt, ne manquez pas de la faire enterrer du mieux que vous pourrez."
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l486",
+              "characterId": "dev-c-sganarelle",
+              "text": "Voici la belle nourrice. Ah ! nourrice de mon cœur, je suis ravi de cette rencontre ; et votre vue est la rhubarbe, la casse, et le séné, qui purgent toute la mélancolie de mon ame."
+            },
+            {
+              "id": "dev-l487",
+              "characterId": "dev-c-jacqueline",
+              "text": "Par ma figue, monsieu le médecin, ça est trop bian dit pour moi, et je n’entends rian à tout votre latin."
+            },
+            {
+              "id": "dev-l488",
+              "characterId": "dev-c-sganarelle",
+              "text": "Devenez malade, nourrice, je vous prie ; devenez malade pour l’amour de moi. J’aurois toutes les joies du monde de vous guérir."
+            },
+            {
+              "id": "dev-l489",
+              "characterId": "dev-c-jacqueline",
+              "text": "Je sis votre sarvante ; j’aime bian mieux qu’an ne me garisse pas."
+            },
+            {
+              "id": "dev-l490",
+              "characterId": "dev-c-sganarelle",
+              "text": "Que je vous plains, belle nourrice, d’avoir un mari jaloux et fâcheux comme celui que vous avez !"
+            },
+            {
+              "id": "dev-l491",
+              "characterId": "dev-c-jacqueline",
+              "text": "Que velez-vous, monsieu ? C’est pour la pénitence de mes fautes ; et là où la chèvre est liée, il faut bian qu’aile y broute."
+            },
+            {
+              "id": "dev-l492",
+              "characterId": "dev-c-sganarelle",
+              "text": "Comment ! un rustre comme cela ! un homme qui vous observe toujours, et ne veut pas que personne vous parle !"
+            },
+            {
+              "id": "dev-l493",
+              "characterId": "dev-c-jacqueline",
+              "text": "Hélas ! vous n’avez rian vu encore ; et ce n’est qu’un petit échantillon de sa mauvaise humeur."
+            },
+            {
+              "id": "dev-l494",
+              "characterId": "dev-c-sganarelle",
+              "text": "Est-il possible ? et qu’un homme ait l’ame assez basse pour maltraiter une personne comme vous ? Ah ! que j’en sais, belle nourrice, et qui ne sont pas loin d’ici, qui se tiendroient heureux de baiser seulement les petits bouts de vos petons ! Pourquoi faut-il qu’une personne si bien faite soit tombée en de telles mains ! et qu’un franc animal, un brutal, un stupide, un sot… pardonnez-moi, nourrice, si je parle ainsi de votre mari…"
+            },
+            {
+              "id": "dev-l495",
+              "characterId": "dev-c-jacqueline",
+              "text": "Hé ! monsieu, je sais bian qu’il mérite tous ces noms-là."
+            },
+            {
+              "id": "dev-l496",
+              "characterId": "dev-c-sganarelle",
+              "text": "Oui, sans doute, nourrice, il les mérite ; et il mériteroit encore que vous lui missiez quelque chose sur la tête, pour le punir des soupçons qu’il a."
+            },
+            {
+              "id": "dev-l497",
+              "characterId": "dev-c-jacqueline",
+              "text": "Il est bian vrai que si je n’avois devant les yeux que son intérêt, il pourroit m’obliger à queuque étrange chose."
+            },
+            {
+              "id": "dev-l498",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ma foi, vous ne feriez pas mal de vous venger de lui avec quelqu’un. C’est un homme, je vous le dis, qui mérite bien cela ; et, si j’étois assez heureux, belle nourrice, pour être choisi pour… (Dans le temps que Sganarelle tend les bras pour embrasser Jacqueline, Lucas passe sa tête par dessous, et se met entre eux deux. Sganarelle et Jacqueline regardent Lucas, et sortent chacun de leur côté, mais le médecin d’une manière fort plaisante.)"
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l499",
+              "characterId": "dev-c-geronte",
+              "text": "Holà ! Lucas, n’as-tu point vu ici notre médecin ?"
+            },
+            {
+              "id": "dev-l500",
+              "characterId": "dev-c-lucas",
+              "text": "Et oui, de par tous les diantres, je l’ai vu, et ma femme aussi."
+            },
+            {
+              "id": "dev-l501",
+              "characterId": "dev-c-geronte",
+              "text": "Où est-ce donc qu’il peut être ?"
+            },
+            {
+              "id": "dev-l502",
+              "characterId": "dev-c-lucas",
+              "text": "Je ne sais ; mais je voudrois qu’il fût à tous les guèbles."
+            },
+            {
+              "id": "dev-l503",
+              "characterId": "dev-c-geronte",
+              "text": "Va-t’en voir un peu ce que fait ma fille ?"
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l504",
+              "characterId": "dev-c-geronte",
+              "text": "Ah ! monsieur, je demandois où vous étiez."
+            },
+            {
+              "id": "dev-l505",
+              "characterId": "dev-c-sganarelle",
+              "text": "Je m’étois amusé dans votre cour à expulser le superflu de la boisson. Comment se porte la malade ?"
+            },
+            {
+              "id": "dev-l506",
+              "characterId": "dev-c-geronte",
+              "text": "Un peu plus mal depuis votre remède."
+            },
+            {
+              "id": "dev-l507",
+              "characterId": "dev-c-sganarelle",
+              "text": "Tant mieux ; c’est signe qu’il opère."
+            },
+            {
+              "id": "dev-l508",
+              "characterId": "dev-c-geronte",
+              "text": "Oui ; mais en opérant, je crains qu’il ne l’étouffe"
+            },
+            {
+              "id": "dev-l509",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ne vous mettez pas en peine ; j’ai des remèdes qui se moquent de tout, et je l’attends à l’agonie."
+            },
+            {
+              "id": "dev-l510",
+              "characterId": "dev-c-geronte",
+              "text": "(montrant Léandre.)\nQui est cet homme-là que vous amenez ?"
+            },
+            {
+              "id": "dev-l511",
+              "characterId": "dev-c-sganarelle",
+              "text": "(faisant des signes avec la main pour montrer que c’est son apothicaire.)\nC’est…"
+            },
+            {
+              "id": "dev-l512",
+              "characterId": "dev-c-geronte",
+              "text": "Quoi ?"
+            },
+            {
+              "id": "dev-l513",
+              "characterId": "dev-c-sganarelle",
+              "text": "Celui…"
+            },
+            {
+              "id": "dev-l514",
+              "characterId": "dev-c-geronte",
+              "text": "Hé !"
+            },
+            {
+              "id": "dev-l515",
+              "characterId": "dev-c-sganarelle",
+              "text": "Qui…"
+            },
+            {
+              "id": "dev-l516",
+              "characterId": "dev-c-geronte",
+              "text": "Je vous entends."
+            },
+            {
+              "id": "dev-l517",
+              "characterId": "dev-c-sganarelle",
+              "text": "Votre fille en aura besoin."
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l518",
+              "characterId": "dev-c-jacqueline",
+              "text": "Monsieu, v’là votre fille qui veut un peu marcher."
+            },
+            {
+              "id": "dev-l519",
+              "characterId": "dev-c-sganarelle",
+              "text": "Cela lui fera du bien. Allez-vous-en, monsieur l’apothicaire, tâter un peu son pouls, afin que je raisonne tantôt avec vous de sa maladie.\nMonsieur, c’est une grande et subtile question entre les docteurs, de savoir si les femmes sont plus faciles à guérir que les hommes. Je vous prie d’écouter ceci, s’il vous plaît. Les uns disent que non, les autres disent que oui : et moi je dis que oui et non ; d’autant que l’incongruité des humeurs opaques, qui se rencontrent au tempérament naturel des femmes, étant cause que la partie brutale veut toujours prendre empire sur la sensitive, on voit que l’inégalité de leurs opinions dépend du mouvement oblique du cercle de la lune ; et comme le soleil, qui darde ses rayons sur la concavité de la terre, trouve…"
+            },
+            {
+              "id": "dev-l520",
+              "characterId": "dev-c-lucinde",
+              "text": "(à Léandre.)\nNon, je ne suis point du tout capable de changer de sentiment."
+            },
+            {
+              "id": "dev-l521",
+              "characterId": "dev-c-geronte",
+              "text": "Voilà ma fille qui parle ! ô grande vertu du remède ! ô admirable médecin ! Que je vous suis obligé, monsieur, de cette guérison merveilleuse ! et que puis-je faire pour vous après un tel service ?"
+            },
+            {
+              "id": "dev-l522",
+              "characterId": "dev-c-sganarelle",
+              "text": "(se promenant sur le théâtre, et s’eventant avec son chapeau.)\nVoilà une maladie qui m’a bien donné de la peine !"
+            },
+            {
+              "id": "dev-l523",
+              "characterId": "dev-c-lucinde",
+              "text": "Oui, mon père, j’ai recouvré la parole ; mais je l’ai recouvrée pour vous dire que je n’aurai jamais d’autre époux que Léandre, et que c’est inutilement que vous voulez me donner Horace."
+            },
+            {
+              "id": "dev-l524",
+              "characterId": "dev-c-geronte",
+              "text": "Mais…"
+            },
+            {
+              "id": "dev-l525",
+              "characterId": "dev-c-lucinde",
+              "text": "Rien n’est capable d’ébranler la résolution que j’ai prise."
+            },
+            {
+              "id": "dev-l526",
+              "characterId": "dev-c-geronte",
+              "text": "Quoi !"
+            },
+            {
+              "id": "dev-l527",
+              "characterId": "dev-c-lucinde",
+              "text": "Vous m’opposerez en vain de belles raisons."
+            },
+            {
+              "id": "dev-l528",
+              "characterId": "dev-c-geronte",
+              "text": "Si…"
+            },
+            {
+              "id": "dev-l529",
+              "characterId": "dev-c-lucinde",
+              "text": "Tous vos discours ne serviront de rien."
+            },
+            {
+              "id": "dev-l530",
+              "characterId": "dev-c-geronte",
+              "text": "Je…"
+            },
+            {
+              "id": "dev-l531",
+              "characterId": "dev-c-lucinde",
+              "text": "C’est une chose où je suis déterminée."
+            },
+            {
+              "id": "dev-l532",
+              "characterId": "dev-c-geronte",
+              "text": "Mais…"
+            },
+            {
+              "id": "dev-l533",
+              "characterId": "dev-c-lucinde",
+              "text": "Il n’est puissance paternelle qui me puisse obliger à me marier malgré moi."
+            },
+            {
+              "id": "dev-l534",
+              "characterId": "dev-c-geronte",
+              "text": "J’ai…"
+            },
+            {
+              "id": "dev-l535",
+              "characterId": "dev-c-lucinde",
+              "text": "Vous avez beau faire tous vos efforts."
+            },
+            {
+              "id": "dev-l536",
+              "characterId": "dev-c-geronte",
+              "text": "Il…"
+            },
+            {
+              "id": "dev-l537",
+              "characterId": "dev-c-lucinde",
+              "text": "Mon cœur ne sauroit se soumettre à cette tyrannie."
+            },
+            {
+              "id": "dev-l538",
+              "characterId": "dev-c-geronte",
+              "text": "La…"
+            },
+            {
+              "id": "dev-l539",
+              "characterId": "dev-c-lucinde",
+              "text": "Et je me jetterai plutôt dans un couvent que d’épouser un homme que je n’aime point."
+            },
+            {
+              "id": "dev-l540",
+              "characterId": "dev-c-geronte",
+              "text": "Mais…"
+            },
+            {
+              "id": "dev-l541",
+              "characterId": "dev-c-lucinde",
+              "text": "(parlant d’un ton de voix à étourdir.)\nNon. En aucune façon. Point d’affaires. Vous perdez le temps. Je n’en ferai rien. Cela est résolu."
+            },
+            {
+              "id": "dev-l542",
+              "characterId": "dev-c-geronte",
+              "text": "Ah ! quelle impétuosité de paroles ! Il n’y a pas moyen d’y résister. (à Sganarelle.) Monsieur, je vous prie de la faire redevenir muette."
+            },
+            {
+              "id": "dev-l543",
+              "characterId": "dev-c-sganarelle",
+              "text": "C’est une chose qui m’est impossible. Tout ce que je puis faire pour votre service est de vous rendre sourd, si vous voulez"
+            },
+            {
+              "id": "dev-l544",
+              "characterId": "dev-c-geronte",
+              "text": "Je vous remercie. (à Lucinde.) Penses-tu donc…"
+            },
+            {
+              "id": "dev-l545",
+              "characterId": "dev-c-lucinde",
+              "text": "Non, toutes vos raisons ne gagneront rien sur mon ame."
+            },
+            {
+              "id": "dev-l546",
+              "characterId": "dev-c-geronte",
+              "text": "Tu épouseras Horace dès ce soir."
+            },
+            {
+              "id": "dev-l547",
+              "characterId": "dev-c-lucinde",
+              "text": "J’épouserai plutôt la mort."
+            },
+            {
+              "id": "dev-l548",
+              "characterId": "dev-c-sganarelle",
+              "text": "(à Géronte.)\nMon Dieu ! arrêtez-vous, laissez-moi médicamenter cette affaire ; c’est une maladie qui la tient, et je sais le remède qu’il y faut apporter."
+            },
+            {
+              "id": "dev-l549",
+              "characterId": "dev-c-geronte",
+              "text": "Seroit-il possible, monsieur, que vous pussiez aussi guérir cette maladie d’esprit ?"
+            },
+            {
+              "id": "dev-l550",
+              "characterId": "dev-c-sganarelle",
+              "text": "Oui ; laissez-moi faire, j’ai des remèdes pour tout ; et notre apothicaire nous servira pour cette cure, (à Léandre.) Un mot. Vous voyez que l’ardeur qu’elle a pour ce Léandre est tout à fait contraire aux volontés du père ; qu’il n’y a point de temps à perdre ; que les humeurs sont fort aigries ; et qu’il est nécessaire de trouver promptement un remède à ce mal, qui pourroit empirer par le retardement. Pour moi, je n’y en vois qu’un seul, qui est une prise de fuite purgative, que vous mêlerez comme il faut avec deux dragmes de matrimonium en pilules. Peut-être fera-t-elle quelque difficulté à prendre ce remède : mais comme vous êtes habile homme dans votre métier, c’est à vous de l’y résoudre, et de lui faire avaler la chose du mieux que vous pourrez. Allez-vous-en lui faire faire un petit tour de jardin, afin de préparer les humeurs, tandis que j’entretiendrai ici son père ; mais surtout ne perdez point de temps. Au remède, vite ! au remède spécifique !"
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l551",
+              "characterId": "dev-c-geronte",
+              "text": "Quelles drogues, monsieur, sont celles que vous venez de dire ? il me semble que je ne les ai jamais ouï nommer."
+            },
+            {
+              "id": "dev-l552",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ce sont drogues dont on se sert dans les nécessités urgentes."
+            },
+            {
+              "id": "dev-l553",
+              "characterId": "dev-c-geronte",
+              "text": "Avez-vous jamais vu une insolence pareille à la sienne ?"
+            },
+            {
+              "id": "dev-l554",
+              "characterId": "dev-c-sganarelle",
+              "text": "Les filles sont quelquefois un peu têtues."
+            },
+            {
+              "id": "dev-l555",
+              "characterId": "dev-c-geronte",
+              "text": "Vous ne sauriez croire comme elle est affolée de ce Léandre."
+            },
+            {
+              "id": "dev-l556",
+              "characterId": "dev-c-sganarelle",
+              "text": "La chaleur du sang fait cela dans les jeunes esprits."
+            },
+            {
+              "id": "dev-l557",
+              "characterId": "dev-c-geronte",
+              "text": "Pour moi, dès que j’ai eu découvert la violence de cet amour, j’ai su tenir toujours ma fille renfermée."
+            },
+            {
+              "id": "dev-l558",
+              "characterId": "dev-c-sganarelle",
+              "text": "Vous avez fait sagement."
+            },
+            {
+              "id": "dev-l559",
+              "characterId": "dev-c-geronte",
+              "text": "Et j’ai bien empêché qu’ils n’aient eu communication ensemble."
+            },
+            {
+              "id": "dev-l560",
+              "characterId": "dev-c-sganarelle",
+              "text": "Fort bien."
+            },
+            {
+              "id": "dev-l561",
+              "characterId": "dev-c-geronte",
+              "text": "Il seroit arrivé quelque folie, si j’avois souffert qu’ils se fussent vus."
+            },
+            {
+              "id": "dev-l562",
+              "characterId": "dev-c-sganarelle",
+              "text": "Sans doute."
+            },
+            {
+              "id": "dev-l563",
+              "characterId": "dev-c-geronte",
+              "text": "Et je crois qu’elle auroit été fille à s’en aller avec lui."
+            },
+            {
+              "id": "dev-l564",
+              "characterId": "dev-c-sganarelle",
+              "text": "C’est prudemment raisonné."
+            },
+            {
+              "id": "dev-l565",
+              "characterId": "dev-c-geronte",
+              "text": "On m’avertit qu’il fait tous ses efforts pour lui parler."
+            },
+            {
+              "id": "dev-l566",
+              "characterId": "dev-c-sganarelle",
+              "text": "Quel drôle !"
+            },
+            {
+              "id": "dev-l567",
+              "characterId": "dev-c-geronte",
+              "text": "Mais il perdra son temps."
+            },
+            {
+              "id": "dev-l568",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ah ! ah !"
+            },
+            {
+              "id": "dev-l569",
+              "characterId": "dev-c-geronte",
+              "text": "Et j’empêcherai bien qu’il ne la voie."
+            },
+            {
+              "id": "dev-l570",
+              "characterId": "dev-c-sganarelle",
+              "text": "Il n’a pas affaire à un sot, et vous savez des rubriques qu’il ne sait pas. Plus fin que vous n’est pas bête."
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l571",
+              "characterId": "dev-c-lucas",
+              "text": "Ah ! palsanguenne, monsieu, vaici bian du tintamarre ; votre fille s’en est enfuie avec son Liandre. C’étoit lui qui étoit l’apothicaire ; et v’là monsieu le médecin qui a fait cette belle opération-là."
+            },
+            {
+              "id": "dev-l572",
+              "characterId": "dev-c-geronte",
+              "text": "Comment ! m’assassiner de la façon ! Allons, un commissaire, et qu’on empêche qu’il ne sorte. Ah ! traître, je vous ferai punir par la justice."
+            },
+            {
+              "id": "dev-l573",
+              "characterId": "dev-c-lucas",
+              "text": "Ah ! par ma fi, monsieu le médecin, vous serez pendu : bougez de là seulement."
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l574",
+              "characterId": "dev-c-martine",
+              "text": "(à Lucas.)\nAh ! mon Dieu ! que j’ai eu de peine à trouver ce logis Dites-moi un peu des nouvelles du médecin que je vous ai donné."
+            },
+            {
+              "id": "dev-l575",
+              "characterId": "dev-c-lucas",
+              "text": "Le v’là qui va être pendu."
+            },
+            {
+              "id": "dev-l576",
+              "characterId": "dev-c-martine",
+              "text": "Quoi ! mon mari pendu ! Hélas ! et qu’a-t-il fait pour cela ?"
+            },
+            {
+              "id": "dev-l577",
+              "characterId": "dev-c-lucas",
+              "text": "Il a fait enlever la fille de notre maître."
+            },
+            {
+              "id": "dev-l578",
+              "characterId": "dev-c-martine",
+              "text": "Hélas ! mon cher mari, est-il bien vrai qu’on te va pendre ?"
+            },
+            {
+              "id": "dev-l579",
+              "characterId": "dev-c-sganarelle",
+              "text": "Tu vois. Ah !"
+            },
+            {
+              "id": "dev-l580",
+              "characterId": "dev-c-martine",
+              "text": "Faut-il que tu te laisses mourir en présence de tant de gens ?"
+            },
+            {
+              "id": "dev-l581",
+              "characterId": "dev-c-sganarelle",
+              "text": "Que veux-tu que j’y fasse ?"
+            },
+            {
+              "id": "dev-l582",
+              "characterId": "dev-c-martine",
+              "text": "Encore, si tu avois achevé de couper notre bois, je prendrois quelque consolation."
+            },
+            {
+              "id": "dev-l583",
+              "characterId": "dev-c-sganarelle",
+              "text": "Retire-toi de là, tu me fends le cœur."
+            },
+            {
+              "id": "dev-l584",
+              "characterId": "dev-c-martine",
+              "text": "Non, je veux demeurer pour t’encourager à la mort ; et je ne te quitterai point que je ne t’aie vu pendu."
+            },
+            {
+              "id": "dev-l585",
+              "characterId": "dev-c-sganarelle",
+              "text": "Ah !"
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l586",
+              "characterId": "dev-c-geronte",
+              "text": "(à Sganarelle.)\nLe commissaire viendra bientôt, et l’on s’en va vous mettre en lieu où l’on me répondra de vous."
+            },
+            {
+              "id": "dev-l587",
+              "characterId": "dev-c-sganarelle",
+              "text": "(à genoux, le chapeau à la main.)\nHélas ! cela ne se peut-il point changer en quelques coups de bâton ?"
+            },
+            {
+              "id": "dev-l588",
+              "characterId": "dev-c-geronte",
+              "text": "Non, non ; la justice en ordonnera. Mais que vois-je ?"
+            }
+          ]
+        },
+        {
+          "lines": [
+            {
+              "id": "dev-l589",
+              "characterId": "dev-c-leandre",
+              "text": "Monsieur, je tiens faire paroître Léandre à vos yeux, et remettre Lucinde en votre pouvoir. Nous avons eu dessein de prendre la fuite nous deux, et de nous aller marier ensemble ; mais cette entreprise a fait place à un procédé plus honnête. Je ne prétends point vous voler votre fille, et ce n’est que de votre main que je veux la recevoir. Ce que je vous dirai, monsieur, c’est que je viens tout à l’heure de recevoir des lettres par où j’apprends que mon oncle est mort, et que je suis héritier de tous ses biens."
+            },
+            {
+              "id": "dev-l590",
+              "characterId": "dev-c-geronte",
+              "text": "Monsieur, votre vertu m’est tout à fait considérable, et je vous donne ma fille avec la plus grande joie du monde."
+            },
+            {
+              "id": "dev-l591",
+              "characterId": "dev-c-sganarelle",
+              "text": "(à part.)\nLa médecine l’a échappé belle !"
+            },
+            {
+              "id": "dev-l592",
+              "characterId": "dev-c-martine",
+              "text": "Puisque tu ne seras point pendu, rends-moi grâce d’être médecin, car c’est moi qui t’ai procuré cet honneur."
+            },
+            {
+              "id": "dev-l593",
+              "characterId": "dev-c-sganarelle",
+              "text": "Oui ! c’est toi qui m’as procuré je ne sais combien de coups de bâton."
+            },
+            {
+              "id": "dev-l594",
+              "characterId": "dev-c-leandre",
+              "text": "(à Sganarelle.)\nL’effet en est trop beau pour en garder du ressentiment."
+            },
+            {
+              "id": "dev-l595",
+              "characterId": "dev-c-sganarelle",
+              "text": "Soit. (à Martine.) Je te pardonne ces coups de bâton en faveur de la dignité où tu m’as élevé : mais prépare-toi désormais à vivre dans un grand respect avec un homme de ma conséquence, et songe que la colère d’un médecin est plus à craindre qu’on ne peut croire."
             }
           ]
         }

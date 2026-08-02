@@ -55,10 +55,15 @@ data/history.json           journal for uploads no play claimed
   (`listed_play_ids`), reachable only by typing `plays/dev/rehearsal.html`. Otherwise an
   ordinary play: same pipeline, deployed, own upload zone. It exists so a page can be
   tried on real data without writing test uploads into the troupe's journal, which every
-  fork inherits. Its script covers on purpose an empty scene, a line with no text, a
-  character with no colour and one with no line, an overflowing tirade, the three
-  recording states, a stale line next to one whose apostrophe alone changed. Clips are
-  tones, one pitch per character. `DEV_PLAY_ID` is an address no troupe can take.
+  fork inherits. Its script is a whole real play, VERBATIM: Molière, *Le Médecin malgré
+  lui* (public domain, transcribed from the Louandre edition on fr.wikisource), 3 acts,
+  26 scenes, 595 lines, 11 characters, an unequal cast (Sganarelle 224 lines, Perrin 6),
+  characters who speak in one act only and tirades long enough to overflow a card. The
+  didascalie printed next to a name becomes a leading `(à part.)` in the line's text,
+  because a line holds one string. **No clips**: every line is `manquant`, so the
+  recorded states are checked by recording into the bench, not by committed audio, and
+  no synthetic case (empty scene, line with no text, character with no colour) is
+  grafted on any more. `DEV_PLAY_ID` is an address no troupe can take.
 
 ## Architecture
 
