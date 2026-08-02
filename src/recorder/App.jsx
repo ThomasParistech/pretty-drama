@@ -168,6 +168,8 @@ export default function App() {
       const result = await stop();
       if (result) saveTake(currentLine, result.blob, result.mimeType);
     } else {
+      // A take still playing would be captured by the mic.
+      pauseOtherAudio();
       try {
         await start(currentLine.id);
       } catch {
@@ -399,7 +401,7 @@ export default function App() {
                   lineText={line.text}
                   // Only a session take is deletable; the player also replays published clips.
                   onDelete={take ? () => deleteTake(line) : null}
-                  deleteDisabled={isRecording}
+                  recording={isRecording}
                 />
               )}
             </div>
@@ -695,8 +697,17 @@ function formatTime(seconds) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
+// One voice at a time: the page holds one <audio> per recorded line, so playing a take has
+// to silence the others. Called with no argument to silence them all.
+function pauseOtherAudio(except) {
+  document.querySelectorAll("audio").forEach((a) => {
+    if (a !== except) a.pause();
+  });
+}
+
 // In-card player. `onDelete` only for a take of THIS session; `fresh` switches the palette.
-function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
+// `recording` locks it: nothing plays while the mic is open.
+function TakePlayer({ src, seed, fresh, lineText, onDelete, recording }) {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
@@ -730,6 +741,7 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
       <button
         className="player-play"
         title={playing ? t("recorder.player.pause") : t("recorder.player.play")}
+        disabled={recording}
         onClick={() => {
           const audio = audioRef.current;
           if (audio.paused) audio.play();
@@ -756,7 +768,7 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
           className="player-delete"
           title={t("recorder.player.delete")}
           aria-label={t("recorder.player.delete")}
-          disabled={deleteDisabled}
+          disabled={recording}
           onClick={() => setConfirming(true)}
         >
           <TrashIcon />
@@ -780,7 +792,10 @@ function TakePlayer({ src, seed, fresh, lineText, onDelete, deleteDisabled }) {
         ref={audioRef}
         src={src}
         preload="metadata"
-        onPlay={() => setPlaying(true)}
+        onPlay={(e) => {
+          pauseOtherAudio(e.target);
+          setPlaying(true);
+        }}
         onPause={() => setPlaying(false)}
         onEnded={() => setTime(0)}
         // No pause event is guaranteed on a source change, so reset here.

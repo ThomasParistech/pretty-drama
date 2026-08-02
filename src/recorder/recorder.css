@@ -338,6 +338,8 @@
   color: #fff;
 }
 
+/* Both lock while the mic is open. */
+.player-play:disabled,
 .player-delete:disabled {
   opacity: 0.4;
   cursor: not-allowed;
