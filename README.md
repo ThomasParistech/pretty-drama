@@ -11,19 +11,24 @@ seule, et vous dites vos répliques au bon moment.
 
 ## Mise en place
 
-Si vous n'avez pas encore de compte GitHub, [créez-en un](https://github.com/signup), puis suivez les étapes de la vidéo ci-dessous.
+Suivez les étapes de la vidéo ci-dessous:
+
+> [!NOTE]
+> Pas encore de compte GitHub ? [Créez-en un](https://github.com/signup) avant de commencer.
 
 
-> ⚠️ **Étape obligatoire avant de créer une pièce**
+VIDEO
+
+
+> [!WARNING] Étape obligatoire avant de créer ma 1ère pièce
 >
-> Comme indiqué dans la vidéo, activez d'abord le site dans [**Settings → Pages**](../../settings/pages).
-> Sans cette étape, rien ne s'affichera et la création de la pièce ne fonctionnera pas.
+> Comme indiqué dans la vidéo, il est primordial de sélectionner l'option "GitHub Actions" sur la page [**Settings → Pages**](../../settings/pages) pour que le site prenne vie. Sans cette étape, le bouton de création de la 1ère place échouera.
 
 <div align="center">
 
 <!-- GitHub's markdown sanitizer drops `data:` image sources: the button is a committed
      file, referenced by a repo-relative path so a fork serves its own copy. -->
-[![Créer une pièce](design/new-play-button.svg)](../../new/main?filename=uploads/_new-play/nouvelle-piece.txt&value=%0A---%0ALa%20premi%C3%A8re%20ligne%20de%20ce%20fichier%20est%20le%20titre%20de%20la%20pi%C3%A8ce.%0ACliquez%20sur%20le%20bouton%20vert%20%C2%AB%C2%A0Valider%20les%20modifications%C2%A0%C2%BB%2C%20elle%20sera%0Aen%20ligne%20dans%20quelques%20minutes.%0A)
+[![Créer ma 1ère pièce](design/new-play-button.svg)](../../new/main?filename=uploads/_new-play/nouvelle-piece.txt&value=%0A---%0ALa%20premi%C3%A8re%20ligne%20de%20ce%20fichier%20est%20le%20titre%20de%20la%20pi%C3%A8ce.%0ACliquez%20sur%20le%20bouton%20vert%20%C2%AB%C2%A0Commit%20changes%C2%A0%C2%BB%2C%20elle%20sera%0Aen%20ligne%20dans%20quelques%20minutes.%0A)
 
 </div>
 

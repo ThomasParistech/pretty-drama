@@ -301,14 +301,14 @@ export const FR = {
   // the box wears the tile's label, `editor.upload` composed with
   // `editor.upload.script`, so the gesture is named identically where it is offered
   // and where it is confirmed.
-  // The green button is quoted by the name GitHub gives it in this language: the
-  // coordinator is looking for it on a page we do not own, and a translated name they
-  // cannot find would be worse than no name.
+  // The green button is quoted by its ENGLISH label, guillemets around it: GitHub's
+  // editor has no French, so the coordinator is looking for that exact word on a page we
+  // do not own, and a translated name is one they cannot find.
   // The last sentence is the only one about what follows the commit: the Action takes
   // minutes, and without that a coordinator reloads the site and concludes it failed.
   "editor.uploadNotice.body":
     "Le fichier {file} va être téléchargé, puis GitHub s'ouvrira dans un autre onglet : " +
-    "glissez-y le fichier et appuyez sur le bouton vert « Valider les modifications ».{br}" +
+    "glissez-y le fichier et appuyez sur le bouton vert « Commit changes ».{br}" +
     "La mise à jour prendra ensuite quelques minutes.",
   "editor.uploadNotice.go": "Continuer",
 
@@ -859,11 +859,11 @@ export const FR = {
   // box as a form to fill in, so that is still not said.
   // The README hand-writes this same French text into its link, GitHub's editor being
   // unable to call a catalogue; test_contracts.py holds the two to each other.
-  // The GitHub button is NAMED, where `manage.new.hint` only describes it, and it is
-  // named in the reader's language like everything else in this catalogue: github.com is
-  // translated too, and the company that reads the site in French reads its GitHub in
-  // French. It is the only label of another site this catalogue carries, so it is also
-  // the only line to fix should GitHub word it differently.
+  // The GitHub button is NAMED, where `manage.new.hint` only describes it, and it keeps
+  // its ENGLISH label even in this catalogue: GitHub's interface is English whatever the
+  // reader's language, so the only name that finds the button is the one printed on it.
+  // It is the only label of another site this catalogue carries, so it is also the only
+  // line to fix should GitHub word it differently.
   // The line breaks are DATA here, and this is the only entry of either catalogue where
   // they are: everywhere else a string is one paragraph and the wrapping belongs to the
   // renderer. This one is written into a file, read in GitHub's editor, which wraps
@@ -871,7 +871,7 @@ export const FR = {
   // file's lines, and they are kept short enough to be read in that box.
   "manage.new.fileNote":
     "La première ligne de ce fichier est le titre de la pièce.\n" +
-    "Cliquez sur le bouton vert « Valider les modifications », elle sera\n" +
+    "Cliquez sur le bouton vert « Commit changes », elle sera\n" +
     "en ligne dans quelques minutes.",
   "manage.new.emptyTitle": "Donnez un titre à la pièce.",
   "manage.new.badTitle":

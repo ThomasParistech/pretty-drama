@@ -200,9 +200,9 @@ export const EN = {
   // throughout, and the order of the two halves is the order they will come in.
   // `{file}` arrives as code, like in `editor.leaveBody`. It has no title of its own:
   // the box wears the tile's label (see the French entry).
-  // "Commit changes" is the name GitHub prints on that green button in English, kept
-  // verbatim for the same reason the French entry keeps the French one: it is a button
-  // on a page we do not own, and it has to be found by its name.
+  // "Commit changes" is the name GitHub prints on that green button, and the French
+  // entry quotes the same English words: it is a button on a page we do not own, whose
+  // interface is not translated, and it has to be found by its name.
   "editor.uploadNotice.body":
     "The {file} file will be downloaded, then GitHub will open in another tab: drag the file " +
     "in and press the green \"Commit changes\" button.{br}" +
@@ -583,8 +583,8 @@ export const EN = {
   // Written into the file itself, under the separator line where the Action stops
   // reading: it is what the coordinator sees in GitHub's text box, and its line breaks
   // are data (see fr.js, which also carries why the button is named here and not in
-  // `manage.new.hint`). The button keeps its English label on this side, which is the
-  // same rule as the French one: GitHub is read in the reader's language.
+  // `manage.new.hint`). The button label is English in BOTH catalogues: GitHub's
+  // interface is not translated, so its name is not either.
   "manage.new.fileNote":
     "The first line of this file is the play's title.\n" +
     'Click the green "Commit changes" button, and it will be online\n' +
