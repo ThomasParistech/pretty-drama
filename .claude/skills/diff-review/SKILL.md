@@ -28,7 +28,7 @@ Delimit with `git log --oneline $BASE..HEAD`, `git diff $BASE --stat`, `git stat
 `node_modules/`, `clips/*.mp3`. Empty scope: say so and stop.
 
 Sort touched files by decreasing risk: 1. **back** (`scripts/` + tests, CI code on hostile
-input); 2. **CI** (`.github/`); 3. **shared front** (`src/shared/`, `vite.config.js`);
+input); 2. **CI** (`.github/`); 3. **shared front** (`src/shared/`, `vite.config.ts`);
 4. **pages** (`src/<page>/`, `*.html`, CSS); 5. **data** (`data/`, `uploads/`);
 6. **docs/config**.
 
@@ -65,7 +65,7 @@ Read the diff file by file, and for each hunk enough surrounding code to judge i
   normalization is tested through the shared `normalize-cases.json`.
 - **`data/*.json`**: consistent with the code that produces it. No hand edit that will
   diverge at the next build, unless it is an assumed fixture.
-- **`src/<page>/App.jsx`**: review **every state of the page**. List its conditional
+- **`src/<page>/App.tsx`**: review **every state of the page**. List its conditional
   `return`s (loading, read error, walled page, nothing selected, empty list) and judge each
   as a screen of its own: which header, which title, which data was loaded for it. A state
   reached only on one device (touch pointer, no microphone) is never visited during review,
@@ -75,12 +75,12 @@ Read the diff file by file, and for each hunk enough surrounding code to judge i
 
 ## 3 bis. Language pass (bilingual front)
 
-**No visible string lives in a component.** Mandatory as soon as the diff touches a `.jsx`
-or `.js` under `src/`, even for a small change: that is how five whole pages stayed French
+**No visible string lives in a component.** Mandatory as soon as the diff touches a `.tsx`
+or `.ts` under `src/`, even for a small change: that is how five whole pages stayed French
 after being translated. Guards first, reading second.
 
 1. **Guards**, in the Python suite (`test_contracts.py`, class `TestCatalogues`) and JS
-   (`locales/parity.test.js`). A failure is **high**, never a test to relax: every key
+   (`locales/parity.test.ts`). A failure is **high**, never a test to relax: every key
    passed to `t()`/`<T>` exists in BOTH catalogues; no declared key is unused (an orphan
    means a string believed translated and left hardcoded); no accented literal, no
    text-bearing attribute (`title`, `aria-label`, `placeholder`, `alt`, `hint`, `error`,
@@ -96,7 +96,7 @@ after being translated. Guards first, reading second.
      `{ one, other }` + `t(key, { count })`, `fmt.percent`, `fmt.dateTime`, `fmt.quote`;
    - a label named twice is INTERPOLATED from its key, not copied;
    - the English entry is not a calque, typography included;
-   - no module under `node --test` imports `locale.js`: it takes `t` as an argument or
+   - no module under `node --test` imports `locale.ts`: it takes `t` as an argument or
      returns a code the page translates.
 
    Then **re-read the page in both languages**, at least mentally. The report says which
@@ -108,9 +108,9 @@ Check as soon as the diff touches the area:
 
 - **Normalization**: one implementation (`scripts/normalize.py`), exactly two callers,
   `build_manifest.compute_status` and `script_diff.script_changes`, deliberately sharing
-  the rule. No JS normalizes: the browser ships **raw** text (`editor/search.js` folding is
+  the rule. No JS normalizes: the browser ships **raw** text (`editor/search.ts` folding is
   not this).
-- **Line ids**: never recycled (they name the mp3s); `SAFE_ID` (`editor/reducer.js`) and
+- **Line ids**: never recycled (they name the mp3s); `SAFE_ID` (`editor/reducer.ts`) and
   `LINE_ID_PATTERN` (`process_uploads.py`) strictly identical.
 - **Play ids**: never re-minted, minted in one place (`mint_play_id`), validated **before**
   a path is built.

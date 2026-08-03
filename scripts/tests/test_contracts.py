@@ -37,15 +37,24 @@ from process_uploads import (
 from script_diff import script_changes
 
 SRC = REPO_ROOT / "src"
+TSCONFIG_PATH = REPO_ROOT / "tsconfig.json"
+PACKAGE_JSON = REPO_ROOT / "package.json"
+BUILD_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "build.yml"
+
+# Nothing here is a source of this site. The first three are generated or vendored, so
+# walking them costs seconds and answers nothing. `.claude` IS tracked, and is skipped for
+# a different reason: it holds the review skills, whose own examples may name a `.ts` file
+# that belongs to no build, and `include` would then be judged against it.
+NOT_SOURCE_DIRS = {".git", "node_modules", "dist", ".claude"}
 THEME_CSS = SRC / "shared" / "theme.css"
-PAGES_JS = SRC / "shared" / "pages.js"
-# Templates for a play's seven pages, instantiated per play by vite.config.js.
+PAGES_TS = SRC / "shared" / "pages.ts"
+# Templates for a play's seven pages, instantiated per play by vite.config.ts.
 PAGES_DIR = REPO_ROOT / "pages"
-PLAYS_JS = SRC / "shared" / "plays.js"
-REDUCER_JS = SRC / "editor" / "reducer.js"
-RECORDER_JSX = SRC / "recorder" / "App.jsx"
+PLAYS_TS = SRC / "shared" / "plays.ts"
+REDUCER_TS = SRC / "editor" / "reducer.ts"
+RECORDER_TSX = SRC / "recorder" / "App.tsx"
 PROCESS_UPLOADS_PY = REPO_ROOT / "scripts" / "process_uploads.py"
-CHARACTER_COLORS_JS = SRC / "shared" / "characterColors.js"
+CHARACTER_COLORS_TS = SRC / "shared" / "characterColors.ts"
 
 # Tokens a shared header rule must not consume: each is re-skinned somewhere (the
 # first three by the editor, the seal pair by every page).
@@ -58,7 +67,7 @@ FORBIDDEN_IN_HEADER = (
 )
 
 # Deliberate exception: the home link is the FOOT of its header and wears its
-# colour, carrying `page-${page}` itself (HomeLink.jsx), which CSS alone cannot show.
+# colour, carrying `page-${page}` itself (HomeLink.tsx), which CSS alone cannot show.
 HEADER_TOKEN_EXEMPT_PREFIX = ".play-header-home"
 EXEMPT_TOKENS = ("--page-mark", "--page-mark-soft")
 
@@ -76,13 +85,13 @@ def catalogue_value(locale: str, key: str) -> str:
     Handles the entries written as several literals joined by `+`: `manage.new.fileNote`
     is the one whose line breaks are DATA, being written into a file GitHub's editor
     does not wrap."""
-    source = read(SRC / "shared" / "locales" / f"{locale}.js")
+    source = read(SRC / "shared" / "locales" / f"{locale}.ts")
     entry = re.search(
         rf'^  "{re.escape(key)}":((?:.|\n)*?),\n(?=  (?:"|//|\}}))', source, re.MULTILINE
     )
     if entry is None:
-        raise AssertionError(f"{key} not found in src/shared/locales/{locale}.js")
-    # Both quote styles: en.js single-quotes the line that carries GitHub's own label.
+        raise AssertionError(f"{key} not found in src/shared/locales/{locale}.ts")
+    # Both quote styles: en.ts single-quotes the line that carries GitHub's own label.
     parts = re.findall(r"\"((?:[^\"\\]|\\.)*)\"|'((?:[^'\\]|\\.)*)'", entry.group(1))
     joined = "".join(double or single for double, single in parts)
     return joined.replace("\\n", "\n").replace('\\"', '"').replace("\\'", "'")
@@ -101,14 +110,28 @@ def published_scripts():
             yield play_id, json.loads(read(path))
 
 
+def source_files(suffixes: tuple[str, ...] = (".ts", ".tsx")):
+    """Every front source in the repo, build output and dependencies aside. A WALK and
+    not a glob over `src/`: the point of the callers below is to catch a source sitting
+    where nothing looks for it (vite.config.ts is already one)."""
+    stack = [REPO_ROOT]
+    while stack:
+        for entry in sorted(stack.pop().iterdir()):
+            if entry.is_dir():
+                if entry.name not in NOT_SOURCE_DIRS:
+                    stack.append(entry)
+            elif entry.suffix in suffixes:
+                yield entry
+
+
 def css(path: Path) -> str:
     """CSS without its comments: a comment quoting a token is not a declaration."""
     return re.sub(r"/\*.*?\*/", "", read(path), flags=re.DOTALL)
 
 
-def js_without_comments(source: str) -> str:
-    """JS without its comments, skipping over strings: comments here QUOTE code
-    (T.jsx documents `<T k="key" …>`) and a naive `//` split cuts inside URLs.
+def without_comments(source: str) -> str:
+    """Source without its comments, skipping over strings: comments here QUOTE code
+    (T.tsx documents `<T k="key" …>`) and a naive `//` split cuts inside URLs.
     Accepted limit: a regex holding a quote reads as a string start."""
     out: list[str] = []
     i, n = 0, len(source)
@@ -142,16 +165,16 @@ def js_without_comments(source: str) -> str:
 
 
 class TestLineIdPattern(unittest.TestCase):
-    """SAFE_ID (editor/reducer.js) vs LINE_ID_PATTERN (process_uploads.py): line
+    """SAFE_ID (editor/reducer.ts) vs LINE_ID_PATTERN (process_uploads.py): line
     ids name the mp3 files, so both guards must say exactly the same thing."""
 
     def test_safe_id_and_line_id_pattern_are_the_same_expression(self):
-        match = re.search(r"export const SAFE_ID = /(.+?)/;", read(REDUCER_JS))
-        self.assertIsNotNone(match, "SAFE_ID not found in src/editor/reducer.js")
+        match = re.search(r"export const SAFE_ID(?:\s*:[^=]+)? = /(.+?)/;", read(REDUCER_TS))
+        self.assertIsNotNone(match, "SAFE_ID not found in src/editor/reducer.ts")
         self.assertEqual(
             match.group(1),
             LINE_ID_PATTERN.pattern,
-            "SAFE_ID (src/editor/reducer.js) and LINE_ID_PATTERN "
+            "SAFE_ID (src/editor/reducer.ts) and LINE_ID_PATTERN "
             "(scripts/process_uploads.py) have diverged: they name the same "
             "mp3 files and must stay identical down to the character.",
         )
@@ -165,15 +188,15 @@ class TestLineIdPattern(unittest.TestCase):
 
 
 class TestPlayIdPattern(unittest.TestCase):
-    """SAFE_PLAY_ID (shared/plays.js) vs PLAY_ID_PATTERN (common.py)."""
+    """SAFE_PLAY_ID (shared/plays.ts) vs PLAY_ID_PATTERN (common.py)."""
 
     def test_safe_play_id_and_play_id_pattern_are_the_same_expression(self):
-        match = re.search(r"export const SAFE_PLAY_ID = /(.+?)/;", read(PLAYS_JS))
-        self.assertIsNotNone(match, "SAFE_PLAY_ID not found in src/shared/plays.js")
+        match = re.search(r"export const SAFE_PLAY_ID(?:\s*:[^=]+)? = /(.+?)/;", read(PLAYS_TS))
+        self.assertIsNotNone(match, "SAFE_PLAY_ID not found in src/shared/plays.ts")
         self.assertEqual(
             match.group(1),
             PLAY_ID_PATTERN.pattern,
-            "SAFE_PLAY_ID (src/shared/plays.js) and PLAY_ID_PATTERN "
+            "SAFE_PLAY_ID (src/shared/plays.ts) and PLAY_ID_PATTERN "
             "(scripts/common.py) have diverged: they name the same folders and "
             "must stay identical down to the character.",
         )
@@ -185,7 +208,7 @@ class TestPlayIdPattern(unittest.TestCase):
         self.assertIn("{0,", pattern)
 
     def test_the_pattern_accepts_what_slugify_produces(self):
-        # `slugify` (src/shared/data.js) is the only function feeding the pattern.
+        # `slugify` (src/shared/data.ts) is the only function feeding the pattern.
         for good in ("transport-de-femmes", "le-malade-imaginaire", "piece2", "a"):
             self.assertIsNotNone(PLAY_ID_PATTERN.fullmatch(good), good)
         for bad in ("-tiret-en-tete", "Majuscule", "avec espace", "accentué", "a" * 65, ""):
@@ -193,7 +216,7 @@ class TestPlayIdPattern(unittest.TestCase):
 
 
 class TestPlayIdMinting(unittest.TestCase):
-    """`mintPlayId` (shared/plays.js) announces the address, `mint_play_id`
+    """`mintPlayId` (shared/plays.ts) announces the address, `mint_play_id`
     (common.py) decides it. Diverged, the play appears where nobody was told to look.
     A shared table of cases holds both suites."""
 
@@ -216,7 +239,7 @@ class TestPlayIdMinting(unittest.TestCase):
                 self.assertEqual(mint_play_id(case["title"]), case["id"])
 
     def test_the_shared_table_is_read_by_the_front_test_too(self):
-        source = read(SRC / "shared" / "plays.test.js")
+        source = read(SRC / "shared" / "plays.test.ts")
         self.assertIn(self.CASES_PATH.name, source)
 
     def test_every_minted_identifier_is_accepted_by_the_pattern(self):
@@ -232,20 +255,20 @@ class TestPlayIdMinting(unittest.TestCase):
 
 
 class TestCreationZone(unittest.TestCase):
-    """NEW_PLAY_DIR, in shared/data.js and process_uploads.py. Diverged, the file
+    """NEW_PLAY_DIR, in shared/data.ts and process_uploads.py. Diverged, the file
     lands in a folder nothing scans: no play, no journal line, no error. It must
     also stay outside PLAY_ID_PATTERN or `main` reads the zone as a play."""
 
-    def js_zone(self) -> str:
-        found = re.search(r'const NEW_PLAY_DIR = "([^"]+)";', read(SRC / "shared" / "data.js"))
-        self.assertIsNotNone(found, "NEW_PLAY_DIR not found in src/shared/data.js")
+    def front_zone(self) -> str:
+        found = re.search(r'const NEW_PLAY_DIR(?:\s*:[^=]+)? = "([^"]+)";', read(SRC / "shared" / "data.ts"))
+        self.assertIsNotNone(found, "NEW_PLAY_DIR not found in src/shared/data.ts")
         return found.group(1)
 
     def test_both_sides_name_the_same_folder(self):
         self.assertEqual(
-            self.js_zone(),
+            self.front_zone(),
             NEW_PLAY_DIR,
-            "NEW_PLAY_DIR (src/shared/data.js) and NEW_PLAY_DIR "
+            "NEW_PLAY_DIR (src/shared/data.ts) and NEW_PLAY_DIR "
             "(scripts/process_uploads.py) have diverged: the site would commit the file "
             "into a folder the Action does not read, and nothing would say so.",
         )
@@ -253,17 +276,17 @@ class TestCreationZone(unittest.TestCase):
     def test_the_folder_can_never_be_a_play_id(self):
         self.assertIsNone(PLAY_ID_PATTERN.fullmatch(NEW_PLAY_DIR), NEW_PLAY_DIR)
 
-    def js_separator(self) -> str:
-        found = re.search(r'const TITLE_SEPARATOR = "([^"]+)";', read(SRC / "shared" / "data.js"))
-        self.assertIsNotNone(found, "TITLE_SEPARATOR not found in src/shared/data.js")
+    def front_separator(self) -> str:
+        found = re.search(r'const TITLE_SEPARATOR(?:\s*:[^=]+)? = "([^"]+)";', read(SRC / "shared" / "data.ts"))
+        self.assertIsNotNone(found, "TITLE_SEPARATOR not found in src/shared/data.ts")
         return found.group(1)
 
     def test_both_sides_agree_on_the_line_that_closes_the_title(self):
         # Diverged, the note is read as title and every creation is refused.
         self.assertEqual(
-            self.js_separator(),
+            self.front_separator(),
             TITLE_SEPARATOR,
-            "TITLE_SEPARATOR (src/shared/data.js) and TITLE_SEPARATOR "
+            "TITLE_SEPARATOR (src/shared/data.ts) and TITLE_SEPARATOR "
             "(scripts/process_uploads.py) have diverged: the note the site writes into "
             "the file would be read as part of the play's title.",
         )
@@ -273,12 +296,12 @@ class TestCreationZone(unittest.TestCase):
 
     def test_the_site_writes_the_folder_into_the_url_it_opens(self):
         # The constant could exist and be used nowhere.
-        source = js_without_comments(read(SRC / "shared" / "data.js"))
+        source = without_comments(read(SRC / "shared" / "data.ts"))
         self.assertIn("uploads/${NEW_PLAY_DIR}/", source)
 
-    def js_branch(self) -> str:
-        found = re.search(r'const BRANCH = "([^"]+)";', read(SRC / "shared" / "data.js"))
-        self.assertIsNotNone(found, "BRANCH not found in src/shared/data.js")
+    def front_branch(self) -> str:
+        found = re.search(r'const BRANCH(?:\s*:[^=]+)? = "([^"]+)";', read(SRC / "shared" / "data.ts"))
+        self.assertIsNotNone(found, "BRANCH not found in src/shared/data.ts")
         return found.group(1)
 
     def test_the_readme_opens_the_same_creation_zone_as_the_site(self):
@@ -295,15 +318,15 @@ class TestCreationZone(unittest.TestCase):
         branch, zone, value = found.group(1), found.group(2), found.group(3)
         self.assertEqual(
             branch,
-            self.js_branch(),
-            "the README's creation link and BRANCH (src/shared/data.js) name different "
+            self.front_branch(),
+            "the README's creation link and BRANCH (src/shared/data.ts) name different "
             "branches: GitHub answers a branch it does not know with the repository "
             "home page, so the button looks alive and creates nothing.",
         )
         self.assertEqual(
             zone,
             NEW_PLAY_DIR,
-            "the README's creation link and NEW_PLAY_DIR (src/shared/data.js, "
+            "the README's creation link and NEW_PLAY_DIR (src/shared/data.ts, "
             "scripts/process_uploads.py) name different folders: the install's last "
             "step would commit into a folder the Action does not read.",
         )
@@ -330,7 +353,7 @@ class TestCreationZone(unittest.TestCase):
             body,
             f"\n{TITLE_SEPARATOR}\n{catalogue_value('fr', 'manage.new.fileNote')}\n",
             "the README's creation link and manage.new.fileNote (src/shared/locales/"
-            "fr.js) prefill different notes: the same file, opened the same way, would "
+            "fr.ts) prefill different notes: the same file, opened the same way, would "
             "carry different instructions depending on where the coordinator started.",
         )
 
@@ -343,20 +366,20 @@ class TestCreationZone(unittest.TestCase):
 
 
 class TestDevPlay(unittest.TestCase):
-    """DEV_PLAY_ID, in shared/plays.js and common.py. The test bench is absent from
+    """DEV_PLAY_ID, in shared/plays.ts and common.py. The test bench is absent from
     data/plays.json, so the creation box needs the id in hand to refuse that address;
     and the id names real folders, so it must be a valid play id."""
 
-    def js_dev_play(self) -> str:
-        found = re.search(r'export const DEV_PLAY_ID = "([^"]+)";', read(PLAYS_JS))
-        self.assertIsNotNone(found, "DEV_PLAY_ID not found in src/shared/plays.js")
+    def front_dev_play(self) -> str:
+        found = re.search(r'export const DEV_PLAY_ID(?:\s*:[^=]+)? = "([^"]+)";', read(PLAYS_TS))
+        self.assertIsNotNone(found, "DEV_PLAY_ID not found in src/shared/plays.ts")
         return found.group(1)
 
     def test_both_sides_name_the_same_play(self):
         self.assertEqual(
-            self.js_dev_play(),
+            self.front_dev_play(),
             DEV_PLAY_ID,
-            "DEV_PLAY_ID (src/shared/plays.js) and DEV_PLAY_ID (scripts/common.py) have "
+            "DEV_PLAY_ID (src/shared/plays.ts) and DEV_PLAY_ID (scripts/common.py) have "
             "diverged: the creation box would offer an address the Action refuses, or "
             "would refuse one that is free.",
         )
@@ -366,7 +389,7 @@ class TestDevPlay(unittest.TestCase):
 
     def test_the_creation_box_refuses_that_address(self):
         # The constant could exist and be consulted nowhere.
-        source = js_without_comments(read(SRC / "chooser" / "NewPlay.jsx"))
+        source = without_comments(read(SRC / "chooser" / "NewPlay.tsx"))
         self.assertIn("DEV_PLAY_ID", source)
 
     def test_the_dev_server_announces_it_and_opens_it(self):
@@ -377,7 +400,7 @@ class TestDevPlay(unittest.TestCase):
             "scripts/dev.sh no longer opens the test bench under the name DEV_PLAY_ID "
             "(scripts/common.py) gives it.",
         )
-        self.assertIn("DEV_PLAY_ID", js_without_comments(read(REPO_ROOT / "vite.config.js")))
+        self.assertIn("DEV_PLAY_ID", without_comments(read(REPO_ROOT / "vite.config.ts")))
 
     def test_it_is_the_only_play_the_index_leaves_out(self):
         # A second hidden play would be one nobody could reach.
@@ -388,13 +411,13 @@ class TestDevPlay(unittest.TestCase):
 
 
 class TestNewPlay(unittest.TestCase):
-    """`new_play_script` (common.py) vs `EMPTY_SCRIPT` (editor/reducer.js)."""
+    """`new_play_script` (common.py) vs `EMPTY_SCRIPT` (editor/reducer.ts)."""
 
     def empty_script_keys(self) -> set[str]:
         body = re.search(
-            r"export const EMPTY_SCRIPT = \{(.*?)^\};", read(REDUCER_JS), re.DOTALL | re.MULTILINE
+            r"export const EMPTY_SCRIPT(?:\s*:[^=]+)? = \{(.*?)^\};", read(REDUCER_TS), re.DOTALL | re.MULTILINE
         )
-        self.assertIsNotNone(body, "EMPTY_SCRIPT not found in src/editor/reducer.js")
+        self.assertIsNotNone(body, "EMPTY_SCRIPT not found in src/editor/reducer.ts")
         return set(re.findall(r"^  ([a-zA-Z]+):", body.group(1), re.MULTILINE))
 
     def test_a_created_play_has_exactly_the_fields_of_an_editor_play(self):
@@ -420,11 +443,11 @@ class TestCharacterPalette(unittest.TestCase):
 
     def palette(self) -> list[str]:
         body = re.search(
-            r"export const CHARACTER_COLORS = \[(.*?)^\];",
-            read(CHARACTER_COLORS_JS),
+            r"export const CHARACTER_COLORS(?:\s*:[^=]+)? = \[(.*?)^\];",
+            read(CHARACTER_COLORS_TS),
             re.DOTALL | re.MULTILINE,
         )
-        self.assertIsNotNone(body, "CHARACTER_COLORS not found in characterColors.js")
+        self.assertIsNotNone(body, "CHARACTER_COLORS not found in characterColors.ts")
         return re.findall(r'"(#[0-9a-fA-F]+)"', body.group(1))
 
     def test_the_palette_is_found_and_has_its_twenty_colours(self):
@@ -437,7 +460,7 @@ class TestCharacterPalette(unittest.TestCase):
         for color in self.palette():
             self.assertIsNotNone(
                 COLOR_PATTERN.match(color),
-                f"{color} (src/shared/characterColors.js) is refused by "
+                f"{color} (src/shared/characterColors.ts) is refused by "
                 f"COLOR_PATTERN (scripts/build_manifest.py), so it would not "
                 f"make it through the manifest.",
             )
@@ -503,12 +526,12 @@ class TestReservedHeaderTokens(unittest.TestCase):
 
 
 class TestPageSeals(unittest.TestCase):
-    """`PAGES` (pages.js) names the pages, `.page-<key>` (theme.css) colours them,
+    """`PAGES` (pages.ts) names the pages, `.page-<key>` (theme.css) colours them,
     and nothing in the code links the two."""
 
     def page_keys(self) -> set[str]:
-        body = re.search(r"export const PAGES = \{(.*?)^\};", read(PAGES_JS), re.DOTALL | re.MULTILINE)
-        self.assertIsNotNone(body, "PAGES not found in src/shared/pages.js")
+        body = re.search(r"export const PAGES(?:\s*:[^=]+)? = \{(.*?)^\};", read(PAGES_TS), re.DOTALL | re.MULTILINE)
+        self.assertIsNotNone(body, "PAGES not found in src/shared/pages.ts")
         return set(re.findall(r"^  ([a-zA-Z]+): \{", body.group(1), re.MULTILINE))
 
     def test_pages_are_found(self):
@@ -566,7 +589,7 @@ class TestPageSeals(unittest.TestCase):
     def test_each_html_favicon_and_theme_colour_match_its_seal(self):
         """The favicon IS the seal badge, but a `<link>` reads no CSS variable, so a
         page duplicated from another keeps its hex values. Pairing: `PAGES[key].href`."""
-        pages_js = read(PAGES_JS)
+        pages_js = read(PAGES_TS)
         hrefs = dict(
             re.findall(r"^  ([a-zA-Z]+): \{\s*\n\s*href: \"\./([a-z]+\.html)\"", pages_js, re.MULTILINE)
         )
@@ -597,7 +620,7 @@ class TestPageSeals(unittest.TestCase):
 
     def test_every_page_has_its_apple_touch_icon(self):
         """iOS reads no SVG favicon nor `data:` URI, and invents one if it is missing."""
-        pages_js = read(PAGES_JS)
+        pages_js = read(PAGES_TS)
         hrefs = dict(
             re.findall(r"^  ([a-zA-Z]+): \{\s*\n\s*href: \"\./([a-z]+\.html)\"", pages_js, re.MULTILINE)
         )
@@ -616,40 +639,40 @@ class TestPageEntries(unittest.TestCase):
     breaks the build."""
 
     def test_every_pages_href_points_to_a_real_html_file(self):
-        hrefs = re.findall(r'href: "\./([a-z]+\.html)"', read(PAGES_JS))
+        hrefs = re.findall(r'href: "\./([a-z]+\.html)"', read(PAGES_TS))
         self.assertGreaterEqual(len(hrefs), 5)
         for href in hrefs:
             self.assertTrue((PAGES_DIR / href).is_file(), f"{href} declared in PAGES but missing")
 
     def test_every_root_html_is_a_vite_entry(self):
         """The two root pages are the only literal Vite entries."""
-        config = read(REPO_ROOT / "vite.config.js")
+        config = read(REPO_ROOT / "vite.config.ts")
         entries = set(re.findall(r'resolve\(ROOT, "([a-z]+\.html)"\)', config))
         on_disk = {p.name for p in REPO_ROOT.glob("*.html")}
         self.assertEqual(
             entries,
             on_disk,
-            "The root entries of vite.config.js and the root .html files have "
+            "The root entries of vite.config.ts and the root .html files have "
             "diverged: an entry with no file breaks the build, a file with no "
             "entry is never built nor deployed.",
         )
 
     def test_every_play_page_template_is_instantiated_by_the_build(self):
-        """PLAY_PAGES (vite.config.js) vs `pages/*.html`: a missing template 404s."""
-        config = read(REPO_ROOT / "vite.config.js")
-        declared = re.search(r"const PLAY_PAGES = \[([^\]]*)\]", config)
-        self.assertIsNotNone(declared, "PLAY_PAGES not found in vite.config.js")
+        """PLAY_PAGES (vite.config.ts) vs `pages/*.html`: a missing template 404s."""
+        config = read(REPO_ROOT / "vite.config.ts")
+        declared = re.search(r"const PLAY_PAGES(?:\s*:[^=]+)? = \[([^\]]*)\]", config)
+        self.assertIsNotNone(declared, "PLAY_PAGES not found in vite.config.ts")
         listed = set(re.findall(r'"([a-z]+)"', declared.group(1)))
         on_disk = {p.stem for p in PAGES_DIR.glob("*.html")}
         self.assertEqual(
             listed,
             on_disk,
-            "PLAY_PAGES (vite.config.js) and the templates in pages/ have diverged.",
+            "PLAY_PAGES (vite.config.ts) and the templates in pages/ have diverged.",
         )
 
     def test_the_play_pages_cover_every_page_of_the_site(self):
         """Those templates are exactly what PAGES declares, plus the second home page."""
-        keys = set(re.findall(r"^  ([a-zA-Z]+): \{", read(PAGES_JS), re.MULTILINE))
+        keys = set(re.findall(r"^  ([a-zA-Z]+): \{", read(PAGES_TS), re.MULTILINE))
         # `home` is a play's `index.html`; `respo` is its coordinator twin, not in PAGES.
         expected = (keys - {"home"}) | {"index", "respo"}
         self.assertEqual(expected, {p.stem for p in PAGES_DIR.glob("*.html")})
@@ -657,7 +680,7 @@ class TestPageEntries(unittest.TestCase):
 
 class TestScriptDiffFields(unittest.TestCase):
     """`script_changes` (script_diff.py) writes the counts, `CHANGE_LABEL_KEYS`
-    (dashboard/App.jsx) has a sentence for each. Renamed on one side, the row
+    (dashboard/App.tsx) has a sentence for each. Renamed on one side, the row
     silently stops showing that count."""
 
     def python_fields(self) -> set[str]:
@@ -717,9 +740,9 @@ class TestScriptDiffFields(unittest.TestCase):
 
     def test_the_front_has_a_sentence_for_every_count_the_action_writes(self):
         body = re.search(
-            r"const CHANGE_LABEL_KEYS = \{(.*?)\};", read(SRC / "dashboard" / "App.jsx"), re.S
+            r"const CHANGE_LABEL_KEYS(?:\s*:[^=]+)? = \{(.*?)\};", read(SRC / "dashboard" / "App.tsx"), re.S
         )
-        self.assertIsNotNone(body, "CHANGE_LABEL_KEYS not found in dashboard/App.jsx")
+        self.assertIsNotNone(body, "CHANGE_LABEL_KEYS not found in dashboard/App.tsx")
         front = set(re.findall(r"^  ([a-zA-Z]+):", body.group(1), re.MULTILINE))
         self.assertEqual(front, self.python_fields())
 
@@ -727,13 +750,13 @@ class TestScriptDiffFields(unittest.TestCase):
 class TestCatalogues(unittest.TestCase):
     """The i18n guards, by static reading (this project has no component test): a
     mistyped key shows verbatim on screen, a forgotten string stays French in the
-    English UI. Parity is checked JS-side (locales/parity.test.js, Intl.PluralRules)."""
+    English UI. Parity is checked JS-side (locales/parity.test.ts, Intl.PluralRules)."""
 
     LOCALES_DIR = SRC / "shared" / "locales"
 
     def catalogue_keys(self, locale: str) -> set[str]:
         """The keys declared in a catalogue: read from source, no JS engine here."""
-        source = read(self.LOCALES_DIR / f"{locale}.js")
+        source = read(self.LOCALES_DIR / f"{locale}.ts")
         return set(re.findall(r'^  "([a-zA-Z0-9_.]+)":', source, re.MULTILINE))
 
     def test_catalogues_are_found_and_not_empty(self):
@@ -744,8 +767,8 @@ class TestCatalogues(unittest.TestCase):
 
     def scanned_files(self):
         """The front-end sources, excluding tests and catalogues."""
-        for path in sorted(SRC.rglob("*.js*")):
-            if path.name.endswith(".test.js") or path.parent == self.LOCALES_DIR:
+        for path in sorted(SRC.rglob("*.ts*")):
+            if path.name.endswith(".test.ts") or path.parent == self.LOCALES_DIR:
                 continue
             yield path
 
@@ -755,7 +778,7 @@ class TestCatalogues(unittest.TestCase):
         invisible and covered by pattern in the orphan-key test."""
         used: dict[str, set[str]] = {}
         for path in self.scanned_files():
-            source = js_without_comments(read(path))
+            source = without_comments(read(path))
             found = [
                 key
                 for callee in ("t", "mountPage")
@@ -764,7 +787,9 @@ class TestCatalogues(unittest.TestCase):
                 for key in re.findall(r'"([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)+)"', call)
             ]
             found += re.findall(r'<T\s[^>]*?\bk="([a-zA-Z0-9_.]+)"', source)
-            for table in re.findall(r"\b[A-Z][A-Z0-9_]*KEYS?\b\s*=\s*[\[{](.*?)[\]}];", source, re.S):
+            for table in re.findall(
+                r"\b[A-Z][A-Z0-9_]*KEYS?\b(?:\s*:[^=]+)?\s*=\s*[\[{](.*?)[\]}];", source, re.S
+            ):
                 found += re.findall(r'"([a-zA-Z0-9_.]+)"', table)
             for key in found:
                 used.setdefault(key, set()).add(path.relative_to(REPO_ROOT).as_posix())
@@ -807,10 +832,10 @@ class TestCatalogues(unittest.TestCase):
         stayed hardcoded in the JSX (it caught `common.loadingScript`)."""
         used = set(self.used_keys())
         # Keys composed at runtime, covered by pattern. Each is built in one place:
-        #   page.<x>.label|desc      pageLabelKey / pageDescKey (pages.js)
-        #   structure.language.<xx>  LOCALES (StructurePanel.jsx)
-        #   rail.<x>[.tip]           the icon strip (EditorRail.jsx)
-        #   recorder.status.<x>      a line's label (recorder/App.jsx)
+        #   page.<x>.label|desc      pageLabelKey / pageDescKey (pages.ts)
+        #   structure.language.<xx>  LOCALES (StructurePanel.tsx)
+        #   rail.<x>[.tip]           the icon strip (EditorRail.tsx)
+        #   recorder.status.<x>      a line's label (recorder/App.tsx)
         built_by_helper = re.compile(
             r"^(page\.[a-z]+\.(label|desc)"
             r"|structure\.language\.[a-z]{2}"
@@ -835,7 +860,7 @@ class TestCatalogues(unittest.TestCase):
 
     # Accented literals that are NOT interface text. Adding one is a decision.
     ACCENT_ALLOWED = {
-        # A language's name is written in that language (LocaleSwitch.jsx).
+        # A language's name is written in that language (LocaleSwitch.tsx).
         "Français",
         # `makeFormats` quotation marks: locale DATA, and Intl does not expose CLDR's.
         "«\u00a0",
@@ -883,7 +908,7 @@ class TestCatalogues(unittest.TestCase):
         offenders = []
         for path in self.scanned_files():
             relative = path.relative_to(REPO_ROOT).as_posix()
-            source = js_without_comments(read(path))
+            source = without_comments(read(path))
             for quoted in re.findall(r'"([^"\n]*)"|\'([^\'\n]*)\'', source):
                 text = quoted[0] or quoted[1]
                 if text in self.ACCENT_ALLOWED:
@@ -906,7 +931,7 @@ class TestCatalogues(unittest.TestCase):
         offenders = []
         for path in self.scanned_files():
             relative = path.relative_to(REPO_ROOT).as_posix()
-            source = js_without_comments(read(path))
+            source = without_comments(read(path))
             for match in pattern.finditer(source):
                 text = self.INTERPOLATION.sub("", match.group(3)).strip()
                 if not text or text in self.NOT_TEXT:
@@ -920,20 +945,31 @@ class TestCatalogues(unittest.TestCase):
             "translated. Go through t(). " + " ; ".join(offenders),
         )
 
+    # A TYPE ANNOTATION reads as a text node to this scan: `Record<string, unknown>`
+    # closes on a `>` and the next generic opens on a `<`, so the code between the two
+    # is captured like the inside of a tag. Recognised by SHAPE (`name: Type`,
+    # `name?: Type`, or a leading `?`/`|`/`&`), which is the bound of the test below: a
+    # real text node opening with "Note:" is not seen either. Accepted, the accent guard
+    # and the key scan covering the French side.
+    TYPE_FRAGMENT = re.compile(r"^[?|&]|^[A-Za-z_$][\w$]*\??\s*:")
+
     def test_no_jsx_text_node_carries_a_literal(self):
         """Text between two tags. Bounded to prose-looking lines with no code
-        character; a text adjacent to a brace needs a real JSX parser, and the accent
-        guard covers that case in French."""
+        character and to what is not a type annotation (cf. TYPE_FRAGMENT); a text
+        adjacent to a brace needs a real JSX parser, and the accent guard covers that
+        case in French."""
         offenders = []
         for path in self.scanned_files():
             relative = path.relative_to(REPO_ROOT).as_posix()
-            source = js_without_comments(read(path))
+            source = without_comments(read(path))
             for match in re.finditer(r">([^<>]*?)<", source, re.S):
                 for line in match.group(1).split("\n"):
                     text = line.strip()
                     if not text or text in self.NOT_TEXT:
                         continue
                     if self.CODE_CHARS & set(text):
+                        continue
+                    if self.TYPE_FRAGMENT.match(text):
                         continue
                     if self.HAS_WORD.search(text) and self.looks_like_prose(text):
                         offenders.append(f"{relative}: '{text[:50]}'")
@@ -971,9 +1007,9 @@ class TestCatalogues(unittest.TestCase):
             ("fr", (r"\b(?:page|mode)\s+{label}\b",)),
             ("en", (r"\b{label}\s+(?:page|screen|mode)\b", r"\b(?:page|screen|mode)\s+{label}\b")),
         ):
-            source = read(self.LOCALES_DIR / f"{locale}.js")
+            source = read(self.LOCALES_DIR / f"{locale}.ts")
             labels = dict(re.findall(r'"page\.([a-z]+)\.label":\s*"([^"]+)"', source))
-            self.assertTrue(labels, f"no page label read in {locale}.js")
+            self.assertTrue(labels, f"no page label read in {locale}.ts")
             offenders = []
             for key, text in re.findall(r'^  "([a-zA-Z0-9_.]+)":\s*(.*)$', source, re.MULTILINE):
                 for page, label in labels.items():
@@ -991,15 +1027,15 @@ class TestCatalogues(unittest.TestCase):
             )
 
     def test_the_static_html_title_matches_the_french_catalogue(self):
-        """The static `<title>` is the fallback before locale.js runs, so a drift from
+        """The static `<title>` is the fallback before locale.ts runs, so a drift from
         the French catalogue makes the title visibly change on load."""
-        source = read(self.LOCALES_DIR / "fr.js")
+        source = read(self.LOCALES_DIR / "fr.ts")
         template = re.search(r'"common\.docTitle":\s*"([^"]+)"', source)
-        self.assertIsNotNone(template, "common.docTitle not found in fr.js")
+        self.assertIsNotNone(template, "common.docTitle not found in fr.ts")
 
         def label(key):
             found = re.search(rf'"{re.escape(key)}":\s*"([^"]+)"', source)
-            self.assertIsNotNone(found, f"{key} missing from fr.js")
+            self.assertIsNotNone(found, f"{key} missing from fr.ts")
             return found.group(1)
 
         # The `pages/` templates take their page's label (`respo.html` alone does not
@@ -1029,14 +1065,14 @@ class TestCatalogues(unittest.TestCase):
 
 
 class TestStructureLabels(unittest.TestCase):
-    """`structureLabels.js` (screen) vs `STRUCTURE` (build_script_pdf.py, paper)."""
+    """`structureLabels.ts` (screen) vs `STRUCTURE` (build_script_pdf.py, paper)."""
 
     LOCALES_DIR = SRC / "shared" / "locales"
 
-    def js_template(self, locale: str, key: str) -> str:
-        source = read(self.LOCALES_DIR / f"{locale}.js")
+    def front_template(self, locale: str, key: str) -> str:
+        source = read(self.LOCALES_DIR / f"{locale}.ts")
         found = re.search(rf'"{re.escape(key)}":\s*"([^"]+)"', source)
-        self.assertIsNotNone(found, f"{key} not found in {locale}.js")
+        self.assertIsNotNone(found, f"{key} not found in {locale}.ts")
         return found.group(1)
 
     def test_the_pdf_words_match_the_catalogues(self):
@@ -1045,26 +1081,26 @@ class TestStructureLabels(unittest.TestCase):
             for kind, key in (("act", "structure.act"), ("scene", "structure.scene")):
                 self.assertEqual(
                     words[kind].replace("%s", "{n}"),
-                    self.js_template(locale, key),
+                    self.front_template(locale, key),
                     f"{locale}/{kind}: the PDF and the screen would not name it the same way",
                 )
 
     def test_both_sides_know_the_same_languages(self):
         js = set(re.findall(r'"([a-z]{2})"', re.search(
-            r"export const LOCALES = \[(.*?)\];", read(SRC / "shared" / "i18n.js"), re.DOTALL
+            r"export const LOCALES(?:\s*:[^=]+)? = \[(.*?)\];", read(SRC / "shared" / "i18n.ts"), re.DOTALL
         ).group(1)))
         self.assertEqual(set(LANGUAGES), js, "LANGUAGES (Python) and LOCALES (JS) have diverged")
         self.assertEqual(set(STRUCTURE), js, "the PDF's STRUCTURE does not cover every language")
         self.assertIn(DEFAULT_LANGUAGE, LANGUAGES)
 
     def test_the_roman_numerals_agree(self):
-        js = read(SRC / "shared" / "structureLabels.js")
-        tens = re.search(r'const TENS = \[(.*?)\];', js, re.DOTALL).group(1)
-        units = re.search(r'const UNITS = \[(.*?)\];', js, re.DOTALL).group(1)
-        js_tens = re.findall(r'"([A-Z]*)"', tens)
-        js_units = re.findall(r'"([A-Z]*)"', units)
-        self.assertEqual(js_tens, list(_TENS), "the Roman tens have diverged")
-        self.assertEqual(js_units, list(_UNITS), "the Roman units have diverged")
+        js = read(SRC / "shared" / "structureLabels.ts")
+        tens = re.search(r'const TENS(?:\s*:[^=]+)? = \[(.*?)\];', js, re.DOTALL).group(1)
+        units = re.search(r'const UNITS(?:\s*:[^=]+)? = \[(.*?)\];', js, re.DOTALL).group(1)
+        front_tens = re.findall(r'"([A-Z]*)"', tens)
+        front_units = re.findall(r'"([A-Z]*)"', units)
+        self.assertEqual(front_tens, list(_TENS), "the Roman tens have diverged")
+        self.assertEqual(front_units, list(_UNITS), "the Roman units have diverged")
         expected = {1: "I", 4: "IV", 9: "IX", 10: "X", 14: "XIV", 39: "XXXIX", 40: "40", 0: "0"}
         for n, want in expected.items():
             self.assertEqual(roman_numeral(n), want, f"roman_numeral({n})")
@@ -1082,13 +1118,13 @@ class TestStructureLabels(unittest.TestCase):
 
 
 class TestZipFormat(unittest.TestCase):
-    """`downloadZip` (recorder/App.jsx) writes the archive, `parse_manifest`
+    """`downloadZip` (recorder/App.tsx) writes the archive, `parse_manifest`
     (process_uploads.py) reads it, and the two never run together: out of step, every
     ZIP an actor sends is refused. Loose about everything but the set of keys."""
 
     def manifest_keys_written(self) -> set:
         """The keys the Recorder puts in manifest.json."""
-        source = js_without_comments(read(RECORDER_JSX))
+        source = without_comments(read(RECORDER_TSX))
         found = re.search(
             r'zip\.file\(\s*"manifest\.json"\s*,\s*JSON\.stringify\(\s*\{(.*?)\}', source, re.S
         )
@@ -1122,10 +1158,10 @@ class TestZipFormat(unittest.TestCase):
     def test_the_audio_member_is_named_after_the_line_id(self):
         """`{lineId}.{ext}`: the extension is the recording browser's, so the Action
         looks the member up by id."""
-        written = js_without_comments(read(RECORDER_JSX))
+        written = without_comments(read(RECORDER_TSX))
         self.assertTrue(
             re.search(r"zip\.file\(\s*`\$\{lineId\}\.\$\{take\.ext\}`", written),
-            "recorder/App.jsx no longer names the audio member {lineId}.{ext}: the "
+            "recorder/App.tsx no longer names the audio member {lineId}.{ext}: the "
             "Action looks it up by id and would find nothing.",
         )
         source = read(PROCESS_UPLOADS_PY)
@@ -1135,10 +1171,10 @@ class TestZipFormat(unittest.TestCase):
 
     def test_the_play_id_travels_verbatim_from_the_manifest(self):
         """The field verifies and never routes, so it must be the manifest's own id."""
-        source = js_without_comments(read(RECORDER_JSX))
+        source = without_comments(read(RECORDER_TSX))
         self.assertTrue(
             re.search(r"play:\s*manifest\.id", source),
-            "recorder/App.jsx no longer writes the play id straight from the manifest.",
+            "recorder/App.tsx no longer writes the play id straight from the manifest.",
         )
 
 
@@ -1167,6 +1203,153 @@ class TestPublishedPlays(unittest.TestCase):
             zone = REPO_ROOT / "uploads" / play_id
             self.assertTrue(zone.is_dir(), f"uploads/{play_id}/ is missing")
             self.assertTrue((zone / ".gitkeep").exists(), f"uploads/{play_id}/.gitkeep is missing")
+
+
+class TestTypeChecking(unittest.TestCase):
+    """`tsc --noEmit` is the ONLY reader of the types: Vite (esbuild) and `node --test`
+    (Node's type stripping) both ERASE them without looking. So none of this is style.
+    It is whether the check happens at all, over everything, with nothing silencing it.
+
+    The check itself is NOT run here: it needs `node_modules`, and this suite reads
+    files. `build.yml` runs it, and one test below is what holds that."""
+
+    def tsconfig(self) -> dict:
+        """tsconfig.json carries `//` comments (its own reasons), which `json` refuses."""
+        return json.loads(without_comments(read(TSCONFIG_PATH)))
+
+    def relative(self, path: Path) -> str:
+        return path.relative_to(REPO_ROOT).as_posix()
+
+    def test_the_typecheck_is_strict_and_emits_nothing(self):
+        options = self.tsconfig()["compilerOptions"]
+        self.assertIs(
+            options.get("strict"), True, "strict is off: the annotations stop being checked"
+        )
+        self.assertIs(
+            options.get("noEmit"), True, "tsc must judge and never emit: Vite is what builds"
+        )
+        # Import specifiers carry the REAL extension because `node --test` resolves what
+        # is written (cf. the specifier test below). Without this the tree stops compiling.
+        self.assertIs(options.get("allowImportingTsExtensions"), True)
+
+    def test_no_compiler_option_is_turned_off(self):
+        """In a tsconfig every `false` is a LOOSENING, and `strict` is a family whose
+        members can be disabled one at a time behind it: measured, `noImplicitAny: false`
+        alone hid 473 errors while `strict: true` sat right above it. Hence the blanket
+        rule rather than a list of flags to keep in step with TypeScript's releases."""
+        off = [
+            option for option, value in self.tsconfig()["compilerOptions"].items() if value is False
+        ]
+        self.assertEqual(
+            off,
+            [],
+            "these compiler options are off, which loosens the check: " + ", ".join(off),
+        )
+
+    def test_the_typecheck_sees_every_source_file(self):
+        """`include` is a two-entry list, so a source outside it is never read by
+        anything: it compiles in the browser and its types are decoration."""
+        included = [REPO_ROOT / entry for entry in self.tsconfig()["include"]]
+        unchecked = [
+            self.relative(path)
+            for path in source_files()
+            if not any(path == entry or entry in path.parents for entry in included)
+        ]
+        self.assertEqual(
+            unchecked,
+            [],
+            "outside tsconfig.json's `include`, hence type-checked by nothing: "
+            + ", ".join(unchecked),
+        )
+
+    def test_the_typecheck_runs_in_ci_before_the_build(self):
+        script = json.loads(read(PACKAGE_JSON))["scripts"].get("typecheck", "")
+        self.assertIn("--noEmit", script, "`npm run typecheck` no longer runs tsc")
+        workflow = read(BUILD_WORKFLOW)
+        self.assertIn(
+            "npm run typecheck",
+            workflow,
+            "build.yml no longer typechecks: a type error would then reach the deploy",
+        )
+        # BEFORE the build, which succeeds on the very code the check refuses.
+        self.assertLess(
+            workflow.index("npm run typecheck"),
+            workflow.index("npm run build"),
+            "build.yml typechecks AFTER building, so the build is what reports first",
+        )
+
+    def test_the_react_types_describe_the_react_that_is_installed(self):
+        """`@types/react` one major ahead of `react` is the worst kind of green check:
+        it announces hooks and a `ref` prop this React does not have, and the checker
+        being the ONLY reader, nothing else would refuse the code before the browser
+        does. Majors only: the types are versioned independently within one."""
+        manifest = json.loads(read(PACKAGE_JSON))
+        runtime = manifest["dependencies"]
+        types = manifest["devDependencies"]
+        for package in ("react", "react-dom"):
+            self.assertEqual(
+                re.sub(r"^\D*(\d+).*", r"\1", types[f"@types/{package}"]),
+                re.sub(r"^\D*(\d+).*", r"\1", runtime[package]),
+                f"@types/{package} and {package} are on different majors: the "
+                f"typecheck would accept an API this React does not ship.",
+            )
+
+    def test_no_type_error_is_silenced(self):
+        """The escape hatches, which turn a checked file into an unchecked one without
+        changing anything visible. A cast is the honest way to overrule the checker: it
+        says what the value is, where these say only "not now"."""
+        offenders = [
+            f"{self.relative(path)}: {directive}"
+            for path in source_files()
+            for directive in ("@ts-ignore", "@ts-nocheck", "@ts-expect-error")
+            if directive in read(path)
+        ]
+        self.assertEqual(offenders, [], "type errors silenced: " + ", ".join(offenders))
+
+    def test_every_relative_import_names_the_file_it_resolves(self):
+        """The pure modules run under `node --test` with NO bundler, so Node resolves the
+        specifier AS WRITTEN. A `.js` left over from the migration, or an extension left
+        off because Vite would have guessed it, is a module not found at test time."""
+        offenders = []
+        for path in source_files():
+            for spec in re.findall(
+                r'(?:from|import)\s*\(?\s*"(\.[^"]*)"', without_comments(read(path))
+            ):
+                if not spec.endswith((".ts", ".tsx", ".css", ".json")):
+                    offenders.append(f"{self.relative(path)}: '{spec}'")
+        self.assertEqual(
+            offenders,
+            [],
+            "these relative imports do not name a real file: " + ", ".join(offenders),
+        )
+
+    def test_no_source_file_is_javascript(self):
+        """The migration is not half-done anywhere. `allowJs` is unset, so a `.js` back
+        in the tree is read by no checker and resolved by no import."""
+        left = [self.relative(path) for path in source_files((".js", ".jsx", ".mjs", ".cjs"))]
+        self.assertEqual(left, [], "JavaScript left in the tree: " + ", ".join(left))
+
+    def test_no_comment_names_a_file_that_no_longer_exists(self):
+        """The class of dirt a rename leaves behind: CLAUDE.md's doctrine puts the reason
+        for a rule in a comment AT THE SITE, and those comments cite files by name, in
+        the CSS as much as in the sources: five of them still named the old extension
+        after the migration, the CSS having no import for a rename to follow, and each
+        sent the next reader looking for a file that is not there.
+        Bounded to a NAME followed by the extension, so the trap in CLAUDE.md that
+        deliberately writes a bare `.js` is not a match. Nor is this docstring, which is
+        why it describes the case instead of spelling one out."""
+        pattern = re.compile(r"\b(\w+\.jsx?)\b")
+        text_suffixes = (".ts", ".tsx", ".css", ".html", ".py", ".yml", ".md", ".sh")
+        offenders = []
+        for path in source_files(text_suffixes):
+            for name in set(pattern.findall(read(path))):
+                offenders.append(f"{self.relative(path)}: '{name}'")
+        self.assertEqual(
+            offenders,
+            [],
+            "these comments name a JavaScript file, which this repo no longer has: "
+            + ", ".join(sorted(offenders)),
+        )
 
 
 if __name__ == "__main__":

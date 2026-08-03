@@ -130,6 +130,12 @@ jobs:
       - name: Run front tests (reducer, undo stack, shared helpers)
         run: npm test
 
+      # Vite and `node --test` both ERASE the types rather than check them, so a type
+      # error breaks nothing until it is read here. Before the build on purpose: the
+      # build would succeed on the very code this refuses.
+      - name: Typecheck the front
+        run: npm run typecheck
+
       # Derived, so rebuilt here to survive a hand edit in the repo. The index reads the
       # manifests, hence the order. Nothing is committed: only uploads.yml writes.
       - name: Rebuild the manifests and the plays index
@@ -144,7 +150,7 @@ jobs:
 
       # --exclude='*.html' is mandatory, not a precaution: plays/<id>/*.html are the
       # worktree templates, the dist/ ones are Vite's with hashed asset URLs, so
-      # copying over them serves /src/rehearsal/main.jsx and a blank page.
+      # copying over them serves /src/rehearsal/main.tsx and a blank page.
       # The mkdir -p cover a repo with no play at all (fresh fork): plays/ and
       # dist/plays/ then do not exist and rsync fails on a missing source, yet that
       # site is precisely the one carrying the create-a-play page.

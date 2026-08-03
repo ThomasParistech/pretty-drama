@@ -51,8 +51,12 @@
   --ed-sidebar: var(--accent-soft);
   /* The "lit" surface of the rail (open section, pointed-at or open scene, current
      search hit, chosen flag). The same lilac deeper, the rail already being
-     `--accent-soft`. Carries `--ink` 10.6:1, `--ed-accent-ink` 5.5:1, `--ink-soft` 3.8:1. */
-  --ed-tile-lit: color-mix(in srgb, var(--accent) 22%, #fff);
+     `--accent-soft`. Carries `--ink` 10.6:1, `--ed-accent-ink` 5.5:1, `--ink-soft` 3.8:1.
+     `var(--tile-lit)` and not the mix written out again: that token is declared on
+     `:root` beside the accent it mixes, so it re-derives from the violet this page
+     re-skins and computes the very value the ratios above were measured on. The name
+     stays local, the rail's eight consumers being a rail surface and not a file tile. */
+  --ed-tile-lit: var(--tile-lit);
   --ed-danger: #c0603f;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
@@ -923,7 +927,7 @@ h3 {
   gap: 8px;
 }
 
-/* While the rendering catches up with the typing (`searching`, useSearch.js) we fade
+/* While the rendering catches up with the typing (`searching`, useSearch.ts) we fade
    rather than freeze, with no transition IN or a flicker is added at every keystroke;
    the return to full opacity is eased, that being the moment the list becomes correct. */
 .search-count.stale,
@@ -969,7 +973,7 @@ h3 {
   padding: 0 12px;
 }
 
-/* Height contract of the windowed list: `ResultList` (SearchPanel.jsx) computes
+/* Height contract of the windowed list: `ResultList` (SearchPanel.tsx) computes
    positions from 66 px per row and 30 px per scene header, written here and there.
    Diverge and the list shifts, so every height below is fixed, never derived. */
 .search-flat {
@@ -1071,9 +1075,10 @@ h3 {
   color: var(--ink);
 }
 
-/* `<mark>` restyled: its default yellow is outside the palette. */
+/* `<mark>` restyled: its default yellow is outside the palette. The lit surface is the
+   rail's, hence the token; the rule below legitimately keeps its own deeper 34 %. */
 .search-hit mark {
-  background: color-mix(in srgb, var(--accent) 22%, #fff);
+  background: var(--ed-tile-lit);
   color: inherit;
   border-radius: 3px;
   padding: 0 1px;
@@ -1302,7 +1307,7 @@ h3 {
 }
 
 /* Narrow window, and not "mobile": the page does not open on a touch pointer at all
-   (useTouchPointer.js), so what follows only targets a shrunk desktop window. */
+   (useTouchPointer.ts), so what follows only targets a shrunk desktop window. */
 
 /* Narrow reflow: one row while the text keeps ~280 px of typing width, then two. A
    CONTAINER query and not a window one, the rail taking its width from the column. */

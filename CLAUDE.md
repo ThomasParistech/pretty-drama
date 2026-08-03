@@ -9,9 +9,9 @@ comment at the site it applies to. `git log -p CLAUDE.md` has the long-form hist
 ## Writing rules
 
 - **Repo is in English**: docs, comments, commit messages, workflows. README stays
-  French (it is for the troupe); `locales/fr.js` values stay French, it is the catalogue.
+  French (it is for the troupe); `locales/fr.ts` values stay French, it is the catalogue.
 - **UI is bilingual**, French default. **No visible string in a component**: everything
-  through `src/shared/locales/{fr,en}.js`.
+  through `src/shared/locales/{fr,en}.ts`.
 - **Never use an em dash**, including in the English catalogue.
 - "le responsable" is **"the coordinator"**, never "your coordinator". The token `respo`
   survives only in identifiers and filenames.
@@ -38,8 +38,8 @@ data/history.json           journal for uploads no play claimed
 ```
 
 - **Inside a play no path changes** (`fetch("data/manifest.json")`, `./rehearsal.html`).
-  Only `chooserHref`/`playHref` (`shared/pages.js`), `githubRepoUrl` (`shared/data.js`)
-  and `vite.config.js` know about `plays/<id>/`.
+  Only `chooserHref`/`playHref` (`shared/pages.ts`), `githubRepoUrl` (`shared/data.ts`)
+  and `vite.config.ts` know about `plays/<id>/`.
 - No `?play=<slug>`: links are bare relative hrefs, so the param dies on every nav.
 - `plays/.gitkeep` and `uploads/.gitkeep` are tracked: `git add` of a missing path exits 128.
 - **The upload FOLDER routes, the content verifies.** A corrupt ZIP still reaches its
@@ -69,10 +69,24 @@ data/history.json           journal for uploads no play claimed
 
 ## Architecture
 
-React + Vite, multi-page (no SPA), `base: "./"`, relative paths throughout. The 2 root
-pages are literal Vite entries; the 7 `pages/` templates are written into each play's
-folder by `writePlayPages` (`vite.config.js`) at CONFIG time. **Creating a play while the
-dev server runs requires a restart.**
+React + Vite + **TypeScript**, multi-page (no SPA), `base: "./"`, relative paths
+throughout. The 2 root pages are literal Vite entries; the 7 `pages/` templates are
+written into each play's folder by `writePlayPages` (`vite.config.ts`) at CONFIG time.
+**Creating a play while the dev server runs requires a restart.**
+
+**Nothing COMPILES the types.** Vite (esbuild) and `node --test` (Node's native type
+stripping) both ERASE them, so `tsc --noEmit` is the only thing that reads them:
+`npm run typecheck`, a step of `build.yml` before the build, because the build succeeds on
+the very code it refuses. Hence also **`allowImportingTsExtensions`**: import specifiers
+carry the REAL extension (`./data.ts`, `./App.tsx`), because the pure modules run under
+`node --test` with no bundler and Node resolves what is written.
+
+`strict` is on, with no `any` at a call site the checker can serve. The four doors of
+`stats.ts`, `sanitizeScript` and the journal normalisers take `unknown` or cast once at
+the top INSTEAD: their whole job is a hand-edited `script.json` or `manifest.json`, so
+the tolerance is the contract and the guards below the cast are what enforce it. The JSON
+shapes those functions produce live in `shared/types.ts`, TYPES ONLY, next to the Python
+writer each one mirrors.
 
 Two workflows, airtight roles:
 - `uploads.yml` (push touching `uploads/**`) processes uploads, writes the journal,
@@ -185,6 +199,8 @@ a problem.
 - `npm test` = `node --test` **with no argument** (Node 22+ reads a positional as a file).
   **Pure** front logic only, no test dependency, no React rendering, so DOM work is
   checked by hand.
+- `npm run typecheck` = `tsc --noEmit`. Not optional and not a formality: it is the ONLY
+  reader of the types (cf. Architecture), and CI runs it before the build.
 - Try a page: the test bench. Both servers print it next to Chooser and Manage
   (`printHomeUrls`), `npm start` opens it as a third tab, both only if `plays/dev/` is
   still there. Edit its `data/script.json` or `data/history.json`, `python3
@@ -219,7 +235,7 @@ a problem.
    script will not parse is **skipped with its manifest untouched**.
 4. `build_plays_index.py`: `data/plays.json`, from FOLDERS not manifests, ordered by id
    (pages sort by title with `Intl.Collator`). Carries cast size, length in words
-   (`count_words`, twin of `countWords` in `stats.js`), lines and recorded.
+   (`count_words`, twin of `countWords` in `stats.ts`), lines and recorded.
 5. `build_script_pdf.py`: `data/script.pdf`, **committed**, the only derived file
    `build.yml` does not rebuild. `uploads.yml` typesets it on the runs that promoted a
    script and for those plays only (`git status --porcelain -uall` names them, so a
@@ -243,22 +259,25 @@ copying expected values. Breaking a pair breaks CI.
 
 | Contract | Sides |
 | --- | --- |
-| `^[0-9a-zA-Z-]{1,64}$` | `SAFE_ID` (`editor/reducer.js`), `LINE_ID_PATTERN` (`process_uploads.py`) |
-| `^[a-z0-9][a-z0-9-]{0,63}$` | `SAFE_PLAY_ID` (`shared/plays.js`), `PLAY_ID_PATTERN` (`common.py`) |
-| Title -> play id, through `scripts/tests/play-id-cases.json` (read by both suites) | `mintPlayId` (`shared/plays.js`) announces, `mint_play_id` (`common.py`) decides |
-| Fields of a brand new play | `EMPTY_SCRIPT` (`editor/reducer.js`), `new_play_script` (`common.py`) |
-| Creation zone `_new-play`, never a valid play id | `NEW_PLAY_DIR` (`shared/data.js`), `NEW_PLAY_DIR` (`process_uploads.py`), and the README's install link, which hand-writes both it and `BRANCH` |
-| The test bench `dev`, a real play id no title may take | `DEV_PLAY_ID` (`shared/plays.js`) refuses the title, `DEV_PLAY_ID` (`common.py`) hides the play |
-| `---` closes the title and opens the note | `TITLE_SEPARATOR` (`shared/data.js`) writes it, (`process_uploads.py`) reads it, and the README's install link prefills it. That link is checked by CALLING `read_title` on the body it prefills: untouched it must be REFUSED, titled it must yield the title |
-| The note prefilled into GitHub's editor, one sentence for ONE box reached two ways | `manage.new.fileNote` (`locales/fr.js`), which the site passes through `githubNewPlayUrl`, and the README's install link, which spells the same French out because markdown cannot call a catalogue. Compared whole, non-breaking spaces included |
-| Act/scene labels, roman numerals | `shared/structureLabels.js`, `build_script_pdf.py` |
-| Vite entries = root `.html` files | `vite.config.js` |
-| ZIP format | `downloadZip` (`recorder/App.jsx`), `parse_manifest` (`process_uploads.py`) |
+| `^[0-9a-zA-Z-]{1,64}$` | `SAFE_ID` (`editor/reducer.ts`), `LINE_ID_PATTERN` (`process_uploads.py`) |
+| `^[a-z0-9][a-z0-9-]{0,63}$` | `SAFE_PLAY_ID` (`shared/plays.ts`), `PLAY_ID_PATTERN` (`common.py`) |
+| Title -> play id, through `scripts/tests/play-id-cases.json` (read by both suites) | `mintPlayId` (`shared/plays.ts`) announces, `mint_play_id` (`common.py`) decides |
+| Fields of a brand new play | `EMPTY_SCRIPT` (`editor/reducer.ts`), `new_play_script` (`common.py`) |
+| Creation zone `_new-play`, never a valid play id | `NEW_PLAY_DIR` (`shared/data.ts`), `NEW_PLAY_DIR` (`process_uploads.py`), and the README's install link, which hand-writes both it and `BRANCH` |
+| The test bench `dev`, a real play id no title may take | `DEV_PLAY_ID` (`shared/plays.ts`) refuses the title, `DEV_PLAY_ID` (`common.py`) hides the play |
+| `---` closes the title and opens the note | `TITLE_SEPARATOR` (`shared/data.ts`) writes it, (`process_uploads.py`) reads it, and the README's install link prefills it. That link is checked by CALLING `read_title` on the body it prefills: untouched it must be REFUSED, titled it must yield the title |
+| The note prefilled into GitHub's editor, one sentence for ONE box reached two ways | `manage.new.fileNote` (`locales/fr.ts`), which the site passes through `githubNewPlayUrl`, and the README's install link, which spells the same French out because markdown cannot call a catalogue. Compared whole, non-breaking spaces included |
+| Act/scene labels, roman numerals | `shared/structureLabels.ts`, `build_script_pdf.py` |
+| Vite entries = root `.html` files | `vite.config.ts` |
+| The typecheck is the ONLY reader of the types, so it must be strict, see everything, and run | `tsconfig.json` (strict, `noEmit`, `include`), `package.json` (`typecheck`), `build.yml` (the step, BEFORE the build). `TestTypeChecking` reads all three, refuses any option set to `false` (`strict` is a family that can be disabled one member at a time behind it), and refuses a source outside `include` |
+| `@types/react` is on react's own MAJOR | `package.json`, both halves. One major ahead, the check describes hooks and a `ref` prop this React does not ship, so the code passes here and breaks in the browser, which is the one failure nothing else would catch |
+| An import specifier names the file it resolves | every `src/**` module and `node --test`, which runs the pure ones with NO bundler and resolves what is WRITTEN. Enforced, not just documented: a `.js` left over or an extension left off is caught by `TestTypeChecking` before it is a module-not-found |
+| ZIP format | `downloadZip` (`recorder/App.tsx`), `parse_manifest` (`process_uploads.py`) |
 | No page CSS redefines `--header-*`; no header rule consumes `--accent` / `--font-serif` / `--shadow` | `theme.css` vs `editor.css` |
-| Every `PAGES` key has its two seal variables | `shared/pages.js`, `theme.css` |
+| Every `PAGES` key has its two seal variables | `shared/pages.ts`, `theme.css` |
 | Colour is only validated as `#rrggbb`, never repaired | `build_manifest.py` |
 | i18n: every `t()`/`<T>` key exists in both catalogues, no key unused, no visible literal in `src/` | all of `src/` |
-| The fields of a script promotion | `script_changes` (`script_diff.py`) writes them, `CHANGE_LABEL_KEYS` (`dashboard/App.jsx`) has a sentence for each, in display order. Renamed on one side, the change silently stops showing. A field's VALUE says whether it is a count (`{count}`) or a flag |
+| The fields of a script promotion | `script_changes` (`script_diff.py`) writes them, `CHANGE_LABEL_KEYS` (`dashboard/App.tsx`) has a sentence for each, in display order. Renamed on one side, the change silently stops showing. A field's VALUE says whether it is a count (`{count}`) or a flag |
 
 ## Invariants
 
@@ -267,7 +286,7 @@ copying expected values. Breaking a pair breaks CI.
   `script_diff.script_changes` (was a line really edited). Same rule for both on purpose:
   the journal's "edited" count is read as "these have to be recorded again", so a curly
   apostrophe must not appear in it while the grid keeps the line green. The browser ships
-  **raw** text. The folding in `editor/search.js` is not this.
+  **raw** text. The folding in `editor/search.ts` is not this.
 - **Line ids are never recycled** (they name the mp3s). **Play ids are never re-minted**
   (they name a folder and a URL). Validate a play id **before** building a path. A play id
   is minted in **one** place, `mint_play_id`; the front's `mintPlayId` only announces it.
@@ -281,7 +300,7 @@ copying expected values. Breaking a pair breaks CI.
 - **`sanitizeScript` never moves a line between characters.** On a duplicate id the first
   holder keeps id and lines, the second gets a fresh id and none.
 - **A no-op must not create a new state** (`updateScene`, `scriptReducer`, and
-  `history.js` comparing by identity).
+  `history.ts` comparing by identity).
 - **`validate_script` is stricter than `sanitize_script`** on purpose: a candidate with no
   lines never replaces a play that has some.
 - **Hostile uploads**: real size caps (ZIP headers lie), member names by fullmatch, one
@@ -290,7 +309,7 @@ copying expected values. Breaking a pair breaks CI.
 - **No local persistence of work** (rail width, Stats slider, takes, script being edited).
   Sole exception `prettydrama.lang`.
 - **No visible string in a component**, down to downloaded filenames.
-- **No emoji in the UI**: SVG in `shared/icons.jsx`, font-sized, `currentColor`.
+- **No emoji in the UI**: SVG in `shared/icons.tsx`, font-sized, `currentColor`.
   Exceptions are the monochrome characters that follow the font (`✓ ✕ ↓ ▼ ⠿ ?`) and
   `FlagIcon`, which is drawn.
 - **The journal is the project's only error channel.** A rejected file is reported nowhere
@@ -298,7 +317,7 @@ copying expected values. Breaking a pair breaks CI.
 
 ## i18n
 
-Pure engine `shared/i18n.js`, environment face `shared/locale.js` (reads `?lang=`, then
+Pure engine `shared/i18n.ts`, environment face `shared/locale.ts` (reads `?lang=`, then
 the stored choice, then the browser). **A module singleton, not a React context**:
 multi-page site, and switching language navigates.
 
@@ -307,40 +326,41 @@ multi-page site, and switching language navigates.
 - **No hand-rolled plurals**: `{ one, other }` with `t(key, { count })`. Numeric
   parameters are formatted by the engine, not at the call site.
 - **French typography lives inside the strings** (non-breaking spaces, guillemets), not in
-  the JSX. `parity.test.js` checks they are present in `fr.js` and absent from `en.js`.
+  the JSX. `parity.test.ts` checks they are present in `fr.ts` and absent from `en.ts`.
 - A label named twice is written once, the second interpolating the first's key.
-- **Reader locale vs PLAY language** (`script.language`): `shared/structureLabels.js`
+- **Reader locale vs PLAY language** (`script.language`): `shared/structureLabels.ts`
   follows the reader on the four navigating pages and the play's language in the Editor,
   where you shape the document the PDF prints. Hence `t` is a **parameter** of
   `actLabel`/`sceneLabel`; the language descends as a **string**, never the translator.
-- A module under `node --test` never imports `locale.js` (it reads URL, storage and
+- A module under `node --test` never imports `locale.ts` (it reads URL, storage and
   navigator on import): it takes `t` as an argument or returns a CODE the page translates.
 
 ## File map
 
 | Area | Files |
 | --- | --- |
-| Root pages | `src/chooser/` (one component, `manage` flag; no link from chooser to management). One `PlayCard` for both, the whole card a link, `manage` adding the recorded share. `NewPlay.jsx`: `NewPlayTile` ends the GRID (dashed, `aria-haspopup`) and opens the shared `ConfirmModal`, never a panel. ONE click from there, `githubNewPlayUrl` (`shared/data.js`), nothing downloaded; the tile hides when the repo is unknown |
-| A play's 2 home pages | `src/home/App.jsx` + `ACTOR_CARDS`/`RESPO_CARDS` (`shared/pages.js`); the actor list omits the editor |
-| Headers | `shared/PlayHeader.jsx` (five pages), `shared/PageHeader.jsx` (manifest-less, via `PageState`), `shared/HomeLink.jsx` (at the header foot, not the top row) |
-| The 4 brand pages | `shared/HomeHero.jsx` / `shared/HomeFooter.jsx`, worn by the 2 root pages and a play's 2 home pages, so the brand is written once. `LocaleSwitch` lives in the FOOTER and nowhere else: a language is a site setting, chosen on the way in |
-| Shared look | `shared/theme.css`: `.dialogue-card`, `.page-shell`/`.page-scroll`, `.truncate`, `.btn-tip`, `.lift-hover`, `.page-notice`, `.confirm-quote`, `.flag-icon`, `.upload-tile`, `--shadow-float` |
-| Rehearsal / Recorder | `shared/ProgressBar.jsx`, `shared/useScrollToActiveCard.js`, `recorder/useRecorder.js`, `downloadZip` (`recorder/App.jsx`). Both act and scene menus offer `actChoices`/`sceneChoices` (`shared/data.js`, one rule at two levels): once a character is chosen, only the acts and scenes they speak in, as INDEXES into the play / into the act (hiding an option never renumbers the rest), and the whole level when they speak nowhere in it. Each page then moves off an act or scene the menu no longer holds, ACT FIRST since it renews the scenes, the Recorder with `setActIndex`/`setSceneIndex`, Rehearsal through `changeAct`/`changeScene` so playback stops too. `recorder.noLinesInScene` therefore survives only for a character silent in the WHOLE play, where both fallbacks fire |
-| Colours | `shared/characterColors.js` (Tableau 10, stored per character; lightness distinguishes). Filling has one implementation: the front's `assignColors` |
-| Stats | `src/stats/stats.js` (pure, tested) does the maths; `App.jsx` only draws |
-| Dashboard | `dashboard/App.jsx`: `ProgressTable`, `Journal` (`detailOf` per kind; a script row reads its `changes` through `CHANGE_LABEL_KEYS` + `changesOf`, each field a WHOLE catalogue phrase joined by `fmt.list`, and `changes: null` means a journal written before the diff existed, so it stays blank), `githubUploadUrl` (`shared/data.js`); its tile takes the VOICES only. Second page after the Editor to re-skin `--accent` on its own `:root` |
-| Editor | its upload tile downloads `script.json` then opens the play's upload page; `editor/EditorRail.jsx` (one section open at a time), `StructurePanel` (only the play has a name, acts and scenes derive labels from rank), `history.js` (wraps a pure `scriptReducer`; `dirty = present !== saved`), `search.js` (pure; no regex; length-preserving folding) |
-| File tiles | `shared/UploadTile.jsx` + `.upload-tile` (`theme.css`): ONE look for "a file passes between the coordinator and the repo", both ways. A link on the Dashboard (voices), a button in the Editor (script, downloaded first), and the Dashboard's PDF download composing the same classes (`.dash-script-tile`). The direction is in the opening drawing and the verb, never the shape; the coloured word takes the page one READS (`tone` on `PageMark`) |
-| Guards | `shared/LeaveGuard.jsx` (capture-phase clicks + `beforeunload`), `shared/ConfirmModal.jsx` (portal, replaces `window.confirm`; `bodyTakesFocus` for the one box that is a FORM) |
+| Root pages | `src/chooser/` (one component, `manage` flag; no link from chooser to management). One `PlayCard` for both, the whole card a link, `manage` adding the recorded share. `NewPlay.tsx`: `NewPlayTile` ends the GRID (dashed, `aria-haspopup`) and opens the shared `ConfirmModal`, never a panel. ONE click from there, `githubNewPlayUrl` (`shared/data.ts`), nothing downloaded; the tile hides when the repo is unknown |
+| A play's 2 home pages | `src/home/App.tsx` + `ACTOR_CARDS`/`RESPO_CARDS` (`shared/pages.ts`); the actor list omits the editor |
+| Headers | `shared/PlayHeader.tsx` (five pages), `shared/PageHeader.tsx` (manifest-less, via `PageState`), `shared/HomeLink.tsx` (at the header foot, not the top row) |
+| The 4 brand pages | `shared/HomeHero.tsx` / `shared/HomeFooter.tsx`, worn by the 2 root pages and a play's 2 home pages, so the brand is written once. `LocaleSwitch` lives in the FOOTER and nowhere else: a language is a site setting, chosen on the way in |
+| Shared look | `shared/theme.css`: `.dialogue-card`, `.page-shell`/`.page-scroll`, `.truncate`, `.btn-tip`, `.lift-hover`, `.page-notice`, `.confirm-quote`, `.flag-icon`, `.upload-tile` (`.in-header` carrying the whole header-tile look, a carrier adding its ink only), `--shadow-float`, `--tile-lit` (the Editor's `--ed-tile-lit` is that token renamed) |
+| Rehearsal / Recorder | `shared/ProgressBar.tsx`, `shared/useScrollToActiveCard.ts`, `recorder/useRecorder.ts`, `downloadZip` (`recorder/App.tsx`). Both act and scene menus offer `actChoices`/`sceneChoices` (`shared/data.ts`, one rule at two levels): once a character is chosen, only the acts and scenes they speak in, as INDEXES into the play / into the act (hiding an option never renumbers the rest), and the whole level when they speak nowhere in it. Each page then moves off an act or scene the menu no longer holds, ACT FIRST since it renews the scenes, the Recorder with `setActIndex`/`setSceneIndex`, Rehearsal through `changeAct`/`changeScene` so playback stops too. `recorder.noLinesInScene` therefore survives only for a character silent in the WHOLE play, where both fallbacks fire |
+| Colours | `shared/characterColors.ts` (Tableau 10, stored per character; lightness distinguishes). Filling has one implementation: the front's `assignColors` |
+| Stats | `src/stats/stats.ts` (pure, tested) does the maths; `App.tsx` only draws |
+| Dashboard | `dashboard/App.tsx`: `ProgressTable`, `Journal` (`detailOf` per kind; a script row reads its `changes` through `CHANGE_LABEL_KEYS` + `changesOf`, each field a WHOLE catalogue phrase joined by `fmt.list`, and `changes: null` means a journal written before the diff existed, so it stays blank), `githubUploadUrl` (`shared/data.ts`); its tile takes the VOICES only. Second page after the Editor to re-skin `--accent` on its own `:root` |
+| Editor | its upload tile downloads `script.json` then opens the play's upload page; `editor/EditorRail.tsx` (one section open at a time), `StructurePanel` (only the play has a name, acts and scenes derive labels from rank), `history.ts` (wraps a pure `scriptReducer`; `dirty = present !== saved`), `search.ts` (pure; no regex; length-preserving folding) |
+| File tiles | `shared/UploadTile.tsx` + `.upload-tile` (`theme.css`): ONE look for "a file passes between the coordinator and the repo", both ways. A link on the Dashboard (voices), a button in the Editor (script, downloaded first), and the Dashboard's PDF download composing the same classes (`.dash-script-tile`). The direction is in the opening drawing and the verb, never the shape; the coloured word takes the page one READS (`tone` on `PageMark`) |
+| Guards | `shared/LeaveGuard.tsx` (capture-phase clicks + `beforeunload`), `shared/ConfirmModal.tsx` (portal, replaces `window.confirm`; `bodyTakesFocus` for the one box that is a FORM) |
+| Types | `shared/types.ts`: the JSON contracts (`Script`, `Manifest`, `PlayEntry`, `History`, `ScriptChanges`) plus `Translate` / `Formats` / `Locale`, and the one `declare global` (Safari's `webkitAudioContext`, which the three audio sites would otherwise reach through `window as any`). TYPES ONLY, so it reaches no bundle. `ScriptAction` lives in `editor/reducer.ts`, which owns it |
 | Python shared | `scripts/common.py`: `REPO_ROOT`, `write_json`, `load_json`, the play layout helpers, and a play's identity (`PLAY_ID_PATTERN`, `mint_play_id`, `new_play_script`) |
-| Dev server | `serveRepoData` in `vite.config.js`, which serves the PDF from the repo like everything else |
+| Dev server | `serveRepoData` in `vite.config.ts`, which serves the PDF from the repo like everything else |
 
 ## Traps
 
 Each has a comment at the site. Do not "fix" one without reading it.
 
 - README links into GitHub are relative and climb **exactly** `../../` (`test_readme.py`).
-- The upload and creation URLs name `main` (`BRANCH`, `shared/data.js`).
+- The upload and creation URLs name `main` (`BRANCH`, `shared/data.ts`).
   `/upload/<branch>` and `/new/<branch>` need a branch that really exists and fail onto
   the repo home page, never a 404; `/tree/` resolves names it rejects, which hides a wrong
   value.
@@ -369,14 +389,27 @@ Each has a comment at the site. Do not "fix" one without reading it.
 - `if (e.defaultPrevented) return;` in the search shortcut handler.
 - `--rec-*` do not derive from `--warn`/`--ok` (measured AA failure on the pink card).
 - Checkbox rows stay `flex-wrap`, never a fixed column count.
-- `mountPage.jsx` imports `theme.css` before `App.jsx` in every entry point, and that
+- `mountPage.tsx` imports `theme.css` before `App.tsx` in every entry point, and that
   order matters.
 - Each CSS file neutralizes its own animations in its own `prefers-reduced-motion` block.
+- Import specifiers name `.ts` / `.tsx`, never `.js`: `node --test` resolves what is
+  written. Renaming a module means rewriting its callers' specifiers.
+- No `@ts-ignore` / `@ts-nocheck` / `@ts-expect-error`, anywhere (`TestTypeChecking`).
+  A cast is the honest way to overrule the checker: it says what the value IS, where
+  those three say only "not now". The four tolerant doors cast once at the top.
+- **A comment naming a file names one that exists**, extension included. The CSS has no
+  import for a rename to follow, so its comments went stale on their own during the
+  TypeScript migration; `TestTypeChecking` now reads every text file for it.
+- **`test_contracts.py` reads these sources by SHAPE**, so a type annotation lands
+  between the name and the `=`: every `const NAME` pattern there tolerates an optional
+  `: Type`, and the JSX-text scan skips what looks like an annotation (`TYPE_FRAGMENT`,
+  whose bound is written at the site). Annotate `PAGES`, `EMPTY_SCRIPT`, `LOCALES`, a
+  `*_KEYS` table or `CHARACTER_COLORS` and the pattern is what to check first.
 
 ## Known gap: Action error strings
 
 The failure reasons `scripts/` writes into `history.json` are still French. They are DATA
 rendered by the bilingual Journal, so translating them would just swap one hardcoded
 language for another. The fix is emitting error CODES the front translates, as
-`useRecorder.js` does with `"mic"`. The Python tests assert on the current strings, so
+`useRecorder.ts` does with `"mic"`. The Python tests assert on the current strings, so
 this is a coordinated change, not a find-and-replace.

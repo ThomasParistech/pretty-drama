@@ -12,6 +12,6 @@ uploads_result.json
 # DIRECTORY and copies the result in, so no half-written file is ever left in the folder
 # the Action commits whole (a `script.pdf.part` rule sat here guarding a name no code
 # has ever written).
-# A play's pages are generated from pages/ at every config load (vite.config.js): derived
+# A play's pages are generated from pages/ at every config load (vite.config.ts): derived
 # and free to rebuild, unlike the PDF above.
 plays/*/*.html

@@ -45,7 +45,7 @@ dropped, not fixed "just in case".
 
 1. **back** (`scripts/` + tests): CI code on hostile input;
 2. **CI** (`.github/`): workflow safety;
-3. **shared front** (`src/shared/`, `vite.config.js`): affects everything;
+3. **shared front** (`src/shared/`, `vite.config.ts`): affects everything;
 4. **pages** (`src/<page>/`, `*.html`, CSS): covered by the front-reviewer;
 5. **data** (`data/`): consistency with the producing code;
 6. **docs/config** (`CLAUDE.md`, `README`, `.claude/`).
@@ -57,13 +57,13 @@ start from the code, not the docs.
 
 - **Normalization**: `grep` every text normalization in the tree. One implementation only
   (`scripts/normalize.py`), with exactly two callers,
-  `build_manifest.compute_status` and `script_diff.script_changes`. No `.js`/`.jsx`
-  normalizes (the browser ships **raw** text; `editor/search.js` folding is not this). Any
+  `build_manifest.compute_status` and `script_diff.script_changes`. No `.ts`/`.tsx`
+  normalizes (the browser ships **raw** text; `editor/search.ts` folding is not this). Any
   other caller, or JS normalization, is high.
-- **Line ids**: `SAFE_ID` (`editor/reducer.js`) and `LINE_ID_PATTERN`
+- **Line ids**: `SAFE_ID` (`editor/reducer.ts`) and `LINE_ID_PATTERN`
   (`process_uploads.py`) must be the **same pattern** (`^[0-9a-zA-Z-]{1,64}$`), compared
   character by character. Check no path recycles an id.
-- **Play ids**: `SAFE_PLAY_ID` (`shared/plays.js`) and `PLAY_ID_PATTERN` (`common.py`)
+- **Play ids**: `SAFE_PLAY_ID` (`shared/plays.ts`) and `PLAY_ID_PATTERN` (`common.py`)
   identical; never re-minted; minted in one place; validated before a path is built.
 - **ZIP contract**: read `downloadZip` AND `parse_manifest` side by side. Bare
   `{lineId: raw text}` mapping, one `{lineId}.{ext}` per line, nothing else. Divergence is
@@ -80,9 +80,9 @@ start from the code, not the docs.
   `locales/`) for a displayed literal: text between tags, `title`, `aria-label`,
   `placeholder`, `alt`, and the text props (`hint`, `error`, `label`, `unit`,
   `confirmLabel`, `primaryLabel`, `saveLabel`). CI guards this best (`TestCatalogues` in
-  `test_contracts.py`, plus `locales/parity.test.js`), so run those first; by hand, cover
+  `test_contracts.py`, plus `locales/parity.test.ts`), so run those first; by hand, cover
   what they cannot see: text adjacent to a brace on the same line, and unaccented English
-  text stored in a variable. Check too that nothing under `node --test` imports `locale.js`
+  text stored in a variable. Check too that nothing under `node --test` imports `locale.ts`
   (it reads URL, storage and navigator at import): a pure module takes `t` as an argument
   or returns a code the page translates.
 
@@ -107,7 +107,7 @@ start from the code, not the docs.
   (normalization is tested through `normalize-cases.json`). Flag untested branches of the
   hostile-input paths.
 - **Dead code**: exports, functions, components, CSS never referenced; orphan files;
-  `vite.config.js` entries with no `.html` and the reverse. Confirm non-use by `grep` first.
+  `vite.config.ts` entries with no `.html` and the reverse. Confirm non-use by `grep` first.
 - **Duplication**: near-identical CSS blocks in 2+ files (lift into `theme.css`), JS
   helpers duplicated across pages (lift into `src/shared/`). The front-reviewer covers page
   CSS; you cover `src/shared/`, `scripts/` and the shared/page boundary.

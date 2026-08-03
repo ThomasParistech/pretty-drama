@@ -1,5 +1,5 @@
 """data/plays.json: never lose or crash on a play whose manifest is damaged.
-`count_words` twins `countWords` (stats.js); its cases mirror stats.test.js."""
+`count_words` twins `countWords` (stats.ts); its cases mirror stats.test.ts."""
 
 import json
 import sys
@@ -42,7 +42,7 @@ class TestCountWords(unittest.TestCase):
 
     def test_the_underscore_separates_here_as_it_does_on_the_front(self):
         # The one place `\w` and `[\p{L}\p{N}]` disagree, so the mirrored case in
-        # stats.test.js is what this asserts against.
+        # stats.test.ts is what this asserts against.
         self.assertEqual(count_words("a_b"), 2)
 
     def test_it_returns_zero_on_anything_that_is_not_a_text(self):

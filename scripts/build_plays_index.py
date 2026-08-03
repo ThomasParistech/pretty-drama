@@ -14,7 +14,7 @@ from common import DEV_PLAY_ID, REPO_ROOT, load_json, play_data_dir, play_ids, w
 
 INDEX_PATH = REPO_ROOT / "data" / "plays.json"
 
-# TWIN of `countWords` (src/stats/stats.js) and must stay one, or the chooser and the
+# TWIN of `countWords` (src/stats/stats.ts) and must stay one, or the chooser and the
 # Stats page would contradict each other. Apostrophes separate: "l'crâne" is two words.
 # `[^\W_]` and not `\w`: `\w` also takes the UNDERSCORE, which `[\p{L}\p{N}]` on the JS
 # side does not, so "a_b" was one word here and two there. Measured: the two agree on

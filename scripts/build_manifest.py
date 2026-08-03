@@ -21,7 +21,7 @@ def _is_id(value) -> bool:
 # Validate the FORM only: the palette has one implementation, in JS.
 COLOR_PATTERN = re.compile(r"#[0-9a-fA-F]{6}\Z")
 
-# Mirror of LOCALES / DEFAULT_LOCALE (src/shared/i18n.js), compared by test_contracts.
+# Mirror of LOCALES / DEFAULT_LOCALE (src/shared/i18n.ts), compared by test_contracts.
 LANGUAGES = ("fr", "en")
 DEFAULT_LANGUAGE = "fr"
 

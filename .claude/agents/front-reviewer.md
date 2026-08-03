@@ -16,10 +16,10 @@ findings.
 
 1. Read the contract, then `src/shared/theme.css` and the shared components.
 2. For each page (`home`, `rehearsal`, `recorder`, `stats`, `dashboard`, `editor`): read
-   its `App.jsx` (and sub-components) and its CSS in full.
+   its `App.tsx` (and sub-components) and its CSS in full.
 3. Cross-check systematically; a keyword grep is not enough:
    - **Structure**: the page imports the expected shared components and re-codes none.
-   - **Page states**: enumerate EVERY conditional `return` in `App.jsx` (loading, error,
+   - **Page states**: enumerate EVERY conditional `return` in `App.tsx` (loading, error,
      walled page, nothing selected, empty list) and confront each with the contract as a
      page of its own. A screen you pass THROUGH gets no title; a FINAL screen (e.g. the
      Editor on a touch pointer) must name the play like the four headers. Check what the
@@ -57,7 +57,7 @@ findings.
      * a label named in two places is interpolated from its key, never copied;
      * the two catalogues answer each other: same keys, same placeholders, English without
        French typography and without calquing the French;
-     * no module under `node --test` imports `locale.js`.
+     * no module under `node --test` imports `locale.ts`.
    - **Copy**: tone and consistency, language aside (no `tutoiement`, one concept named
      identically from page to page, no em dash, doc sentences imperative first, ten words).
 4. Verify each finding by re-reading the code: exact `file:line`, no "probable" finding.

@@ -15,7 +15,7 @@ TEXT = README.read_text(encoding="utf-8")
 
 # The two routes that REQUIRE a real branch in the path: `/new/<branch>` and
 # `/upload/<branch>` answer with the repository home page when it does not exist
-# (measured, cf. BRANCH in shared/data.js), so they name one on purpose. Every other
+# (measured, cf. BRANCH in shared/data.ts), so they name one on purpose. Every other
 # route resolves without a branch, where naming one is the fork-renamed-its-default
 # trap. test_contracts.py holds the branch these two carry to that same constant.
 BRANCH_ROUTES = ("new/", "upload/")

@@ -9,7 +9,7 @@ port="${1:-5173}"
 url="http://localhost:$port"
 
 # The play id is plain text here (a shell script imports nothing): it is DEV_PLAY_ID in
-# src/shared/plays.js and scripts/common.py, held together by test_contracts.py.
+# src/shared/plays.ts and scripts/common.py, held together by test_contracts.py.
 #
 # An `if` and not `[ -d … ] && pages+=(…)`: under `set -e` that one-liner ABORTS the
 # script whenever the folder is missing.

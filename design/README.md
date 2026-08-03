@@ -16,7 +16,7 @@ donc un `git diff` y a un sens.
 
 ## Ce que le dépôt en a fait
 
-`drama-wine.svg` est la source de `MasksIcon` (`src/shared/icons.jsx`) : ses 8
+`drama-wine.svg` est la source de `MasksIcon` (`src/shared/icons.tsx`) : ses 8
 tracés et leurs `transform` y sont repris tels quels, **et ne se redessinent
 pas**. Deux écarts assumés, qui ne touchent aucune forme : les remplissages
 passent en `currentColor` et `var(--page-mark-soft)` pour que la marque suive le

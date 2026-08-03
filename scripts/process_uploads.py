@@ -41,7 +41,7 @@ RESULT_PATH = REPO_ROOT / "uploads_result.json"
 MAX_FILENAME_CHARS = 100
 MAX_ERROR_CHARS = 300
 
-# Line ids become clip filenames. Mirror of SAFE_ID (src/editor/reducer.js).
+# Line ids become clip filenames. Mirror of SAFE_ID (src/editor/reducer.ts).
 LINE_ID_PATTERN = re.compile(r"^[0-9a-zA-Z-]{1,64}$")
 
 # Sanity caps against hostile or absurd uploads.
@@ -52,10 +52,10 @@ MAX_SCRIPT_BYTES = 5 * 1024 * 1024
 MAX_TITLE_BYTES = 4 * 1024
 
 # Closes the title, opens a note for the human. Mirror of TITLE_SEPARATOR
-# (src/shared/data.js), compared by test_contracts.py.
+# (src/shared/data.ts), compared by test_contracts.py.
 TITLE_SEPARATOR = "---"
 
-# The creation zone. Mirror of NEW_PLAY_DIR (src/shared/data.js), compared by
+# The creation zone. Mirror of NEW_PLAY_DIR (src/shared/data.ts), compared by
 # test_contracts.py. The leading `_` puts it outside PLAY_ID_PATTERN.
 NEW_PLAY_DIR = "_new-play"
 

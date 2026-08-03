@@ -11,15 +11,15 @@ page seal: no `page.*` key, no `desc`, the hero, all styling from `home.css`.
 | Entry | Page | Own CSS |
 | --- | --- | --- |
 | `index.html` | The troupe's play chooser | `src/home/home.css` + `src/chooser/chooser.css` |
-| `respo.html` | The coordinator's play management (same `App.jsx`, `manage` flag) | same |
+| `respo.html` | The coordinator's play management (same `App.tsx`, `manage` flag) | same |
 
 **Seven pages of a PLAY**, templates from `pages/` instantiated into each play's folder by
-`vite.config.js`:
+`vite.config.ts`:
 
 | Template | Page | Own CSS |
 | --- | --- | --- |
 | `pages/index.html` | The play's actor home (Rehearsal, Recorder, Stats) | `src/home/home.css` |
-| `pages/respo.html` | The play's coordinator home (all 5 pages) | `src/home/home.css` (same `App.jsx`, other card list) |
+| `pages/respo.html` | The play's coordinator home (all 5 pages) | `src/home/home.css` (same `App.tsx`, other card list) |
 | `pages/rehearsal.html` | Rehearsal | `src/rehearsal/rehearsal.css` |
 | `pages/recorder.html` | Recorder | `src/recorder/recorder.css` |
 | `pages/stats.html` | Stats | `src/stats/stats.css` |
@@ -50,8 +50,10 @@ Every page loads it. Colours, radii, shadows and fonts go through `:root`: `--pa
 `--shadow`, `--shadow-hover` (consumed only through `.lift-hover`), `--shadow-float` (a
 layer FLOATING above the page: modal, Rehearsal's "your turn" pop-up), `--card-active`,
 `--focus-ring(-offset)` (elements with no default ring: slider, cards, card links),
-`--notice-gutter`, `--font-ui`, `--font-serif`, the reserved `--header-accent` /
-`--header-serif` / `--header-shadow`, and `--ease-header`.
+`--notice-gutter`, `--tile-lit` (the lit surface of a header file tile, the accent at 22 %
+on white, declared beside the accent it mixes so a re-skinning page re-derives it: the
+Editor's `--ed-tile-lit` is that token under a local name), `--font-ui`, `--font-serif`,
+the reserved `--header-accent` / `--header-serif` / `--header-shadow`, and `--ease-header`.
 
 **Re-skins.** A page may re-skin tokens in a local `:root`, and two do: the Editor
 wholesale (the "Rail": accent `#7a5cc0`, IBM Plex/Spectral, warmed neutrals), the
@@ -112,6 +114,8 @@ in JSX. Rewriting one is a `duplication` finding:
 - `.page-shell` / `.page-scroll`: window-height shell whose content alone scrolls, tuned
   by `--shell-height` (`100vh` on the Editor, `100dvh` elsewhere).
 - `.checks-row label, .search-options label`: checkbox-label geometry.
+- `.upload-tile.in-header`: the WHOLE look of a file tile worn in a header (fill, lit
+  hover through `--tile-lit`, focus, reduced motion). A carrier adds its ink only.
 
 **A local colour is not necessarily a duplication.** Check the BACKGROUND first:
 `--rec-todo` / `--rec-fresh` (`recorder.css`) look like `--warn` / `--ok` but live on the
@@ -125,26 +129,26 @@ values are for genuinely local cases and must stay harmonious on cream.
 
 | Element | Source and rules | Pages |
 | --- | --- | --- |
-| Brand header | `src/shared/PageHeader.jsx`. Heads `PageState` screens only, never mounted by a page. Same geometry as `PlayHeader` and the same `HomeLink` at the foot. Its `title` is the **play title and nothing else**, optional, `<span>` not rendered without it. Same CSS rule as `.play-header-title`, not a lookalike | through `PageState` only |
-| Play header (seal + play title, collapsible; **no** page label written out) | `src/shared/PlayHeader.jsx`. Top row says ONLY the play title; "PrettyDrama" and the home link live at the foot of the expanded header. Act/scene selects come as `children` (`.selects-row`), their variants being real (`disabled` while recording, "to record" counters). Both scene menus are FILTERED by `sceneChoices` (`shared/data.js`) once a character is chosen: `<option value>` stays the scene's rank in the ACT (hiding an option never renumbers the rest), and the whole act comes back when the character speaks nowhere in it. The Recorder's menus carry `optionSuffix` with THREE cases: `(n à enregistrer)`, a bare `✓` when done, `(aucune réplique)` where the character never speaks (a tick there would claim work that never existed). The mark is a monochrome glyph, an `<option>` being drawn by the browser. Dashboard and Editor pass no selects (the Editor moved its plan into the rail's "Structure" section, it SHAPES the structure). **The header collapses on all five**, those two included | Rehearsal, Recorder, Stats, Editor, Dashboard |
+| Brand header | `src/shared/PageHeader.tsx`. Heads `PageState` screens only, never mounted by a page. Same geometry as `PlayHeader` and the same `HomeLink` at the foot. Its `title` is the **play title and nothing else**, optional, `<span>` not rendered without it. Same CSS rule as `.play-header-title`, not a lookalike | through `PageState` only |
+| Play header (seal + play title, collapsible; **no** page label written out) | `src/shared/PlayHeader.tsx`. Top row says ONLY the play title; "PrettyDrama" and the home link live at the foot of the expanded header. Act/scene selects come as `children` (`.selects-row`), their variants being real (`disabled` while recording, "to record" counters). Both scene menus are FILTERED by `sceneChoices` (`shared/data.ts`) once a character is chosen: `<option value>` stays the scene's rank in the ACT (hiding an option never renumbers the rest), and the whole act comes back when the character speaks nowhere in it. The Recorder's menus carry `optionSuffix` with THREE cases: `(n à enregistrer)`, a bare `✓` when done, `(aucune réplique)` where the character never speaks (a tick there would claim work that never existed). The mark is a monochrome glyph, an `<option>` being drawn by the browser. Dashboard and Editor pass no selects (the Editor moved its plan into the rail's "Structure" section, it SHAPES the structure). **The header collapses on all five**, those two included | Rehearsal, Recorder, Stats, Editor, Dashboard |
 | Bottom control bar `.controls` + `.ctrl-btn` | `theme.css` | Rehearsal, Recorder |
-| Indexed progress slider | `src/shared/ProgressBar.jsx` | Rehearsal, Recorder |
+| Indexed progress slider | `src/shared/ProgressBar.tsx` | Rehearsal, Recorder |
 | Dialogue cards `.dialogue-card` (+ `.mine` palette, `.active` border) | `theme.css`; pages set `.mine` beside their semantic class and keep only real deviations | Rehearsal, Recorder |
 | Buttons `.btn` / `.btn.primary` | `theme.css` | all |
-| File tile | `src/shared/UploadTile.jsx` + `.upload-tile*` (`theme.css`). ONE look for "a file passes between the coordinator and the repository", BOTH directions; the class name says `upload` for history only. Covers the two uploads (GitHub link on Progress, button on Editing since the file downloads first); the PDF download composes the same classes by hand (`.dash-script-tile`), the component being a link or a button and neither being a download. Direction is the opening drawing (a seal for what leaves, `DownloadIcon` for what returns) and the verb, never the shape. The coloured word takes the page one is READING: the PDF tile sits in the header with `page-dashboard`, the voices tile in the BODY where the seal tokens resolve to nothing, so it carries no `page-<key>` and takes the re-skinned `--accent` through `.dash-actions .upload-tile-word`. Its seal still draws Recording's mic, `tone` on `PageMark` splitting drawing from colour | Progress (voices, PDF), Editing (script) |
-| Home link | `src/shared/HomeLink.jsx`, **one component for both headers**. Carries `page-${page}` on the link and passes the same key as the seal's `tone`: badge, word, hover wash and focus ring take the colour of the page one is LEAVING | both headers |
-| Page seal (round pill + icon) | `src/shared/PageMark.jsx` + `PAGES` (`src/shared/pages.js`). Its `page-<key>` class carries its colours, so it displays anywhere, header or not. `label` when the seal does not designate its own page (the journal's Type column: the mic means "Voice"); `label=""` when **decorative**, the word being already beside it (home cards, hero brand, home link, file tile), else every link announces itself twice. `tone` when DRAWING and COLOURS part company: exactly two places, the home link and the voices tile | both headers, home cards, Dashboard's voices tile, both icon columns of its journal (Status reuses the pill with `--ok`/`--warn`) |
+| File tile | `src/shared/UploadTile.tsx` + `.upload-tile*` (`theme.css`). ONE look for "a file passes between the coordinator and the repository", BOTH directions; the class name says `upload` for history only. Covers the two uploads (GitHub link on Progress, button on Editing since the file downloads first); the PDF download composes the same classes by hand (`.dash-script-tile`), the component being a link or a button and neither being a download. Direction is the opening drawing (a seal for what leaves, `DownloadIcon` for what returns) and the verb, never the shape. The coloured word takes the page one is READING: the PDF tile sits in the header with `page-dashboard`, the voices tile in the BODY where the seal tokens resolve to nothing, so it carries no `page-<key>` and takes the re-skinned `--accent` through `.dash-actions .upload-tile-word`. Its seal still draws Recording's mic, `tone` on `PageMark` splitting drawing from colour | Progress (voices, PDF), Editing (script) |
+| Home link | `src/shared/HomeLink.tsx`, **one component for both headers**. Carries `page-${page}` on the link and passes the same key as the seal's `tone`: badge, word, hover wash and focus ring take the colour of the page one is LEAVING | both headers |
+| Page seal (round pill + icon) | `src/shared/PageMark.tsx` + `PAGES` (`src/shared/pages.ts`). Its `page-<key>` class carries its colours, so it displays anywhere, header or not. `label` when the seal does not designate its own page (the journal's Type column: the mic means "Voice"); `label=""` when **decorative**, the word being already beside it (home cards, hero brand, home link, file tile), else every link announces itself twice. `tone` when DRAWING and COLOURS part company: exactly two places, the home link and the voices tile | both headers, home cards, Dashboard's voices tile, both icon columns of its journal (Status reuses the pill with `--ok`/`--warn`) |
 | Header doc `.header-hint` (one class for both paragraphs, their place tells them apart) | Style in `theme.css`, **rendered by `PlayHeader`**, never by a page: first paragraph `PAGES[page].desc` (same as the home card), second the optional `hint`. The two bracket the settings | all five: `desc` everywhere, `hint` on Recorder and Editor |
-| Destructive-action confirmation | `src/shared/ConfirmModal.jsx`: portal, Escape cancels, initial focus on the proposed button. **Never `window.confirm`**. Line quotation: `.confirm-quote` + `excerpt` (`data.js`) | Editor (line, scene, act), Recorder (discard a take), `LeaveGuard` |
-| Page-exit guard (undownloaded work) | `src/shared/LeaveGuard.jsx`: capture-phase link clicks + `beforeunload` as a net | Editor, Recorder |
-| SITE language switch (two flags) | `src/shared/LocaleSwitch.jsx`: two real links carrying `?lang=`, so right-click and new tab work, and no state (the next load stores the choice). **Mounted at the foot of the home pages and by them ALONE**: a language is a SITE setting, chosen on the way in, and the shared header's foot is a finished composition a second object would knock off-centre. A language's name is written **in that language** (`Français`, `English`), the only accented literal the CI guard exempts by name. Not the PLAY's language, which shows the same flags in the rail plan but is a FIELD editing `script.json` | the home pages |
-| Sentence carrying markup | `src/shared/T.jsx`, `<T k="…" p={{ … }} />`, the JSX becoming a PARAMETER. A sentence split into fragments is a finding | every one quoting a `<strong>`, `<code>`, an icon or a link mid-sentence |
-| Act and scene labels | `src/shared/structureLabels.js`, DERIVED from rank (`actLabel(t, i)`, `sceneLabel(t, i)`), acts and scenes having no title. Pure, `t` as an argument, which is what lets the two language axes coexist. Python holds a second implementation for paper (`STRUCTURE`, `roman_numeral` in `build_script_pdf.py`), from the PLAY's language; `TestStructureLabels` forbids divergence | both scope selects, Dashboard, Stats, Search, rail plan, PDF |
-| Line count of a play object | `src/editor/CountBadge.jsx`: bare number on screen (the column must align), sentence in the `aria-label`, `role="img"` to be valid on a `<span>` | Editor rail, "Structure" and "Characters" |
-| Mounting a page | `src/shared/mountPage.jsx`: `applyDocumentLanguage` then `createRoot(...).render(...)`, and the `theme.css` import, whose ORDER matters (before the page CSS that overrides it), hence importing this module BEFORE `App.jsx` in every entry point | the nine entry points |
-| "(3/12)" numbering of my lines | `src/shared/data.js`: `myLineNumbers` (Map) and `myLineNumber` (label, `t` as an argument, this module being under `node --test`) | Rehearsal, Recorder |
-| Manifest fetch | `src/shared/useManifest.js` | Rehearsal, Recorder, Stats, Dashboard (the home page calls `fetchManifest` directly: no loading and no error screen, a missing manifest just leaves the title empty) |
-| Full-page loading/error screen | `src/shared/PageState.jsx`: BOTH states take the shared `.page-notice` card, being one screen at two moments | the five play pages (Rehearsal, Recorder, Stats, Dashboard, Editor). The four BRAND pages have no `page` key and so no seal to head a state with: a play's home page leaves the title empty, the two root pages report inline (`.chooser-error`, `.chooser-new-error`) |
+| Destructive-action confirmation | `src/shared/ConfirmModal.tsx`: portal, Escape cancels, initial focus on the proposed button. **Never `window.confirm`**. Line quotation: `.confirm-quote` + `excerpt` (`data.ts`) | Editor (line, scene, act), Recorder (discard a take), `LeaveGuard` |
+| Page-exit guard (undownloaded work) | `src/shared/LeaveGuard.tsx`: capture-phase link clicks + `beforeunload` as a net | Editor, Recorder |
+| SITE language switch (two flags) | `src/shared/LocaleSwitch.tsx`: two real links carrying `?lang=`, so right-click and new tab work, and no state (the next load stores the choice). **Mounted at the foot of the home pages and by them ALONE**: a language is a SITE setting, chosen on the way in, and the shared header's foot is a finished composition a second object would knock off-centre. A language's name is written **in that language** (`Français`, `English`), the only accented literal the CI guard exempts by name. Not the PLAY's language, which shows the same flags in the rail plan but is a FIELD editing `script.json` | the home pages |
+| Sentence carrying markup | `src/shared/T.tsx`, `<T k="…" p={{ … }} />`, the JSX becoming a PARAMETER. A sentence split into fragments is a finding | every one quoting a `<strong>`, `<code>`, an icon or a link mid-sentence |
+| Act and scene labels | `src/shared/structureLabels.ts`, DERIVED from rank (`actLabel(t, i)`, `sceneLabel(t, i)`), acts and scenes having no title. Pure, `t` as an argument, which is what lets the two language axes coexist. Python holds a second implementation for paper (`STRUCTURE`, `roman_numeral` in `build_script_pdf.py`), from the PLAY's language; `TestStructureLabels` forbids divergence | both scope selects, Dashboard, Stats, Search, rail plan, PDF |
+| Line count of a play object | `src/editor/CountBadge.tsx`: bare number on screen (the column must align), sentence in the `aria-label`, `role="img"` to be valid on a `<span>` | Editor rail, "Structure" and "Characters" |
+| Mounting a page | `src/shared/mountPage.tsx`: `applyDocumentLanguage` then `createRoot(...).render(...)`, and the `theme.css` import, whose ORDER matters (before the page CSS that overrides it), hence importing this module BEFORE `App.tsx` in every entry point | the nine entry points |
+| "(3/12)" numbering of my lines | `src/shared/data.ts`: `myLineNumbers` (Map) and `myLineNumber` (label, `t` as an argument, this module being under `node --test`) | Rehearsal, Recorder |
+| Manifest fetch | `src/shared/useManifest.ts` | Rehearsal, Recorder, Stats, Dashboard (the home page calls `fetchManifest` directly: no loading and no error screen, a missing manifest just leaves the title empty) |
+| Full-page loading/error screen | `src/shared/PageState.tsx`: BOTH states take the shared `.page-notice` card, being one screen at two moments | the five play pages (Rehearsal, Recorder, Stats, Dashboard, Editor). The four BRAND pages have no `page` key and so no seal to head a state with: a play's home page leaves the title empty, the two root pages report inline (`.chooser-error`, `.chooser-new-error`) |
 
 **No header writes its page label**, without exception: the seal says the page and the tab
 repeats it. Both headers' `title` is the play title, and it is optional.
@@ -187,7 +191,7 @@ Related rules:
   line height; the clickable width compensates); Stats' two pie legends stop at 32 px,
   only the top legend bar going to 40 px (with ten characters, 40 px per row added 400 px
   to each panel on a phone; the whole row is the target); the Editor has no touch target
-  left, not opening on a `coarse` pointer (`useTouchPointer.js`).
+  left, not opening on a `coarse` pointer (`useTouchPointer.ts`).
 - Readable contrast on cream: `--ink-soft` is the minimum for informative text.
 
 ## Responsive
@@ -199,8 +203,8 @@ Related rules:
 ## Text
 
 **Bilingual** (French default, English), a structural constraint before a style one:
-everything goes through `src/shared/locales/{fr,en}.js`, read by `t()` / `<T>` (engine
-`i18n.js`, locale resolved by `locale.js`).
+everything goes through `src/shared/locales/{fr,en}.ts`, read by `t()` / `<T>` (engine
+`i18n.ts`, locale resolved by `locale.ts`).
 
 - **Zero visible literal in `src/`**, catalogues aside: no text between tags, no `title`,
   `aria-label`, `placeholder`, `alt`, no text-carrying prop (`hint`, `error`, `label`,
@@ -220,14 +224,14 @@ everything goes through `src/shared/locales/{fr,en}.js`, read by `t()` / `<T>` (
 - **Quotes come from `fmt.quote`**, never hand-written `«&nbsp;…&nbsp;»`.
 - **An ENUMERATION of translated phrases is joined by `fmt.list`** (`Intl.ListFormat`,
   `type: "unit"`), never a `", "` in the component nor a catalogue entry made of one
-  comma. The case is the journal's script row (`changesOf`, `dashboard/App.jsx`).
+  comma. The case is the journal's script row (`changesOf`, `dashboard/App.tsx`).
   `type: "unit"` and not the default `"conjunction"`, which in English adds a spoken
   ", and" that turns a row of measurements into a sentence about them. Measured.
 - **French typography lives INSIDE the strings** (non-breaking space before `?`, `!`, `:`,
   guillemets), never in the JSX.
 - **A shared label exists only once**, down to PUNCTUATION: separators, parentheses and a
   fraction slash live in the string (`recorder.lineCounter` is "{n}/{total}" in both
-  catalogues). **One named exception**, `CellMark` (`dashboard/App.jsx`): its two numbers
+  catalogues). **One named exception**, `CellMark` (`dashboard/App.tsx`): its two numbers
   must be two elements to carry two weights, so routing the slash through the catalogue
   would mean one `<T>` per CELL, several hundred per play, for a character both languages
   write the same way. Do not reopen it.
@@ -249,9 +253,9 @@ everything goes through `src/shared/locales/{fr,en}.js`, read by `t()` / `<T>` (
   on a play whose language is not the reader's, the same scene is "Scene 3" in the Editor
   and "Scène 3" on the Dashboard, and a sentence QUOTING a label stays in the reader's
   language ("Déplacer Act I").
-- **A pure module never imports `locale.js`** (it reads URL, storage and navigator on
-  import, breaking `node --test`): it takes `t` as an argument (`stats.js`) or returns a
-  CODE the page translates (`useRecorder.js` and its `"mic"`).
+- **A pure module never imports `locale.ts`** (it reads URL, storage and navigator on
+  import, breaking `node --test`): it takes `t` as an argument (`stats.ts`) or returns a
+  CODE the page translates (`useRecorder.ts` and its `"mic"`).
 - Style, both languages: consistent tone (no `tutoiement`, infinitive or polite
   imperative), no em dash, and English never calques the French ("répéter à l'italienne"
   into "run your lines", "le responsable" into "the coordinator", never "your

@@ -115,7 +115,7 @@
   pointer-events: none;
 }
 
-/* The size of these two lines is NOT here: stats.js computes it to fit the hole of the
+/* The size of these two lines is NOT here: stats.ts computes it to fit the hole of the
    ring and the JSX passes it as a style. `tabular-nums` is what that computation
    assumes. */
 .stats-donut-total {

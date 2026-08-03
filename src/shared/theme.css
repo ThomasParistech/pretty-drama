@@ -801,7 +801,7 @@ input[type="checkbox"] {
   outline-offset: var(--focus-ring-offset);
 }
 
-/* `.lift-hover` is not applied in this state (UploadTile.jsx): `:hover` still fires on
+/* `.lift-hover` is not applied in this state (UploadTile.tsx): `:hover` still fires on
    a disabled button, and a tile that lifts promises a gesture that will not happen. */
 .upload-tile:disabled {
   opacity: 0.45;

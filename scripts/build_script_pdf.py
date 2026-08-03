@@ -104,7 +104,7 @@ PREAMBLE = r"""\documentclass[10pt,a4paper,twocolumn]{article}
 
 
 # Act and scene labels, derived from rank, in the language of the PLAY. Mirror of
-# src/shared/structureLabels.js and the catalogues, compared by test_contracts.py.
+# src/shared/structureLabels.ts and the catalogues, compared by test_contracts.py.
 # `babel`: English needs no apt package (english.ldf ships with texlive-latex-base),
 # only French does. Check this first when adding a language: a missing .ldf fails LaTeX
 # and this script exits 0, so the PDF would vanish silently.
@@ -125,7 +125,7 @@ STRUCTURE = {
     },
 }
 
-# Mirror of `romanNumeral` (structureLabels.js), including giving up beyond 39.
+# Mirror of `romanNumeral` (structureLabels.ts), including giving up beyond 39.
 _TENS = ("", "X", "XX", "XXX")
 _UNITS = ("", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX")
 

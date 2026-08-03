@@ -1,5 +1,5 @@
 """The upload journals, each play's own plus the root one: the project's only error
-channel, its shape a contract with `filesOf` / `detailOf` (dashboard/App.jsx).
+channel, its shape a contract with `filesOf` / `detailOf` (dashboard/App.tsx).
 `history-example.json` is the fixture and the file to copy into `data/` in dev."""
 
 import io

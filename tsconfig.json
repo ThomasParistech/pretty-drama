@@ -1,0 +1,28 @@
+// Type checking only: Vite (esbuild) and `node --test` (Node's native type stripping)
+// both erase the types themselves, so tsc never emits. `npm run typecheck` is the gate.
+//
+// `allowImportingTsExtensions` is not a style choice: import specifiers carry the REAL
+// file extension because the pure modules run under `node --test` with no bundler, and
+// Node resolves what is written. So `./data.ts`, never `./data.js`.
+//
+// The check reads the types of the React that is INSTALLED, hence `@types/react` pinned
+// to react's own major in package.json (held by TestTypeChecking). One major ahead it
+// describes hooks and a `ref` prop this React does not have: the code would pass here
+// and break in the browser, which is exactly what nothing else would catch.
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "types": ["node", "vite/client"]
+  },
+  "include": ["src", "vite.config.ts"]
+}

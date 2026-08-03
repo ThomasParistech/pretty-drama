@@ -1,6 +1,6 @@
 """Shared by every Action script: a play's identity, repo paths, JSON, timestamps.
 
-The identity half is the Python side of src/shared/plays.js: the browser announces, the
+The identity half is the Python side of src/shared/plays.ts: the browser announces, the
 Action decides, scripts/tests/ holds the two in agreement."""
 
 # Keeps annotations unevaluated so an older local Python can still import this.
@@ -15,7 +15,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-# Mirror of SAFE_PLAY_ID (src/shared/plays.js), compared character for character by
+# Mirror of SAFE_PLAY_ID (src/shared/plays.ts), compared character for character by
 # test_contracts.py. This id names a folder and a URL segment.
 PLAY_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 
@@ -27,7 +27,7 @@ def is_play_id(value) -> bool:
 
 
 # The site's test bench: ordinary except that build_plays_index leaves it out of
-# data/plays.json. Mirror of DEV_PLAY_ID (src/shared/plays.js).
+# data/plays.json. Mirror of DEV_PLAY_ID (src/shared/plays.ts).
 DEV_PLAY_ID = "dev"
 
 # Bound of the pattern above: mint_play_id must truncate to the same length.
@@ -37,7 +37,7 @@ MAX_PLAY_ID_LENGTH = 64
 def mint_play_id(title) -> str:
     """A play's id, derived from its title: "L'École des femmes" -> "l-ecole-des-femmes".
 
-    The Action decides here; `mintPlayId` (src/shared/plays.js) only announces, and
+    The Action decides here; `mintPlayId` (src/shared/plays.ts) only announces, and
     scripts/tests/play-id-cases.json holds the two in agreement. Empty string when the
     title leaves no usable address; the caller then refuses."""
     if not isinstance(title, str):
@@ -45,7 +45,7 @@ def mint_play_id(title) -> str:
     # Lowercase BEFORE decomposing so "É" folds onto "e" instead of being dropped.
     folded = unicodedata.normalize("NFD", title.lower())
     # Category M and not `combining()`: JS has no access to a combining class, so the
-    # announcing side (`slugify`, src/shared/data.js) can only express `\p{M}`. Measured:
+    # announcing side (`slugify`, src/shared/data.ts) can only express `\p{M}`. Measured:
     # the two rules agree on all 2268 mark code points, `combining()` on 1403 fewer.
     base = "".join(c for c in folded if not unicodedata.category(c).startswith("M"))
     base = re.sub(r"[^a-z0-9]+", "-", base).strip("-")
@@ -55,7 +55,7 @@ def mint_play_id(title) -> str:
 
 def new_play_script(play_id: str, title: str, language: str) -> dict:
     """The empty play a creation upload brings into being. Mirror of EMPTY_SCRIPT
-    (src/editor/reducer.js), held by test_contracts.py. The empty act and scene are the
+    (src/editor/reducer.ts), held by test_contracts.py. The empty act and scene are the
     structural floor: there must be a scene to write a line in."""
     return {
         "id": play_id,
